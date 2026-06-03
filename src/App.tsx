@@ -3,6 +3,7 @@ import { useSetAtom } from 'jotai'
 import { Toaster } from 'sonner'
 import { authUserAtom, authLoadingAtom } from '@/store/authAtom'
 import { subscribeToAuthState } from '@/services/authService'
+import { AppRouter } from '@/router'
 
 export default function App() {
   const setUser = useSetAtom(authUserAtom)
@@ -14,7 +15,7 @@ export default function App() {
 
   return (
     <>
-      <div>gaplan — Router goes here</div>
+      <AppRouter />
       <Toaster position="top-right" richColors />
     </>
   )
