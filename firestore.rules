@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth() { return request.auth != null; }
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    function isAdmin() { return isAuth() && userRole() == 'admin'; }
+    function isSeventy() { return isAuth() && userRole() == 'seventy'; }
+    function isPresident() { return isAuth() && userRole() == 'president'; }
+
+    match /users/{uid} {
+      allow read: if isAuth() && (request.auth.uid == uid || isAdmin());
+      allow create: if isAuth() && request.auth.uid == uid;
+      allow update: if isAdmin() || (isAuth() && request.auth.uid == uid
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']));
+    }
+
+    match /invites/{email} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /regions/{regionId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /units/{unitId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /availability/{seventyUid}/slots/{slotId} {
+      allow read: if isAuth();
+      allow write: if isAdmin() || (isSeventy() && request.auth.uid == seventyUid);
+    }
+
+    match /schedules/{scheduleId} {
+      allow read: if isAuth();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isAuth() && (
+        isAdmin() || resource.data.assignedTo == request.auth.uid
+      );
+      allow write: if isAdmin();
+      allow update: if isAuth() && resource.data.assignedTo == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+    }
+
+    match /notifications/{uid}/items/{notifId} {
+      allow read, write: if isAuth() && request.auth.uid == uid;
+    }
+
+    match /settings/{doc} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+  }
+}
