@@ -15,7 +15,7 @@ const TASK_TYPE_OPTIONS = [
   { value: 'select_interview', label: '접견 일정 선택' },
 ]
 
-export function RegionSettings() {
+export function TaskCreation() {
   const user = useAtomValue(authUserAtom)!
   const { users } = useUsers()
   const presidents = users.filter(u => u.role === 'president')

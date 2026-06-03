@@ -4,6 +4,10 @@ import type { AppUser } from '@/types'
 
 export function useUsers() {
   const [users, setUsers] = useState<AppUser[]>([])
-  useEffect(() => subscribeToUsers(setUsers), [])
-  return { users }
+  const [loading, setLoading] = useState(true)
+  useEffect(() => subscribeToUsers(data => {
+    setUsers(data)
+    setLoading(false)
+  }), [])
+  return { users, loading }
 }

@@ -7,7 +7,10 @@ export function useTasks(assignedTo: string) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!assignedTo) return
+    if (!assignedTo) {
+      setLoading(false)
+      return
+    }
     const unsub = subscribeToTasks(assignedTo, data => {
       setTasks(data)
       setLoading(false)

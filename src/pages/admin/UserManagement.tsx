@@ -7,7 +7,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { REGIONS } from '@/constants/regions'
 import { ROLE_LABELS } from '@/constants/roles'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Input, Select, Button, Badge, Avatar } from '@/components/ui'
+import { Card, CardHeader, CardBody, Input, Select, Button, Badge, Avatar, Skeleton } from '@/components/ui'
 import type { UserRole } from '@/types'
 import styles from './UserManagement.module.scss'
 
@@ -16,7 +16,7 @@ const REGION_OPTIONS = REGIONS.map(r => ({ value: r.id, label: r.name }))
 
 export function UserManagement() {
   const user = useAtomValue(authUserAtom)!
-  const { users } = useUsers()
+  const { users, loading: usersLoading } = useUsers()
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<UserRole>('president')
   const [regionId, setRegionId] = useState('')
@@ -61,18 +61,20 @@ export function UserManagement() {
         <Card>
           <CardHeader title="전체 사용자" />
           <CardBody>
-            {users.map(u => (
-              <div key={u.uid} className={styles.userRow}>
-                <Avatar name={u.name} size="sm" />
-                <div className={styles.userInfo}>
-                  <p className={styles.userName}>{u.name}</p>
-                  <p className={styles.userEmail}>{u.email}</p>
+            {usersLoading
+              ? [1,2,3].map(i => <Skeleton key={i} height="44px" className={styles.skeletonRow} />)
+              : users.map(u => (
+                <div key={u.uid} className={styles.userRow}>
+                  <Avatar name={u.name} size="sm" />
+                  <div className={styles.userInfo}>
+                    <p className={styles.userName}>{u.name}</p>
+                    <p className={styles.userEmail}>{u.email}</p>
+                  </div>
+                  <Badge variant={u.role === 'admin' ? 'danger' : u.role === 'seventy' ? 'warning' : 'default'}>
+                    {ROLE_LABELS[u.role]}
+                  </Badge>
                 </div>
-                <Badge variant={u.role === 'admin' ? 'danger' : u.role === 'seventy' ? 'warning' : 'default'}>
-                  {ROLE_LABELS[u.role]}
-                </Badge>
-              </div>
-            ))}
+              ))}
           </CardBody>
         </Card>
       </div>

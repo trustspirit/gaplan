@@ -3,6 +3,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
+import dayjs from 'dayjs'
 import { db, functions } from '@/firebase'
 import type { Schedule, TimeSlot } from '@/types'
 
@@ -13,11 +14,15 @@ export function subscribeToSchedules(
   let q = query(collection(db, 'schedules'), orderBy('date', 'asc'))
   if (filters.presidentUid)
     q = query(q, where('presidentUid', '==', filters.presidentUid))
-  if (filters.seventyUid)
+  else if (filters.seventyUid)
     q = query(q, where('seventyUid', '==', filters.seventyUid))
+  else {
+    // Admin view: limit to ±6 months to avoid unbounded collection scan
+    const sixMonthsAgo = dayjs().subtract(6, 'month').format('YYYY-MM-DD')
+    q = query(q, where('date', '>=', sixMonthsAgo))
+  }
   return onSnapshot(q, snap => {
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule)
-    )
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule))
   })
 }
 

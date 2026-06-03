@@ -32,6 +32,12 @@ export const taskReminder = functions
       const president = userSnaps[i].data()
       if (!president?.email) return
 
+      // Skip if already notified today to prevent duplicate daily emails
+      const alreadyNotifiedToday = (task.notifiedAt as admin.firestore.Timestamp[] ?? []).some(
+        t => dayjs(t.toDate()).format('YYYY-MM-DD') === today
+      )
+      if (alreadyNotifiedToday) return
+
       const label = task.type === 'select_visit' ? '와드 방문 일정 선택' : '접견 일정 선택'
       const daysLeft = dayjs(task.dueDate).diff(dayjs(), 'day')
 
