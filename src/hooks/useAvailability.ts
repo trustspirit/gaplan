@@ -4,15 +4,22 @@ import type { AvailabilitySlot } from '@/types'
 
 export function useAvailability(seventyUid: string) {
   const [slots, setSlots] = useState<AvailabilitySlot[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
-    if (!seventyUid) return
-    getAvailabilitySlots(seventyUid).then(data => {
-      setSlots(data)
+    if (!seventyUid) {
+      setSlots([])
       setLoading(false)
-    })
+      setError(null)
+      return
+    }
+    setLoading(true)
+    setError(null)
+    getAvailabilitySlots(seventyUid)
+      .then(data => { setSlots(data); setLoading(false) })
+      .catch(e => { setError(e); setLoading(false) })
   }, [seventyUid])
 
-  return { slots, loading, setSlots }
+  return { slots, loading, error, setSlots }
 }

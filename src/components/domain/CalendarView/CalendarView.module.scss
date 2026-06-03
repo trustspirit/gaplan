@@ -19,4 +19,9 @@
 .dotInterview { background: $color-primary; }
 .dotBlocked { background: $color-border; }
 .legend { display: flex; gap: $space-4; font-size: $font-size-xs; color: $color-text-muted; align-items: center; }
-.wip { color: $color-text-muted; text-align: center; padding: $space-8; }
+.weekGrid { display: flex; flex-direction: column; gap: 1px; background: $color-border; border: 1px solid $color-border; border-radius: $border-radius-md; overflow: hidden; }
+.weekRow { display: grid; grid-template-columns: 80px 1fr; background: $color-surface; padding: $space-3 $space-4; gap: $space-3; align-items: center; cursor: pointer; transition: background 0.1s; &:hover { background: $color-bg; } }
+.weekDayLabel { font-size: $font-size-sm; font-weight: $font-weight-medium; color: $color-text-muted; }
+.weekDayLabelToday { color: $color-primary; font-weight: $font-weight-semibold; }
+.weekDayBlocked { color: $color-text-light; font-style: italic; }
+.weekSchedules { display: flex; flex-direction: column; gap: 3px; }

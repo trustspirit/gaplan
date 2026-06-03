@@ -71,6 +71,42 @@ export function CalendarView({ schedules, onDateClick, defaultView = 'month' }: 
     )
   }
 
+  const renderWeekView = () => {
+    const weekStart = current.startOf('week')
+    const days = Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day'))
+    return (
+      <div className={styles.weekGrid}>
+        {days.map(d => {
+          const dateStr = d.format('YYYY-MM-DD')
+          const daySchedules = getSchedulesForDate(dateStr)
+          const isToday = d.isSame(dayjs(), 'day')
+          const isBlocked = isFastSunday(d)
+          const DOW = ['일', '월', '화', '수', '목', '금', '토']
+          return (
+            <div
+              key={dateStr}
+              className={styles.weekRow}
+              onClick={() => !isBlocked && onDateClick?.(dateStr)}
+            >
+              <span className={clsx(
+                styles.weekDayLabel,
+                isToday && styles.weekDayLabelToday,
+                isBlocked && styles.weekDayBlocked,
+              )}>
+                {DOW[d.day()]} {d.format('M/D')}{isBlocked ? ' (금식)' : ''}
+              </span>
+              <div className={styles.weekSchedules}>
+                {daySchedules.map(s => (
+                  <span key={s.id} className={clsx(styles.dot, s.type === 'ward_visit' ? styles.dotVisit : styles.dotInterview)} />
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <div className={styles.calendar}>
       <div className={styles.controls}>
@@ -88,9 +124,7 @@ export function CalendarView({ schedules, onDateClick, defaultView = 'month' }: 
           <Button variant={view === 'week' ? 'primary' : 'ghost'} size="sm" onClick={() => setView('week')}>주</Button>
         </div>
       </div>
-      {view === 'month' ? renderMonthView() : (
-        <p className={styles.wip}>주간 뷰 — 추후 구현</p>
-      )}
+      {view === 'month' ? renderMonthView() : renderWeekView()}
       <div className={styles.legend}>
         <span><span className={clsx(styles.dot, styles.dotVisit)} /> 와드 방문</span>
         <span><span className={clsx(styles.dot, styles.dotInterview)} /> 접견</span>

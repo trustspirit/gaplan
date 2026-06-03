@@ -3,20 +3,26 @@ import { useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 import { authUserAtom } from '@/store/authAtom'
 import { useAvailability } from '@/hooks/useAvailability'
+import { useUsers } from '@/hooks/useUsers'
 import { saveAvailabilitySlots } from '@/services/availabilityService'
-import { AppShell, Sidebar, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody } from '@/components/ui'
+import { AppShell, TopBar } from '@/components/layout'
+import { Card, CardHeader, CardBody, Select } from '@/components/ui'
 import { AvailabilityEditor } from '@/components/domain'
 import type { AvailabilitySlot } from '@/types'
 import styles from './AvailabilitySettings.module.scss'
 
 export function AvailabilitySettings() {
   const user = useAtomValue(authUserAtom)!
-  const targetUid = user.uid
-  const { slots, loading } = useAvailability(targetUid)
+  const { users } = useUsers()
+  const seventies = users.filter(u => u.role === 'seventy')
+  const [targetUid, setTargetUid] = useState('')
+  const { slots, loading, error } = useAvailability(targetUid)
   const [saving, setSaving] = useState(false)
 
+  const seventyOptions = seventies.map(s => ({ value: s.uid, label: s.name }))
+
   const handleSave = async (newSlots: Omit<AvailabilitySlot, 'id' | 'seventyUid'>[]) => {
+    if (!targetUid) return
     setSaving(true)
     try {
       await saveAvailabilitySlots(targetUid, newSlots)
@@ -30,14 +36,25 @@ export function AvailabilitySettings() {
 
   return (
     <AppShell
-      sidebar={<Sidebar role={user.role} name={user.name} />}
+      role={user.role} name={user.name}
       topBar={<TopBar name={user.name} subtext="가능 일정 설정" />}
     >
       <div className={styles.page}>
         <Card>
           <CardHeader title="가능 일정 설정" />
           <CardBody>
-            {!loading && <AvailabilityEditor slots={slots} onSave={handleSave} loading={saving} />}
+            <Select
+              label="지역 칠십인 선택"
+              value={targetUid}
+              onChange={e => setTargetUid(e.target.value)}
+              options={seventyOptions}
+            />
+            {targetUid && error && (
+              <p className={styles.error}>슬롯 로딩에 실패했습니다. 다시 시도해주세요.</p>
+            )}
+            {targetUid && !loading && !error && (
+              <AvailabilityEditor slots={slots} onSave={handleSave} loading={saving} />
+            )}
           </CardBody>
         </Card>
       </div>

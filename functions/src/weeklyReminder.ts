@@ -12,8 +12,8 @@ export const weeklyReminder = functions
   .timeZone('Asia/Seoul')
   .onRun(async () => {
     const db = admin.firestore()
-    const weekStart = dayjs().startOf('isoWeek' as any).format('YYYY-MM-DD')
-    const weekEnd = dayjs().endOf('isoWeek' as any).format('YYYY-MM-DD')
+    const weekStart = dayjs().startOf('isoWeek' as dayjs.OpUnitType).format('YYYY-MM-DD')
+    const weekEnd = dayjs().endOf('isoWeek' as dayjs.OpUnitType).format('YYYY-MM-DD')
 
     const snap = await db.collection('schedules')
       .where('status', '==', 'confirmed')

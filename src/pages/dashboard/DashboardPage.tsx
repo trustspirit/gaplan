@@ -1,18 +1,22 @@
 import { useState } from 'react'
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
 import { Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { authUserAtom } from '@/store/authAtom'
-import { taskModalOpenAtom, selectedTaskAtom } from '@/store/uiAtom'
 import { useTasks } from '@/hooks/useTasks'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
-import { AppShell, Sidebar, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Skeleton, Button } from '@/components/ui'
-import { TaskCard, ScheduleItem, CalendarView } from '@/components/domain'
+import { useAvailability } from '@/hooks/useAvailability'
+import { useIsMobile } from '@/hooks/useIsMobile'
+import { computeAvailableSlots } from '@/services/availabilityService'
+import { confirmSchedule } from '@/services/scheduleService'
 import { subscribeToSharedCalendar } from '@/services/calendarService'
-import type { Task } from '@/types'
+import { AppShell, TopBar } from '@/components/layout'
+import { Card, CardHeader, CardBody, Skeleton, Button, Modal, BottomSheet } from '@/components/ui'
+import { TaskCard, ScheduleItem, CalendarView, TimeSlotPicker } from '@/components/domain'
+import { REGIONS } from '@/constants/regions'
+import type { Task, TimeSlot } from '@/types'
 import styles from './DashboardPage.module.scss'
 
 function CalendarConnectCard({ connected }: { connected?: boolean }) {
@@ -49,24 +53,77 @@ function CalendarConnectCard({ connected }: { connected?: boolean }) {
 
 function PresidentDashboard() {
   const user = useAtomValue(authUserAtom)!
-  const setTaskModal = useSetAtom(taskModalOpenAtom)
-  const setSelectedTask = useSetAtom(selectedTaskAtom)
   const { tasks, loading: tasksLoading } = useTasks(user.uid)
   const { schedules, loading: schedulesLoading } = useSchedules({ presidentUid: user.uid })
   const { getUnitName } = useUnits()
+  const isMobile = useIsMobile()
+
+  const [activeTask, setActiveTask] = useState<Task | null>(null)
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  const seventyUid = activeTask?.seventyUid ?? ''
+  const { slots } = useAvailability(seventyUid)
+  const confirmedDates = schedules.filter(s => s.status === 'confirmed').map(s => s.date)
+  const availableSlots = computeAvailableSlots(
+    slots,
+    confirmedDates,
+    dayjs().format('YYYY-MM-DD'),
+    dayjs().add(60, 'day').format('YYYY-MM-DD'),
+  )
+
+  const handleTaskAction = (task: Task) => {
+    setActiveTask(task)
+    setSelectedSlot(null)
+  }
+
+  const handleConfirm = async () => {
+    if (!activeTask || !selectedSlot || !user.unitId) return
+    setSubmitting(true)
+    try {
+      const result = await confirmSchedule({
+        taskId: activeTask.id,
+        seventyUid,
+        unitId: user.unitId,
+        slot: selectedSlot,
+        type: activeTask.type === 'select_visit' ? 'ward_visit' : 'interview',
+      })
+      if (result.success) {
+        toast.success('일정이 확정되었습니다!')
+        setActiveTask(null)
+        setSelectedSlot(null)
+      } else {
+        toast.error(result.error ?? '해당 슬롯이 이미 선택되었습니다. 다른 시간을 선택해주세요.')
+      }
+    } catch {
+      toast.error('오류가 발생했습니다. 다시 시도해주세요.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   const upcoming = schedules
     .filter(s => s.status === 'confirmed' && dayjs(s.date).isAfter(dayjs().subtract(1, 'day')))
     .slice(0, 3)
 
-  const handleTaskAction = (task: Task) => {
-    setSelectedTask(task)
-    setTaskModal(true)
-  }
+  const slotPickerContent = (
+    <>
+      <TimeSlotPicker slots={availableSlots} selected={selectedSlot} onSelect={setSelectedSlot} />
+      <Button
+        onClick={handleConfirm}
+        loading={submitting}
+        disabled={!selectedSlot}
+        fullWidth
+        className={styles.confirmBtn}
+      >
+        일정 확정
+      </Button>
+    </>
+  )
 
   return (
     <AppShell
-      sidebar={<Sidebar role={user.role} name={user.name} />}
+      role={user.role} name={user.name}
       topBar={<TopBar name={user.name} subtext={dayjs().format('YYYY년 M월')} pendingCount={tasks.length} />}
     >
       <div className={styles.grid}>
@@ -110,6 +167,16 @@ function PresidentDashboard() {
           </CardBody>
         </Card>
       </div>
+
+      {isMobile ? (
+        <BottomSheet open={!!activeTask} onClose={() => setActiveTask(null)} title="날짜/시간 선택">
+          {slotPickerContent}
+        </BottomSheet>
+      ) : (
+        <Modal open={!!activeTask} onClose={() => setActiveTask(null)} title="날짜/시간 선택">
+          {slotPickerContent}
+        </Modal>
+      )}
     </AppShell>
   )
 }
@@ -118,13 +185,14 @@ function SeventyDashboard() {
   const user = useAtomValue(authUserAtom)!
   const { schedules } = useSchedules({ seventyUid: user.uid })
   const { getUnitName } = useUnits()
+  const regionName = REGIONS.find(r => r.id === user.regionId)?.name ?? user.regionId ?? ''
   const thisMonth = schedules.filter(
     s => s.status === 'confirmed' && dayjs(s.date).month() === dayjs().month()
   )
   return (
     <AppShell
-      sidebar={<Sidebar role={user.role} name={user.name} />}
-      topBar={<TopBar name={user.name} subtext={user.regionId} />}
+      role={user.role} name={user.name}
+      topBar={<TopBar name={user.name} subtext={regionName} />}
     >
       <div className={styles.grid}>
         <Card className={styles.calendarConnectCard}>
@@ -159,7 +227,7 @@ function AdminDashboardContent() {
   const { schedules } = useSchedules({})
   return (
     <AppShell
-      sidebar={<Sidebar role={user.role} name={user.name} />}
+      role={user.role} name={user.name}
       topBar={<TopBar name={user.name} />}
     >
       <div className={styles.grid}>

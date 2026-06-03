@@ -25,7 +25,11 @@ export function OnboardingPage() {
       return
     }
     const firebaseUser = auth.currentUser
-    if (!firebaseUser) return
+    if (!firebaseUser) {
+      toast.error('로그인이 필요합니다.')
+      navigate('/login')
+      return
+    }
     setLoading(true)
     try {
       const newUser = {

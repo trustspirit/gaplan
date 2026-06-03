@@ -42,15 +42,16 @@ service cloud.firestore {
       allow read: if isAuth();
       allow create: if false;
       allow update: if false;
+      allow delete: if false;
     }
 
     match /tasks/{taskId} {
       allow read: if isAuth() && (
         isAdmin() || resource.data.assignedTo == request.auth.uid
       );
-      allow write: if isAdmin();
-      allow update: if isAuth() && resource.data.assignedTo == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (isAuth() && resource.data.assignedTo == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
     }
 
     match /notifications/{uid}/items/{notifId} {
