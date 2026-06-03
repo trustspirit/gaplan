@@ -1,0 +1,10 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+.card { @include card-base; }
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: $space-3 $space-4 0;
+  font-size: $font-size-xs; font-weight: $font-weight-semibold;
+  letter-spacing: 0.07em; text-transform: uppercase; color: $color-text-muted;
+}
+.body { padding: $space-2 $space-4 $space-4; }

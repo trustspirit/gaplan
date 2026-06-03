@@ -1,0 +1,7 @@
+@use '@/styles/variables' as *;
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid $color-border; border-top-color: $color-primary;
+  border-radius: $border-radius-full; animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
