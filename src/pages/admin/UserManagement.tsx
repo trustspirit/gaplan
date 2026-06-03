@@ -6,7 +6,7 @@ import { inviteUser } from '@/services/userService'
 import { useUsers } from '@/hooks/useUsers'
 import { REGIONS } from '@/constants/regions'
 import { ROLE_LABELS } from '@/constants/roles'
-import { AppShell, Sidebar, TopBar } from '@/components/layout'
+import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Input, Select, Button, Badge, Avatar } from '@/components/ui'
 import type { UserRole } from '@/types'
 import styles from './UserManagement.module.scss'
@@ -40,7 +40,7 @@ export function UserManagement() {
 
   return (
     <AppShell
-      sidebar={<Sidebar role={user.role} name={user.name} />}
+      role={user.role} name={user.name}
       topBar={<TopBar name={user.name} subtext="사용자 관리" />}
     >
       <div className={styles.page}>

@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { authUserAtom } from '@/store/authAtom';
 import { useAvailability } from '@/hooks/useAvailability';
 import { saveAvailabilitySlots } from '@/services/availabilityService';
-import { AppShell, Sidebar, TopBar } from '@/components/layout';
+import { AppShell, TopBar } from '@/components/layout';
 import { Card, CardHeader, CardBody } from '@/components/ui';
 import { AvailabilityEditor } from '@/components/domain';
 import styles from './AvailabilitySettings.module.scss';
@@ -27,5 +27,5 @@ export function AvailabilitySettings() {
             setSaving(false);
         }
     };
-    return (_jsx(AppShell, { sidebar: _jsx(Sidebar, { role: user.role, name: user.name }), topBar: _jsx(TopBar, { name: user.name, subtext: "\uAC00\uB2A5 \uC77C\uC815 \uC124\uC815" }), children: _jsx("div", { className: styles.page, children: _jsxs(Card, { children: [_jsx(CardHeader, { title: "\uAC00\uB2A5 \uC77C\uC815 \uC124\uC815" }), _jsx(CardBody, { children: !loading && _jsx(AvailabilityEditor, { slots: slots, onSave: handleSave, loading: saving }) })] }) }) }));
+    return (_jsx(AppShell, { role: user.role, name: user.name, topBar: _jsx(TopBar, { name: user.name, subtext: "\uAC00\uB2A5 \uC77C\uC815 \uC124\uC815" }), children: _jsx("div", { className: styles.page, children: _jsxs(Card, { children: [_jsx(CardHeader, { title: "\uAC00\uB2A5 \uC77C\uC815 \uC124\uC815" }), _jsx(CardBody, { children: !loading && _jsx(AvailabilityEditor, { slots: slots, onSave: handleSave, loading: saving }) })] }) }) }));
 }

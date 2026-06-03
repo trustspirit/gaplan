@@ -39,27 +39,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.weeklyReminder = void 0;
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
-const nodemailer = __importStar(require("nodemailer"));
 const dayjs_1 = __importDefault(require("dayjs"));
 const isoWeek_1 = __importDefault(require("dayjs/plugin/isoWeek"));
+const emailTransport_1 = require("./emailTransport");
 dayjs_1.default.extend(isoWeek_1.default);
-function getTransport() {
-    var _a, _b, _c, _d;
-    return nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: (_b = (_a = functions.config().email) === null || _a === void 0 ? void 0 : _a.user) !== null && _b !== void 0 ? _b : process.env.EMAIL_USER,
-            pass: (_d = (_c = functions.config().email) === null || _c === void 0 ? void 0 : _c.pass) !== null && _d !== void 0 ? _d : process.env.EMAIL_PASS,
-        },
-    });
-}
-// Every Monday 9am KST (= 00:00 UTC)
+// Every Monday 9am KST (timeZone: Asia/Seoul → cron is in KST)
 exports.weeklyReminder = functions
     .region('asia-northeast3')
-    .pubsub.schedule('0 0 * * 1')
+    .pubsub.schedule('0 9 * * 1')
     .timeZone('Asia/Seoul')
     .onRun(async () => {
-    var _a, _b;
     const db = admin.firestore();
     const weekStart = (0, dayjs_1.default)().startOf('isoWeek').format('YYYY-MM-DD');
     const weekEnd = (0, dayjs_1.default)().endOf('isoWeek').format('YYYY-MM-DD');
@@ -76,7 +65,7 @@ exports.weeklyReminder = functions
         const uid = d.data().presidentUid;
         byPresident[uid] = [...((_a = byPresident[uid]) !== null && _a !== void 0 ? _a : []), d];
     });
-    const transport = getTransport();
+    const transport = (0, emailTransport_1.getTransport)();
     for (const [uid, docs] of Object.entries(byPresident)) {
         const presidentSnap = await db.collection('users').doc(uid).get();
         const president = presidentSnap.data();
@@ -87,7 +76,7 @@ exports.weeklyReminder = functions
             return `• ${s.date} ${s.startTime} — ${s.type === 'ward_visit' ? '와드 방문' : '접견'}`;
         }).join('\n');
         await transport.sendMail({
-            from: (_b = (_a = functions.config().email) === null || _a === void 0 ? void 0 : _a.user) !== null && _b !== void 0 ? _b : process.env.EMAIL_USER,
+            from: (0, emailTransport_1.getSenderEmail)(),
             to: president.email,
             subject: `[gaplan] 이번 주 일정 안내 (${weekStart} ~ ${weekEnd})`,
             text: `${president.name} 회장님,\n\n이번 주 확정된 일정입니다:\n\n${lines}\n\ngaplan`,

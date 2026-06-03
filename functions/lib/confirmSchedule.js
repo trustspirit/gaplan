@@ -43,20 +43,36 @@ exports.confirmSchedule = functions
         throw new functions.https.HttpsError('unauthenticated', 'Login required');
     }
     const db = admin.firestore();
+    // Deterministic ID ensures tx.get participates in the transaction's optimistic lock.
+    // Two concurrent requests for the same seventy+date will conflict at commit time.
+    const scheduleId = `${data.seventyUid}_${data.slot.date}`;
+    const scheduleRef = db.collection('schedules').doc(scheduleId);
+    const taskRef = db.collection('tasks').doc(data.taskId);
     return db.runTransaction(async (tx) => {
-        // Check for conflict: same seventy, same date, already confirmed
-        const conflictSnap = await db.collection('schedules')
-            .where('seventyUid', '==', data.seventyUid)
-            .where('date', '==', data.slot.date)
-            .where('status', '==', 'confirmed')
-            .get();
-        if (!conflictSnap.empty) {
+        // Validate task ownership and data integrity before writing
+        const [existingSchedule, taskSnap] = await Promise.all([
+            tx.get(scheduleRef),
+            tx.get(taskRef),
+        ]);
+        if (!taskSnap.exists) {
+            throw new functions.https.HttpsError('not-found', 'Task not found');
+        }
+        const taskData = taskSnap.data();
+        if (taskData.assignedTo !== context.auth.uid) {
+            throw new functions.https.HttpsError('permission-denied', 'Not your task');
+        }
+        if (taskData.seventyUid !== data.seventyUid) {
+            throw new functions.https.HttpsError('invalid-argument', 'seventyUid mismatch');
+        }
+        if (taskData.status === 'completed') {
+            return { success: false, error: '이미 처리된 Task입니다.' };
+        }
+        if (existingSchedule.exists) {
             return {
                 success: false,
                 error: '해당 날짜에 이미 확정된 일정이 있습니다. 다른 날짜를 선택해주세요.',
             };
         }
-        const scheduleRef = db.collection('schedules').doc();
         tx.set(scheduleRef, {
             type: data.type,
             seventyUid: data.seventyUid,
@@ -69,9 +85,8 @@ exports.confirmSchedule = functions
             createdBy: context.auth.uid,
             confirmedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
-        const taskRef = db.collection('tasks').doc(data.taskId);
         tx.update(taskRef, { status: 'completed' });
-        return { success: true, scheduleId: scheduleRef.id };
+        return { success: true, scheduleId };
     });
 });
 //# sourceMappingURL=confirmSchedule.js.map

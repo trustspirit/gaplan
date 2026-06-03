@@ -48,15 +48,29 @@ exports.calendarSync = functions
     .firestore.document('schedules/{scheduleId}')
     .onWrite(async (change) => {
     var _a, _b, _c;
-    const after = change.after.data();
-    if (!after || after.status !== 'confirmed')
-        return;
-    if (after.googleCalendarEventId)
-        return;
     const db = admin.firestore();
     const settingsSnap = await db.collection('settings').doc('calendar').get();
     const sharedCalendarId = (_a = settingsSnap.data()) === null || _a === void 0 ? void 0 : _a.sharedCalendarId;
     if (!sharedCalendarId)
+        return;
+    const after = change.after.data();
+    const before = change.before.data();
+    // Document deleted or schedule cancelled — remove Google Calendar event
+    const eventIdToDelete = before === null || before === void 0 ? void 0 : before.googleCalendarEventId;
+    const wasCancelled = !after || after.status === 'cancelled';
+    if (wasCancelled && eventIdToDelete) {
+        try {
+            const calendar = getCalendarClient();
+            await calendar.events.delete({ calendarId: sharedCalendarId, eventId: eventIdToDelete });
+        }
+        catch (err) {
+            functions.logger.error('Google Calendar delete failed', err);
+        }
+        return;
+    }
+    if (!after || after.status !== 'confirmed')
+        return;
+    if (after.googleCalendarEventId)
         return;
     const unitSnap = await db.collection('units').doc(after.unitId).get();
     const unitName = (_c = (_b = unitSnap.data()) === null || _b === void 0 ? void 0 : _b.name) !== null && _c !== void 0 ? _c : after.unitId;

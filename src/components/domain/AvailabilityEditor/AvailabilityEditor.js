@@ -5,9 +5,10 @@ import { Button, Input } from '@/components/ui';
 import styles from './AvailabilityEditor.module.scss';
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 export function AvailabilityEditor({ slots, onSave, loading }) {
-    const [recurringDays, setRecurringDays] = useState(slots.filter(s => s.type === 'recurring' && !s.isBlocked).flatMap(s => s.recurringDays ?? []));
-    const [startTime, setStartTime] = useState('09:00');
-    const [endTime, setEndTime] = useState('18:00');
+    const existingRecurring = slots.filter(s => s.type === 'recurring' && !s.isBlocked);
+    const [recurringDays, setRecurringDays] = useState(existingRecurring.flatMap(s => s.recurringDays ?? []));
+    const [startTime, setStartTime] = useState(existingRecurring[0]?.startTime ?? '09:00');
+    const [endTime, setEndTime] = useState(existingRecurring[0]?.endTime ?? '18:00');
     const toggleDay = (day) => setRecurringDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
     const handleSave = () => {
         const newSlots = recurringDays.map(day => ({

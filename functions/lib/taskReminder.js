@@ -39,14 +39,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.taskReminder = void 0;
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
-const nodemailer = __importStar(require("nodemailer"));
 const dayjs_1 = __importDefault(require("dayjs"));
+const emailTransport_1 = require("./emailTransport");
 exports.taskReminder = functions
     .region('asia-northeast3')
     .pubsub.schedule('0 0 * * *')
     .timeZone('Asia/Seoul')
     .onRun(async () => {
-    var _a, _b, _c, _d, _e, _f;
     const db = admin.firestore();
     const today = (0, dayjs_1.default)().format('YYYY-MM-DD');
     const threshold = (0, dayjs_1.default)().add(3, 'day').format('YYYY-MM-DD');
@@ -57,13 +56,7 @@ exports.taskReminder = functions
         .get();
     if (snap.empty)
         return;
-    const transport = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: (_b = (_a = functions.config().email) === null || _a === void 0 ? void 0 : _a.user) !== null && _b !== void 0 ? _b : process.env.EMAIL_USER,
-            pass: (_d = (_c = functions.config().email) === null || _c === void 0 ? void 0 : _c.pass) !== null && _d !== void 0 ? _d : process.env.EMAIL_PASS,
-        },
-    });
+    const transport = (0, emailTransport_1.getTransport)();
     for (const d of snap.docs) {
         const task = d.data();
         const presidentSnap = await db.collection('users').doc(task.assignedTo).get();
@@ -73,7 +66,7 @@ exports.taskReminder = functions
         const label = task.type === 'select_visit' ? '와드 방문 일정 선택' : '접견 일정 선택';
         const daysLeft = (0, dayjs_1.default)(task.dueDate).diff((0, dayjs_1.default)(), 'day');
         await transport.sendMail({
-            from: (_f = (_e = functions.config().email) === null || _e === void 0 ? void 0 : _e.user) !== null && _f !== void 0 ? _f : process.env.EMAIL_USER,
+            from: (0, emailTransport_1.getSenderEmail)(),
             to: president.email,
             subject: `[gaplan] 처리 필요: ${label} (D-${daysLeft})`,
             text: `${president.name} 회장님,\n\n미완료 task가 있습니다:\n\n• ${label} (마감: ${task.dueDate})\n\ngaplan에 로그인하여 처리해주세요.`,

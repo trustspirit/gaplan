@@ -4,7 +4,7 @@ import { doc, setDoc } from 'firebase/firestore'
 import { toast } from 'sonner'
 import { authUserAtom } from '@/store/authAtom'
 import { db } from '@/firebase'
-import { AppShell, Sidebar, TopBar } from '@/components/layout'
+import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Input, Button } from '@/components/ui'
 import styles from './CalendarSettings.module.scss'
 
@@ -29,7 +29,7 @@ export function CalendarSettings() {
 
   return (
     <AppShell
-      sidebar={<Sidebar role={user.role} name={user.name} />}
+      role={user.role} name={user.name}
       topBar={<TopBar name={user.name} subtext="구글 캘린더 연동" />}
     >
       <div className={styles.page}>
