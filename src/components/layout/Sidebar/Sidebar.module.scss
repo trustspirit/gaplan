@@ -1,0 +1,31 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.sidebar {
+  width: $sidebar-width; background: $color-sidebar;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 14px 0 12px;
+}
+.logo { margin-bottom: 24px; }
+.logoIcon { width: 28px; height: 28px; border-radius: $border-radius-full; background: $color-primary; opacity: 0.9; }
+.nav { display: flex; flex-direction: column; gap: 2px; width: 100%; align-items: center; flex: 1; }
+.navItem {
+  width: 40px; height: 40px; border-radius: $border-radius-md;
+  @include flex-center; color: rgba(255,255,255,0.45);
+  transition: background 0.15s, color 0.15s;
+  &:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+  &.active { background: rgba($color-primary, 0.25); color: #fff; }
+}
+.footer { padding-top: 8px; }
+
+.bottomNav {
+  width: 100%; height: 100%; background: $color-sidebar;
+  display: flex; align-items: center; justify-content: space-around;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.tabItem {
+  flex: 1; @include flex-center; flex-direction: column; gap: 3px;
+  color: rgba(255,255,255,0.4); padding: 8px 0; transition: color 0.15s;
+  &.active { color: #fff; }
+}
+.tabLabel { font-size: 9px; font-weight: $font-weight-medium; }
