@@ -1,0 +1,27 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: $z-modal; padding: $space-4;
+}
+.modal {
+  background: $color-surface; border-radius: $border-radius-xl;
+  box-shadow: $shadow-popped;
+  width: 100%; max-width: 480px; max-height: 90vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  @include mobile { display: none; }
+}
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: $space-4 $space-4 $space-3; border-bottom: 1px solid $color-border;
+}
+.title { font-size: $font-size-md; font-weight: $font-weight-semibold; color: $color-text; }
+.close {
+  @include flex-center;
+  width: 28px; height: 28px; border-radius: $border-radius-md; color: $color-text-muted;
+  &:hover { background: $color-border; }
+}
+.body { padding: $space-4; overflow-y: auto; flex: 1; }

@@ -1,0 +1,13 @@
+@use '@/styles/variables' as *;
+.wrapper { display: flex; flex-direction: column; gap: $space-1; }
+.label { font-size: $font-size-sm; font-weight: $font-weight-medium; color: $color-text; }
+.input {
+  width: 100%; padding: $space-2 $space-3;
+  border: 1px solid $color-border; border-radius: $border-radius-md;
+  font-size: $font-size-base; color: $color-text; background: $color-surface;
+  transition: border-color 0.15s;
+  &:focus { outline: none; border-color: $color-primary; }
+  &::placeholder { color: $color-text-light; }
+  &.error { border-color: $color-danger; }
+}
+.errorMsg { font-size: $font-size-xs; color: $color-danger; }
