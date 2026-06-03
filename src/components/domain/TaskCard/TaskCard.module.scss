@@ -1,0 +1,7 @@
+@use '@/styles/variables' as *;
+.card { display: flex; align-items: center; justify-content: space-between; padding: $space-3 $space-4; border: 1px solid $color-border; border-radius: $border-radius-md; background: $color-surface; gap: $space-3; margin-bottom: $space-2; }
+.urgent { border-left: 3px solid $color-danger; background: $color-highlight-danger; }
+.left { display: flex; align-items: center; gap: $space-2; flex: 1; }
+.icon { color: $color-warning; flex-shrink: 0; }
+.label { font-size: $font-size-sm; color: $color-text; }
+.right { display: flex; align-items: center; gap: $space-2; }

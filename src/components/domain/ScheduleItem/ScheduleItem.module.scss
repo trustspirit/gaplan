@@ -1,0 +1,10 @@
+@use '@/styles/variables' as *;
+.item { display: flex; align-items: center; gap: $space-3; padding: $space-3 0; border-bottom: 1px solid $color-border; &:last-child { border-bottom: none; } }
+.dateBox { width: 36px; min-width: 36px; display: flex; flex-direction: column; align-items: center; border-radius: $border-radius-md; padding: 4px; }
+.visit .dateBox { background: $color-sidebar; }
+.interview .dateBox { background: $color-primary; }
+.day { font-size: $font-size-md; font-weight: $font-weight-bold; color: #fff; line-height: 1; }
+.month { font-size: 9px; color: rgba(255,255,255,0.7); }
+.type { display: flex; align-items: center; gap: 4px; font-size: $font-size-xs; color: $color-text-muted; margin-bottom: 2px; }
+.unit { font-size: $font-size-sm; font-weight: $font-weight-medium; color: $color-text; }
+.time { font-size: $font-size-xs; color: $color-text-muted; }

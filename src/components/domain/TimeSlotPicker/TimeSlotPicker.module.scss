@@ -1,0 +1,13 @@
+@use '@/styles/variables' as *;
+.picker { display: flex; flex-direction: column; gap: $space-4; }
+.date { font-size: $font-size-sm; font-weight: $font-weight-semibold; color: $color-text; margin-bottom: $space-2; }
+.slots { display: flex; flex-wrap: wrap; gap: $space-2; }
+.slot {
+  padding: $space-2 $space-3; border: 1px solid $color-border; border-radius: $border-radius-md;
+  font-size: $font-size-sm; color: $color-text; background: $color-surface;
+  transition: border-color 0.15s, background 0.15s;
+  &:hover:not(:disabled) { border-color: $color-primary; color: $color-primary; }
+  &.selected { background: $color-primary; border-color: $color-primary; color: #fff; }
+  &.disabled { opacity: 0.35; cursor: not-allowed; background: $color-bg; }
+}
+.empty { font-size: $font-size-sm; color: $color-text-muted; text-align: center; padding: $space-6 0; }

@@ -1,0 +1,6 @@
+@use '@/styles/variables' as *;
+.editor { display: flex; flex-direction: column; gap: $space-4; }
+.section { font-size: $font-size-sm; font-weight: $font-weight-semibold; color: $color-text; }
+.days { display: flex; gap: $space-2; flex-wrap: wrap; }
+.dayBtn { width: 38px; height: 38px; border-radius: $border-radius-full; border: 1px solid $color-border; font-size: $font-size-sm; color: $color-text; background: $color-surface; transition: background 0.15s, border-color 0.15s; &.selected { background: $color-primary; border-color: $color-primary; color: #fff; } }
+.timeRow { display: grid; grid-template-columns: 1fr 1fr; gap: $space-3; }
