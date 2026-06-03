@@ -18,22 +18,22 @@ export const confirmSchedule = functions
 
     const db = admin.firestore()
 
-    return db.runTransaction(async tx => {
-      // Check for conflict: same seventy, same date, already confirmed
-      const conflictSnap = await db.collection('schedules')
-        .where('seventyUid', '==', data.seventyUid)
-        .where('date', '==', data.slot.date)
-        .where('status', '==', 'confirmed')
-        .get()
+    // Deterministic ID ensures tx.get participates in the transaction's optimistic lock.
+    // Two concurrent requests for the same seventy+date will conflict at commit time.
+    const scheduleId = `${data.seventyUid}_${data.slot.date}`
+    const scheduleRef = db.collection('schedules').doc(scheduleId)
+    const taskRef = db.collection('tasks').doc(data.taskId)
 
-      if (!conflictSnap.empty) {
+    return db.runTransaction(async tx => {
+      const existing = await tx.get(scheduleRef)
+
+      if (existing.exists) {
         return {
           success: false,
           error: '해당 날짜에 이미 확정된 일정이 있습니다. 다른 날짜를 선택해주세요.',
         }
       }
 
-      const scheduleRef = db.collection('schedules').doc()
       tx.set(scheduleRef, {
         type: data.type,
         seventyUid: data.seventyUid,
@@ -47,9 +47,8 @@ export const confirmSchedule = functions
         confirmedAt: admin.firestore.FieldValue.serverTimestamp(),
       })
 
-      const taskRef = db.collection('tasks').doc(data.taskId)
       tx.update(taskRef, { status: 'completed' })
 
-      return { success: true, scheduleId: scheduleRef.id }
+      return { success: true, scheduleId }
     })
   })

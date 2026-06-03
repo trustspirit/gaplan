@@ -13,14 +13,29 @@ export const calendarSync = functions
   .region('asia-northeast3')
   .firestore.document('schedules/{scheduleId}')
   .onWrite(async (change) => {
-    const after = change.after.data()
-    if (!after || after.status !== 'confirmed') return
-    if (after.googleCalendarEventId) return
-
     const db = admin.firestore()
     const settingsSnap = await db.collection('settings').doc('calendar').get()
     const sharedCalendarId = settingsSnap.data()?.sharedCalendarId
     if (!sharedCalendarId) return
+
+    const after = change.after.data()
+    const before = change.before.data()
+
+    // Document deleted or schedule cancelled — remove Google Calendar event
+    const eventIdToDelete = before?.googleCalendarEventId
+    const wasCancelled = !after || after.status === 'cancelled'
+    if (wasCancelled && eventIdToDelete) {
+      try {
+        const calendar = getCalendarClient()
+        await calendar.events.delete({ calendarId: sharedCalendarId, eventId: eventIdToDelete })
+      } catch (err) {
+        functions.logger.error('Google Calendar delete failed', err)
+      }
+      return
+    }
+
+    if (!after || after.status !== 'confirmed') return
+    if (after.googleCalendarEventId) return
 
     const unitSnap = await db.collection('units').doc(after.unitId).get()
     const unitName = unitSnap.data()?.name ?? after.unitId

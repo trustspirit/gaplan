@@ -12,11 +12,12 @@ interface AvailabilityEditorProps {
   loading?: boolean
 }
 export function AvailabilityEditor({ slots, onSave, loading }: AvailabilityEditorProps) {
+  const existingRecurring = slots.filter(s => s.type === 'recurring' && !s.isBlocked)
   const [recurringDays, setRecurringDays] = useState<number[]>(
-    slots.filter(s => s.type === 'recurring' && !s.isBlocked).flatMap(s => s.recurringDays ?? [])
+    existingRecurring.flatMap(s => s.recurringDays ?? [])
   )
-  const [startTime, setStartTime] = useState('09:00')
-  const [endTime, setEndTime] = useState('18:00')
+  const [startTime, setStartTime] = useState(existingRecurring[0]?.startTime ?? '09:00')
+  const [endTime, setEndTime] = useState(existingRecurring[0]?.endTime ?? '18:00')
 
   const toggleDay = (day: number) =>
     setRecurringDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])

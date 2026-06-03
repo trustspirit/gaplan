@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Compiled test artifacts
+src/**/*.test.js
+src/**/*.test.js.map

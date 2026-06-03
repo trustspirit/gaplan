@@ -2,19 +2,23 @@ import { useAtomValue } from 'jotai'
 import { authUserAtom } from '@/store/authAtom'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
-import { AppShell, Sidebar, TopBar } from '@/components/layout'
+import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody } from '@/components/ui'
 import { ScheduleItem } from '@/components/domain'
 import styles from './InterviewsPage.module.scss'
 
 export function InterviewsPage() {
   const user = useAtomValue(authUserAtom)!
-  const filters = user.role === 'president' ? { presidentUid: user.uid } : { seventyUid: user.uid }
+  const filters = user.role === 'president'
+    ? { presidentUid: user.uid }
+    : user.role === 'seventy'
+      ? { seventyUid: user.uid }
+      : {}
   const { schedules } = useSchedules(filters)
   const { getUnitName } = useUnits()
   const interviews = schedules.filter(s => s.type === 'interview' && s.status === 'confirmed')
   return (
-    <AppShell sidebar={<Sidebar role={user.role} name={user.name} />} topBar={<TopBar name={user.name} subtext="접견 일정" />}>
+    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext="접견 일정" />}>
       <div className={styles.page}>
         <Card>
           <CardHeader title="접견 일정" />

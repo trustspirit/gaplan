@@ -1,24 +1,14 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
-import * as nodemailer from 'nodemailer'
 import dayjs from 'dayjs'
 import isoWeek from 'dayjs/plugin/isoWeek'
+import { getTransport, getSenderEmail } from './emailTransport'
 dayjs.extend(isoWeek)
 
-function getTransport() {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: functions.config().email?.user ?? process.env.EMAIL_USER,
-      pass: functions.config().email?.pass ?? process.env.EMAIL_PASS,
-    },
-  })
-}
-
-// Every Monday 9am KST (= 00:00 UTC)
+// Every Monday 9am KST (timeZone: Asia/Seoul → cron is in KST)
 export const weeklyReminder = functions
   .region('asia-northeast3')
-  .pubsub.schedule('0 0 * * 1')
+  .pubsub.schedule('0 9 * * 1')
   .timeZone('Asia/Seoul')
   .onRun(async () => {
     const db = admin.firestore()
@@ -52,7 +42,7 @@ export const weeklyReminder = functions
       }).join('\n')
 
       await transport.sendMail({
-        from: functions.config().email?.user ?? process.env.EMAIL_USER,
+        from: getSenderEmail(),
         to: president.email,
         subject: `[gaplan] 이번 주 일정 안내 (${weekStart} ~ ${weekEnd})`,
         text: `${president.name} 회장님,\n\n이번 주 확정된 일정입니다:\n\n${lines}\n\ngaplan`,

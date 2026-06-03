@@ -26,6 +26,7 @@ export async function completeTask(taskId: string): Promise<void> {
 export async function createTask(params: {
   type: 'select_visit' | 'select_interview'
   assignedTo: string
+  seventyUid: string
   regionId: string
   dueDate: string
   createdBy: string

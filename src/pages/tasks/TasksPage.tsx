@@ -9,7 +9,7 @@ import { useSchedules } from '@/hooks/useSchedules'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { computeAvailableSlots } from '@/services/availabilityService'
 import { confirmSchedule } from '@/services/scheduleService'
-import { AppShell, Sidebar, TopBar } from '@/components/layout'
+import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Button, Modal, BottomSheet } from '@/components/ui'
 import { TaskCard, TimeSlotPicker } from '@/components/domain'
 import type { Task, TimeSlot } from '@/types'
@@ -25,11 +25,7 @@ export function TasksPage() {
 
   const { schedules } = useSchedules({ presidentUid: user.uid })
 
-  // Get seventyUid from active task's region — for now use empty string (will be set by task metadata in real app)
-  // The confirmSchedule function will resolve the seventy from the task
-  const seventyUid = activeTask?.scheduleId
-    ? schedules.find(s => s.id === activeTask.scheduleId)?.seventyUid ?? ''
-    : ''
+  const seventyUid = activeTask?.seventyUid ?? ''
 
   const { slots } = useAvailability(seventyUid)
   const confirmedDates = schedules.filter(s => s.status === 'confirmed').map(s => s.date)
@@ -82,7 +78,7 @@ export function TasksPage() {
 
   return (
     <AppShell
-      sidebar={<Sidebar role={user.role} name={user.name} />}
+      role={user.role} name={user.name}
       topBar={<TopBar name={user.name} pendingCount={tasks.length} />}
     >
       <div className={styles.page}>

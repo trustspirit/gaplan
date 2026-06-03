@@ -1,0 +1,22 @@
+@use '@/styles/variables' as *;
+
+.container {
+  padding: 24px;
+  text-align: center;
+  color: $color-text-light;
+}
+
+.reloadBtn {
+  margin-top: 12px;
+  padding: 8px 16px;
+  cursor: pointer;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-sm;
+  background: $color-surface;
+  color: $color-text;
+  font-size: 14px;
+
+  &:hover {
+    background: $color-bg;
+  }
+}

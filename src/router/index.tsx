@@ -34,7 +34,7 @@ export function AppRouter() {
           <Route element={<RoleRoute allow={['admin']} />}>
             <Route path="/admin"              element={<AdminDashboard />} />
             <Route path="/admin/users"        element={<UserManagement />} />
-            <Route path="/admin/regions"      element={<RegionSettings />} />
+            <Route path="/admin/tasks"         element={<RegionSettings />} />
             <Route path="/admin/availability" element={<AvailabilitySettings />} />
             <Route path="/admin/calendar"     element={<CalendarSettings />} />
           </Route>

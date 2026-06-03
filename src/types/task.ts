@@ -5,6 +5,7 @@ export interface Task {
   id: string
   type: TaskType
   assignedTo: string
+  seventyUid: string
   scheduleId?: string
   regionId: string
   status: TaskStatus
