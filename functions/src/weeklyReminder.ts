@@ -30,11 +30,18 @@ export const weeklyReminder = functions
     })
 
     const transport = getTransport()
+    const presidentUids = Object.keys(byPresident)
 
-    for (const [uid, docs] of Object.entries(byPresident)) {
-      const presidentSnap = await db.collection('users').doc(uid).get()
-      const president = presidentSnap.data()
-      if (!president?.email) continue
+    // Fetch all president user docs in parallel
+    const presidentSnaps = await Promise.all(
+      presidentUids.map(uid => db.collection('users').doc(uid).get())
+    )
+
+    await Promise.all(presidentSnaps.map(async (snap, i) => {
+      const president = snap.data()
+      if (!president?.email) return
+      const uid = presidentUids[i]
+      const docs = byPresident[uid]
 
       const lines = docs.map(d => {
         const s = d.data()
@@ -47,5 +54,5 @@ export const weeklyReminder = functions
         subject: `[gaplan] 이번 주 일정 안내 (${weekStart} ~ ${weekEnd})`,
         text: `${president.name} 회장님,\n\n이번 주 확정된 일정입니다:\n\n${lines}\n\ngaplan`,
       })
-    }
+    }))
   })

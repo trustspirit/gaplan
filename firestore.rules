@@ -34,7 +34,8 @@ service cloud.firestore {
     }
 
     match /availability/{seventyUid}/slots/{slotId} {
-      allow read: if isAuth();
+      // Admin and presidents need to read slots for schedule coordination
+      allow read: if isAdmin() || isPresident() || (isSeventy() && request.auth.uid == seventyUid);
       allow write: if isAdmin() || (isSeventy() && request.auth.uid == seventyUid);
     }
 

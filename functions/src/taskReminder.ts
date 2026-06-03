@@ -22,11 +22,15 @@ export const taskReminder = functions
 
     const transport = getTransport()
 
-    for (const d of snap.docs) {
+    // Fetch all assignee user docs in parallel
+    const userSnaps = await Promise.all(
+      snap.docs.map(d => db.collection('users').doc(d.data().assignedTo).get())
+    )
+
+    await Promise.all(snap.docs.map(async (d, i) => {
       const task = d.data()
-      const presidentSnap = await db.collection('users').doc(task.assignedTo).get()
-      const president = presidentSnap.data()
-      if (!president?.email) continue
+      const president = userSnaps[i].data()
+      if (!president?.email) return
 
       const label = task.type === 'select_visit' ? '와드 방문 일정 선택' : '접견 일정 선택'
       const daysLeft = dayjs(task.dueDate).diff(dayjs(), 'day')
@@ -41,5 +45,5 @@ export const taskReminder = functions
       await d.ref.update({
         notifiedAt: admin.firestore.FieldValue.arrayUnion(admin.firestore.Timestamp.now()),
       })
-    }
+    }))
   })

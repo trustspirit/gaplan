@@ -16,6 +16,17 @@ export const confirmSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Login required')
     }
 
+    // Validate input format to prevent malformed Firestore document IDs
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.slot?.date ?? '')) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid date format')
+    }
+    if (!/^[\w-]+$/.test(data.seventyUid ?? '')) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid seventyUid')
+    }
+    if (!['ward_visit', 'interview'].includes(data.type)) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid schedule type')
+    }
+
     const db = admin.firestore()
 
     // Deterministic ID ensures tx.get participates in the transaction's optimistic lock.

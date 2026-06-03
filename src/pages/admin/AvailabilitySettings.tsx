@@ -6,7 +6,7 @@ import { useAvailability } from '@/hooks/useAvailability'
 import { useUsers } from '@/hooks/useUsers'
 import { saveAvailabilitySlots } from '@/services/availabilityService'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Select } from '@/components/ui'
+import { Card, CardHeader, CardBody, Select, Skeleton } from '@/components/ui'
 import { AvailabilityEditor } from '@/components/domain'
 import type { AvailabilitySlot } from '@/types'
 import styles from './AvailabilitySettings.module.scss'
@@ -49,6 +49,7 @@ export function AvailabilitySettings() {
               onChange={e => setTargetUid(e.target.value)}
               options={seventyOptions}
             />
+            {targetUid && loading && <Skeleton height="160px" className={styles.skeleton} />}
             {targetUid && error && (
               <p className={styles.error}>슬롯 로딩에 실패했습니다. 다시 시도해주세요.</p>
             )}

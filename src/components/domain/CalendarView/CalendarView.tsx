@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
 import type { Schedule } from '@/types'
+import { isFastSunday } from '@/utils/fastSunday'
 import { Button } from '@/components/ui'
 import styles from './CalendarView.module.scss'
 
@@ -20,14 +21,7 @@ export function CalendarView({ schedules, onDateClick, defaultView = 'month' }: 
   const getSchedulesForDate = (date: string) =>
     schedules.filter(s => s.date === date && s.status === 'confirmed')
 
-  const isFastSunday = (d: dayjs.Dayjs) => {
-    const firstDay = d.startOf('month')
-    const daysToSunday = (7 - firstDay.day()) % 7
-    const firstSundayDate = firstDay.date() + daysToSunday
-    return d.date() === firstSundayDate && d.day() === 0
-  }
-
-  const renderMonthView = () => {
+const renderMonthView = () => {
     const start = current.startOf('month').startOf('week')
     const end = current.endOf('month').endOf('week')
     const days: dayjs.Dayjs[] = []
