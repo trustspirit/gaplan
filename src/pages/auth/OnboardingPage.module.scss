@@ -1,0 +1,8 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.page { min-height: 100dvh; @include flex-center; background: $color-bg; padding: $space-4; }
+.card { background: $color-surface; border: 1px solid $color-border; border-radius: $border-radius-xl; padding: $space-8; width: 100%; max-width: 400px; }
+.title { font-size: $font-size-lg; font-weight: $font-weight-bold; color: $color-text; margin-bottom: $space-1; }
+.subtitle { font-size: $font-size-sm; color: $color-text-muted; margin-bottom: $space-6; }
+.form { display: flex; flex-direction: column; gap: $space-4; }

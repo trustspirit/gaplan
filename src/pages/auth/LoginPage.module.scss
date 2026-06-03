@@ -1,0 +1,13 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.page { min-height: 100dvh; @include flex-center; background: $color-bg; padding: $space-4; }
+.card {
+  background: $color-surface; border: 1px solid $color-border;
+  border-radius: $border-radius-xl; padding: $space-8;
+  width: 100%; max-width: 360px; text-align: center;
+  display: flex; flex-direction: column; gap: $space-4;
+}
+.logo { width: 48px; height: 48px; border-radius: $border-radius-full; background: $color-sidebar; margin: 0 auto; }
+.title { font-size: $font-size-xl; font-weight: $font-weight-bold; color: $color-text; }
+.subtitle { font-size: $font-size-sm; color: $color-text-muted; margin-top: -$space-2; }
