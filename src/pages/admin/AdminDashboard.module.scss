@@ -1,0 +1,4 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+.page { padding: $space-5; max-width: 400px; @include mobile { padding-bottom: calc(#{$bottom-tab-height} + #{$space-4}); } }
+.menu { display: flex; flex-direction: column; gap: $space-3; }
