@@ -1,0 +1,3 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+.page { padding: $space-5; max-width: 480px; @include mobile { padding-bottom: calc(#{$bottom-tab-height} + #{$space-4}); } }
