@@ -1,0 +1,18 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  padding: $space-5;
+  max-width: 640px;
+
+  @include mobile {
+    padding-bottom: calc(#{$bottom-tab-height} + #{$space-4});
+  }
+}
+
+.empty {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  text-align: center;
+  padding: $space-6 0;
+}
