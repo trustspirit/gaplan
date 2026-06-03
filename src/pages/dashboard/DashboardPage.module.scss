@@ -32,3 +32,24 @@
   padding: $space-4 0;
   text-align: center;
 }
+
+.calendarConnectCard {
+  grid-column: span 2;
+
+  @include mobile {
+    grid-column: span 1;
+  }
+}
+
+.calendarConnected {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: $font-size-xs;
+  color: $color-success;
+}
+
+.calendarDesc {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}

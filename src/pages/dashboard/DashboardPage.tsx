@@ -1,15 +1,51 @@
+import { useState } from 'react'
 import { useAtomValue, useSetAtom } from 'jotai'
 import dayjs from 'dayjs'
+import { Calendar } from 'lucide-react'
+import { toast } from 'sonner'
 import { authUserAtom } from '@/store/authAtom'
 import { taskModalOpenAtom, selectedTaskAtom } from '@/store/uiAtom'
 import { useTasks } from '@/hooks/useTasks'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
 import { AppShell, Sidebar, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Skeleton } from '@/components/ui'
+import { Card, CardHeader, CardBody, Skeleton, Button } from '@/components/ui'
 import { TaskCard, ScheduleItem, CalendarView } from '@/components/domain'
+import { subscribeToSharedCalendar } from '@/services/calendarService'
 import type { Task } from '@/types'
 import styles from './DashboardPage.module.scss'
+
+function CalendarConnectCard({ connected }: { connected?: boolean }) {
+  const [loading, setLoading] = useState(false)
+
+  const handleConnect = async () => {
+    setLoading(true)
+    try {
+      await subscribeToSharedCalendar()
+      toast.success('구글 캘린더에 구독되었습니다! 핸드폰 캘린더에도 자동으로 나타납니다.')
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : '연동에 실패했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (connected) {
+    return (
+      <div className={styles.calendarConnected}>
+        <Calendar size={14} />
+        <span>구글 캘린더 구독 완료</span>
+      </div>
+    )
+  }
+
+  return (
+    <Button variant="secondary" size="sm" onClick={handleConnect} loading={loading}>
+      <Calendar size={14} />
+      구글 캘린더 구독
+    </Button>
+  )
+}
 
 function PresidentDashboard() {
   const user = useAtomValue(authUserAtom)!
@@ -34,6 +70,15 @@ function PresidentDashboard() {
       topBar={<TopBar name={user.name} subtext={dayjs().format('YYYY년 M월')} pendingCount={tasks.length} />}
     >
       <div className={styles.grid}>
+        <Card className={styles.calendarConnectCard}>
+          <CardHeader title="구글 캘린더" action={<CalendarConnectCard connected={user.calendarConnected} />} />
+          <CardBody>
+            <p className={styles.calendarDesc}>
+              구독하면 모든 확정 일정이 핸드폰 및 Google 캘린더에 자동으로 나타납니다.
+            </p>
+          </CardBody>
+        </Card>
+
         <Card>
           <CardHeader title="처리 필요" />
           <CardBody>
@@ -82,6 +127,15 @@ function SeventyDashboard() {
       topBar={<TopBar name={user.name} subtext={user.regionId} />}
     >
       <div className={styles.grid}>
+        <Card className={styles.calendarConnectCard}>
+          <CardHeader title="구글 캘린더" action={<CalendarConnectCard connected={user.calendarConnected} />} />
+          <CardBody>
+            <p className={styles.calendarDesc}>
+              구독하면 모든 확정 일정이 핸드폰 및 Google 캘린더에 자동으로 나타납니다.
+            </p>
+          </CardBody>
+        </Card>
+
         <Card>
           <CardHeader title="이번 달 일정" />
           <CardBody>
