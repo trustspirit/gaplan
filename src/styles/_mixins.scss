@@ -1,0 +1,41 @@
+// src/styles/_mixins.scss
+@use 'variables' as *;
+
+$breakpoint-mobile: 768px;
+$breakpoint-tablet: 1024px;
+
+@mixin mobile {
+  @media (max-width: #{$breakpoint-mobile}) { @content; }
+}
+
+@mixin tablet {
+  @media (max-width: #{$breakpoint-tablet}) { @content; }
+}
+
+@mixin desktop {
+  @media (min-width: #{$breakpoint-mobile + 1px}) { @content; }
+}
+
+@mixin focus-ring {
+  outline: 2px solid $color-primary;
+  outline-offset: 2px;
+}
+
+@mixin truncate {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin card-base {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+}

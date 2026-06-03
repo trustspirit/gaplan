@@ -1,0 +1,73 @@
+// src/styles/_variables.scss
+
+// Colors — churchofjesuschrist.org design tokens
+$color-sidebar:       #003057;
+$color-primary:       #177C9C;
+$color-primary-hover: #147ea5;
+$color-primary-light: #6bcbeb;
+$color-warning:       #f68c24;
+$color-danger:        #cf302f;
+$color-success:       #23b187;
+$color-bg:            #f7f8f8;
+$color-surface:       #ffffff;
+$color-border:        #e4e4e6;
+$color-text:          #212225;
+$color-text-muted:    #808081;
+$color-text-light:    #b8b8bd;
+
+// Highlight backgrounds
+$color-highlight-warning: #fff8e9;
+$color-highlight-danger:  #fee8e7;
+$color-highlight-success: #eff7ea;
+
+// Typography
+$font-family: 'Inter', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+$font-size-xs:   0.6875rem;
+$font-size-sm:   0.8125rem;
+$font-size-base: 1rem;
+$font-size-md:   1.125rem;
+$font-size-lg:   1.25rem;
+$font-size-xl:   1.75rem;
+
+$font-weight-normal:    400;
+$font-weight-medium:    500;
+$font-weight-semibold:  600;
+$font-weight-bold:      700;
+
+$line-height-tight:  1.2;
+$line-height-normal: 1.4;
+$line-height-loose:  1.6;
+
+// Spacing
+$space-1:  0.25rem;
+$space-2:  0.5rem;
+$space-3:  0.75rem;
+$space-4:  1rem;
+$space-5:  1.25rem;
+$space-6:  1.5rem;
+$space-8:  2rem;
+$space-12: 3rem;
+
+// Border
+$border-radius-sm:   4px;
+$border-radius-md:   6px;
+$border-radius-lg:   8px;
+$border-radius-xl:   12px;
+$border-radius-full: 9999px;
+
+// Shadows
+$shadow-raised:   0 2px 4px 0 rgba(0, 0, 0, 0.12);
+$shadow-detached: 0 4px 8px 0 rgba(0, 0, 0, 0.12);
+$shadow-overlaid: 0 8px 16px 0 rgba(0, 0, 0, 0.14);
+$shadow-popped:   0 16px 32px 0 rgba(0, 0, 0, 0.16);
+
+// Layout
+$sidebar-width:     56px;
+$topbar-height:     52px;
+$bottom-tab-height: 60px;
+
+// Z-index
+$z-modal:   100;
+$z-sidebar: 50;
+$z-topbar:  40;
+$z-toast:   200;
