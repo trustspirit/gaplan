@@ -34,6 +34,11 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.calendarSync = void 0;
+// DEPLOYMENT REQUIREMENT: The Firebase service account must have the Google Calendar API
+// enabled in Google Cloud Console, AND the service account email must be granted
+// "Make changes to events" (Editor) access on the shared calendar.
+// Service account email: <project-id>@appspot.gserviceaccount.com
+// Guide: https://cloud.google.com/iam/docs/service-accounts#service_account_permissions
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const googleapis_1 = require("googleapis");

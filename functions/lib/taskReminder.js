@@ -57,12 +57,18 @@ exports.taskReminder = functions
     if (snap.empty)
         return;
     const transport = (0, emailTransport_1.getTransport)();
-    for (const d of snap.docs) {
+    // Fetch all assignee user docs in parallel
+    const userSnaps = await Promise.all(snap.docs.map(d => db.collection('users').doc(d.data().assignedTo).get()));
+    await Promise.all(snap.docs.map(async (d, i) => {
+        var _a;
         const task = d.data();
-        const presidentSnap = await db.collection('users').doc(task.assignedTo).get();
-        const president = presidentSnap.data();
+        const president = userSnaps[i].data();
         if (!(president === null || president === void 0 ? void 0 : president.email))
-            continue;
+            return;
+        // Skip if already notified today to prevent duplicate daily emails
+        const alreadyNotifiedToday = ((_a = task.notifiedAt) !== null && _a !== void 0 ? _a : []).some(t => (0, dayjs_1.default)(t.toDate()).format('YYYY-MM-DD') === today);
+        if (alreadyNotifiedToday)
+            return;
         const label = task.type === 'select_visit' ? '와드 방문 일정 선택' : '접견 일정 선택';
         const daysLeft = (0, dayjs_1.default)(task.dueDate).diff((0, dayjs_1.default)(), 'day');
         await transport.sendMail({
@@ -74,6 +80,6 @@ exports.taskReminder = functions
         await d.ref.update({
             notifiedAt: admin.firestore.FieldValue.arrayUnion(admin.firestore.Timestamp.now()),
         });
-    }
+    }));
 });
 //# sourceMappingURL=taskReminder.js.map

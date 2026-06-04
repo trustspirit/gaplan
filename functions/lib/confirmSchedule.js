@@ -39,8 +39,28 @@ const admin = __importStar(require("firebase-admin"));
 exports.confirmSchedule = functions
     .region('asia-northeast3')
     .https.onCall(async (data, context) => {
+    var _a, _b, _c, _d, _e, _f, _g;
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Login required');
+    }
+    // Validate all inputs before building Firestore document IDs
+    if (!data.taskId || !/^[\w-]+$/.test(data.taskId)) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid taskId');
+    }
+    if (!data.unitId || !/^[\w-]+$/.test(data.unitId)) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid unitId');
+    }
+    if (!/^[\w-]+$/.test((_a = data.seventyUid) !== null && _a !== void 0 ? _a : '')) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid seventyUid');
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test((_c = (_b = data.slot) === null || _b === void 0 ? void 0 : _b.date) !== null && _c !== void 0 ? _c : '')) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid date format');
+    }
+    if (!/^\d{2}:\d{2}$/.test((_e = (_d = data.slot) === null || _d === void 0 ? void 0 : _d.startTime) !== null && _e !== void 0 ? _e : '') || !/^\d{2}:\d{2}$/.test((_g = (_f = data.slot) === null || _f === void 0 ? void 0 : _f.endTime) !== null && _g !== void 0 ? _g : '')) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid time format');
+    }
+    if (!['ward_visit', 'interview'].includes(data.type)) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid schedule type');
     }
     const db = admin.firestore();
     // Deterministic ID ensures tx.get participates in the transaction's optimistic lock.

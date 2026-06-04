@@ -66,11 +66,15 @@ exports.weeklyReminder = functions
         byPresident[uid] = [...((_a = byPresident[uid]) !== null && _a !== void 0 ? _a : []), d];
     });
     const transport = (0, emailTransport_1.getTransport)();
-    for (const [uid, docs] of Object.entries(byPresident)) {
-        const presidentSnap = await db.collection('users').doc(uid).get();
-        const president = presidentSnap.data();
+    const presidentUids = Object.keys(byPresident);
+    // Fetch all president user docs in parallel
+    const presidentSnaps = await Promise.all(presidentUids.map(uid => db.collection('users').doc(uid).get()));
+    await Promise.all(presidentSnaps.map(async (snap, i) => {
+        const president = snap.data();
         if (!(president === null || president === void 0 ? void 0 : president.email))
-            continue;
+            return;
+        const uid = presidentUids[i];
+        const docs = byPresident[uid];
         const lines = docs.map(d => {
             const s = d.data();
             return `• ${s.date} ${s.startTime} — ${s.type === 'ward_visit' ? '와드 방문' : '접견'}`;
@@ -81,6 +85,6 @@ exports.weeklyReminder = functions
             subject: `[gaplan] 이번 주 일정 안내 (${weekStart} ~ ${weekEnd})`,
             text: `${president.name} 회장님,\n\n이번 주 확정된 일정입니다:\n\n${lines}\n\ngaplan`,
         });
-    }
+    }));
 });
 //# sourceMappingURL=weeklyReminder.js.map
