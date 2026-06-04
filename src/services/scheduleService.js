@@ -25,6 +25,11 @@ export async function adminConfirmSchedule(params) {
     const result = await fn(params);
     return result.data;
 }
+export async function adminConfirmWardVisit(taskId) {
+    const fn = httpsCallable(functions, 'adminConfirmWardVisit');
+    const result = await fn({ taskId });
+    return result.data;
+}
 export async function updateSchedule(scheduleId, updates) {
     await updateDoc(doc(db, 'schedules', scheduleId), updates);
 }

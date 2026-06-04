@@ -7,7 +7,7 @@ import { CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Pencil, XCirc
 import { authUserAtom } from '@/store/authAtom'
 import { useAllTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
-import { adminConfirmSchedule } from '@/services/scheduleService'
+import { adminConfirmSchedule, adminConfirmWardVisit } from '@/services/scheduleService'
 import { expireTask, updateTaskDetails } from '@/services/taskService'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
@@ -199,10 +199,13 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
   const [expiring, setExpiring] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const daysLeft = dayjs(task.dueDate).diff(dayjs(), 'day')
   const isOverdue = daysLeft < 0
-  const typeLabel = TASK_LABELS[task.type] ?? task.type
+  const typeLabel = task.title ?? (TASK_LABELS[task.type] ?? task.type)
   const hasSlots = (task.respondedSlots?.length ?? 0) > 0
+  const hasWardAssignments = (task.wardAssignments?.length ?? 0) > 0
+  const isVisitTask = task.type === 'select_visit'
   const canExpire = task.status === 'pending' || task.status === 'responded'
   const canEdit = task.status === 'pending' || task.status === 'responded'
   const isExpired = task.status === 'expired'
@@ -214,6 +217,22 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
       toast.success('Task가 만료되었습니다.')
     } catch { toast.error('만료 처리에 실패했습니다.') }
     finally { setExpiring(false) }
+  }
+
+  const handleConfirmWardVisit = async () => {
+    setConfirming(true)
+    try {
+      const result = await adminConfirmWardVisit(task.id)
+      if (result.success) {
+        toast.success(`${result.scheduleCount}개 와드 방문 일정이 확정되었습니다!`)
+      } else {
+        toast.error(result.error ?? '확정에 실패했습니다.')
+      }
+    } catch (e: unknown) {
+      toast.error((e as { message?: string })?.message ?? '오류가 발생했습니다.')
+    } finally {
+      setConfirming(false)
+    }
   }
 
   return (
@@ -256,10 +275,16 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
           <div className={styles.taskRowRight}>
             <StatusBadge status={task.status} />
 
-            {task.status === 'responded' && hasSlots && (
+            {task.status === 'responded' && hasSlots && !isVisitTask && (
               <button type="button" className={styles.expandBtn} onClick={() => setExpanded(v => !v)}>
                 {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 {expanded ? '닫기' : `${task.respondedSlots!.length}개 확인`}
+              </button>
+            )}
+            {task.status === 'responded' && isVisitTask && hasWardAssignments && (
+              <button type="button" className={styles.expandBtn} onClick={() => setExpanded(v => !v)}>
+                {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                {expanded ? '닫기' : `${task.wardAssignments!.length}개 배정 확인`}
               </button>
             )}
 
@@ -283,7 +308,8 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
           </div>
         </div>
 
-        {expanded && task.respondedSlots && (
+        {/* Interview/meeting: time slot rows */}
+        {expanded && task.respondedSlots && !isVisitTask && (
           <div className={styles.slotsPanel}>
             <p className={styles.slotsPanelTitle}>회장이 제출한 가능 시간</p>
             {task.respondedSlots.map(slot => (
@@ -294,6 +320,26 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
                 onConfirmed={() => setExpanded(false)}
               />
             ))}
+          </div>
+        )}
+
+        {/* Ward visit: ward assignment list + confirm button */}
+        {expanded && isVisitTask && task.wardAssignments && (
+          <div className={styles.slotsPanel}>
+            <p className={styles.slotsPanelTitle}>회장이 제출한 와드 배정</p>
+            {task.wardAssignments.map((a, i) => (
+              <div key={i} className={styles.slotRow}>
+                <span className={styles.slotDate}>{dayjs(a.date).format('M/D (ddd)')}</span>
+                <span className={styles.slotTime}>{a.wardName}</span>
+              </div>
+            ))}
+            {task.status === 'responded' && (
+              <div className={styles.wardConfirmRow}>
+                <Button onClick={handleConfirmWardVisit} loading={confirming} size="sm">
+                  전체 배정 확정 ({task.wardAssignments.length}개 일정 생성)
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

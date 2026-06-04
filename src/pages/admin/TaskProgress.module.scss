@@ -224,6 +224,13 @@
   flex: 1;
 }
 
+.wardConfirmRow {
+  padding-top: $space-3;
+  border-top: 1px solid $color-border;
+  display: flex;
+  justify-content: flex-end;
+}
+
 // ── Edit modal ────────────────────────────────────────────────────────────────
 
 .editForm {

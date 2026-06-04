@@ -15,6 +15,7 @@ export interface Schedule {
   confirmedAt?: string
   googleCalendarEventId?: string
   wardName?: string   // ward visit: specific ward/branch name
+  taskId?: string     // ward visit: links schedule back to source task (for re-confirmation cleanup)
   notes?: string
 }
 

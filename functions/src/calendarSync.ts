@@ -49,26 +49,53 @@ export const calendarSync = functions
     }
 
     if (!after || after.status !== 'confirmed') return
-    if (after.googleCalendarEventId) return
+    // Only skip creation if there's already an event AND the date/time haven't changed
+    const dateChanged = before?.date !== after.date || before?.startTime !== after.startTime
+    if (after.googleCalendarEventId && !dateChanged) return
 
-    const unitSnap = await db.collection('units').doc(after.unitId).get()
-    const unitName = unitSnap.data()?.name ?? after.unitId
+    const unitSnap = after.unitId
+      ? await db.collection('units').doc(after.unitId).get()
+      : null
+    const unitName = unitSnap?.data()?.name ?? after.unitId ?? ''
 
     const startDateTime = `${after.date}T${after.startTime}:00+09:00`
     const endDateTime = `${after.date}T${after.endTime}:00+09:00`
-    const title = after.type === 'ward_visit' ? `${unitName} 방문` : `${unitName} 접견`
+
+    // Ward visits include the ward/branch name in the title
+    let title: string
+    if (after.type === 'ward_visit') {
+      title = after.wardName ? `${unitName} - ${after.wardName} 방문` : `${unitName} 방문`
+    } else {
+      title = `${unitName} 접견`
+    }
+
+    const calendar = getCalendarClient()
+    const existingEventId: string | undefined = before?.googleCalendarEventId
 
     try {
-      const calendar = getCalendarClient()
-      const event = await calendar.events.insert({
-        calendarId: sharedCalendarId,
-        requestBody: {
-          summary: title,
-          start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
-          end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
-        },
-      })
-      await change.after.ref.update({ googleCalendarEventId: event.data.id })
+      if (existingEventId) {
+        // Update existing event (re-confirmation after schedule was overwritten)
+        await calendar.events.update({
+          calendarId: sharedCalendarId,
+          eventId: existingEventId,
+          requestBody: {
+            summary: title,
+            start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
+            end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
+          },
+        })
+      } else {
+        // Create new event
+        const event = await calendar.events.insert({
+          calendarId: sharedCalendarId,
+          requestBody: {
+            summary: title,
+            start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
+            end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
+          },
+        })
+        await change.after.ref.update({ googleCalendarEventId: event.data.id })
+      }
     } catch (err) {
       functions.logger.error('Google Calendar sync failed', err)
     }

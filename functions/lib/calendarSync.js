@@ -52,7 +52,7 @@ exports.calendarSync = functions
     .region('asia-northeast3')
     .firestore.document('schedules/{scheduleId}')
     .onWrite(async (change) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
     const db = admin.firestore();
     // Resolve which regional calendar to use via the seventy's regionId
     const after = change.after.data();
@@ -83,24 +83,51 @@ exports.calendarSync = functions
     }
     if (!after || after.status !== 'confirmed')
         return;
-    if (after.googleCalendarEventId)
+    // Only skip creation if there's already an event AND the date/time haven't changed
+    const dateChanged = (before === null || before === void 0 ? void 0 : before.date) !== after.date || (before === null || before === void 0 ? void 0 : before.startTime) !== after.startTime;
+    if (after.googleCalendarEventId && !dateChanged)
         return;
-    const unitSnap = await db.collection('units').doc(after.unitId).get();
-    const unitName = (_j = (_h = unitSnap.data()) === null || _h === void 0 ? void 0 : _h.name) !== null && _j !== void 0 ? _j : after.unitId;
+    const unitSnap = after.unitId
+        ? await db.collection('units').doc(after.unitId).get()
+        : null;
+    const unitName = (_k = (_j = (_h = unitSnap === null || unitSnap === void 0 ? void 0 : unitSnap.data()) === null || _h === void 0 ? void 0 : _h.name) !== null && _j !== void 0 ? _j : after.unitId) !== null && _k !== void 0 ? _k : '';
     const startDateTime = `${after.date}T${after.startTime}:00+09:00`;
     const endDateTime = `${after.date}T${after.endTime}:00+09:00`;
-    const title = after.type === 'ward_visit' ? `${unitName} 방문` : `${unitName} 접견`;
+    // Ward visits include the ward/branch name in the title
+    let title;
+    if (after.type === 'ward_visit') {
+        title = after.wardName ? `${unitName} - ${after.wardName} 방문` : `${unitName} 방문`;
+    }
+    else {
+        title = `${unitName} 접견`;
+    }
+    const calendar = getCalendarClient();
+    const existingEventId = before === null || before === void 0 ? void 0 : before.googleCalendarEventId;
     try {
-        const calendar = getCalendarClient();
-        const event = await calendar.events.insert({
-            calendarId: sharedCalendarId,
-            requestBody: {
-                summary: title,
-                start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
-                end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
-            },
-        });
-        await change.after.ref.update({ googleCalendarEventId: event.data.id });
+        if (existingEventId) {
+            // Update existing event (re-confirmation after schedule was overwritten)
+            await calendar.events.update({
+                calendarId: sharedCalendarId,
+                eventId: existingEventId,
+                requestBody: {
+                    summary: title,
+                    start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
+                    end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
+                },
+            });
+        }
+        else {
+            // Create new event
+            const event = await calendar.events.insert({
+                calendarId: sharedCalendarId,
+                requestBody: {
+                    summary: title,
+                    start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
+                    end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
+                },
+            });
+            await change.after.ref.update({ googleCalendarEventId: event.data.id });
+        }
     }
     catch (err) {
         functions.logger.error('Google Calendar sync failed', err);
