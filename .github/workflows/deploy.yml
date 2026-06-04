@@ -16,10 +16,10 @@ jobs:
           cache: 'npm'
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm install --prefer-offline --no-audit
 
       - name: Install functions dependencies
-        run: npm ci
+        run: npm install --prefer-offline --no-audit
         working-directory: functions
 
       - name: Create .env
