@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
-import { Calendar } from 'lucide-react'
+import { Calendar, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { authUserAtom } from '@/store/authAtom'
 import { useTasks } from '@/hooks/useTasks'
@@ -16,14 +16,14 @@ import { TaskCard, ScheduleItem, CalendarView, TimeSlotPicker } from '@/componen
 import { REGIONS } from '@/constants/regions'
 import styles from './DashboardPage.module.scss'
 
-function CalendarConnectCard({ connected }: { connected?: boolean }) {
+function CalendarBanner({ connected }: { connected?: boolean }) {
   const [loading, setLoading] = useState(false)
 
   const handleConnect = async () => {
     setLoading(true)
     try {
       await subscribeToSharedCalendar()
-      toast.success('구글 캘린더에 구독되었습니다! 핸드폰 캘린더에도 자동으로 나타납니다.')
+      toast.success('구글 캘린더에 구독되었습니다!')
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : '연동에 실패했습니다.')
     } finally {
@@ -31,20 +31,23 @@ function CalendarConnectCard({ connected }: { connected?: boolean }) {
     }
   }
 
-  if (connected) {
-    return (
-      <div className={styles.calendarConnected}>
-        <Calendar size={14} />
-        <span>구글 캘린더 구독 완료</span>
-      </div>
-    )
-  }
-
   return (
-    <Button variant="secondary" size="sm" onClick={handleConnect} loading={loading}>
-      <Calendar size={14} />
-      구글 캘린더 구독
-    </Button>
+    <div className={styles.calendarBanner}>
+      <Calendar size={16} color="var(--color-primary, #177C9C)" />
+      <span className={styles.calendarBannerText}>
+        구글 캘린더 구독으로 모든 확정 일정을 핸드폰에서 바로 확인하세요.
+      </span>
+      {connected ? (
+        <div className={styles.calendarConnected}>
+          <CheckCircle2 size={14} />
+          구독 완료
+        </div>
+      ) : (
+        <Button variant="secondary" size="sm" onClick={handleConnect} loading={loading}>
+          구독
+        </Button>
+      )}
+    </div>
   )
 }
 
@@ -62,7 +65,8 @@ function PresidentDashboard() {
 
   const upcoming = schedules
     .filter(s => s.status === 'confirmed' && dayjs(s.date).isAfter(dayjs().subtract(1, 'day')))
-    .slice(0, 3)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 5)
 
   const slotPickerContent = (
     <>
@@ -87,46 +91,45 @@ function PresidentDashboard() {
       role={user.role} name={user.name}
       topBar={<TopBar name={user.name} subtext={dayjs().format('YYYY년 M월')} pendingCount={tasks.length} />}
     >
-      <div className={styles.grid}>
-        <Card className={styles.calendarConnectCard}>
-          <CardHeader title="구글 캘린더" action={<CalendarConnectCard connected={user.calendarConnected} />} />
-          <CardBody>
-            <p className={styles.calendarDesc}>
-              구독하면 모든 확정 일정이 핸드폰 및 Google 캘린더에 자동으로 나타납니다.
-            </p>
-          </CardBody>
-        </Card>
+      <div className={styles.layout}>
+        <div className={styles.mainCol}>
+          <CalendarBanner connected={user.calendarConnected} />
 
-        <Card>
-          <CardHeader title="처리 필요" />
-          <CardBody>
-            {tasksLoading
-              ? [1,2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
-              : tasks.length === 0
-                ? <p className={styles.empty}>처리할 항목이 없습니다.</p>
-                : tasks.map(t => <TaskCard key={t.id} task={t} onAction={openTask} />)
-            }
-          </CardBody>
-        </Card>
+          <Card>
+            <CardHeader title="처리 필요" />
+            <CardBody>
+              {tasksLoading
+                ? [1, 2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
+                : tasks.length === 0
+                  ? <p className={styles.empty}>처리할 항목이 없습니다.</p>
+                  : tasks.map(t => <TaskCard key={t.id} task={t} onAction={openTask} />)
+              }
+            </CardBody>
+          </Card>
 
-        <Card>
-          <CardHeader title="확정 일정" />
-          <CardBody>
-            {schedulesLoading
-              ? [1,2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
-              : upcoming.length === 0
-                ? <p className={styles.empty}>예정된 일정이 없습니다.</p>
-                : upcoming.map(s => <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} />)
-            }
-          </CardBody>
-        </Card>
+          <Card>
+            <CardHeader title="예정 일정" />
+            <CardBody>
+              {schedulesLoading
+                ? [1, 2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
+                : upcoming.length === 0
+                  ? <p className={styles.empty}>예정된 일정이 없습니다.</p>
+                  : upcoming.map(s => (
+                      <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} />
+                    ))
+              }
+            </CardBody>
+          </Card>
+        </div>
 
-        <Card className={styles.calendarCard}>
-          <CardHeader title="캘린더" />
-          <CardBody>
-            <CalendarView schedules={schedules} />
-          </CardBody>
-        </Card>
+        <div className={styles.sideCol}>
+          <Card>
+            <CardHeader title="캘린더" />
+            <CardBody>
+              <CalendarView schedules={schedules} />
+            </CardBody>
+          </Card>
+        </div>
       </div>
 
       {isMobile ? (
@@ -147,37 +150,49 @@ function SeventyDashboard() {
   const { schedules } = useSchedules({ seventyUid: user.uid })
   const { getUnitName } = useUnits()
   const regionName = REGIONS.find(r => r.id === user.regionId)?.name ?? user.regionId ?? ''
-  const thisMonth = schedules.filter(
-    s => s.status === 'confirmed' && dayjs(s.date).month() === dayjs().month()
-  )
+
+  const upcoming = schedules
+    .filter(s => s.status === 'confirmed' && dayjs(s.date).isAfter(dayjs().subtract(1, 'day')))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 10)
+
+  const thisMonthCount = schedules.filter(
+    s => s.status === 'confirmed' && dayjs(s.date).format('YYYY-M') === dayjs().format('YYYY-M')
+  ).length
+
   return (
     <AppShell
       role={user.role} name={user.name}
       topBar={<TopBar name={user.name} subtext={regionName} />}
     >
-      <div className={styles.grid}>
-        <Card className={styles.calendarConnectCard}>
-          <CardHeader title="구글 캘린더" action={<CalendarConnectCard connected={user.calendarConnected} />} />
-          <CardBody>
-            <p className={styles.calendarDesc}>
-              구독하면 모든 확정 일정이 핸드폰 및 Google 캘린더에 자동으로 나타납니다.
-            </p>
-          </CardBody>
-        </Card>
+      <div className={styles.layout}>
+        <div className={styles.mainCol}>
+          <CalendarBanner connected={user.calendarConnected} />
 
-        <Card>
-          <CardHeader title="이번 달 일정" />
-          <CardBody>
-            {thisMonth.length === 0
-              ? <p className={styles.empty}>이번 달 확정 일정이 없습니다.</p>
-              : thisMonth.map(s => <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} />)
-            }
-          </CardBody>
-        </Card>
-        <Card className={styles.calendarCard}>
-          <CardHeader title="캘린더" />
-          <CardBody><CalendarView schedules={schedules} /></CardBody>
-        </Card>
+          <Card>
+            <CardHeader
+              title="예정 일정"
+              action={<span style={{ fontSize: '0.8125rem', color: '#808081' }}>이번 달 {thisMonthCount}건</span>}
+            />
+            <CardBody>
+              {upcoming.length === 0
+                ? <p className={styles.empty}>예정된 확정 일정이 없습니다.</p>
+                : upcoming.map(s => (
+                    <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} />
+                  ))
+              }
+            </CardBody>
+          </Card>
+        </div>
+
+        <div className={styles.sideCol}>
+          <Card>
+            <CardHeader title="캘린더" />
+            <CardBody>
+              <CalendarView schedules={schedules} />
+            </CardBody>
+          </Card>
+        </div>
       </div>
     </AppShell>
   )
@@ -186,16 +201,47 @@ function SeventyDashboard() {
 function AdminDashboardContent() {
   const user = useAtomValue(authUserAtom)!
   const { schedules } = useSchedules({})
+
+  const thisMonth = schedules.filter(
+    s => s.status === 'confirmed' && dayjs(s.date).format('YYYY-M') === dayjs().format('YYYY-M')
+  )
+  const upcoming = schedules
+    .filter(s => s.status === 'confirmed' && dayjs(s.date).isAfter(dayjs().subtract(1, 'day')))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 8)
+  const { getUnitName } = useUnits()
+
   return (
     <AppShell
       role={user.role} name={user.name}
-      topBar={<TopBar name={user.name} />}
+      topBar={<TopBar name={user.name} subtext="관리자 대시보드" />}
     >
-      <div className={styles.grid}>
-        <Card className={styles.calendarCard}>
-          <CardHeader title="전체 일정" />
-          <CardBody><CalendarView schedules={schedules} /></CardBody>
-        </Card>
+      <div className={styles.layout}>
+        <div className={styles.mainCol}>
+          <Card>
+            <CardHeader
+              title="전체 예정 일정"
+              action={<span style={{ fontSize: '0.8125rem', color: '#808081' }}>이번 달 {thisMonth.length}건</span>}
+            />
+            <CardBody>
+              {upcoming.length === 0
+                ? <p className={styles.empty}>예정된 일정이 없습니다.</p>
+                : upcoming.map(s => (
+                    <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} />
+                  ))
+              }
+            </CardBody>
+          </Card>
+        </div>
+
+        <div className={styles.sideCol}>
+          <Card>
+            <CardHeader title="캘린더" />
+            <CardBody>
+              <CalendarView schedules={schedules} />
+            </CardBody>
+          </Card>
+        </div>
       </div>
     </AppShell>
   )

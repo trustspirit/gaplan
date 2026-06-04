@@ -1,15 +1,17 @@
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
-.grid {
-  padding: $space-6;
+// Shared two-panel layout for all role dashboards
+.layout {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 360px;
   gap: $space-4;
-  align-content: start;
+  padding: $space-6 $space-8;
+  align-items: start;
+  min-height: 0;
 
-  @media (min-width: 769px) and (max-width: 1199px) {
-    grid-template-columns: 1fr 1fr;
+  @include tablet {
+    grid-template-columns: 1fr;
     padding: $space-5;
   }
 
@@ -18,22 +20,52 @@
     padding: $space-4;
     padding-bottom: calc(#{$bottom-tab-height} + #{$space-4});
   }
+}
 
-  @media (min-width: 1200px) {
-    padding: $space-8;
+.mainCol {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  min-width: 0;
+}
+
+.sideCol {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  position: sticky;
+  top: $space-4;
+
+  @include tablet {
+    position: static;
   }
 }
 
-.calendarCard {
-  grid-column: span 3;
+// Google Calendar inline connect banner
+.calendarBanner {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-raised;
+}
 
-  @media (min-width: 769px) and (max-width: 1199px) {
-    grid-column: span 2;
-  }
+.calendarBannerText {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
 
-  @include mobile {
-    grid-column: span 1;
-  }
+.calendarConnected {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: $font-size-xs;
+  color: $color-success;
+  font-weight: $font-weight-medium;
 }
 
 .skeletonItem {
@@ -45,31 +77,6 @@
   color: $color-text-muted;
   padding: $space-4 0;
   text-align: center;
-}
-
-.calendarConnectCard {
-  grid-column: span 3;
-
-  @media (min-width: 769px) and (max-width: 1199px) {
-    grid-column: span 2;
-  }
-
-  @include mobile {
-    grid-column: span 1;
-  }
-}
-
-.calendarConnected {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: $font-size-xs;
-  color: $color-success;
-}
-
-.calendarDesc {
-  font-size: $font-size-sm;
-  color: $color-text-muted;
 }
 
 .confirmBtn {
