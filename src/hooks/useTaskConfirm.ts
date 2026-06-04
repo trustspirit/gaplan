@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
 import { useSchedules } from '@/hooks/useSchedules'
-import { computeAvailableSlots } from '@/services/availabilityService'
+import { computeAvailableSlots, computeInterviewSlots } from '@/services/availabilityService'
 import { confirmSchedule } from '@/services/scheduleService'
 import { submitAvailability } from '@/services/taskService'
 import type { Task, TimeSlot, AvailabilitySlot } from '@/types'
@@ -16,7 +16,11 @@ export function useTaskConfirm(presidentUid: string, unitId: string | undefined)
   const { schedules } = useSchedules({ presidentUid })
   const confirmedDates = schedules.filter(s => s.status === 'confirmed').map(s => s.date)
 
-  const taskSlots: AvailabilitySlot[] = activeTask
+  const isVisit = activeTask?.type === 'select_visit'
+  const isMultiSelect = activeTask?.type === 'select_interview' || activeTask?.type === 'select_meeting'
+
+  // Ward visits: compute from recurring Sunday availability
+  const visitSlots: AvailabilitySlot[] = (isVisit && activeTask)
     ? (activeTask.availableDays ?? []).map(day => ({
         id: '',
         seventyUid: activeTask.seventyUid,
@@ -28,15 +32,26 @@ export function useTaskConfirm(presidentUid: string, unitId: string | undefined)
       }))
     : []
 
-  const availableSlots = computeAvailableSlots(
-    taskSlots,
-    confirmedDates,
-    dayjs().format('YYYY-MM-DD'),
-    dayjs().add(60, 'day').format('YYYY-MM-DD'),
-  )
+  const visitAvailableSlots = isVisit
+    ? computeAvailableSlots(
+        visitSlots,
+        confirmedDates,
+        dayjs().format('YYYY-MM-DD'),
+        dayjs().add(90, 'day').format('YYYY-MM-DD'),
+      )
+    : []
 
-  const isVisit = activeTask?.type === 'select_visit'
-  const isMultiSelect = activeTask?.type === 'select_interview' || activeTask?.type === 'select_meeting'
+  // Interview/Meeting: compute from specific dates set by admin
+  const interviewAvailableSlots = isMultiSelect && activeTask
+    ? computeInterviewSlots(
+        activeTask.availableDates ?? [],
+        activeTask.availableStartTime ?? '09:00',
+        activeTask.availableEndTime ?? '18:00',
+        activeTask.slotDurationMinutes ?? 60,
+      )
+    : []
+
+  const availableSlots = isVisit ? visitAvailableSlots : interviewAvailableSlots
 
   const openTask = (task: Task) => {
     setActiveTask(task)
@@ -61,7 +76,6 @@ export function useTaskConfirm(presidentUid: string, unitId: string | undefined)
   const isSlotSelected = (slot: TimeSlot) =>
     selectedSlots.some(s => s.date === slot.date && s.startTime === slot.startTime)
 
-  // Ward visit: president picks one day → immediate confirmation
   const handleConfirm = async () => {
     if (!activeTask || !selectedSlot || !unitId) return
     setSubmitting(true)
@@ -86,7 +100,6 @@ export function useTaskConfirm(presidentUid: string, unitId: string | undefined)
     }
   }
 
-  // Interview/Meeting: president submits multiple available slots → awaits admin/seventy confirmation
   const handleSubmitAvailability = async () => {
     if (!activeTask || selectedSlots.length === 0) return
     setSubmitting(true)

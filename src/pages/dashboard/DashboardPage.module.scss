@@ -51,12 +51,24 @@
   border: 1px solid $color-border;
   border-radius: $border-radius-lg;
   box-shadow: $shadow-raised;
+
+  @include mobile {
+    flex-wrap: wrap;
+    gap: $space-2;
+    padding: $space-3;
+  }
 }
 
 .calendarBannerText {
   flex: 1;
+  min-width: 0;
   font-size: $font-size-sm;
   color: $color-text-muted;
+
+  @include mobile {
+    flex-basis: 100%;
+    font-size: $font-size-xs;
+  }
 }
 
 .calendarConnected {

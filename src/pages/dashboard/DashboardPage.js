@@ -13,7 +13,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { subscribeToSharedCalendar } from '@/services/calendarService';
 import { AppShell, TopBar } from '@/components/layout';
 import { Card, CardHeader, CardBody, Skeleton, Button, Modal, BottomSheet } from '@/components/ui';
-import { TaskCard, ScheduleItem, CalendarView, TimeSlotPicker } from '@/components/domain';
+import { TaskCard, ScheduleItem, CalendarView, TimeSlotPicker, VisitDatePicker } from '@/components/domain';
 import { REGIONS } from '@/constants/regions';
 import styles from './DashboardPage.module.scss';
 function CalendarBanner({ connected }) {
@@ -44,7 +44,7 @@ function PresidentDashboard() {
         .filter(s => s.status === 'confirmed' && dayjs(s.date).isAfter(dayjs().subtract(1, 'day')))
         .sort((a, b) => a.date.localeCompare(b.date))
         .slice(0, 5);
-    const slotPickerContent = (_jsxs(_Fragment, { children: [_jsx(TimeSlotPicker, { slots: availableSlots, granularity: isVisit ? 'day' : 'time', multiSelect: isMultiSelect, selected: selectedSlot, onSelect: setSelectedSlot, isSlotSelected: isSlotSelected, onToggle: toggleSlot }), isMultiSelect ? (_jsxs(Button, { onClick: handleSubmitAvailability, loading: submitting, disabled: selectedSlots.length === 0, fullWidth: true, className: styles.confirmBtn, children: ["\uAC00\uB2A5 \uC2DC\uAC04 \uC81C\uCD9C ", selectedSlots.length > 0 ? `(${selectedSlots.length}개)` : ''] })) : (_jsx(Button, { onClick: handleConfirm, loading: submitting, disabled: !selectedSlot, fullWidth: true, className: styles.confirmBtn, children: "\uBC29\uBB38 \uC77C\uC815 \uD655\uC815" }))] }));
+    const slotPickerContent = (_jsxs(_Fragment, { children: [isVisit ? (_jsx(VisitDatePicker, { slots: availableSlots, selected: selectedSlot, onSelect: setSelectedSlot })) : (_jsx(TimeSlotPicker, { slots: availableSlots, granularity: "time", multiSelect: true, isSlotSelected: isSlotSelected, onToggle: toggleSlot })), isMultiSelect ? (_jsxs(Button, { onClick: handleSubmitAvailability, loading: submitting, disabled: selectedSlots.length === 0, fullWidth: true, className: styles.confirmBtn, children: ["\uAC00\uB2A5 \uC2DC\uAC04 \uC81C\uCD9C ", selectedSlots.length > 0 ? `(${selectedSlots.length}개)` : ''] })) : (_jsx(Button, { onClick: handleConfirm, loading: submitting, disabled: !selectedSlot, fullWidth: true, className: styles.confirmBtn, children: "\uBC29\uBB38 \uC77C\uC815 \uD655\uC815" }))] }));
     return (_jsxs(AppShell, { role: user.role, name: user.name, topBar: _jsx(TopBar, { name: user.name, subtext: dayjs().format('YYYY년 M월'), pendingCount: tasks.length }), children: [_jsxs("div", { className: styles.layout, children: [_jsxs("div", { className: styles.mainCol, children: [_jsx(CalendarBanner, { connected: user.calendarConnected }), _jsxs(Card, { children: [_jsx(CardHeader, { title: "\uCC98\uB9AC \uD544\uC694" }), _jsx(CardBody, { children: tasksLoading
                                             ? [1, 2].map(i => _jsx(Skeleton, { height: "44px", className: styles.skeletonItem }, i))
                                             : tasks.length === 0

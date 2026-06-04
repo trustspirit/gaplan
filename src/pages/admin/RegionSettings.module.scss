@@ -29,9 +29,17 @@
 }
 
 .availHint {
-  font-weight: $font-weight-normal;
+  font-size: $font-size-xs;
   color: $color-text-muted;
-  margin-left: $space-1;
+}
+
+.visitNote {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  padding: $space-2 $space-3;
+  background: $color-bg;
+  border-radius: $border-radius-md;
+  border: 1px solid $color-border;
 }
 
 .days {

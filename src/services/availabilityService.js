@@ -25,6 +25,27 @@ export async function saveAvailabilitySlots(seventyUid, slots) {
     });
     await batch.commit();
 }
+// Generate time slots for specific dates (interview / meeting tasks)
+export function computeInterviewSlots(availableDates, startTime, endTime, slotDurationMinutes = 60) {
+    return availableDates.flatMap(date => {
+        const slots = [];
+        let t = dayjs(`${date}T${startTime}`);
+        const end = dayjs(`${date}T${endTime}`);
+        while (t.isBefore(end)) {
+            const slotEnd = t.add(slotDurationMinutes, 'minute');
+            if (slotEnd.isAfter(end))
+                break;
+            slots.push({
+                date,
+                startTime: t.format('HH:mm'),
+                endTime: slotEnd.format('HH:mm'),
+                isAvailable: true, // stays open until admin confirms
+            });
+            t = slotEnd;
+        }
+        return slots;
+    });
+}
 export function computeAvailableSlots(slots, confirmedDates, fromDate, toDate) {
     const result = [];
     let current = dayjs(fromDate);

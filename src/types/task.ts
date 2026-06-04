@@ -19,9 +19,13 @@ export interface Task {
   createdBy: string
   createdAt: string
   notifiedAt: string[]
+  // Ward visit: availableDays = [0] (Sundays)
   availableDays: number[]
-  availableStartTime?: string   // interview/meeting (HH:mm)
-  availableEndTime?: string     // interview/meeting (HH:mm)
+  // Interview/Meeting: specific dates admin selected
+  availableDates?: string[]          // YYYY-MM-DD[] for interview/meeting
+  availableStartTime?: string        // HH:mm
+  availableEndTime?: string          // HH:mm
+  slotDurationMinutes?: number       // interview/meeting slot size (default 60)
   respondedSlots?: RespondedSlot[]   // submitted by president for interview/meeting
   respondedAt?: string
 }

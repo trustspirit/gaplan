@@ -2,22 +2,27 @@ import { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
-import clsx from 'clsx'
 import { authUserAtom } from '@/store/authAtom'
 import { createTask } from '@/services/taskService'
 import { useUsers } from '@/hooks/useUsers'
 import { ALL_UNITS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Select, Button, Input, Badge } from '@/components/ui'
+import { MultiDatePicker } from '@/components/domain'
 import styles from './RegionSettings.module.scss'
 
 const TASK_TYPE_OPTIONS = [
-  { value: 'select_visit', label: '와드 방문 일정 선택 (일 단위)' },
-  { value: 'select_interview', label: '접견 일정 선택 (시간 단위)' },
-  { value: 'select_meeting', label: '모임 일정 선택 (시간 단위)' },
+  { value: 'select_visit', label: '와드 방문 (일요일 일 단위 선택)' },
+  { value: 'select_interview', label: '접견 일정 (특정 날짜 · 시간 단위 선택)' },
+  { value: 'select_meeting', label: '모임 일정 (특정 날짜 · 시간 단위 선택)' },
 ]
 
-const DAYS = ['일', '월', '화', '수', '목', '금', '토']
+const SLOT_DURATION_OPTIONS = [
+  { value: '30', label: '30분 단위' },
+  { value: '60', label: '1시간 단위' },
+  { value: '90', label: '1.5시간 단위' },
+  { value: '120', label: '2시간 단위' },
+]
 
 export function TaskCreation() {
   const user = useAtomValue(authUserAtom)!
@@ -29,19 +34,15 @@ export function TaskCreation() {
   const [seventyUid, setSeventyUid] = useState('')
   const [taskType, setTaskType] = useState<'select_visit' | 'select_interview' | 'select_meeting'>('select_visit')
   const [dueDate, setDueDate] = useState(dayjs().add(7, 'day').format('YYYY-MM-DD'))
-  const [availableDays, setAvailableDays] = useState<number[]>([])
+  // Interview/Meeting: specific dates
+  const [availableDates, setAvailableDates] = useState<string[]>([])
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('18:00')
+  const [slotDuration, setSlotDuration] = useState('60')
   const [loading, setLoading] = useState(false)
 
   const seventyOptions = seventies.map(s => ({ value: s.uid, label: s.name }))
-  const isInterview = taskType === 'select_interview' || taskType === 'select_meeting'
-
-  function toggleDay(day: number) {
-    setAvailableDays(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-    )
-  }
+  const isTimeBased = taskType === 'select_interview' || taskType === 'select_meeting'
 
   function togglePresident(uid: string) {
     setSelectedPresidents(prev => {
@@ -59,11 +60,17 @@ export function TaskCreation() {
     }
   }
 
+  const isValid = selectedPresidents.size > 0 && !!seventyUid
+    && (taskType === 'select_visit' || availableDates.length > 0)
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (selectedPresidents.size === 0) { toast.error('대상 회장을 한 명 이상 선택해주세요.'); return }
-    if (!seventyUid) { toast.error('담당 지역 칠십인을 선택해주세요.'); return }
-    if (availableDays.length === 0) { toast.error('가능 요일을 하나 이상 선택해주세요.'); return }
+    if (!isValid) {
+      if (selectedPresidents.size === 0) toast.error('대상 회장을 한 명 이상 선택해주세요.')
+      else if (!seventyUid) toast.error('담당 지역 칠십인을 선택해주세요.')
+      else if (isTimeBased && availableDates.length === 0) toast.error('가능 날짜를 하나 이상 선택해주세요.')
+      return
+    }
 
     setLoading(true)
     try {
@@ -79,15 +86,20 @@ export function TaskCreation() {
             regionId,
             dueDate,
             createdBy: user.uid,
-            availableDays,
-            ...(isInterview ? { availableStartTime: startTime, availableEndTime: endTime } : {}),
+            availableDays: taskType === 'select_visit' ? [0] : [],  // Sunday for visits
+            ...(isTimeBased ? {
+              availableDates,
+              availableStartTime: startTime,
+              availableEndTime: endTime,
+              slotDurationMinutes: parseInt(slotDuration),
+            } : {}),
           })
         })
       )
       toast.success(`Task ${selectedPresidents.size}건이 생성되었습니다.`)
       setSelectedPresidents(new Set())
       setSeventyUid('')
-      setAvailableDays([])
+      setAvailableDates([])
     } catch {
       toast.error('Task 생성에 실패했습니다.')
     } finally {
@@ -147,30 +159,25 @@ export function TaskCreation() {
               <Select
                 label="Task 유형"
                 value={taskType}
-                onChange={e => setTaskType(e.target.value as 'select_visit' | 'select_interview' | 'select_meeting')}
+                onChange={e => setTaskType(e.target.value as typeof taskType)}
                 options={TASK_TYPE_OPTIONS}
               />
 
-              <div className={styles.availSection}>
-                <p className={styles.availLabel}>
-                  가능 요일
-                  <span className={styles.availHint}>
-                    {isInterview ? '— 접견 가능한 요일을 선택하세요' : '— 방문 가능한 요일을 선택하세요'}
-                  </span>
+              {taskType === 'select_visit' && (
+                <p className={styles.visitNote}>
+                  와드 방문은 일요일(금식일 제외)에만 선택 가능합니다.
                 </p>
-                <div className={styles.days}>
-                  {DAYS.map((d, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className={clsx(styles.dayBtn, availableDays.includes(i) && styles.daySelected)}
-                      onClick={() => toggleDay(i)}
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </div>
-                {isInterview && (
+              )}
+
+              {isTimeBased && (
+                <div className={styles.availSection}>
+                  <p className={styles.availLabel}>가능 날짜 선택</p>
+                  <p className={styles.availHint}>캘린더에서 날짜를 클릭해 선택하세요 (복수 선택 가능)</p>
+                  <MultiDatePicker
+                    selected={availableDates}
+                    onChange={setAvailableDates}
+                  />
+
                   <div className={styles.timeRow}>
                     <Input
                       label="가능 시작 시간"
@@ -185,8 +192,15 @@ export function TaskCreation() {
                       onChange={e => setEndTime(e.target.value)}
                     />
                   </div>
-                )}
-              </div>
+
+                  <Select
+                    label="시간 단위"
+                    value={slotDuration}
+                    onChange={e => setSlotDuration(e.target.value)}
+                    options={SLOT_DURATION_OPTIONS}
+                  />
+                </div>
+              )}
 
               <Input
                 label="마감일"
@@ -198,7 +212,7 @@ export function TaskCreation() {
               <Button
                 type="submit"
                 loading={loading}
-                disabled={selectedPresidents.size === 0 || !seventyUid || availableDays.length === 0}
+                disabled={!isValid}
               >
                 Task {selectedPresidents.size > 0 ? `${selectedPresidents.size}건 ` : ''}생성
               </Button>

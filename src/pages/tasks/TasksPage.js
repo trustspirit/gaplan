@@ -6,7 +6,7 @@ import { useTaskConfirm } from '@/hooks/useTaskConfirm';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { AppShell, TopBar } from '@/components/layout';
 import { Card, CardHeader, CardBody, Button, BottomSheet, Skeleton } from '@/components/ui';
-import { TaskCard, TimeSlotPicker } from '@/components/domain';
+import { TaskCard, TimeSlotPicker, VisitDatePicker } from '@/components/domain';
 import styles from './TasksPage.module.scss';
 export function TasksPage() {
     const user = useAtomValue(authUserAtom);
@@ -15,7 +15,7 @@ export function TasksPage() {
     const { activeTask, selectedSlot, setSelectedSlot, selectedSlots, toggleSlot, isSlotSelected, submitting, availableSlots, isVisit, isMultiSelect, openTask, closeTask, handleConfirm, handleSubmitAvailability, } = useTaskConfirm(user.uid, user.unitId);
     const pendingTasks = tasks.filter(t => t.status === 'pending');
     const respondedTasks = tasks.filter(t => t.status === 'responded');
-    const slotPickerContent = (_jsxs(_Fragment, { children: [_jsx(TimeSlotPicker, { slots: availableSlots, granularity: isVisit ? 'day' : 'time', multiSelect: isMultiSelect, selected: selectedSlot, onSelect: setSelectedSlot, isSlotSelected: isSlotSelected, onToggle: toggleSlot }), isMultiSelect ? (_jsxs(Button, { onClick: handleSubmitAvailability, loading: submitting, disabled: selectedSlots.length === 0, fullWidth: true, className: styles.confirmBtn, children: ["\uAC00\uB2A5 \uC2DC\uAC04 \uC81C\uCD9C ", selectedSlots.length > 0 ? `(${selectedSlots.length}개)` : ''] })) : (_jsx(Button, { onClick: handleConfirm, loading: submitting, disabled: !selectedSlot, fullWidth: true, className: styles.confirmBtn, children: "\uBC29\uBB38 \uC77C\uC815 \uD655\uC815" }))] }));
+    const slotPickerContent = (_jsxs(_Fragment, { children: [isVisit ? (_jsx(VisitDatePicker, { slots: availableSlots, selected: selectedSlot, onSelect: setSelectedSlot })) : (_jsx(TimeSlotPicker, { slots: availableSlots, granularity: "time", multiSelect: true, isSlotSelected: isSlotSelected, onToggle: toggleSlot })), isMultiSelect ? (_jsxs(Button, { onClick: handleSubmitAvailability, loading: submitting, disabled: selectedSlots.length === 0, fullWidth: true, className: styles.confirmBtn, children: ["\uAC00\uB2A5 \uC2DC\uAC04 \uC81C\uCD9C ", selectedSlots.length > 0 ? `(${selectedSlots.length}개)` : ''] })) : (_jsx(Button, { onClick: handleConfirm, loading: submitting, disabled: !selectedSlot, fullWidth: true, className: styles.confirmBtn, children: "\uBC29\uBB38 \uC77C\uC815 \uD655\uC815" }))] }));
     return (_jsxs(AppShell, { role: user.role, name: user.name, topBar: _jsx(TopBar, { name: user.name, pendingCount: pendingTasks.length }), children: [_jsxs("div", { className: styles.layout, children: [_jsxs("div", { className: styles.mainCol, children: [_jsxs(Card, { children: [_jsx(CardHeader, { title: "\uCC98\uB9AC \uD544\uC694" }), _jsx(CardBody, { children: tasksLoading
                                             ? [1, 2].map(i => _jsx(Skeleton, { height: "44px", className: styles.skeletonItem }, i))
                                             : pendingTasks.length === 0

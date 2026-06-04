@@ -1,9 +1,107 @@
 @use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
 .topbar {
-  height: $topbar-height; background: $color-surface;
+  height: $topbar-height;
+  background: $color-surface;
   border-bottom: 1px solid $color-border;
   padding: 0 $space-5;
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
 }
-.greeting { font-size: $font-size-base; font-weight: $font-weight-medium; color: $color-text; }
-.sub { font-size: $font-size-xs; color: $color-text-muted; margin-top: 1px; }
+
+.textGroup {
+  flex: 1;
+  min-width: 0;
+}
+
+.greeting {
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  @include truncate;
+
+  @include mobile { font-size: $font-size-sm; }
+}
+
+.sub {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  margin-top: 1px;
+  @include truncate;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex-shrink: 0;
+}
+
+.avatarWrap {
+  position: relative;
+
+  // On desktop the sidebar already has avatar/logout
+  @include desktop { display: none; }
+}
+
+.avatarBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: $border-radius-full;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-overlaid;
+  z-index: $z-modal;
+  overflow: hidden;
+}
+
+.dropdownUser {
+  padding: $space-3 $space-4;
+}
+
+.dropdownName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: $color-border;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  width: 100%;
+  padding: $space-3 $space-4;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+
+  &:hover {
+    background: $color-bg;
+    color: $color-text;
+  }
+}

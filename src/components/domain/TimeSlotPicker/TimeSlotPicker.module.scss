@@ -1,14 +1,22 @@
 @use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
 .picker { display: flex; flex-direction: column; gap: $space-4; }
+.dayGroup { display: flex; flex-direction: column; }
 .date { font-size: $font-size-sm; font-weight: $font-weight-semibold; color: $color-text; margin-bottom: $space-2; }
 .slots { display: flex; flex-wrap: wrap; gap: $space-2; }
 .slot {
-  padding: $space-2 $space-3; border: 1px solid $color-border; border-radius: $border-radius-md;
+  padding: $space-2 $space-3;
+  min-height: 40px;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
   font-size: $font-size-sm; color: $color-text; background: $color-surface;
   transition: border-color 0.15s, background 0.15s;
   &:hover:not(:disabled) { border-color: $color-primary; color: $color-primary; }
   &.selected { background: $color-primary; border-color: $color-primary; color: #fff; }
   &.disabled { opacity: 0.35; cursor: not-allowed; background: $color-bg; }
+
+  @include mobile { min-height: 44px; padding: $space-2 $space-4; }
 }
 .empty { font-size: $font-size-sm; color: $color-text-muted; text-align: center; padding: $space-6 0; }
 
@@ -22,15 +30,19 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
   padding: $space-3 $space-4;
+  min-height: 64px;
+  min-width: 60px;
   border: 1px solid $color-border;
   border-radius: $border-radius-lg;
   background: $color-surface;
   cursor: pointer;
   transition: border-color 0.12s, background 0.12s;
-  min-width: 56px;
   &:hover { border-color: $color-primary; }
+
+  @include mobile { min-width: 56px; min-height: 68px; }
 }
 
 .dayCardSelected {

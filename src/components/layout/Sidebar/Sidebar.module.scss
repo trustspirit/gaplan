@@ -158,8 +158,9 @@
   flex-direction: column;
   gap: 3px;
   color: rgba(255, 255, 255, 0.4);
-  padding: 8px 0;
+  padding: 6px 4px;
   transition: color 0.15s;
+  min-width: 0;
 
   &.active {
     color: #fff;
@@ -167,6 +168,8 @@
 }
 
 .tabLabel {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: $font-weight-medium;
+  @include truncate;
+  max-width: 100%;
 }

@@ -12,7 +12,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { subscribeToSharedCalendar } from '@/services/calendarService'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Skeleton, Button, Modal, BottomSheet } from '@/components/ui'
-import { TaskCard, ScheduleItem, CalendarView, TimeSlotPicker } from '@/components/domain'
+import { TaskCard, ScheduleItem, CalendarView, TimeSlotPicker, VisitDatePicker } from '@/components/domain'
 import { REGIONS } from '@/constants/regions'
 import styles from './DashboardPage.module.scss'
 
@@ -71,15 +71,21 @@ function PresidentDashboard() {
 
   const slotPickerContent = (
     <>
-      <TimeSlotPicker
-        slots={availableSlots}
-        granularity={isVisit ? 'day' : 'time'}
-        multiSelect={isMultiSelect}
-        selected={selectedSlot}
-        onSelect={setSelectedSlot}
-        isSlotSelected={isSlotSelected}
-        onToggle={toggleSlot}
-      />
+      {isVisit ? (
+        <VisitDatePicker
+          slots={availableSlots}
+          selected={selectedSlot}
+          onSelect={setSelectedSlot}
+        />
+      ) : (
+        <TimeSlotPicker
+          slots={availableSlots}
+          granularity="time"
+          multiSelect
+          isSlotSelected={isSlotSelected}
+          onToggle={toggleSlot}
+        />
+      )}
       {isMultiSelect ? (
         <Button
           onClick={handleSubmitAvailability}

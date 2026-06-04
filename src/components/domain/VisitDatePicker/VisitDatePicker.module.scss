@@ -1,0 +1,143 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.navBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  border-radius: $border-radius-md;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  &:hover { background: $color-bg; color: $color-text; }
+}
+
+.period {
+  flex: 1;
+  text-align: center;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dowLabel {
+  text-align: center;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+  padding: $space-1 0;
+}
+
+.dowSun { color: $color-danger; }
+
+.cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-radius: $border-radius-md;
+  border: none;
+  background: none;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  cursor: default;
+  transition: background 0.1s;
+}
+
+.otherMonth { opacity: 0.3; }
+
+.sunday {
+  background: color-mix(in srgb, $color-primary 10%, white);
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  &:hover { background: color-mix(in srgb, $color-primary 20%, white); }
+}
+
+.fastSunday {
+  background: $color-bg;
+  color: $color-text-light;
+  text-decoration: line-through;
+}
+
+.today .day {
+  background: $color-sidebar;
+  color: #fff;
+  border-radius: $border-radius-full;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selected {
+  background: $color-primary !important;
+  color: #fff !important;
+  font-weight: $font-weight-bold;
+}
+
+.day {
+  font-size: $font-size-xs;
+  line-height: 1;
+}
+
+.fastLabel {
+  font-size: 8px;
+  color: $color-text-light;
+  line-height: 1;
+}
+
+.empty {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  text-align: center;
+  padding: $space-2 0;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: $border-radius-full;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.legendAvailable { background: $color-primary; }
+.legendFast { background: $color-border; }
+
+.legendText {
+  margin-right: $space-2;
+}

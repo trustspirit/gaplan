@@ -1,0 +1,120 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.navBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  border-radius: $border-radius-md;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  &:hover { background: $color-bg; color: $color-text; }
+}
+
+.period {
+  flex: 1;
+  text-align: center;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dowLabel {
+  text-align: center;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+  padding: $space-1 0;
+}
+
+.cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $border-radius-md;
+  border: none;
+  background: none;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  cursor: default;
+  transition: background 0.12s, color 0.12s;
+}
+
+.otherMonth { opacity: 0.25; }
+
+.available {
+  color: $color-text;
+  cursor: pointer;
+  &:hover { background: $color-bg; }
+}
+
+.today {
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.selected {
+  background: $color-primary !important;
+  color: #fff !important;
+  font-weight: $font-weight-bold;
+  &:hover { background: $color-primary-hover !important; }
+}
+
+.selectedList {
+  border-top: 1px solid $color-border;
+  padding-top: $space-3;
+}
+
+.selectedTitle {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+  margin-bottom: $space-2;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px $space-2;
+  background: color-mix(in srgb, $color-primary 12%, white);
+  color: $color-primary;
+  border: 1px solid color-mix(in srgb, $color-primary 30%, white);
+  border-radius: $border-radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: background 0.12s;
+  &:hover { background: color-mix(in srgb, $color-primary 20%, white); }
+}

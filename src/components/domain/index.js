@@ -3,3 +3,5 @@ export { TaskCard } from './TaskCard/TaskCard';
 export { TimeSlotPicker } from './TimeSlotPicker/TimeSlotPicker';
 export { CalendarView } from './CalendarView/CalendarView';
 export { AvailabilityEditor } from './AvailabilityEditor/AvailabilityEditor';
+export { VisitDatePicker } from './VisitDatePicker/VisitDatePicker';
+export { MultiDatePicker } from './MultiDatePicker/MultiDatePicker';

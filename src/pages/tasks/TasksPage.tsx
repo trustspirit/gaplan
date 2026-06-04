@@ -5,7 +5,7 @@ import { useTaskConfirm } from '@/hooks/useTaskConfirm'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Button, BottomSheet, Skeleton } from '@/components/ui'
-import { TaskCard, TimeSlotPicker } from '@/components/domain'
+import { TaskCard, TimeSlotPicker, VisitDatePicker } from '@/components/domain'
 import styles from './TasksPage.module.scss'
 
 export function TasksPage() {
@@ -24,15 +24,21 @@ export function TasksPage() {
 
   const slotPickerContent = (
     <>
-      <TimeSlotPicker
-        slots={availableSlots}
-        granularity={isVisit ? 'day' : 'time'}
-        multiSelect={isMultiSelect}
-        selected={selectedSlot}
-        onSelect={setSelectedSlot}
-        isSlotSelected={isSlotSelected}
-        onToggle={toggleSlot}
-      />
+      {isVisit ? (
+        <VisitDatePicker
+          slots={availableSlots}
+          selected={selectedSlot}
+          onSelect={setSelectedSlot}
+        />
+      ) : (
+        <TimeSlotPicker
+          slots={availableSlots}
+          granularity="time"
+          multiSelect
+          isSlotSelected={isSlotSelected}
+          onToggle={toggleSlot}
+        />
+      )}
       {isMultiSelect ? (
         <Button
           onClick={handleSubmitAvailability}
