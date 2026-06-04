@@ -56,10 +56,10 @@ export const adminConfirmWardVisit = functions
       .get()
     existingSnap.docs.forEach(doc => batch.delete(doc.ref))
 
-    // Create one schedule document per ward assignment
-    for (const assignment of wardAssignments) {
-      const safeWard = assignment.wardName.replace(/[^a-zA-Z0-9가-힣]/g, '_')
-      const scheduleId = `wv_${data.taskId}_${safeWard}`
+    // Create one schedule document per ward assignment (index suffix prevents ID collision)
+    for (const [i, assignment] of wardAssignments.entries()) {
+      const safeWard = assignment.wardName.replace(/[^a-zA-Z0-9가-힣]/g, '_').slice(0, 60)
+      const scheduleId = `wv_${data.taskId}_${safeWard}_${i}`
       const scheduleRef = db.collection('schedules').doc(scheduleId)
       batch.set(scheduleRef, {
         type: 'ward_visit',

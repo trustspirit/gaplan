@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
 import { Calendar, CheckCircle2 } from 'lucide-react'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { toast } from 'sonner'
 import { authUserAtom } from '@/store/authAtom'
 import { useTasks } from '@/hooks/useTasks'
@@ -12,7 +13,8 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { subscribeToSharedCalendar } from '@/services/calendarService'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Skeleton, Button, Modal, BottomSheet } from '@/components/ui'
-import { TaskCard, ScheduleItem, CalendarView, TimeSlotPicker, VisitDatePicker } from '@/components/domain'
+import { TaskCard, ScheduleItem, CalendarView, TaskPickerContent, taskPickerTitle } from '@/components/domain'
+import { useWardSubmit } from '@/hooks/useWardSubmit'
 import { REGIONS } from '@/constants/regions'
 import styles from './DashboardPage.module.scss'
 
@@ -58,57 +60,35 @@ function PresidentDashboard() {
   const { getUnitName } = useUnits()
   const isMobile = useIsMobile()
   const {
-    activeTask, selectedSlot, setSelectedSlot,
+    activeTask, selectedSlot: _selectedSlot,
     selectedSlots, toggleSlot, isSlotSelected,
-    submitting, availableSlots, isVisit, isMultiSelect,
-    openTask, closeTask, handleConfirm, handleSubmitAvailability,
+    submitting, availableSlots,
+    openTask, closeTask, handleSubmitAvailability,
   } = useTaskConfirm(user.uid, user.unitId)
+
+  const { handleSubmitWards, wardSubmitting } = useWardSubmit(activeTask, closeTask)
 
   const upcoming = schedules
     .filter(s => s.status === 'confirmed' && dayjs(s.date).isAfter(dayjs().subtract(1, 'day')))
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 5)
 
-  const slotPickerContent = (
-    <>
-      {isVisit ? (
-        <VisitDatePicker
-          slots={availableSlots}
-          selected={selectedSlot}
-          onSelect={setSelectedSlot}
-        />
-      ) : (
-        <TimeSlotPicker
-          slots={availableSlots}
-          granularity="time"
-          multiSelect
-          isSlotSelected={isSlotSelected}
-          onToggle={toggleSlot}
-        />
-      )}
-      {isMultiSelect ? (
-        <Button
-          onClick={handleSubmitAvailability}
-          loading={submitting}
-          disabled={selectedSlots.length === 0}
-          fullWidth
-          className={styles.confirmBtn}
-        >
-          가능 시간 제출 {selectedSlots.length > 0 ? `(${selectedSlots.length}개)` : ''}
-        </Button>
-      ) : (
-        <Button
-          onClick={handleConfirm}
-          loading={submitting}
-          disabled={!selectedSlot}
-          fullWidth
-          className={styles.confirmBtn}
-        >
-          방문 일정 확정
-        </Button>
-      )}
-    </>
-  )
+  const pickerTitle = taskPickerTitle(activeTask)
+
+  const pickerContent = activeTask ? (
+    <TaskPickerContent
+      activeTask={activeTask}
+      user={user}
+      availableSlots={availableSlots}
+      isSlotSelected={isSlotSelected}
+      onToggleSlot={toggleSlot}
+      slotSubmitting={submitting}
+      selectedSlots={selectedSlots}
+      onSubmitAvailability={handleSubmitAvailability}
+      onSubmitWards={handleSubmitWards}
+      wardSubmitting={wardSubmitting}
+    />
+  ) : null
 
   return (
     <AppShell
@@ -155,20 +135,12 @@ function PresidentDashboard() {
       </div>
 
       {isMobile ? (
-        <BottomSheet
-          open={!!activeTask}
-          onClose={closeTask}
-          title={isVisit ? '방문 날짜 선택' : isMultiSelect ? '가능한 시간 선택 (복수 가능)' : '날짜/시간 선택'}
-        >
-          {slotPickerContent}
+        <BottomSheet open={!!activeTask} onClose={closeTask} title={pickerTitle}>
+          {pickerContent}
         </BottomSheet>
       ) : (
-        <Modal
-          open={!!activeTask}
-          onClose={closeTask}
-          title={isVisit ? '방문 날짜 선택' : isMultiSelect ? '가능한 시간 선택 (복수 가능)' : '날짜/시간 선택'}
-        >
-          {slotPickerContent}
+        <Modal open={!!activeTask} onClose={closeTask} title={pickerTitle}>
+          {pickerContent}
         </Modal>
       )}
     </AppShell>

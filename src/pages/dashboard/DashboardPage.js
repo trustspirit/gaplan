@@ -1,8 +1,9 @@
-import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
 import { useAtomValue } from 'jotai';
 import dayjs from 'dayjs';
 import { Calendar, CheckCircle2 } from 'lucide-react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { toast } from 'sonner';
 import { authUserAtom } from '@/store/authAtom';
 import { useTasks } from '@/hooks/useTasks';
@@ -13,7 +14,8 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { subscribeToSharedCalendar } from '@/services/calendarService';
 import { AppShell, TopBar } from '@/components/layout';
 import { Card, CardHeader, CardBody, Skeleton, Button, Modal, BottomSheet } from '@/components/ui';
-import { TaskCard, ScheduleItem, CalendarView, TimeSlotPicker, VisitDatePicker } from '@/components/domain';
+import { TaskCard, ScheduleItem, CalendarView, TaskPickerContent, taskPickerTitle } from '@/components/domain';
+import { useWardSubmit } from '@/hooks/useWardSubmit';
 import { REGIONS } from '@/constants/regions';
 import styles from './DashboardPage.module.scss';
 function CalendarBanner({ connected }) {
@@ -39,12 +41,14 @@ function PresidentDashboard() {
     const { schedules, loading: schedulesLoading } = useSchedules({ presidentUid: user.uid });
     const { getUnitName } = useUnits();
     const isMobile = useIsMobile();
-    const { activeTask, selectedSlot, setSelectedSlot, selectedSlots, toggleSlot, isSlotSelected, submitting, availableSlots, isVisit, isMultiSelect, openTask, closeTask, handleConfirm, handleSubmitAvailability, } = useTaskConfirm(user.uid, user.unitId);
+    const { activeTask, selectedSlot: _selectedSlot, selectedSlots, toggleSlot, isSlotSelected, submitting, availableSlots, openTask, closeTask, handleSubmitAvailability, } = useTaskConfirm(user.uid, user.unitId);
+    const { handleSubmitWards, wardSubmitting } = useWardSubmit(activeTask, closeTask);
     const upcoming = schedules
         .filter(s => s.status === 'confirmed' && dayjs(s.date).isAfter(dayjs().subtract(1, 'day')))
         .sort((a, b) => a.date.localeCompare(b.date))
         .slice(0, 5);
-    const slotPickerContent = (_jsxs(_Fragment, { children: [isVisit ? (_jsx(VisitDatePicker, { slots: availableSlots, selected: selectedSlot, onSelect: setSelectedSlot })) : (_jsx(TimeSlotPicker, { slots: availableSlots, granularity: "time", multiSelect: true, isSlotSelected: isSlotSelected, onToggle: toggleSlot })), isMultiSelect ? (_jsxs(Button, { onClick: handleSubmitAvailability, loading: submitting, disabled: selectedSlots.length === 0, fullWidth: true, className: styles.confirmBtn, children: ["\uAC00\uB2A5 \uC2DC\uAC04 \uC81C\uCD9C ", selectedSlots.length > 0 ? `(${selectedSlots.length}개)` : ''] })) : (_jsx(Button, { onClick: handleConfirm, loading: submitting, disabled: !selectedSlot, fullWidth: true, className: styles.confirmBtn, children: "\uBC29\uBB38 \uC77C\uC815 \uD655\uC815" }))] }));
+    const pickerTitle = taskPickerTitle(activeTask);
+    const pickerContent = activeTask ? (_jsx(TaskPickerContent, { activeTask: activeTask, user: user, availableSlots: availableSlots, isSlotSelected: isSlotSelected, onToggleSlot: toggleSlot, slotSubmitting: submitting, selectedSlots: selectedSlots, onSubmitAvailability: handleSubmitAvailability, onSubmitWards: handleSubmitWards, wardSubmitting: wardSubmitting })) : null;
     return (_jsxs(AppShell, { role: user.role, name: user.name, topBar: _jsx(TopBar, { name: user.name, subtext: dayjs().format('YYYY년 M월'), pendingCount: tasks.length }), children: [_jsxs("div", { className: styles.layout, children: [_jsxs("div", { className: styles.mainCol, children: [_jsxs(Card, { children: [_jsx(CardHeader, { title: "\uCC98\uB9AC \uD544\uC694" }), _jsx(CardBody, { children: tasksLoading
                                             ? [1, 2].map(i => _jsx(Skeleton, { height: "44px", className: styles.skeletonItem }, i))
                                             : tasks.length === 0
@@ -53,7 +57,7 @@ function PresidentDashboard() {
                                             ? [1, 2].map(i => _jsx(Skeleton, { height: "44px", className: styles.skeletonItem }, i))
                                             : upcoming.length === 0
                                                 ? _jsx("p", { className: styles.empty, children: "\uC608\uC815\uB41C \uC77C\uC815\uC774 \uC5C6\uC2B5\uB2C8\uB2E4." })
-                                                : upcoming.map(s => (_jsx(ScheduleItem, { schedule: s, unitName: getUnitName(s.unitId), showCalendarAdd: true }, s.id))) })] })] }), _jsx("div", { className: styles.sideCol, children: _jsxs(Card, { children: [_jsx(CardHeader, { title: "\uCE98\uB9B0\uB354" }), _jsx(CardBody, { children: _jsx(CalendarView, { schedules: schedules }) })] }) })] }), isMobile ? (_jsx(BottomSheet, { open: !!activeTask, onClose: closeTask, title: isVisit ? '방문 날짜 선택' : isMultiSelect ? '가능한 시간 선택 (복수 가능)' : '날짜/시간 선택', children: slotPickerContent })) : (_jsx(Modal, { open: !!activeTask, onClose: closeTask, title: isVisit ? '방문 날짜 선택' : isMultiSelect ? '가능한 시간 선택 (복수 가능)' : '날짜/시간 선택', children: slotPickerContent }))] }));
+                                                : upcoming.map(s => (_jsx(ScheduleItem, { schedule: s, unitName: getUnitName(s.unitId), showCalendarAdd: true }, s.id))) })] })] }), _jsx("div", { className: styles.sideCol, children: _jsxs(Card, { children: [_jsx(CardHeader, { title: "\uCE98\uB9B0\uB354" }), _jsx(CardBody, { children: _jsx(CalendarView, { schedules: schedules }) })] }) })] }), isMobile ? (_jsx(BottomSheet, { open: !!activeTask, onClose: closeTask, title: pickerTitle, children: pickerContent })) : (_jsx(Modal, { open: !!activeTask, onClose: closeTask, title: pickerTitle, children: pickerContent }))] }));
 }
 function SeventyDashboard() {
     const user = useAtomValue(authUserAtom);

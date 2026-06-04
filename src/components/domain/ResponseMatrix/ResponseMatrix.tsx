@@ -6,7 +6,7 @@
  * Cell = ✓ if that president selected this slot
  * Admin clicks a cell → adminConfirmSchedule for that president's task + slot
  */
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/ko'
 dayjs.locale('ko')
@@ -240,8 +240,8 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: Respons
             </thead>
             <tbody>
               {dates.map(date => (
-                <>
-                  <tr key={`h_${date}`} className={styles.dateHeader}>
+                <Fragment key={date}>
+                  <tr className={styles.dateHeader}>
                     <td className={clsx(styles.td, styles.tdDateHeader)} colSpan={visibleRespondents.length + 1}>
                       {dayjs(date).format('M월 D일 (ddd)')}
                     </td>
@@ -276,7 +276,7 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: Respons
                       })}
                     </tr>
                   ))}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>

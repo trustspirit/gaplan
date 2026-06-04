@@ -69,7 +69,8 @@ exports.weeklyReminder = functions
     const presidentUids = Object.keys(byPresident);
     // Fetch all president user docs in parallel
     const presidentSnaps = await Promise.all(presidentUids.map(uid => db.collection('users').doc(uid).get()));
-    await Promise.all(presidentSnaps.map(async (snap, i) => {
+    // Use allSettled so one failed email doesn't block the others
+    const results = await Promise.allSettled(presidentSnaps.map(async (snap, i) => {
         const president = snap.data();
         if (!(president === null || president === void 0 ? void 0 : president.email))
             return;
@@ -86,5 +87,10 @@ exports.weeklyReminder = functions
             text: `${president.name} 회장님,\n\n이번 주 확정된 일정입니다:\n\n${lines}\n\ngaplan`,
         });
     }));
+    results.forEach((r, i) => {
+        if (r.status === 'rejected') {
+            functions.logger.error(`weeklyReminder: failed for ${presidentUids[i]}`, r.reason);
+        }
+    });
 });
 //# sourceMappingURL=weeklyReminder.js.map

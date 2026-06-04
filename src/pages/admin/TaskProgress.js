@@ -13,7 +13,7 @@ import { expireTask, updateTaskDetails } from '@/services/taskService';
 import { ALL_UNITS, REGIONS } from '@/constants/regions';
 import { AppShell, TopBar } from '@/components/layout';
 import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Select, Modal } from '@/components/ui';
-import { MultiDatePicker, ResponseMatrix } from '@/components/domain';
+import { MultiDatePicker, ResponseMatrix, ScheduleSuggestions } from '@/components/domain';
 import styles from './TaskProgress.module.scss';
 const TASK_LABELS = {
     select_visit: '와드 방문',
@@ -190,7 +190,8 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName }) {
                     : (_jsxs(_Fragment, { children: [matrixBatches.map(batch => {
                                 const ref = batch[0];
                                 const title = ref.title ?? TASK_LABELS[ref.type] ?? ref.type;
-                                return (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: [title, " \uC751\uB2F5 \uD604\uD669 (", batch.filter(t => t.status === 'responded' || t.status === 'completed').length, "/", batch.length, ")"] }), _jsx(ResponseMatrix, { tasks: batch, getPresidentName: getUserName })] }, ref.batchId ?? ref.id));
+                                const hasResponded = batch.some(t => t.status === 'responded' || t.status === 'completed');
+                                return (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: [title, " \uC751\uB2F5 \uD604\uD669 (", batch.filter(t => t.status === 'responded' || t.status === 'completed').length, "/", batch.length, ")"] }), _jsx(ResponseMatrix, { tasks: batch, getPresidentName: getUserName }), hasResponded && (_jsx("div", { className: styles.suggestionsWrap, children: _jsx(ScheduleSuggestions, { tasks: batch, getPresidentName: getUserName }) }))] }, ref.batchId ?? ref.id));
                             }), responded.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: ["\uD655\uC815 \uB300\uAE30 (", responded.length, ")"] }), renderRows(responded.filter(t => t.type === 'select_visit'))] })), pending.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: ["\uBBF8\uC751\uB2F5 (", pending.length, ")"] }), renderRows(pending)] })), completed.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: ["\uC644\uB8CC (", completed.length, ")"] }), renderRows(completed.filter(t => t.type === 'select_visit'))] })), expired.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: clsx(styles.statusLabel, styles.statusLabelExpired), children: ["\uB9CC\uB8CC (", expired.length, ")"] }), renderRows(expired)] }))] })) })] }));
 }
 // ── Main page ────────────────────────────────────────────────────────────────

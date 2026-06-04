@@ -62,10 +62,16 @@ service cloud.firestore {
         isAdmin() || isSeventy() || resource.data.assignedTo == request.auth.uid
       );
       allow create, delete: if isAdmin();
-      allow update: if isAdmin() || isSeventy()
+      // Admin: unrestricted. Seventy: only their region's tasks, status-only.
+      // President: own tasks, limited fields only.
+      allow update: if isAdmin()
+        || (isSeventy() && resource.data.seventyUid == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status']))
         || (isAuth() && resource.data.assignedTo == request.auth.uid
-          && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['status', 'respondedSlots', 'respondedAt']));
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status', 'respondedSlots', 'respondedAt',
+                            'wardAssignments']));
     }
 
     match /notifications/{uid}/items/{notifId} {
@@ -73,8 +79,9 @@ service cloud.firestore {
     }
 
     match /settings/{doc} {
-      // calendar settings (shared calendar IDs) are for admin/seventy only
-      allow read: if isAdmin() || isSeventy() || (isAuth() && doc != 'calendar');
+      // All authenticated users can read settings (presidents may need calendar IDs for their own use).
+      // Write is admin-only.
+      allow read: if isAuth();
       allow write: if isAdmin();
     }
   }

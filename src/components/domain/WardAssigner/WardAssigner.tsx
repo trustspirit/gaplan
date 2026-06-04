@@ -214,7 +214,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
           </ul>
           <p className={styles.conflictQuestion}>그래도 이 배정으로 제출하시겠습니까?</p>
           <div className={styles.conflictActions}>
-            <Button variant="ghost" onClick={handleCancelWarning}>취소 (다시 수정)</Button>
+            <Button variant="secondary" onClick={handleCancelWarning}>← 다시 수정</Button>
             <Button onClick={handleSubmit} loading={submitting}>확인 후 제출</Button>
           </div>
         </div>

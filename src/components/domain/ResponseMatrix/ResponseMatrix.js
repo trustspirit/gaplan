@@ -1,4 +1,4 @@
-import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 /**
  * ResponseMatrix — shows who selected which time slot across all responded tasks in a batch.
  *
@@ -7,7 +7,7 @@ import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-run
  * Cell = ✓ if that president selected this slot
  * Admin clicks a cell → adminConfirmSchedule for that president's task + slot
  */
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 dayjs.locale('ko');
@@ -115,12 +115,12 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }) {
                                                         const isCompleted = r.task.status === 'completed';
                                                         return (_jsxs("button", { type: "button", className: clsx(styles.slotName, isCompleted && styles.slotNameConfirmed, isConfirming && styles.slotNameConfirming), style: { borderLeftColor: respondentColor(respondents.indexOf(r)), color: respondentColor(respondents.indexOf(r)) }, onClick: () => !isCompleted && handleConfirm(r.task, { date, startTime: time, endTime: slot.endTime }), title: isCompleted ? '이미 확정됨' : `${r.name} — 이 시간으로 확정`, disabled: !!confirming || isCompleted, children: [isCompleted ? '✓ ' : '', r.name] }, r.task.id));
                                                     }) })] }, date));
-                                    })] }, time))) })] })) : (_jsxs("table", { className: styles.table, children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { className: clsx(styles.th, styles.thTime), children: "\uB0A0\uC9DC / \uC2DC\uAC04" }), visibleRespondents.map((r, idx) => (_jsx("th", { className: clsx(styles.th, styles.thParticipant), style: { color: respondentColor(respondents.indexOf(r)) }, children: r.name }, r.task.id)))] }) }), _jsx("tbody", { children: dates.map(date => (_jsxs(_Fragment, { children: [_jsx("tr", { className: styles.dateHeader, children: _jsx("td", { className: clsx(styles.td, styles.tdDateHeader), colSpan: visibleRespondents.length + 1, children: dayjs(date).format('M월 D일 (ddd)') }) }, `h_${date}`), slots.filter(s => s.date === date).map(slot => (_jsxs("tr", { children: [_jsx("td", { className: clsx(styles.td, styles.tdTime), children: slot.startTime }), visibleRespondents.map(r => {
+                                    })] }, time))) })] })) : (_jsxs("table", { className: styles.table, children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { className: clsx(styles.th, styles.thTime), children: "\uB0A0\uC9DC / \uC2DC\uAC04" }), visibleRespondents.map((r, idx) => (_jsx("th", { className: clsx(styles.th, styles.thParticipant), style: { color: respondentColor(respondents.indexOf(r)) }, children: r.name }, r.task.id)))] }) }), _jsx("tbody", { children: dates.map(date => (_jsxs(Fragment, { children: [_jsx("tr", { className: styles.dateHeader, children: _jsx("td", { className: clsx(styles.td, styles.tdDateHeader), colSpan: visibleRespondents.length + 1, children: dayjs(date).format('M월 D일 (ddd)') }) }), slots.filter(s => s.date === date).map(slot => (_jsxs("tr", { children: [_jsx("td", { className: clsx(styles.td, styles.tdTime), children: slot.startTime }), visibleRespondents.map(r => {
                                                 const selected = (r.task.respondedSlots ?? [])
                                                     .some(s => s.date === date && s.startTime === slot.startTime);
                                                 const color = respondentColor(respondents.indexOf(r));
                                                 const isCompleted = r.task.status === 'completed';
                                                 const isConfirming = confirming === `${r.task.id}_${date}_${slot.startTime}`;
                                                 return (_jsx("td", { className: clsx(styles.td, styles.tdCheck), children: selected ? (_jsx("button", { type: "button", className: clsx(styles.checkBtn, isCompleted && styles.checkBtnConfirmed), style: { background: color + '33', color }, onClick: () => !isCompleted && handleConfirm(r.task, slot), title: isCompleted ? '이미 확정됨' : '이 시간으로 확정', disabled: !!confirming || isCompleted, children: isCompleted ? '✓' : isConfirming ? '...' : '✓' })) : (_jsx("span", { className: styles.checkEmpty })) }, r.task.id));
-                                            })] }, `${date}_${slot.startTime}`)))] }))) })] })) })] }));
+                                            })] }, `${date}_${slot.startTime}`)))] }, date))) })] })) })] }));
 }
