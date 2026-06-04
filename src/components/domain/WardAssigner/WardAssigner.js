@@ -8,8 +8,19 @@ import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui';
 import styles from './WardAssigner.module.scss';
 const DOW_KR = ['일', '월', '화', '수', '목', '금', '토'];
-export function WardAssigner({ availableDates, wards, note, onSubmit, submitting }) {
-    const [assignments, setAssignments] = useState(Object.fromEntries(wards.map(w => [w.id, null])));
+export function WardAssigner({ availableDates, wards, note, initialAssignments, onSubmit, submitting }) {
+    const [assignments, setAssignments] = useState(() => {
+        // Pre-fill from previously submitted assignments if editing a responded task
+        const base = Object.fromEntries(wards.map(w => [w.id, null]));
+        if (initialAssignments) {
+            for (const { wardName, date } of initialAssignments) {
+                const ward = wards.find(w => w.name === wardName);
+                if (ward)
+                    base[ward.id] = date;
+            }
+        }
+        return base;
+    });
     const [warnings, setWarnings] = useState([]);
     const [pendingAssignments, setPendingAssignments] = useState(null);
     const assignedCount = Object.values(assignments).filter(Boolean).length;

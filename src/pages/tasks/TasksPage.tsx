@@ -108,7 +108,14 @@ export function TasksPage() {
             <Card>
               <CardHeader title="제출 완료 · 확정 대기" />
               <CardBody>
-                {respondedTasks.map(t => <TaskCard key={t.id} task={t} />)}
+                {respondedTasks.map(t => (
+                  <TaskCard
+                    key={t.id}
+                    task={t}
+                    // Ward visit responded tasks can be reopened for editing
+                    onAction={t.type === 'select_visit' ? openTask : undefined}
+                  />
+                ))}
               </CardBody>
             </Card>
           )}
@@ -129,6 +136,7 @@ export function TasksPage() {
                   availableDates={activeTask.availableDates ?? []}
                   wards={availableWards}
                   note={activeTask.note}
+                  initialAssignments={activeTask.wardAssignments}
                   onSubmit={handleSubmitWards}
                   submitting={wardSubmitting}
                 />
@@ -166,6 +174,7 @@ export function TasksPage() {
               availableDates={activeTask.availableDates ?? []}
               wards={availableWards}
               note={activeTask.note}
+              initialAssignments={activeTask.wardAssignments}
               onSubmit={handleSubmitWards}
               submitting={wardSubmitting}
             />

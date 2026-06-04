@@ -17,7 +17,9 @@ export function TaskCard({ task, onAction }: TaskCardProps) {
   const isUrgent = daysLeft <= 3
   const isOverdue = daysLeft < 0
   const isResponded = task.status === 'responded'
-  const label = TASK_LABELS[task.type] ?? task.type
+  // Ward visit tasks in responded state can be reopened for editing
+  const canReopen = isResponded && task.type === 'select_visit'
+  const label = task.title ?? (TASK_LABELS[task.type] ?? task.type)
   const dDayLabel = isOverdue ? `D+${Math.abs(daysLeft)}` : `D-${daysLeft}`
 
   return (
@@ -30,7 +32,9 @@ export function TaskCard({ task, onAction }: TaskCardProps) {
         <div className={styles.labelGroup}>
           <span className={styles.label}>{label}</span>
           {isResponded && (
-            <span className={styles.respondedHint}>제출 완료 · 확정 대기 중</span>
+            <span className={styles.respondedHint}>
+              제출 완료 · 확정 대기 중
+            </span>
           )}
         </div>
       </div>
@@ -38,10 +42,14 @@ export function TaskCard({ task, onAction }: TaskCardProps) {
         {!isResponded && (
           <Badge variant={isOverdue ? 'danger' : isUrgent ? 'danger' : 'warning'}>{dDayLabel}</Badge>
         )}
-        {isResponded
-          ? <Badge variant="default">대기 중</Badge>
-          : <Button size="sm" onClick={() => onAction?.(task)}>처리</Button>
-        }
+        {isResponded && !canReopen && (
+          <Badge variant="default">대기 중</Badge>
+        )}
+        {(!isResponded || canReopen) && onAction && (
+          <Button size="sm" variant={canReopen ? 'secondary' : 'primary'} onClick={() => onAction(task)}>
+            {canReopen ? '수정' : '처리'}
+          </Button>
+        )}
       </div>
     </div>
   )

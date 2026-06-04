@@ -13,7 +13,9 @@ const DOW_KR = ['일', '월', '화', '수', '목', '금', '토']
 interface WardAssignerProps {
   availableDates: string[]
   wards: WardUnit[]
-  note?: string    // admin memo shown to president
+  note?: string
+  /** Pre-fill with previously submitted ward assignments (for editing responded tasks) */
+  initialAssignments?: { wardName: string; date: string }[]
   onSubmit: (assignments: { wardName: string; date: string }[]) => Promise<void>
   submitting: boolean
 }
@@ -24,10 +26,18 @@ interface Warning {
   detail: string
 }
 
-export function WardAssigner({ availableDates, wards, note, onSubmit, submitting }: WardAssignerProps) {
-  const [assignments, setAssignments] = useState<Record<string, string | null>>(
-    Object.fromEntries(wards.map(w => [w.id, null]))
-  )
+export function WardAssigner({ availableDates, wards, note, initialAssignments, onSubmit, submitting }: WardAssignerProps) {
+  const [assignments, setAssignments] = useState<Record<string, string | null>>(() => {
+    // Pre-fill from previously submitted assignments if editing a responded task
+    const base = Object.fromEntries(wards.map(w => [w.id, null as string | null]))
+    if (initialAssignments) {
+      for (const { wardName, date } of initialAssignments) {
+        const ward = wards.find(w => w.name === wardName)
+        if (ward) base[ward.id] = date
+      }
+    }
+    return base
+  })
   const [warnings, setWarnings] = useState<Warning[]>([])
   const [pendingAssignments, setPendingAssignments] = useState<{ wardName: string; date: string }[] | null>(null)
 
