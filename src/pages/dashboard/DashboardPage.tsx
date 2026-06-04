@@ -59,7 +59,7 @@ function PresidentDashboard() {
   const isMobile = useIsMobile()
   const {
     activeTask, selectedSlot, setSelectedSlot,
-    submitting, slotsLoading, availableSlots,
+    submitting, availableSlots, isVisit,
     openTask, closeTask, handleConfirm,
   } = useTaskConfirm(user.uid, user.unitId)
 
@@ -70,14 +70,16 @@ function PresidentDashboard() {
 
   const slotPickerContent = (
     <>
-      {slotsLoading
-        ? <Skeleton height="120px" />
-        : <TimeSlotPicker slots={availableSlots} selected={selectedSlot} onSelect={setSelectedSlot} />
-      }
+      <TimeSlotPicker
+        slots={availableSlots}
+        selected={selectedSlot}
+        onSelect={setSelectedSlot}
+        granularity={isVisit ? 'day' : 'time'}
+      />
       <Button
         onClick={handleConfirm}
         loading={submitting}
-        disabled={!selectedSlot || slotsLoading}
+        disabled={!selectedSlot}
         fullWidth
         className={styles.confirmBtn}
       >

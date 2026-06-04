@@ -4,7 +4,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useTaskConfirm } from '@/hooks/useTaskConfirm'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Button, Modal, BottomSheet, Skeleton } from '@/components/ui'
+import { Card, CardHeader, CardBody, Button, BottomSheet, Skeleton } from '@/components/ui'
 import { TaskCard, TimeSlotPicker } from '@/components/domain'
 import styles from './TasksPage.module.scss'
 
@@ -14,20 +14,22 @@ export function TasksPage() {
   const isMobile = useIsMobile()
   const {
     activeTask, selectedSlot, setSelectedSlot,
-    submitting, slotsLoading, availableSlots,
+    submitting, availableSlots, isVisit,
     openTask, closeTask, handleConfirm,
   } = useTaskConfirm(user.uid, user.unitId)
 
   const slotPickerContent = (
     <>
-      {slotsLoading
-        ? <Skeleton height="120px" />
-        : <TimeSlotPicker slots={availableSlots} selected={selectedSlot} onSelect={setSelectedSlot} />
-      }
+      <TimeSlotPicker
+        slots={availableSlots}
+        selected={selectedSlot}
+        onSelect={setSelectedSlot}
+        granularity={isVisit ? 'day' : 'time'}
+      />
       <Button
         onClick={handleConfirm}
         loading={submitting}
-        disabled={!selectedSlot || slotsLoading}
+        disabled={!selectedSlot}
         fullWidth
         className={styles.confirmBtn}
       >
@@ -47,7 +49,7 @@ export function TasksPage() {
             <CardHeader title="처리 필요 Task" />
             <CardBody>
               {tasksLoading
-                ? [1,2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
+                ? [1, 2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
                 : tasks.length === 0
                   ? <p className={styles.empty}>모든 task가 완료되었습니다.</p>
                   : tasks.map(t => <TaskCard key={t.id} task={t} onAction={openTask} />)
@@ -60,7 +62,9 @@ export function TasksPage() {
           <div className={styles.sideCol}>
             {activeTask ? (
               <div className={styles.sidePickerCard}>
-                <div className={styles.sidePickerHeader}>날짜/시간 선택</div>
+                <div className={styles.sidePickerHeader}>
+                  {isVisit ? '방문 날짜 선택' : '접견 날짜/시간 선택'}
+                </div>
                 <div className={styles.sidePickerBody}>
                   {slotPickerContent}
                 </div>
@@ -75,7 +79,11 @@ export function TasksPage() {
       </div>
 
       {isMobile && (
-        <BottomSheet open={!!activeTask} onClose={closeTask} title="날짜/시간 선택">
+        <BottomSheet
+          open={!!activeTask}
+          onClose={closeTask}
+          title={isVisit ? '방문 날짜 선택' : '접견 날짜/시간 선택'}
+        >
           {slotPickerContent}
         </BottomSheet>
       )}

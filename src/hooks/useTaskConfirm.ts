@@ -1,28 +1,40 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
-import { useAvailability } from '@/hooks/useAvailability'
 import { useSchedules } from '@/hooks/useSchedules'
 import { computeAvailableSlots } from '@/services/availabilityService'
 import { confirmSchedule } from '@/services/scheduleService'
-import type { Task, TimeSlot } from '@/types'
+import type { Task, TimeSlot, AvailabilitySlot } from '@/types'
 
 export function useTaskConfirm(presidentUid: string, unitId: string | undefined) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const seventyUid = activeTask?.seventyUid ?? ''
-  const { slots, loading: slotsLoading } = useAvailability(seventyUid)
   const { schedules } = useSchedules({ presidentUid })
-
   const confirmedDates = schedules.filter(s => s.status === 'confirmed').map(s => s.date)
+
+  // Build synthetic AvailabilitySlot[] from the task's own availability settings
+  const taskSlots: AvailabilitySlot[] = activeTask
+    ? (activeTask.availableDays ?? []).map(day => ({
+        id: '',
+        seventyUid: activeTask.seventyUid,
+        type: 'recurring' as const,
+        recurringDays: [day],
+        startTime: activeTask.availableStartTime ?? '09:00',
+        endTime: activeTask.availableEndTime ?? '18:00',
+        isBlocked: false,
+      }))
+    : []
+
   const availableSlots = computeAvailableSlots(
-    slots,
+    taskSlots,
     confirmedDates,
     dayjs().format('YYYY-MM-DD'),
     dayjs().add(60, 'day').format('YYYY-MM-DD'),
   )
+
+  const isVisit = activeTask?.type === 'select_visit'
 
   const openTask = (task: Task) => {
     setActiveTask(task)
@@ -40,7 +52,7 @@ export function useTaskConfirm(presidentUid: string, unitId: string | undefined)
     try {
       const result = await confirmSchedule({
         taskId: activeTask.id,
-        seventyUid,
+        seventyUid: activeTask.seventyUid,
         unitId,
         slot: selectedSlot,
         type: activeTask.type === 'select_visit' ? 'ward_visit' : 'interview',
@@ -63,8 +75,9 @@ export function useTaskConfirm(presidentUid: string, unitId: string | undefined)
     selectedSlot,
     setSelectedSlot,
     submitting,
-    slotsLoading,
+    slotsLoading: false,   // computed synchronously from task data
     availableSlots,
+    isVisit,
     openTask,
     closeTask,
     handleConfirm,

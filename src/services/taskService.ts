@@ -30,6 +30,9 @@ export async function createTask(params: {
   regionId: string
   dueDate: string
   createdBy: string
+  availableDays: number[]
+  availableStartTime?: string
+  availableEndTime?: string
 }): Promise<string> {
   const ref = await addDoc(collection(db, 'tasks'), {
     ...params, status: 'pending', notifiedAt: [], createdAt: serverTimestamp(),

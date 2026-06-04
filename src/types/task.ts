@@ -13,6 +13,9 @@ export interface Task {
   createdBy: string
   createdAt: string
   notifiedAt: string[]
+  availableDays: number[]       // 0=Sun … 6=Sat
+  availableStartTime?: string   // interview only (HH:mm)
+  availableEndTime?: string     // interview only (HH:mm)
 }
 
 export interface Notification {

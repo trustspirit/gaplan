@@ -11,3 +11,42 @@
   &.disabled { opacity: 0.35; cursor: not-allowed; background: $color-bg; }
 }
 .empty { font-size: $font-size-sm; color: $color-text-muted; text-align: center; padding: $space-6 0; }
+
+.dayCards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.dayCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: $space-3 $space-4;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  background: $color-surface;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+  min-width: 56px;
+  &:hover { border-color: $color-primary; }
+}
+
+.dayCardSelected {
+  background: $color-primary;
+  border-color: $color-primary;
+  .dayCardDow, .dayCardDate { color: #fff; }
+}
+
+.dayCardDow {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+}
+
+.dayCardDate {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+}

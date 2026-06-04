@@ -9,8 +9,39 @@ interface TimeSlotPickerProps {
   slots: TimeSlot[]
   selected: TimeSlot | null
   onSelect: (slot: TimeSlot) => void
+  granularity?: 'day' | 'time'  // 'day' = ward_visit, 'time' = interview
 }
-export function TimeSlotPicker({ slots, selected, onSelect }: TimeSlotPickerProps) {
+
+export function TimeSlotPicker({ slots, selected, onSelect, granularity = 'time' }: TimeSlotPickerProps) {
+  if (granularity === 'day') {
+    // Day-level: each slot is one selectable date card (no time shown)
+    return (
+      <div className={styles.picker}>
+        <div className={styles.dayCards}>
+          {slots.filter(s => s.isAvailable).map(slot => {
+            const d = dayjs(slot.date)
+            const isSelected = selected?.date === slot.date
+            return (
+              <button
+                key={slot.date}
+                type="button"
+                className={clsx(styles.dayCard, isSelected && styles.dayCardSelected)}
+                onClick={() => onSelect(slot)}
+              >
+                <span className={styles.dayCardDow}>{d.format('ddd')}</span>
+                <span className={styles.dayCardDate}>{d.format('M/D')}</span>
+              </button>
+            )
+          })}
+        </div>
+        {slots.filter(s => s.isAvailable).length === 0 && (
+          <p className={styles.empty}>가능한 날짜가 없습니다.</p>
+        )}
+      </div>
+    )
+  }
+
+  // Time-level: grouped by date, show time buttons within each date
   const grouped = slots.reduce<Record<string, TimeSlot[]>>((acc, slot) => {
     acc[slot.date] = [...(acc[slot.date] ?? []), slot]
     return acc
@@ -25,6 +56,7 @@ export function TimeSlotPicker({ slots, selected, onSelect }: TimeSlotPickerProp
             {daySlots.map(slot => (
               <button
                 key={`${slot.date}-${slot.startTime}`}
+                type="button"
                 className={clsx(
                   styles.slot,
                   !slot.isAvailable && styles.disabled,

@@ -16,6 +16,57 @@
 
 .form { display: flex; flex-direction: column; gap: $space-4; }
 
+.availSection {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.availLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.availHint {
+  font-weight: $font-weight-normal;
+  color: $color-text-muted;
+  margin-left: $space-1;
+}
+
+.days {
+  display: flex;
+  gap: $space-2;
+  flex-wrap: wrap;
+}
+
+.dayBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: $border-radius-full;
+  border: 1px solid $color-border;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  background: $color-surface;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  &:hover { border-color: $color-primary; color: $color-primary; }
+}
+
+.daySelected {
+  background: $color-primary;
+  border-color: $color-primary;
+  color: #fff;
+  &:hover { background: $color-primary-hover; border-color: $color-primary-hover; color: #fff; }
+}
+
+.timeRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-3;
+}
+
 .presidentSection {
   display: flex;
   flex-direction: column;
