@@ -1,5 +1,5 @@
 export type TaskType = 'select_visit' | 'select_interview' | 'select_meeting'
-export type TaskStatus = 'pending' | 'responded' | 'completed'
+export type TaskStatus = 'pending' | 'responded' | 'completed' | 'expired'
 
 export interface RespondedSlot {
   date: string

@@ -3,14 +3,16 @@ import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
 import { toast } from 'sonner'
 import clsx from 'clsx'
-import { CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Pencil, XCircle } from 'lucide-react'
 import { authUserAtom } from '@/store/authAtom'
 import { useAllTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { adminConfirmSchedule } from '@/services/scheduleService'
-import { ALL_UNITS } from '@/constants/regions'
+import { expireTask, updateTaskDetails } from '@/services/taskService'
+import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Badge, Button, Skeleton } from '@/components/ui'
+import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Select, Modal } from '@/components/ui'
+import { MultiDatePicker } from '@/components/domain'
 import type { Task, RespondedSlot } from '@/types'
 import styles from './TaskProgress.module.scss'
 
@@ -20,122 +22,311 @@ const TASK_LABELS: Record<string, string> = {
   select_meeting: '모임',
 }
 
+const SLOT_DURATION_OPTIONS = [
+  { value: '30', label: '30분' },
+  { value: '60', label: '1시간' },
+  { value: '90', label: '1.5시간' },
+  { value: '120', label: '2시간' },
+]
+
 function StatusBadge({ status }: { status: Task['status'] }) {
   if (status === 'completed') return <Badge variant="success">완료</Badge>
   if (status === 'responded') return <Badge variant="default">응답 완료</Badge>
+  if (status === 'expired') return <Badge variant="danger">만료</Badge>
   return <Badge variant="warning">미응답</Badge>
 }
 
-interface RespondedSlotRowProps {
-  slot: RespondedSlot
-  taskId: string
-  onConfirmed: () => void
+// ── Edit Task Modal (for pending tasks) ─────────────────────────────────────
+
+interface EditTaskModalProps {
+  task: Task
+  onClose: () => void
 }
 
-function RespondedSlotRow({ slot, taskId, onConfirmed }: RespondedSlotRowProps) {
+function EditTaskModal({ task, onClose }: EditTaskModalProps) {
+  const isTimeBased = task.type !== 'select_visit'
+  const [dueDate, setDueDate] = useState(task.dueDate)
+  const [availableDates, setAvailableDates] = useState<string[]>(task.availableDates ?? [])
+  const [startTime, setStartTime] = useState(task.availableStartTime ?? '09:00')
+  const [endTime, setEndTime] = useState(task.availableEndTime ?? '18:00')
+  const [slotDuration, setSlotDuration] = useState(String(task.slotDurationMinutes ?? 60))
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (isTimeBased && availableDates.length === 0) {
+      toast.error('가능 날짜를 하나 이상 선택해주세요.')
+      return
+    }
+    setSaving(true)
+    try {
+      await updateTaskDetails(
+        task.id,
+        {
+          dueDate,
+          ...(isTimeBased ? {
+            availableDates,
+            availableStartTime: startTime,
+            availableEndTime: endTime,
+            slotDurationMinutes: parseInt(slotDuration),
+          } : {}),
+        },
+        task.status === 'responded',  // reset if president already responded
+      )
+      toast.success('Task가 수정되었습니다.')
+      onClose()
+    } catch {
+      toast.error('수정에 실패했습니다.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Task 수정">
+      <form className={styles.editForm} onSubmit={handleSave}>
+        {isTimeBased && (
+          <>
+            <div className={styles.editSection}>
+              <p className={styles.editLabel}>가능 날짜 (캘린더에서 선택)</p>
+              <MultiDatePicker selected={availableDates} onChange={setAvailableDates} />
+            </div>
+            <div className={styles.timeRow}>
+              <Input label="시작 시간" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+              <Input label="종료 시간" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+            </div>
+            <Select
+              label="시간 단위"
+              value={slotDuration}
+              onChange={e => setSlotDuration(e.target.value)}
+              options={SLOT_DURATION_OPTIONS}
+            />
+          </>
+        )}
+        <Input label="마감일" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+        {task.status === 'responded' && (
+          <p className={styles.resetNote}>⚠ 이미 응답한 내용이 초기화되고 회장이 다시 응답해야 합니다.</p>
+        )}
+        <div className={styles.modalActions}>
+          <Button variant="ghost" type="button" onClick={onClose}>취소</Button>
+          <Button type="submit" loading={saving}>저장 및 재전달</Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+// ── Responded slot row ───────────────────────────────────────────────────────
+
+function RespondedSlotRow({ slot, taskId, onConfirmed }: { slot: RespondedSlot; taskId: string; onConfirmed: () => void }) {
   const [loading, setLoading] = useState(false)
 
   const handleConfirm = async () => {
     setLoading(true)
     try {
       const result = await adminConfirmSchedule({ taskId, slot })
-      if (result.success) {
-        toast.success('일정이 확정되었습니다!')
-        onConfirmed()
-      } else {
-        toast.error(result.error ?? '확정에 실패했습니다.')
-      }
-    } catch {
-      toast.error('오류가 발생했습니다.')
-    } finally {
-      setLoading(false)
-    }
+      if (result.success) { toast.success('일정이 확정되었습니다!'); onConfirmed() }
+      else toast.error(result.error ?? '확정에 실패했습니다.')
+    } catch { toast.error('오류가 발생했습니다.') }
+    finally { setLoading(false) }
   }
 
   return (
     <div className={styles.slotRow}>
       <span className={styles.slotDate}>{dayjs(slot.date).format('M/D (ddd)')}</span>
       <span className={styles.slotTime}>{slot.startTime} ~ {slot.endTime}</span>
-      <Button size="sm" onClick={handleConfirm} loading={loading}>
-        이 시간으로 확정
-      </Button>
+      <Button size="sm" onClick={handleConfirm} loading={loading}>이 시간으로 확정</Button>
     </div>
   )
 }
 
-interface TaskRowProps {
-  task: Task
-  presidentName: string
-  unitName: string
-}
+// ── Single task row ──────────────────────────────────────────────────────────
+
+interface TaskRowProps { task: Task; presidentName: string; unitName: string }
 
 function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
   const [expanded, setExpanded] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [expiring, setExpiring] = useState(false)
   const daysLeft = dayjs(task.dueDate).diff(dayjs(), 'day')
   const isOverdue = daysLeft < 0
   const typeLabel = TASK_LABELS[task.type] ?? task.type
   const hasSlots = (task.respondedSlots?.length ?? 0) > 0
+  const canExpire = task.status === 'pending' || task.status === 'responded'
+  const canEdit = task.status === 'pending' || task.status === 'responded'
+  const isExpired = task.status === 'expired'
+
+  const handleExpire = async () => {
+    setExpiring(true)
+    try {
+      await expireTask(task.id)
+      toast.success('Task가 만료되었습니다.')
+    } catch { toast.error('만료 처리에 실패했습니다.') }
+    finally { setExpiring(false) }
+  }
 
   return (
-    <div className={clsx(styles.taskRow, task.status === 'responded' && styles.taskRowResponded)}>
-      <div className={styles.taskRowMain}>
-        <div className={styles.taskRowLeft}>
-          <div className={styles.taskIcon}>
-            {task.status === 'completed'
-              ? <CheckCircle2 size={16} className={styles.iconDone} />
-              : task.status === 'responded'
-                ? <Clock size={16} className={styles.iconResponded} />
-                : <AlertCircle size={16} className={styles.iconPending} />
-            }
+    <>
+      <div className={clsx(
+        styles.taskRow,
+        task.status === 'responded' && styles.taskRowResponded,
+        isExpired && styles.taskRowExpired,
+      )}>
+        <div className={styles.taskRowMain}>
+          <div className={styles.taskRowLeft}>
+            <div className={styles.taskIcon}>
+              {task.status === 'completed'
+                ? <CheckCircle2 size={16} className={styles.iconDone} />
+                : task.status === 'responded'
+                  ? <Clock size={16} className={styles.iconResponded} />
+                  : isExpired
+                    ? <XCircle size={16} className={styles.iconExpired} />
+                    : <AlertCircle size={16} className={styles.iconPending} />
+              }
+            </div>
+            <div className={styles.taskInfo}>
+              <span className={styles.taskPresident}>{presidentName}</span>
+              <span className={styles.taskMeta}>
+                {unitName} · {typeLabel} · 마감 {dayjs(task.dueDate).format('M/D')}
+                {task.status === 'pending' && (
+                  <span className={clsx(styles.dDay, isOverdue && styles.dDayOverdue)}>
+                    {isOverdue ? ` (D+${Math.abs(daysLeft)})` : ` (D-${daysLeft})`}
+                  </span>
+                )}
+                {task.status === 'responded' && task.respondedAt && (
+                  <span className={styles.respondedAt}>
+                    {' '}· {dayjs((task.respondedAt as unknown as { seconds: number }).seconds * 1000).format('M/D HH:mm')} 제출
+                  </span>
+                )}
+              </span>
+            </div>
           </div>
-          <div className={styles.taskInfo}>
-            <span className={styles.taskPresident}>{presidentName}</span>
-            <span className={styles.taskMeta}>
-              {unitName} · {typeLabel} · 마감 {dayjs(task.dueDate).format('M/D')}
-              {task.status === 'pending' && (
-                <span className={clsx(styles.dDay, isOverdue && styles.dDayOverdue)}>
-                  {isOverdue ? ` (D+${Math.abs(daysLeft)})` : ` (D-${daysLeft})`}
-                </span>
-              )}
-              {task.status === 'responded' && task.respondedAt && (
-                <span className={styles.respondedAt}>
-                  · {dayjs((task.respondedAt as unknown as { seconds: number }).seconds * 1000).format('M/D HH:mm')} 제출
-                </span>
-              )}
-            </span>
+
+          <div className={styles.taskRowRight}>
+            <StatusBadge status={task.status} />
+
+            {task.status === 'responded' && hasSlots && (
+              <button type="button" className={styles.expandBtn} onClick={() => setExpanded(v => !v)}>
+                {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                {expanded ? '닫기' : `${task.respondedSlots!.length}개 확인`}
+              </button>
+            )}
+
+            {canEdit && (
+              <button type="button" className={styles.actionBtn} onClick={() => setEditing(true)} title="수정">
+                <Pencil size={14} />
+              </button>
+            )}
+
+            {canExpire && (
+              <button
+                type="button"
+                className={clsx(styles.actionBtn, styles.actionBtnDanger)}
+                onClick={handleExpire}
+                disabled={expiring}
+                title="만료"
+              >
+                <XCircle size={14} />
+              </button>
+            )}
           </div>
         </div>
-        <div className={styles.taskRowRight}>
-          <StatusBadge status={task.status} />
-          {task.status === 'responded' && hasSlots && (
-            <button
-              type="button"
-              className={styles.expandBtn}
-              onClick={() => setExpanded(prev => !prev)}
-            >
-              {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              {expanded ? '닫기' : `${task.respondedSlots!.length}개 시간 확인`}
-            </button>
-          )}
-        </div>
+
+        {expanded && task.respondedSlots && (
+          <div className={styles.slotsPanel}>
+            <p className={styles.slotsPanelTitle}>회장이 제출한 가능 시간</p>
+            {task.respondedSlots.map(slot => (
+              <RespondedSlotRow
+                key={`${slot.date}-${slot.startTime}`}
+                slot={slot}
+                taskId={task.id}
+                onConfirmed={() => setExpanded(false)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {expanded && task.respondedSlots && (
-        <div className={styles.slotsPanel}>
-          <p className={styles.slotsPanelTitle}>회장이 제출한 가능 시간</p>
-          {task.respondedSlots.map(slot => (
-            <RespondedSlotRow
-              key={`${slot.date}-${slot.startTime}`}
-              slot={slot}
-              taskId={task.id}
-              onConfirmed={() => setExpanded(false)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+      {editing && <EditTaskModal task={task} onClose={() => setEditing(false)} />}
+    </>
   )
 }
+
+// ── Region group ─────────────────────────────────────────────────────────────
+
+interface RegionGroupProps {
+  regionId: string
+  tasks: Task[]
+  getUserName: (uid: string) => string
+  getUnitName: (uid: string) => string
+}
+
+function RegionGroup({ regionId, tasks, getUserName, getUnitName }: RegionGroupProps) {
+  const regionName = REGIONS.find(r => r.id === regionId)?.name ?? regionId
+  const responded = tasks.filter(t => t.status === 'responded')
+  const pending = tasks.filter(t => t.status === 'pending')
+  const completed = tasks.filter(t => t.status === 'completed')
+  const expired = tasks.filter(t => t.status === 'expired')
+
+  const renderRows = (list: Task[]) => list.map(t => (
+    <TaskRow
+      key={t.id}
+      task={t}
+      presidentName={getUserName(t.assignedTo)}
+      unitName={getUnitName(t.assignedTo)}
+    />
+  ))
+
+  return (
+    <Card>
+      <CardHeader
+        title={regionName}
+        action={
+          <div className={styles.regionSummary}>
+            {responded.length > 0 && <Badge variant="default">응답 {responded.length}</Badge>}
+            {pending.length > 0 && <Badge variant="warning">미응답 {pending.length}</Badge>}
+            {completed.length > 0 && <Badge variant="success">완료 {completed.length}</Badge>}
+          </div>
+        }
+      />
+      <CardBody>
+        {tasks.length === 0
+          ? <p className={styles.empty}>해당 지역 Task 없음</p>
+          : (
+            <>
+              {responded.length > 0 && (
+                <div className={styles.statusSection}>
+                  <p className={styles.statusLabel}>확정 대기 ({responded.length})</p>
+                  {renderRows(responded)}
+                </div>
+              )}
+              {pending.length > 0 && (
+                <div className={styles.statusSection}>
+                  <p className={styles.statusLabel}>미응답 ({pending.length})</p>
+                  {renderRows(pending)}
+                </div>
+              )}
+              {completed.length > 0 && (
+                <div className={styles.statusSection}>
+                  <p className={styles.statusLabel}>완료 ({completed.length})</p>
+                  {renderRows(completed)}
+                </div>
+              )}
+              {expired.length > 0 && (
+                <div className={styles.statusSection}>
+                  <p className={clsx(styles.statusLabel, styles.statusLabelExpired)}>만료 ({expired.length})</p>
+                  {renderRows(expired)}
+                </div>
+              )}
+            </>
+          )
+        }
+      </CardBody>
+    </Card>
+  )
+}
+
+// ── Main page ────────────────────────────────────────────────────────────────
 
 export function TaskProgress() {
   const user = useAtomValue(authUserAtom)!
@@ -149,26 +340,44 @@ export function TaskProgress() {
     return unit?.name ?? '-'
   }
 
-  const pending = tasks.filter(t => t.status === 'pending')
-  const responded = tasks.filter(t => t.status === 'responded')
-  const completed = tasks.filter(t => t.status === 'completed')
+  // Group tasks by regionId
+  const tasksByRegion = tasks.reduce<Record<string, Task[]>>((acc, t) => {
+    const key = t.regionId || 'unknown'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(t)
+    return acc
+  }, {})
+
+  const totalResponded = tasks.filter(t => t.status === 'responded').length
+  const totalPending = tasks.filter(t => t.status === 'pending').length
+  const totalCompleted = tasks.filter(t => t.status === 'completed').length
+  const totalExpired = tasks.filter(t => t.status === 'expired').length
+
+  // Order regions by REGIONS constant order, put unknown at end
+  const regionIds = [
+    ...REGIONS.map(r => r.id).filter(id => tasksByRegion[id]),
+    ...Object.keys(tasksByRegion).filter(id => !REGIONS.find(r => r.id === id)),
+  ]
 
   return (
     <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext="Task 진행 현황" />}>
       <div className={styles.page}>
-        {/* Summary row */}
         <div className={styles.summary}>
           <div className={styles.summaryItem}>
-            <span className={styles.summaryNum}>{pending.length}</span>
-            <span className={styles.summaryLabel}>미응답</span>
-          </div>
-          <div className={styles.summaryItem}>
-            <span className={clsx(styles.summaryNum, styles.summaryNumResponded)}>{responded.length}</span>
+            <span className={clsx(styles.summaryNum, styles.summaryNumResponded)}>{totalResponded}</span>
             <span className={styles.summaryLabel}>확정 대기</span>
           </div>
           <div className={styles.summaryItem}>
-            <span className={clsx(styles.summaryNum, styles.summaryNumDone)}>{completed.length}</span>
+            <span className={styles.summaryNum}>{totalPending}</span>
+            <span className={styles.summaryLabel}>미응답</span>
+          </div>
+          <div className={styles.summaryItem}>
+            <span className={clsx(styles.summaryNum, styles.summaryNumDone)}>{totalCompleted}</span>
             <span className={styles.summaryLabel}>완료</span>
+          </div>
+          <div className={styles.summaryItem}>
+            <span className={clsx(styles.summaryNum, styles.summaryNumExpired)}>{totalExpired}</span>
+            <span className={styles.summaryLabel}>만료</span>
           </div>
         </div>
 
@@ -178,64 +387,18 @@ export function TaskProgress() {
               {[1,2,3].map(i => <Skeleton key={i} height="56px" className={styles.skeletonRow} />)}
             </CardBody>
           </Card>
+        ) : tasks.length === 0 ? (
+          <Card><CardBody><p className={styles.empty}>생성된 Task가 없습니다.</p></CardBody></Card>
         ) : (
-          <>
-            {responded.length > 0 && (
-              <Card>
-                <CardHeader title={`확정 대기 (${responded.length})`} />
-                <CardBody>
-                  {responded.map(t => (
-                    <TaskRow
-                      key={t.id}
-                      task={t}
-                      presidentName={getUserName(t.assignedTo)}
-                      unitName={getUnitName(t.assignedTo)}
-                    />
-                  ))}
-                </CardBody>
-              </Card>
-            )}
-
-            {pending.length > 0 && (
-              <Card>
-                <CardHeader title={`미응답 (${pending.length})`} />
-                <CardBody>
-                  {pending.map(t => (
-                    <TaskRow
-                      key={t.id}
-                      task={t}
-                      presidentName={getUserName(t.assignedTo)}
-                      unitName={getUnitName(t.assignedTo)}
-                    />
-                  ))}
-                </CardBody>
-              </Card>
-            )}
-
-            {completed.length > 0 && (
-              <Card>
-                <CardHeader title={`완료 (${completed.length})`} />
-                <CardBody>
-                  {completed.map(t => (
-                    <TaskRow
-                      key={t.id}
-                      task={t}
-                      presidentName={getUserName(t.assignedTo)}
-                      unitName={getUnitName(t.assignedTo)}
-                    />
-                  ))}
-                </CardBody>
-              </Card>
-            )}
-
-            {tasks.length === 0 && (
-              <Card>
-                <CardBody>
-                  <p className={styles.empty}>생성된 Task가 없습니다.</p>
-                </CardBody>
-              </Card>
-            )}
-          </>
+          regionIds.map(regionId => (
+            <RegionGroup
+              key={regionId}
+              regionId={regionId}
+              tasks={tasksByRegion[regionId]}
+              getUserName={getUserName}
+              getUnitName={getUnitName}
+            />
+          ))
         )}
       </div>
     </AppShell>

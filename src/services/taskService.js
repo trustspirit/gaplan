@@ -14,6 +14,15 @@ export function subscribeToAllTasks(callback) {
 export async function completeTask(taskId) {
     await updateDoc(doc(db, 'tasks', taskId), { status: 'completed' });
 }
+export async function expireTask(taskId) {
+    await updateDoc(doc(db, 'tasks', taskId), { status: 'expired' });
+}
+export async function updateTaskDetails(taskId, updates, resetResponse = false) {
+    await updateDoc(doc(db, 'tasks', taskId), {
+        ...updates,
+        ...(resetResponse ? { status: 'pending', respondedSlots: [], respondedAt: null } : {}),
+    });
+}
 export async function submitAvailability(params) {
     const fn = httpsCallable(functions, 'submitAvailability');
     const result = await fn(params);

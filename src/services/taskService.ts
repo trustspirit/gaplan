@@ -34,6 +34,27 @@ export async function completeTask(taskId: string): Promise<void> {
   await updateDoc(doc(db, 'tasks', taskId), { status: 'completed' })
 }
 
+export async function expireTask(taskId: string): Promise<void> {
+  await updateDoc(doc(db, 'tasks', taskId), { status: 'expired' })
+}
+
+export async function updateTaskDetails(
+  taskId: string,
+  updates: {
+    dueDate?: string
+    availableDates?: string[]
+    availableStartTime?: string
+    availableEndTime?: string
+    slotDurationMinutes?: number
+  },
+  resetResponse = false,
+): Promise<void> {
+  await updateDoc(doc(db, 'tasks', taskId), {
+    ...updates,
+    ...(resetResponse ? { status: 'pending', respondedSlots: [], respondedAt: null } : {}),
+  })
+}
+
 interface SubmitAvailabilityParams {
   taskId: string
   slots: RespondedSlot[]
