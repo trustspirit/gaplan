@@ -14,7 +14,7 @@ export default function App() {
       toast.error('로그인에 실패했습니다. 다시 시도해주세요.')
     })
     return subscribeToAuthState(setUser, setLoading, () => {
-      toast.error('접근 권한이 없습니다. 관리자에게 문의하세요.')
+      toast.error('로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.')
     })
   }, [setUser, setLoading])
 

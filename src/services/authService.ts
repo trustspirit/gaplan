@@ -43,8 +43,10 @@ export async function resolveUser(firebaseUser: User): Promise<AppUser | null> {
     role = inviteSnap.data().role as UserRole
   }
 
-  // president needs onboarding — don't create Firestore doc yet
-  if (role === 'president') return null
+  // president: return transient user (no Firestore doc yet) — ProtectedRoute redirects to onboarding
+  if (role === 'president') {
+    return { uid: firebaseUser.uid, email, name: firebaseUser.displayName ?? email, role, createdAt: new Date().toISOString() }
+  }
 
   const newUser: Omit<AppUser, 'uid'> = {
     email,
@@ -73,6 +75,7 @@ export function subscribeToAuthState(
       onUser(user)
     } catch (e) {
       console.error('[auth] resolveUser failed:', e)
+      onAccessDenied?.()
       onUser(null)
     } finally {
       onLoading(false)
