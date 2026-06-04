@@ -199,7 +199,18 @@
     "confirmOption": "Confirm This Schedule",
     "noResponse": "No responses yet or no available times configured.",
     "availabilityHeatmap": "Availability",
-    "availabilityByParticipant": "By Participant"
+    "availabilityByParticipant": "By Participant",
+    "confirmedSchedules": "Confirmed Schedules",
+    "confirmedSchedulesDesc": "Cancelling a confirmed schedule will automatically remove it from Google Calendar.",
+    "noConfirmedSchedules": "No confirmed schedules.",
+    "scheduleCancelTitle": "Cancel Schedule",
+    "scheduleCancelWarning": "This will delete the schedule and remove it from Google Calendar. This cannot be undone.",
+    "scheduleCancelSuccess": "Schedule cancelled.",
+    "scheduleCancelFailed": "Failed to cancel schedule.",
+    "scheduleDelete": "Cancel Schedule",
+    "calSynced": "Synced to Calendar",
+    "calendarRegionLabel": "Region Calendar ID",
+    "calendarDesc2": "Create a shared calendar per region and paste the Calendar ID from Google Calendar settings. Confirmed schedules are automatically added to the corresponding calendar."
   },
   "visits": {
     "title": "Ward Visit Schedule",

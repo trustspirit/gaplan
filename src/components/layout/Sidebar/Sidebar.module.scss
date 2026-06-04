@@ -121,6 +121,45 @@
   margin: 0;
 }
 
+.dropdownLangRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-4;
+}
+
+.dropdownLangIcon {
+  color: rgba(255, 255, 255, 0.45);
+  flex-shrink: 0;
+}
+
+.dropdownLangBtns {
+  display: flex;
+  gap: $space-1;
+}
+
+.langBtn {
+  padding: 2px 8px;
+  border-radius: $border-radius-sm;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: $font-size-xs;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+  }
+}
+
+.langBtnActive {
+  background: rgba($color-primary, 0.35);
+  color: #fff;
+  border-color: rgba($color-primary, 0.6);
+}
+
 .dropdownSignOut {
   display: flex;
   align-items: center;

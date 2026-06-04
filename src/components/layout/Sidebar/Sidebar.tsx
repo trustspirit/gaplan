@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { LayoutDashboard, Calendar, MapPin, Users, CheckSquare, Settings, LogOut, ClipboardList } from 'lucide-react'
+import { LayoutDashboard, Calendar, MapPin, Users, CheckSquare, Settings, LogOut, ClipboardList, Languages } from 'lucide-react'
 import clsx from 'clsx'
 import type { UserRole } from '@/types'
 import { Avatar } from '@/components/ui'
 import { signOut } from '@/services/authService'
+import { LANGUAGES, type SupportedLang } from '@/i18n'
 import styles from './Sidebar.module.scss'
 
 interface NavItem { to: string; icon: React.ReactNode; labelKey: string; roles: UserRole[] }
@@ -23,7 +24,7 @@ const NAV_ITEMS: NavItem[] = [
 interface SidebarProps { role: UserRole; name: string; mobile?: boolean }
 
 export function Sidebar({ role, name, mobile }: SidebarProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const items = NAV_ITEMS.filter(i => i.roles.includes(role))
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -93,10 +94,25 @@ export function Sidebar({ role, name, mobile }: SidebarProps) {
               <span className={styles.dropdownName}>{name}</span>
               <span className={styles.dropdownRole}>{t(`role.${role}`)}</span>
             </div>
+            <div className={styles.dropdownLangRow}>
+              <Languages size={14} className={styles.dropdownLangIcon} />
+              <div className={styles.dropdownLangBtns}>
+                {LANGUAGES.map(lang => (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    className={clsx(styles.langBtn, i18n.language === lang.code && styles.langBtnActive)}
+                    onClick={() => i18n.changeLanguage(lang.code as SupportedLang)}
+                  >
+                    {lang.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className={styles.dropdownDivider} />
             <button className={styles.dropdownSignOut} onClick={handleSignOut} type="button">
               <LogOut size={14} />
-              <span>로그아웃</span>
+              <span>{t('auth.logout')}</span>
             </button>
           </div>
         )}

@@ -3,6 +3,9 @@
 
 .page {
   padding: $space-6;
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
 
   @media (min-width: 1200px) {
     padding: $space-6 $space-8;
@@ -16,3 +19,106 @@
 
 .desc { font-size: $font-size-sm; color: $color-text-muted; margin-bottom: $space-4; line-height: $line-height-loose; }
 .form { display: flex; flex-direction: column; gap: $space-4; }
+.empty { font-size: $font-size-sm; color: $color-text-muted; text-align: center; padding: $space-4 0; }
+
+.scheduleList {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.scheduleRow {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  background: $color-surface;
+
+  &:hover {
+    background: $color-background;
+  }
+}
+
+.scheduleDate {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  min-width: 170px;
+}
+
+.scheduleDateIcon {
+  color: $color-text-muted;
+  flex-shrink: 0;
+}
+
+.scheduleTime {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  font-weight: $font-weight-normal;
+}
+
+.scheduleMeta {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.scheduleType {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  background: $color-background;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-sm;
+  padding: 2px 7px;
+}
+
+.scheduleWard {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.calSynced {
+  font-size: $font-size-xs;
+  color: $color-success;
+  background: rgba($color-success, 0.08);
+  border-radius: $border-radius-sm;
+  padding: 2px 7px;
+}
+
+.cancelBtn {
+  padding: $space-1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: $color-text-muted;
+  border-radius: $border-radius-sm;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    color: $color-danger;
+    background: rgba($color-danger, 0.08);
+  }
+}
+
+.deleteDesc {
+  font-size: $font-size-sm;
+  color: $color-text;
+  line-height: $line-height-loose;
+  margin-bottom: $space-4;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-2;
+}

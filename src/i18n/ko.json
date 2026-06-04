@@ -195,7 +195,18 @@
     "confirmOption": "이 일정으로 확정",
     "noResponse": "아직 응답이 없거나 가능 시간이 설정되지 않았습니다.",
     "availabilityHeatmap": "가용 현황",
-    "availabilityByParticipant": "참가자별"
+    "availabilityByParticipant": "참가자별",
+    "confirmedSchedules": "확정된 일정",
+    "confirmedSchedulesDesc": "확정된 일정을 취소하면 구글 캘린더에서도 자동으로 삭제됩니다.",
+    "noConfirmedSchedules": "확정된 일정이 없습니다.",
+    "scheduleCancelTitle": "일정 취소",
+    "scheduleCancelWarning": "이 일정을 취소하면 구글 캘린더에서도 삭제됩니다. 되돌릴 수 없습니다.",
+    "scheduleCancelSuccess": "일정이 취소되었습니다.",
+    "scheduleCancelFailed": "일정 취소에 실패했습니다.",
+    "scheduleDelete": "일정 취소",
+    "calSynced": "캘린더 등록됨",
+    "calendarRegionLabel": "지역 캘린더 ID",
+    "calendarDesc2": "각 지역별로 공유 캘린더를 생성하고, Google Calendar 설정에서 캘린더 ID를 복사해 입력하세요. 확정된 일정이 해당 지역 캘린더에 자동으로 기록됩니다."
   },
   "visits": {
     "title": "와드 방문 일정",
