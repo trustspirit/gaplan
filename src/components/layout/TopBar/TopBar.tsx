@@ -1,17 +1,21 @@
 import { useState, useEffect, useRef } from 'react'
-import { LogOut, Pencil } from 'lucide-react'
+import { LogOut, Pencil, Languages } from 'lucide-react'
 import { useAtom } from 'jotai'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
+import clsx from 'clsx'
 import { Badge, Avatar } from '@/components/ui'
 import { signOut } from '@/services/authService'
 import { updateUserName } from '@/services/userService'
 import { authUserAtom } from '@/store/authAtom'
+import { LANGUAGES, type SupportedLang } from '@/i18n'
 import styles from './TopBar.module.scss'
 
 interface TopBarProps { name: string; subtext?: string; pendingCount?: number }
 
 function EditNameRow({ onDone }: { onDone: () => void }) {
   const [user, setUser] = useAtom(authUserAtom)
+  const { t } = useTranslation()
   const [value, setValue] = useState(user?.name ?? '')
   const [saving, setSaving] = useState(false)
 
@@ -21,10 +25,10 @@ function EditNameRow({ onDone }: { onDone: () => void }) {
     try {
       await updateUserName(user.uid, value.trim())
       setUser({ ...user, name: value.trim() })
-      toast.success('이름이 변경되었습니다.')
+      toast.success(t('auth.nameSaved'))
       onDone()
     } catch {
-      toast.error('이름 변경에 실패했습니다.')
+      toast.error(t('auth.nameSaveFailed'))
     } finally {
       setSaving(false)
     }
@@ -48,6 +52,7 @@ function EditNameRow({ onDone }: { onDone: () => void }) {
 }
 
 export function TopBar({ name, subtext, pendingCount = 0 }: TopBarProps) {
+  const { t, i18n } = useTranslation()
   const [open, setOpen] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -64,7 +69,7 @@ export function TopBar({ name, subtext, pendingCount = 0 }: TopBarProps) {
   return (
     <header className={styles.topbar}>
       <div className={styles.textGroup}>
-        <p className={styles.greeting}>{name}님, 안녕하세요</p>
+        <p className={styles.greeting}>{t('auth.greeting', { name })}</p>
         {subtext && <p className={styles.sub}>{subtext}</p>}
       </div>
       <div className={styles.right}>
@@ -88,15 +93,27 @@ export function TopBar({ name, subtext, pendingCount = 0 }: TopBarProps) {
               {editingName ? (
                 <EditNameRow onDone={() => { setEditingName(false); setOpen(false) }} />
               ) : (
-                <button
-                  type="button"
-                  className={styles.dropdownItem}
-                  onClick={() => setEditingName(true)}
-                >
+                <button type="button" className={styles.dropdownItem} onClick={() => setEditingName(true)}>
                   <Pencil size={14} />
-                  이름 변경
+                  {t('auth.changeName')}
                 </button>
               )}
+              <div className={styles.dropdownDivider} />
+              <div className={styles.dropdownLangRow}>
+                <Languages size={14} className={styles.dropdownLangIcon} />
+                <div className={styles.dropdownLangBtns}>
+                  {LANGUAGES.map(lang => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      className={clsx(styles.langBtn, i18n.language === lang.code && styles.langBtnActive)}
+                      onClick={() => i18n.changeLanguage(lang.code as SupportedLang)}
+                    >
+                      {lang.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className={styles.dropdownDivider} />
               <button
                 type="button"
@@ -104,7 +121,7 @@ export function TopBar({ name, subtext, pendingCount = 0 }: TopBarProps) {
                 onClick={() => { setOpen(false); signOut() }}
               >
                 <LogOut size={14} />
-                로그아웃
+                {t('auth.logout')}
               </button>
             </div>
           )}

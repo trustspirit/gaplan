@@ -36,28 +36,25 @@ export async function saveAvailabilitySlots(
   await batch.commit()
 }
 
-// Generate time slots for specific dates with per-date times (interview / meeting tasks)
+// Generate time slots from per-date time ranges (interview / sacrament tasks)
 export function computeInterviewSlots(
-  dateSlots: { date: string; startTime: string; endTime: string }[],
+  dateSlots: { date: string; timeRanges: { startTime: string; endTime: string }[] }[],
   slotDurationMinutes = 60,
 ): TimeSlot[] {
-  return dateSlots.flatMap(({ date, startTime, endTime }) => {
-    const slots: TimeSlot[] = []
-    let t = dayjs(`${date}T${startTime}`)
-    const end = dayjs(`${date}T${endTime}`)
-    while (t.isBefore(end)) {
-      const slotEnd = t.add(slotDurationMinutes, 'minute')
-      if (slotEnd.isAfter(end)) break
-      slots.push({
-        date,
-        startTime: t.format('HH:mm'),
-        endTime: slotEnd.format('HH:mm'),
-        isAvailable: true,
-      })
-      t = slotEnd
-    }
-    return slots
-  })
+  return dateSlots.flatMap(({ date, timeRanges }) =>
+    timeRanges.flatMap(({ startTime, endTime }) => {
+      const slots: TimeSlot[] = []
+      let t = dayjs(`${date}T${startTime}`)
+      const end = dayjs(`${date}T${endTime}`)
+      while (t.isBefore(end)) {
+        const slotEnd = t.add(slotDurationMinutes, 'minute')
+        if (slotEnd.isAfter(end)) break
+        slots.push({ date, startTime: t.format('HH:mm'), endTime: slotEnd.format('HH:mm'), isAvailable: true })
+        t = slotEnd
+      }
+      return slots
+    })
+  )
 }
 
 export function computeAvailableSlots(

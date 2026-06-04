@@ -1,5 +1,7 @@
 import {
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   type User,
@@ -8,8 +10,25 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, googleProvider } from '@/firebase'
 import type { AppUser, UserRole } from '@/types'
 
+// Call once on app startup so a completed redirect login is resolved.
+export function consumeRedirectResult(): void {
+  getRedirectResult(auth).catch(() => {
+    // No redirect pending or already consumed — safe to ignore.
+  })
+}
+
 export async function signInWithGoogle(): Promise<void> {
-  await signInWithPopup(auth, googleProvider)
+  try {
+    await signInWithPopup(auth, googleProvider)
+  } catch (error: unknown) {
+    const e = error as { code?: string }
+    // Android WebView and some browsers block popups → fall back to redirect.
+    if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
+      await signInWithRedirect(auth, googleProvider)
+    } else {
+      throw error
+    }
+  }
 }
 
 export async function signOut(): Promise<void> {

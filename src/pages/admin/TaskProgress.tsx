@@ -12,14 +12,14 @@ import { expireTask, updateTaskDetails } from '@/services/taskService'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Select, Modal } from '@/components/ui'
-import { MultiDatePicker } from '@/components/domain'
+import { MultiDatePicker, ResponseMatrix } from '@/components/domain'
 import type { Task, RespondedSlot } from '@/types'
 import styles from './TaskProgress.module.scss'
 
 const TASK_LABELS: Record<string, string> = {
-  select_visit: '와드 방문',
-  select_interview: '접견',
-  select_meeting: '모임',
+  select_visit:       '와드 방문',
+  select_interview:   '접견',
+  select_sacrament:   '안식일 모임',
 }
 
 const SLOT_DURATION_OPTIONS = [
@@ -48,27 +48,32 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
   const [dueDate, setDueDate] = useState(task.dueDate)
   // For ward visits: just select available Sundays
   const [availableDates, setAvailableDates] = useState<string[]>(task.availableDates ?? [])
-  // For interview/meeting: per-date time slots
+  // For interview/sacrament: per-date time ranges
   const [selectedDates, setSelectedDates] = useState<string[]>(
     (task.availableDateSlots ?? []).map(s => s.date)
   )
-  const [dateTimes, setDateTimes] = useState<Record<string, { startTime: string; endTime: string }>>(
-    Object.fromEntries((task.availableDateSlots ?? []).map(s => [s.date, { startTime: s.startTime, endTime: s.endTime }]))
+  const [dateRanges, setDateRanges] = useState<Record<string, { startTime: string; endTime: string }[]>>(
+    Object.fromEntries(
+      (task.availableDateSlots ?? []).map(s => [
+        s.date,
+        s.timeRanges?.length ? s.timeRanges : [{ startTime: '09:00', endTime: '18:00' }]
+      ])
+    )
   )
   const [slotDuration, setSlotDuration] = useState(String(task.slotDurationMinutes ?? 60))
   const [saving, setSaving] = useState(false)
 
   function handleDatesChange(dates: string[]) {
     setSelectedDates(dates)
-    setDateTimes(prev => {
+    setDateRanges(prev => {
       const next: typeof prev = {}
-      dates.forEach(d => { next[d] = prev[d] ?? { startTime: '09:00', endTime: '18:00' } })
+      dates.forEach(d => { next[d] = prev[d] ?? [{ startTime: '09:00', endTime: '18:00' }] })
       return next
     })
   }
 
   const availableDateSlots = selectedDates
-    .map(d => ({ date: d, ...(dateTimes[d] ?? { startTime: '09:00', endTime: '18:00' }) }))
+    .map(d => ({ date: d, timeRanges: dateRanges[d] ?? [{ startTime: '09:00', endTime: '18:00' }] }))
     .sort((a, b) => a.date.localeCompare(b.date))
 
   const handleSave = async (e: React.FormEvent) => {
@@ -114,22 +119,33 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
               <p className={styles.editLabel}>가능 날짜 (캘린더에서 선택)</p>
               <MultiDatePicker selected={selectedDates} onChange={handleDatesChange} />
               {availableDateSlots.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
                   {availableDateSlots.map(s => (
-                    <div key={s.date} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.8125rem' }}>
-                      <span style={{ minWidth: 70, fontWeight: 500 }}>{dayjs(s.date).format('M/D (ddd)')}</span>
-                      <input type="time" value={s.startTime} style={{ border: '1px solid #e4e4e6', borderRadius: 6, padding: '2px 6px' }}
-                        onChange={e => setDateTimes(prev => ({ ...prev, [s.date]: { ...prev[s.date], startTime: e.target.value } }))} />
-                      <span>~</span>
-                      <input type="time" value={s.endTime} style={{ border: '1px solid #e4e4e6', borderRadius: 6, padding: '2px 6px' }}
-                        onChange={e => setDateTimes(prev => ({ ...prev, [s.date]: { ...prev[s.date], endTime: e.target.value } }))} />
+                    <div key={s.date}>
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '4px' }}>
+                        {dayjs(s.date).format('M/D (ddd)')}
+                      </div>
+                      {(dateRanges[s.date] ?? []).map((r, idx) => (
+                        <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.8125rem', marginBottom: '4px' }}>
+                          <input type="time" value={r.startTime}
+                            style={{ border: '1px solid #e4e4e6', borderRadius: 6, padding: '2px 6px' }}
+                            onChange={e => setDateRanges(prev => ({
+                              ...prev,
+                              [s.date]: prev[s.date].map((x, i) => i === idx ? { ...x, startTime: e.target.value } : x)
+                            }))} />
+                          <span>~</span>
+                          <input type="time" value={r.endTime}
+                            style={{ border: '1px solid #e4e4e6', borderRadius: 6, padding: '2px 6px' }}
+                            onChange={e => setDateRanges(prev => ({
+                              ...prev,
+                              [s.date]: prev[s.date].map((x, i) => i === idx ? { ...x, endTime: e.target.value } : x)
+                            }))} />
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-            <div className={styles.timeRow}>
-              {/* slot duration placeholder - reuse Select below */}
             </div>
             <Select
               label="시간 단위"
@@ -313,6 +329,18 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName }: RegionGroupP
     />
   ))
 
+  // Group interview/sacrament tasks by batchId for the ResponseMatrix
+  const batchGroups: Record<string, Task[]> = {}
+  const timeTasks = tasks.filter(t => t.type === 'select_interview' || t.type === 'select_sacrament')
+  for (const t of timeTasks) {
+    const key = t.batchId ?? t.id
+    if (!batchGroups[key]) batchGroups[key] = []
+    batchGroups[key].push(t)
+  }
+  const matrixBatches = Object.values(batchGroups).filter(
+    batch => batch.some(t => t.status === 'responded' || t.status === 'completed')
+  )
+
   return (
     <Card>
       <CardHeader
@@ -330,10 +358,27 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName }: RegionGroupP
           ? <p className={styles.empty}>해당 지역 Task 없음</p>
           : (
             <>
+              {/* Response Matrix for interview/sacrament batches */}
+              {matrixBatches.map(batch => {
+                const ref = batch[0]
+                const title = ref.title ?? TASK_LABELS[ref.type] ?? ref.type
+                return (
+                  <div key={ref.batchId ?? ref.id} className={styles.statusSection}>
+                    <p className={styles.statusLabel}>
+                      {title} 응답 현황 ({batch.filter(t => t.status === 'responded' || t.status === 'completed').length}/{batch.length})
+                    </p>
+                    <ResponseMatrix
+                      tasks={batch}
+                      getPresidentName={getUserName}
+                    />
+                  </div>
+                )
+              })}
+
               {responded.length > 0 && (
                 <div className={styles.statusSection}>
                   <p className={styles.statusLabel}>확정 대기 ({responded.length})</p>
-                  {renderRows(responded)}
+                  {renderRows(responded.filter(t => t.type === 'select_visit'))}
                 </div>
               )}
               {pending.length > 0 && (
@@ -345,7 +390,7 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName }: RegionGroupP
               {completed.length > 0 && (
                 <div className={styles.statusSection}>
                   <p className={styles.statusLabel}>완료 ({completed.length})</p>
-                  {renderRows(completed)}
+                  {renderRows(completed.filter(t => t.type === 'select_visit'))}
                 </div>
               )}
               {expired.length > 0 && (

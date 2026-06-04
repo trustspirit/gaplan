@@ -138,3 +138,37 @@
   cursor: pointer;
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
+
+.dropdownLangRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+}
+
+.dropdownLangIcon { color: $color-text-muted; flex-shrink: 0; }
+
+.dropdownLangBtns {
+  display: flex;
+  gap: $space-1;
+}
+
+.langBtn {
+  padding: 2px $space-2;
+  border-radius: $border-radius-full;
+  border: 1px solid $color-border;
+  background: $color-surface;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  &:hover { background: $color-bg; color: $color-text; }
+}
+
+.langBtnActive {
+  background: $color-primary;
+  border-color: $color-primary;
+  color: #fff;
+  &:hover { background: $color-primary; color: #fff; }
+}

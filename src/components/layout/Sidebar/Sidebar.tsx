@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { LayoutDashboard, Calendar, MapPin, Users, CheckSquare, Settings, LogOut, ClipboardList } from 'lucide-react'
 import clsx from 'clsx'
 import type { UserRole } from '@/types'
@@ -7,28 +8,22 @@ import { Avatar } from '@/components/ui'
 import { signOut } from '@/services/authService'
 import styles from './Sidebar.module.scss'
 
-interface NavItem { to: string; icon: React.ReactNode; label: string; roles: UserRole[] }
+interface NavItem { to: string; icon: React.ReactNode; labelKey: string; roles: UserRole[] }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/dashboard',  icon: <LayoutDashboard size={20} />, label: '대시보드', roles: ['admin','seventy','president'] },
-  { to: '/calendar',   icon: <Calendar size={20} />,        label: '캘린더',   roles: ['admin','seventy','president'] },
-  { to: '/visits',     icon: <MapPin size={20} />,          label: '방문',     roles: ['admin','seventy','president'] },
-  { to: '/interviews', icon: <Users size={20} />,           label: '접견',     roles: ['admin','seventy','president'] },
-  { to: '/tasks',               icon: <CheckSquare size={20} />,    label: 'Task',    roles: ['president'] },
-  { to: '/admin/task-progress', icon: <ClipboardList size={20} />, label: 'Task 현황', roles: ['admin', 'seventy'] },
-  { to: '/admin',               icon: <Settings size={20} />,      label: '관리',     roles: ['admin'] },
+  { to: '/dashboard',           icon: <LayoutDashboard size={20} />, labelKey: 'nav.dashboard',    roles: ['admin','seventy','president'] },
+  { to: '/calendar',            icon: <Calendar size={20} />,        labelKey: 'nav.calendar',     roles: ['admin','seventy','president'] },
+  { to: '/visits',              icon: <MapPin size={20} />,          labelKey: 'nav.visits',       roles: ['admin','seventy','president'] },
+  { to: '/interviews',          icon: <Users size={20} />,           labelKey: 'nav.interviews',   roles: ['admin','seventy','president'] },
+  { to: '/tasks',               icon: <CheckSquare size={20} />,     labelKey: 'nav.tasks',        roles: ['president'] },
+  { to: '/admin/task-progress', icon: <ClipboardList size={20} />,   labelKey: 'nav.taskProgress', roles: ['admin','seventy'] },
+  { to: '/admin',               icon: <Settings size={20} />,        labelKey: 'nav.admin',        roles: ['admin'] },
 ]
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  admin: '관리자 (집행서기)',
-  seventy: '지역 칠십인',
-  president: '스테이크/지방부 회장',
-  pending: '승인 대기',
-}
 
 interface SidebarProps { role: UserRole; name: string; mobile?: boolean }
 
 export function Sidebar({ role, name, mobile }: SidebarProps) {
+  const { t } = useTranslation()
   const items = NAV_ITEMS.filter(i => i.roles.includes(role))
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -59,7 +54,7 @@ export function Sidebar({ role, name, mobile }: SidebarProps) {
             className={({ isActive }) => clsx(styles.tabItem, isActive && styles.active)}
           >
             {item.icon}
-            <span className={styles.tabLabel}>{item.label}</span>
+            <span className={styles.tabLabel}>{t(item.labelKey)}</span>
           </NavLink>
         ))}
       </nav>
@@ -76,7 +71,7 @@ export function Sidebar({ role, name, mobile }: SidebarProps) {
           <NavLink
             key={item.to}
             to={item.to}
-            title={item.label}
+            title={t(item.labelKey)}
             className={({ isActive }) => clsx(styles.navItem, isActive && styles.active)}
           >
             {item.icon}
@@ -96,7 +91,7 @@ export function Sidebar({ role, name, mobile }: SidebarProps) {
           <div className={styles.dropdown}>
             <div className={styles.dropdownHeader}>
               <span className={styles.dropdownName}>{name}</span>
-              <span className={styles.dropdownRole}>{ROLE_LABELS[role]}</span>
+              <span className={styles.dropdownRole}>{t(`role.${role}`)}</span>
             </div>
             <div className={styles.dropdownDivider} />
             <button className={styles.dropdownSignOut} onClick={handleSignOut} type="button">

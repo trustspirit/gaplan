@@ -1,8 +1,26 @@
-import { signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut as firebaseSignOut, onAuthStateChanged, } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '@/firebase';
+// Call once on app startup so a completed redirect login is resolved.
+export function consumeRedirectResult() {
+    getRedirectResult(auth).catch(() => {
+        // No redirect pending or already consumed — safe to ignore.
+    });
+}
 export async function signInWithGoogle() {
-    await signInWithPopup(auth, googleProvider);
+    try {
+        await signInWithPopup(auth, googleProvider);
+    }
+    catch (error) {
+        const e = error;
+        // Android WebView and some browsers block popups → fall back to redirect.
+        if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
+            await signInWithRedirect(auth, googleProvider);
+        }
+        else {
+            throw error;
+        }
+    }
 }
 export async function signOut() {
     await firebaseSignOut(auth);

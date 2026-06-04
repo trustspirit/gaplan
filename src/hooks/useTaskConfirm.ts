@@ -17,7 +17,7 @@ export function useTaskConfirm(presidentUid: string, unitId: string | undefined)
   const confirmedDates = schedules.filter(s => s.status === 'confirmed').map(s => s.date)
 
   const isVisit = activeTask?.type === 'select_visit'
-  const isMultiSelect = activeTask?.type === 'select_interview' || activeTask?.type === 'select_meeting'
+  const isMultiSelect = activeTask?.type === 'select_interview' || activeTask?.type === 'select_sacrament'
 
   // Ward visits: WardAssigner uses availableDates directly (no slot computation needed)
   const visitAvailableSlots: TimeSlot[] = []

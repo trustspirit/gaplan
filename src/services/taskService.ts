@@ -43,7 +43,7 @@ export async function updateTaskDetails(
   updates: {
     dueDate?: string
     availableDates?: string[]
-    availableDateSlots?: { date: string; startTime: string; endTime: string }[]
+    availableDateSlots?: { date: string; timeRanges: { startTime: string; endTime: string }[] }[]
     slotDurationMinutes?: number
   },
   resetResponse = false,
@@ -83,7 +83,9 @@ export async function submitWardAssignments(params: SubmitWardAssignmentsParams)
 }
 
 export async function createTask(params: {
-  type: 'select_visit' | 'select_interview' | 'select_meeting'
+  type: 'select_visit' | 'select_interview' | 'select_sacrament'
+  batchId?: string
+  title?: string
   assignedTo: string
   seventyUid: string
   regionId: string
@@ -91,9 +93,7 @@ export async function createTask(params: {
   createdBy: string
   availableDays: number[]
   availableDates?: string[]
-  availableDateSlots?: { date: string; startTime: string; endTime: string }[]
-  availableStartTime?: string
-  availableEndTime?: string
+  availableDateSlots?: { date: string; timeRanges: { startTime: string; endTime: string }[] }[]
   slotDurationMinutes?: number
 }): Promise<string> {
   const ref = await addDoc(collection(db, 'tasks'), {

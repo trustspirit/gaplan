@@ -3,6 +3,8 @@ import { useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
+import { Plus, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { createTask } from '@/services/taskService'
 import { useUsers } from '@/hooks/useUsers'
@@ -10,57 +12,79 @@ import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Select, Button, Input, Badge } from '@/components/ui'
 import { MultiDatePicker } from '@/components/domain'
-import type { AvailableDateSlot } from '@/types'
+import type { AvailableDateSlot, TimeRange } from '@/types'
 import styles from './RegionSettings.module.scss'
 
 const TASK_TYPE_OPTIONS = [
-  { value: 'select_interview', label: '접견 일정 선택 (시간 단위)' },
-  { value: 'select_meeting', label: '모임 일정 선택 (시간 단위)' },
+  { value: 'select_interview',  label: '접견 일정 선택 (시간 단위)' },
+  { value: 'select_sacrament',  label: '안식일 모임 (시간 단위)' },
 ]
 
 const SLOT_DURATION_OPTIONS = [
-  { value: '30', label: '30분 단위' },
-  { value: '60', label: '1시간 단위' },
-  { value: '90', label: '1.5시간 단위' },
+  { value: '30',  label: '30분 단위' },
+  { value: '60',  label: '1시간 단위' },
+  { value: '90',  label: '1.5시간 단위' },
   { value: '120', label: '2시간 단위' },
 ]
 
-const DEFAULT_START = '09:00'
-const DEFAULT_END = '18:00'
+const DEFAULT_TIME_RANGE: TimeRange = { startTime: '09:00', endTime: '10:00' }
 
 export function TaskCreation() {
   const user = useAtomValue(authUserAtom)!
+  const { t } = useTranslation()
   const { users } = useUsers()
   const presidents = users.filter(u => u.role === 'president')
-  const seventies = users.filter(u => u.role === 'seventy')
+  const seventies  = users.filter(u => u.role === 'seventy')
 
   const [selectedPresidents, setSelectedPresidents] = useState<Set<string>>(new Set())
-  const [seventyUid, setSeventyUid] = useState('')
-  const [filterRegion, setFilterRegion] = useState('')
-  const [taskType, setTaskType] = useState<'select_interview' | 'select_meeting'>('select_interview')
-  const [dueDate, setDueDate] = useState(dayjs().add(7, 'day').format('YYYY-MM-DD'))
+  const [seventyUid,    setSeventyUid]    = useState('')
+  const [filterRegion,  setFilterRegion]  = useState('')
+  const [taskType,      setTaskType]      = useState<'select_interview' | 'select_sacrament'>('select_interview')
+  const [taskTitle,     setTaskTitle]     = useState('')
+  const [dueDate,       setDueDate]       = useState(dayjs().add(7, 'day').format('YYYY-MM-DD'))
   const [selectedDates, setSelectedDates] = useState<string[]>([])
-  // per-date time config: date → { startTime, endTime }
-  const [dateTimes, setDateTimes] = useState<Record<string, { startTime: string; endTime: string }>>({})
-  const [slotDuration, setSlotDuration] = useState('60')
-  const [loading, setLoading] = useState(false)
+  // per-date time ranges: date → TimeRange[]
+  const [dateRanges, setDateRanges] = useState<Record<string, TimeRange[]>>({})
+  const [slotDuration, setSlotDuration]   = useState('60')
+  const [loading,      setLoading]        = useState(false)
 
   const seventyOptions = seventies.map(s => ({ value: s.uid, label: s.name }))
 
   function handleDatesChange(dates: string[]) {
     setSelectedDates(dates)
-    setDateTimes(prev => {
+    setDateRanges(prev => {
       const next: typeof prev = {}
       dates.forEach(d => {
-        next[d] = prev[d] ?? { startTime: DEFAULT_START, endTime: DEFAULT_END }
+        next[d] = prev[d] ?? [{ ...DEFAULT_TIME_RANGE }]
       })
       return next
     })
   }
 
-  function setDateSlotTime(date: string, field: 'startTime' | 'endTime', value: string) {
-    setDateTimes(prev => ({ ...prev, [date]: { ...prev[date], [field]: value } }))
+  function addRange(date: string) {
+    setDateRanges(prev => ({
+      ...prev,
+      [date]: [...(prev[date] ?? []), { ...DEFAULT_TIME_RANGE }],
+    }))
   }
+
+  function removeRange(date: string, idx: number) {
+    setDateRanges(prev => ({
+      ...prev,
+      [date]: prev[date].filter((_, i) => i !== idx),
+    }))
+  }
+
+  function setRangeField(date: string, idx: number, field: keyof TimeRange, value: string) {
+    setDateRanges(prev => ({
+      ...prev,
+      [date]: prev[date].map((r, i) => i === idx ? { ...r, [field]: value } : r),
+    }))
+  }
+
+  const filteredPresidents = filterRegion
+    ? presidents.filter(p => ALL_UNITS.find(u => u.id === p.unitId)?.regionId === filterRegion)
+    : presidents
 
   function togglePresident(uid: string) {
     setSelectedPresidents(prev => {
@@ -69,13 +93,6 @@ export function TaskCreation() {
       return next
     })
   }
-
-  const filteredPresidents = filterRegion
-    ? presidents.filter(p => {
-        const unit = ALL_UNITS.find(u => u.id === p.unitId)
-        return unit?.regionId === filterRegion
-      })
-    : presidents
 
   function toggleAll() {
     const pool = filteredPresidents
@@ -97,7 +114,7 @@ export function TaskCreation() {
   }
 
   const availableDateSlots: AvailableDateSlot[] = selectedDates
-    .map(d => ({ date: d, ...(dateTimes[d] ?? { startTime: DEFAULT_START, endTime: DEFAULT_END }) }))
+    .map(date => ({ date, timeRanges: dateRanges[date] ?? [{ ...DEFAULT_TIME_RANGE }] }))
     .sort((a, b) => a.date.localeCompare(b.date))
 
   const isValid = selectedPresidents.size > 0 && !!seventyUid && availableDateSlots.length > 0
@@ -111,6 +128,7 @@ export function TaskCreation() {
       return
     }
 
+    const batchId = `batch_${Date.now()}`
     setLoading(true)
     try {
       await Promise.all(
@@ -119,6 +137,8 @@ export function TaskCreation() {
           const unit = ALL_UNITS.find(u => u.id === president?.unitId)
           return createTask({
             type: taskType,
+            batchId,
+            title: taskTitle.trim() || undefined,
             assignedTo,
             seventyUid,
             regionId: unit?.regionId ?? '',
@@ -130,13 +150,14 @@ export function TaskCreation() {
           })
         })
       )
-      toast.success(`Task ${selectedPresidents.size}건이 생성되었습니다.`)
+      toast.success(t('task.createSuccess', { count: selectedPresidents.size }))
       setSelectedPresidents(new Set())
       setSeventyUid('')
       setSelectedDates([])
-      setDateTimes({})
+      setDateRanges({})
+      setTaskTitle('')
     } catch {
-      toast.error('Task 생성에 실패했습니다.')
+      toast.error(t('task.createFailed'))
     } finally {
       setLoading(false)
     }
@@ -146,9 +167,16 @@ export function TaskCreation() {
     <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext="일정 요청 관리" />}>
       <div className={styles.page}>
         <Card>
-          <CardHeader title="Task 생성 (접견/모임 일정 요청)" />
+          <CardHeader title="Task 생성 (접견/안식일 모임)" />
           <CardBody>
             <form className={styles.form} onSubmit={handleCreate}>
+              <Input
+                label="Task 제목 (선택)"
+                value={taskTitle}
+                onChange={e => setTaskTitle(e.target.value)}
+                placeholder="예: 2분기 접견 일정"
+              />
+
               <Select
                 label="담당 지역 칠십인"
                 value={seventyUid}
@@ -167,18 +195,12 @@ export function TaskCreation() {
                   </button>
                 </div>
                 <div className={styles.regionFilter}>
-                  <button
-                    type="button"
-                    className={clsx(styles.regionBtn, !filterRegion && styles.regionBtnActive)}
-                    onClick={() => setFilterRegion('')}
-                  >전체</button>
+                  <button type="button" className={clsx(styles.regionBtn, !filterRegion && styles.regionBtnActive)}
+                    onClick={() => setFilterRegion('')}>전체</button>
                   {REGIONS.map(r => (
-                    <button
-                      key={r.id}
-                      type="button"
+                    <button key={r.id} type="button"
                       className={clsx(styles.regionBtn, filterRegion === r.id && styles.regionBtnActive)}
-                      onClick={() => handleRegionFilter(r.id)}
-                    >{r.name}</button>
+                      onClick={() => handleRegionFilter(r.id)}>{r.name}</button>
                   ))}
                 </div>
                 <div className={styles.presidentList}>
@@ -208,31 +230,53 @@ export function TaskCreation() {
               />
 
               <div className={styles.availSection}>
-                <p className={styles.availLabel}>가능 날짜 선택</p>
-                <p className={styles.availHint}>캘린더에서 날짜를 클릭해 선택하세요. 날짜별로 가능 시간을 설정할 수 있습니다.</p>
+                <p className={styles.availLabel}>가능 날짜 및 시간대 설정</p>
+                <p className={styles.availHint}>날짜를 선택하고 각 날짜마다 가능한 시간대를 추가하세요.</p>
                 <MultiDatePicker selected={selectedDates} onChange={handleDatesChange} />
 
                 {availableDateSlots.length > 0 && (
-                  <div className={styles.dateTimeList}>
-                    <p className={styles.dateTimeTitle}>날짜별 가능 시간</p>
+                  <div className={styles.dateSlotList}>
                     {availableDateSlots.map(s => (
-                      <div key={s.date} className={styles.dateTimeRow}>
-                        <span className={styles.dateTimeLabel}>
-                          {dayjs(s.date).format('M/D (ddd)')}
-                        </span>
-                        <input
-                          type="time"
-                          className={styles.timeInput}
-                          value={s.startTime}
-                          onChange={e => setDateSlotTime(s.date, 'startTime', e.target.value)}
-                        />
-                        <span className={styles.dateTimeSep}>~</span>
-                        <input
-                          type="time"
-                          className={styles.timeInput}
-                          value={s.endTime}
-                          onChange={e => setDateSlotTime(s.date, 'endTime', e.target.value)}
-                        />
+                      <div key={s.date} className={styles.dateSlotCard}>
+                        <div className={styles.dateSlotHeader}>
+                          <span className={styles.dateSlotLabel}>
+                            {dayjs(s.date).format('M/D (ddd)')}
+                          </span>
+                          <button
+                            type="button"
+                            className={styles.addRangeBtn}
+                            onClick={() => addRange(s.date)}
+                          >
+                            <Plus size={12} />
+                            시간대 추가
+                          </button>
+                        </div>
+                        {s.timeRanges.map((range, idx) => (
+                          <div key={idx} className={styles.timeRangeRow}>
+                            <input
+                              type="time"
+                              className={styles.timeInput}
+                              value={range.startTime}
+                              onChange={e => setRangeField(s.date, idx, 'startTime', e.target.value)}
+                            />
+                            <span className={styles.timeSep}>~</span>
+                            <input
+                              type="time"
+                              className={styles.timeInput}
+                              value={range.endTime}
+                              onChange={e => setRangeField(s.date, idx, 'endTime', e.target.value)}
+                            />
+                            {s.timeRanges.length > 1 && (
+                              <button
+                                type="button"
+                                className={styles.removeRangeBtn}
+                                onClick={() => removeRange(s.date, idx)}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     ))}
                   </div>

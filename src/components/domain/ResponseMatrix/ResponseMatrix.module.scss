@@ -1,0 +1,272 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.matrix {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+// ── Participant legend ────────────────────────────────────────────────────────
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  padding: $space-3;
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  padding: 2px $space-2;
+  border-radius: $border-radius-full;
+  border: 2px solid transparent;
+  cursor: pointer;
+  font-size: $font-size-xs;
+  transition: opacity 0.12s, border-color 0.12s;
+  user-select: none;
+}
+
+.legendItemHidden { opacity: 0.4; }
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: $border-radius-full;
+  flex-shrink: 0;
+}
+
+.legendName { display: flex; align-items: center; gap: 4px; }
+.legendNameHidden { text-decoration: line-through; }
+.completedIcon { color: $color-success; }
+
+// ── View toggle ───────────────────────────────────────────────────────────────
+
+.viewToggle {
+  display: flex;
+  gap: $space-1;
+  align-self: flex-end;
+}
+
+.viewBtn {
+  padding: $space-1 $space-3;
+  border-radius: $border-radius-md;
+  border: 1px solid $color-border;
+  font-size: $font-size-xs;
+  background: $color-surface;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  &:hover { color: $color-text; background: $color-bg; }
+}
+
+.viewBtnActive {
+  background: $color-text;
+  color: $color-surface;
+  border-color: $color-text;
+  font-weight: $font-weight-semibold;
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-xs;
+  background: $color-surface;
+}
+
+.th {
+  padding: $space-2 $space-3;
+  font-weight: $font-weight-semibold;
+  border-bottom: 1px solid $color-border;
+  background: color-mix(in srgb, $color-border 30%, white);
+  white-space: nowrap;
+}
+
+.thTime {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 56px;
+  background: color-mix(in srgb, $color-border 30%, white);
+}
+
+.thDate {
+  text-align: center;
+  min-width: 110px;
+  border-left: 1px solid color-mix(in srgb, $color-border 60%, white);
+}
+
+.thParticipant {
+  text-align: center;
+  min-width: 72px;
+  font-size: 11px;
+  border-left: 1px solid color-mix(in srgb, $color-border 60%, white);
+}
+
+.dateMonth {
+  display: block;
+  font-size: 9px;
+  color: $color-text-muted;
+  text-transform: uppercase;
+}
+.dateDay {
+  display: block;
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+  line-height: 1.2;
+}
+.dateDow {
+  display: block;
+  font-size: 9px;
+  color: $color-text-muted;
+}
+
+.td {
+  padding: $space-1 $space-2;
+  border-bottom: 1px solid color-mix(in srgb, $color-border 50%, white);
+  vertical-align: top;
+  &:last-child { border-right: none; }
+}
+
+.tdTime {
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  border-right: 1px solid $color-border;
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: $color-surface;
+}
+
+.tdSlot {
+  border-left: 1px solid color-mix(in srgb, $color-border 60%, white);
+  min-width: 110px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.tdEmpty {
+  border-left: 1px solid color-mix(in srgb, $color-border 60%, white);
+  background: $color-bg;
+}
+
+.tdCheck {
+  text-align: center;
+  border-left: 1px solid color-mix(in srgb, $color-border 60%, white);
+}
+
+// Heat levels
+.heat0 { background: color-mix(in srgb, $color-border 15%, white); }
+.heat1 { background: color-mix(in srgb, $color-primary 15%, white); }
+.heat2 { background: color-mix(in srgb, $color-primary 35%, white); }
+.heat3 { background: color-mix(in srgb, $color-primary 55%, white); }
+
+.slotCount {
+  display: block;
+  font-weight: $font-weight-semibold;
+  font-size: 11px;
+  color: $color-text-muted;
+  margin-bottom: 2px;
+}
+
+.slotNames {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.slotName {
+  display: block;
+  font-size: 10px;
+  font-weight: $font-weight-medium;
+  padding: 1px $space-1;
+  border-radius: $border-radius-sm;
+  border-left: 2px solid;
+  background: $color-surface;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 104px;
+  transition: opacity 0.1s;
+  &:hover { opacity: 0.7; }
+  &:disabled { cursor: not-allowed; opacity: 0.6; }
+}
+
+.slotNameConfirmed {
+  background: $color-highlight-success;
+  cursor: default;
+}
+
+.slotNameConfirming { opacity: 0.5; cursor: wait; }
+
+// Date group header in participant view
+.dateHeader {}
+.tdDateHeader {
+  background: color-mix(in srgb, $color-border 20%, white);
+  font-weight: $font-weight-semibold;
+  font-size: 11px;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: $space-1 $space-3;
+  position: sticky;
+  left: 0;
+}
+
+.checkBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: $border-radius-sm;
+  border: none;
+  cursor: pointer;
+  font-weight: $font-weight-bold;
+  font-size: 11px;
+  transition: opacity 0.1s;
+  &:hover { opacity: 0.7; }
+  &:disabled { cursor: not-allowed; }
+}
+
+.checkBtnConfirmed {
+  cursor: default;
+  &:hover { opacity: 1; }
+}
+
+.checkEmpty {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: $border-radius-full;
+  background: $color-border;
+}
+
+.empty {
+  padding: $space-8 $space-4;
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  background: $color-surface;
+}

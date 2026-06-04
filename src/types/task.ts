@@ -1,4 +1,7 @@
-export type TaskType = 'select_visit' | 'select_interview' | 'select_meeting'
+// select_visit    = day-level ward visit (Sundays)
+// select_interview = time-level interview/one-on-one
+// select_sacrament = Sacrament Meeting / Sunday gathering
+export type TaskType = 'select_visit' | 'select_interview' | 'select_sacrament'
 export type TaskStatus = 'pending' | 'responded' | 'completed' | 'expired'
 
 export interface RespondedSlot {
@@ -7,10 +10,15 @@ export interface RespondedSlot {
   endTime: string
 }
 
-export interface AvailableDateSlot {
-  date: string       // YYYY-MM-DD
+export interface TimeRange {
   startTime: string  // HH:mm
   endTime: string    // HH:mm
+}
+
+// Each date gets one or more time ranges (e.g. 09:00-10:00 and 13:00-14:00)
+export interface AvailableDateSlot {
+  date: string
+  timeRanges: TimeRange[]
 }
 
 export interface WardAssignment {
@@ -20,6 +28,8 @@ export interface WardAssignment {
 
 export interface Task {
   id: string
+  batchId?: string   // groups tasks created together (same admin action)
+  title?: string     // human-readable label set at creation
   type: TaskType
   assignedTo: string
   seventyUid: string
@@ -33,11 +43,11 @@ export interface Task {
   availableDays: number[]
   // Ward visit: specific Sundays admin selected
   availableDates?: string[]
-  // Interview/Meeting: dates with per-date times
+  // Interview/Sacrament: dates with per-date time ranges
   availableDateSlots?: AvailableDateSlot[]
   slotDurationMinutes?: number
   // President responses
-  respondedSlots?: RespondedSlot[]    // interview/meeting
+  respondedSlots?: RespondedSlot[]    // interview/sacrament
   wardAssignments?: WardAssignment[]  // ward visit
   respondedAt?: string
 }

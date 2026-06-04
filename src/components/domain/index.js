@@ -6,3 +6,4 @@ export { AvailabilityEditor } from './AvailabilityEditor/AvailabilityEditor';
 export { VisitDatePicker } from './VisitDatePicker/VisitDatePicker';
 export { MultiDatePicker } from './MultiDatePicker/MultiDatePicker';
 export { WardAssigner } from './WardAssigner/WardAssigner';
+export { ResponseMatrix } from './ResponseMatrix/ResponseMatrix';

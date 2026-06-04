@@ -13,12 +13,12 @@ import { expireTask, updateTaskDetails } from '@/services/taskService';
 import { ALL_UNITS, REGIONS } from '@/constants/regions';
 import { AppShell, TopBar } from '@/components/layout';
 import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Select, Modal } from '@/components/ui';
-import { MultiDatePicker } from '@/components/domain';
+import { MultiDatePicker, ResponseMatrix } from '@/components/domain';
 import styles from './TaskProgress.module.scss';
 const TASK_LABELS = {
     select_visit: '와드 방문',
     select_interview: '접견',
-    select_meeting: '모임',
+    select_sacrament: '안식일 모임',
 };
 const SLOT_DURATION_OPTIONS = [
     { value: '30', label: '30분' },
@@ -40,21 +40,24 @@ function EditTaskModal({ task, onClose }) {
     const [dueDate, setDueDate] = useState(task.dueDate);
     // For ward visits: just select available Sundays
     const [availableDates, setAvailableDates] = useState(task.availableDates ?? []);
-    // For interview/meeting: per-date time slots
+    // For interview/sacrament: per-date time ranges
     const [selectedDates, setSelectedDates] = useState((task.availableDateSlots ?? []).map(s => s.date));
-    const [dateTimes, setDateTimes] = useState(Object.fromEntries((task.availableDateSlots ?? []).map(s => [s.date, { startTime: s.startTime, endTime: s.endTime }])));
+    const [dateRanges, setDateRanges] = useState(Object.fromEntries((task.availableDateSlots ?? []).map(s => [
+        s.date,
+        s.timeRanges?.length ? s.timeRanges : [{ startTime: '09:00', endTime: '18:00' }]
+    ])));
     const [slotDuration, setSlotDuration] = useState(String(task.slotDurationMinutes ?? 60));
     const [saving, setSaving] = useState(false);
     function handleDatesChange(dates) {
         setSelectedDates(dates);
-        setDateTimes(prev => {
+        setDateRanges(prev => {
             const next = {};
-            dates.forEach(d => { next[d] = prev[d] ?? { startTime: '09:00', endTime: '18:00' }; });
+            dates.forEach(d => { next[d] = prev[d] ?? [{ startTime: '09:00', endTime: '18:00' }]; });
             return next;
         });
     }
     const availableDateSlots = selectedDates
-        .map(d => ({ date: d, ...(dateTimes[d] ?? { startTime: '09:00', endTime: '18:00' }) }))
+        .map(d => ({ date: d, timeRanges: dateRanges[d] ?? [{ startTime: '09:00', endTime: '18:00' }] }))
         .sort((a, b) => a.date.localeCompare(b.date));
     const handleSave = async (e) => {
         e.preventDefault();
@@ -82,7 +85,13 @@ function EditTaskModal({ task, onClose }) {
             setSaving(false);
         }
     };
-    return (_jsx(Modal, { open: true, onClose: onClose, title: "Task \uC218\uC815", children: _jsxs("form", { className: styles.editForm, onSubmit: handleSave, children: [isVisit ? (_jsxs("div", { className: styles.editSection, children: [_jsx("p", { className: styles.editLabel, children: "\uAC00\uB2A5 \uBC29\uBB38 \uC77C\uC694\uC77C \uC120\uD0DD" }), _jsx(MultiDatePicker, { selected: availableDates, onChange: setAvailableDates, sundayOnly: true })] })) : (_jsxs(_Fragment, { children: [_jsxs("div", { className: styles.editSection, children: [_jsx("p", { className: styles.editLabel, children: "\uAC00\uB2A5 \uB0A0\uC9DC (\uCE98\uB9B0\uB354\uC5D0\uC11C \uC120\uD0DD)" }), _jsx(MultiDatePicker, { selected: selectedDates, onChange: handleDatesChange }), availableDateSlots.length > 0 && (_jsx("div", { style: { display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }, children: availableDateSlots.map(s => (_jsxs("div", { style: { display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.8125rem' }, children: [_jsx("span", { style: { minWidth: 70, fontWeight: 500 }, children: dayjs(s.date).format('M/D (ddd)') }), _jsx("input", { type: "time", value: s.startTime, style: { border: '1px solid #e4e4e6', borderRadius: 6, padding: '2px 6px' }, onChange: e => setDateTimes(prev => ({ ...prev, [s.date]: { ...prev[s.date], startTime: e.target.value } })) }), _jsx("span", { children: "~" }), _jsx("input", { type: "time", value: s.endTime, style: { border: '1px solid #e4e4e6', borderRadius: 6, padding: '2px 6px' }, onChange: e => setDateTimes(prev => ({ ...prev, [s.date]: { ...prev[s.date], endTime: e.target.value } })) })] }, s.date))) }))] }), _jsx("div", { className: styles.timeRow }), _jsx(Select, { label: "\uC2DC\uAC04 \uB2E8\uC704", value: slotDuration, onChange: e => setSlotDuration(e.target.value), options: SLOT_DURATION_OPTIONS })] })), _jsx(Input, { label: "\uB9C8\uAC10\uC77C", type: "date", value: dueDate, onChange: e => setDueDate(e.target.value) }), task.status === 'responded' && (_jsx("p", { className: styles.resetNote, children: "\u26A0 \uC774\uBBF8 \uC751\uB2F5\uD55C \uB0B4\uC6A9\uC774 \uCD08\uAE30\uD654\uB418\uACE0 \uD68C\uC7A5\uC774 \uB2E4\uC2DC \uC751\uB2F5\uD574\uC57C \uD569\uB2C8\uB2E4." })), _jsxs("div", { className: styles.modalActions, children: [_jsx(Button, { variant: "ghost", type: "button", onClick: onClose, children: "\uCDE8\uC18C" }), _jsx(Button, { type: "submit", loading: saving, children: "\uC800\uC7A5 \uBC0F \uC7AC\uC804\uB2EC" })] })] }) }));
+    return (_jsx(Modal, { open: true, onClose: onClose, title: "Task \uC218\uC815", children: _jsxs("form", { className: styles.editForm, onSubmit: handleSave, children: [isVisit ? (_jsxs("div", { className: styles.editSection, children: [_jsx("p", { className: styles.editLabel, children: "\uAC00\uB2A5 \uBC29\uBB38 \uC77C\uC694\uC77C \uC120\uD0DD" }), _jsx(MultiDatePicker, { selected: availableDates, onChange: setAvailableDates, sundayOnly: true })] })) : (_jsxs(_Fragment, { children: [_jsxs("div", { className: styles.editSection, children: [_jsx("p", { className: styles.editLabel, children: "\uAC00\uB2A5 \uB0A0\uC9DC (\uCE98\uB9B0\uB354\uC5D0\uC11C \uC120\uD0DD)" }), _jsx(MultiDatePicker, { selected: selectedDates, onChange: handleDatesChange }), availableDateSlots.length > 0 && (_jsx("div", { style: { display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }, children: availableDateSlots.map(s => (_jsxs("div", { children: [_jsx("div", { style: { fontSize: '0.8125rem', fontWeight: 600, marginBottom: '4px' }, children: dayjs(s.date).format('M/D (ddd)') }), (dateRanges[s.date] ?? []).map((r, idx) => (_jsxs("div", { style: { display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.8125rem', marginBottom: '4px' }, children: [_jsx("input", { type: "time", value: r.startTime, style: { border: '1px solid #e4e4e6', borderRadius: 6, padding: '2px 6px' }, onChange: e => setDateRanges(prev => ({
+                                                            ...prev,
+                                                            [s.date]: prev[s.date].map((x, i) => i === idx ? { ...x, startTime: e.target.value } : x)
+                                                        })) }), _jsx("span", { children: "~" }), _jsx("input", { type: "time", value: r.endTime, style: { border: '1px solid #e4e4e6', borderRadius: 6, padding: '2px 6px' }, onChange: e => setDateRanges(prev => ({
+                                                            ...prev,
+                                                            [s.date]: prev[s.date].map((x, i) => i === idx ? { ...x, endTime: e.target.value } : x)
+                                                        })) })] }, idx)))] }, s.date))) }))] }), _jsx(Select, { label: "\uC2DC\uAC04 \uB2E8\uC704", value: slotDuration, onChange: e => setSlotDuration(e.target.value), options: SLOT_DURATION_OPTIONS })] })), _jsx(Input, { label: "\uB9C8\uAC10\uC77C", type: "date", value: dueDate, onChange: e => setDueDate(e.target.value) }), task.status === 'responded' && (_jsx("p", { className: styles.resetNote, children: "\u26A0 \uC774\uBBF8 \uC751\uB2F5\uD55C \uB0B4\uC6A9\uC774 \uCD08\uAE30\uD654\uB418\uACE0 \uD68C\uC7A5\uC774 \uB2E4\uC2DC \uC751\uB2F5\uD574\uC57C \uD569\uB2C8\uB2E4." })), _jsxs("div", { className: styles.modalActions, children: [_jsx(Button, { variant: "ghost", type: "button", onClick: onClose, children: "\uCDE8\uC18C" }), _jsx(Button, { type: "submit", loading: saving, children: "\uC800\uC7A5 \uBC0F \uC7AC\uC804\uB2EC" })] })] }) }));
 }
 // ── Responded slot row ───────────────────────────────────────────────────────
 function RespondedSlotRow({ slot, taskId, onConfirmed }) {
@@ -146,9 +155,23 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName }) {
     const completed = tasks.filter(t => t.status === 'completed');
     const expired = tasks.filter(t => t.status === 'expired');
     const renderRows = (list) => list.map(t => (_jsx(TaskRow, { task: t, presidentName: getUserName(t.assignedTo), unitName: getUnitName(t.assignedTo) }, t.id)));
+    // Group interview/sacrament tasks by batchId for the ResponseMatrix
+    const batchGroups = {};
+    const timeTasks = tasks.filter(t => t.type === 'select_interview' || t.type === 'select_sacrament');
+    for (const t of timeTasks) {
+        const key = t.batchId ?? t.id;
+        if (!batchGroups[key])
+            batchGroups[key] = [];
+        batchGroups[key].push(t);
+    }
+    const matrixBatches = Object.values(batchGroups).filter(batch => batch.some(t => t.status === 'responded' || t.status === 'completed'));
     return (_jsxs(Card, { children: [_jsx(CardHeader, { title: regionName, action: _jsxs("div", { className: styles.regionSummary, children: [responded.length > 0 && _jsxs(Badge, { variant: "default", children: ["\uC751\uB2F5 ", responded.length] }), pending.length > 0 && _jsxs(Badge, { variant: "warning", children: ["\uBBF8\uC751\uB2F5 ", pending.length] }), completed.length > 0 && _jsxs(Badge, { variant: "success", children: ["\uC644\uB8CC ", completed.length] })] }) }), _jsx(CardBody, { children: tasks.length === 0
                     ? _jsx("p", { className: styles.empty, children: "\uD574\uB2F9 \uC9C0\uC5ED Task \uC5C6\uC74C" })
-                    : (_jsxs(_Fragment, { children: [responded.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: ["\uD655\uC815 \uB300\uAE30 (", responded.length, ")"] }), renderRows(responded)] })), pending.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: ["\uBBF8\uC751\uB2F5 (", pending.length, ")"] }), renderRows(pending)] })), completed.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: ["\uC644\uB8CC (", completed.length, ")"] }), renderRows(completed)] })), expired.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: clsx(styles.statusLabel, styles.statusLabelExpired), children: ["\uB9CC\uB8CC (", expired.length, ")"] }), renderRows(expired)] }))] })) })] }));
+                    : (_jsxs(_Fragment, { children: [matrixBatches.map(batch => {
+                                const ref = batch[0];
+                                const title = ref.title ?? TASK_LABELS[ref.type] ?? ref.type;
+                                return (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: [title, " \uC751\uB2F5 \uD604\uD669 (", batch.filter(t => t.status === 'responded' || t.status === 'completed').length, "/", batch.length, ")"] }), _jsx(ResponseMatrix, { tasks: batch, getPresidentName: getUserName })] }, ref.batchId ?? ref.id));
+                            }), responded.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: ["\uD655\uC815 \uB300\uAE30 (", responded.length, ")"] }), renderRows(responded.filter(t => t.type === 'select_visit'))] })), pending.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: ["\uBBF8\uC751\uB2F5 (", pending.length, ")"] }), renderRows(pending)] })), completed.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: ["\uC644\uB8CC (", completed.length, ")"] }), renderRows(completed.filter(t => t.type === 'select_visit'))] })), expired.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: clsx(styles.statusLabel, styles.statusLabelExpired), children: ["\uB9CC\uB8CC (", expired.length, ")"] }), renderRows(expired)] }))] })) })] }));
 }
 // ── Main page ────────────────────────────────────────────────────────────────
 export function TaskProgress() {
