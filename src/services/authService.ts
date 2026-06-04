@@ -1,6 +1,5 @@
 import {
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   type User,
@@ -10,11 +9,7 @@ import { auth, db, googleProvider } from '@/firebase'
 import type { AppUser, UserRole } from '@/types'
 
 export async function signInWithGoogle(): Promise<void> {
-  await signInWithRedirect(auth, googleProvider)
-}
-
-export async function handleRedirectResult(): Promise<void> {
-  await getRedirectResult(auth)
+  await signInWithPopup(auth, googleProvider)
 }
 
 export async function signOut(): Promise<void> {
