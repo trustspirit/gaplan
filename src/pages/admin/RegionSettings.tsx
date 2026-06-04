@@ -15,6 +15,7 @@ import { MultiDatePicker } from '@/components/domain'
 import type { AvailableDateSlot, TimeRange } from '@/types'
 import styles from './RegionSettings.module.scss'
 
+type TaskType = 'select_interview' | 'select_visit'
 
 const DEFAULT_TIME_RANGE: TimeRange = { startTime: '09:00', endTime: '10:00' }
 
@@ -25,30 +26,35 @@ export function TaskCreation() {
   const presidents = users.filter(u => u.role === 'president')
   const seventies  = users.filter(u => u.role === 'seventy')
 
+  const [taskType, setTaskType] = useState<TaskType>('select_interview')
   const [selectedPresidents, setSelectedPresidents] = useState<Set<string>>(new Set())
   const [seventyUid,    setSeventyUid]    = useState('')
   const [filterRegion,  setFilterRegion]  = useState('')
-  const taskType = 'select_interview' as const
   const [taskTitle, setTaskTitle] = useState('')
   const [taskNote,  setTaskNote]  = useState('')
   const [dueDate,       setDueDate]       = useState(dayjs().add(7, 'day').format('YYYY-MM-DD'))
   const [selectedDates, setSelectedDates] = useState<string[]>([])
-  // per-date time ranges: date → TimeRange[]
   const [dateRanges, setDateRanges] = useState<Record<string, TimeRange[]>>({})
   const [slotDuration, setSlotDuration]   = useState('60')
   const [loading,      setLoading]        = useState(false)
 
   const seventyOptions = seventies.map(s => ({ value: s.uid, label: s.name }))
 
+  function handleTypeChange(type: TaskType) {
+    setTaskType(type)
+    setSelectedDates([])
+    setDateRanges({})
+  }
+
   function handleDatesChange(dates: string[]) {
     setSelectedDates(dates)
-    setDateRanges(prev => {
-      const next: typeof prev = {}
-      dates.forEach(d => {
-        next[d] = prev[d] ?? [{ ...DEFAULT_TIME_RANGE }]
+    if (taskType === 'select_interview') {
+      setDateRanges(prev => {
+        const next: typeof prev = {}
+        dates.forEach(d => { next[d] = prev[d] ?? [{ ...DEFAULT_TIME_RANGE }] })
+        return next
       })
-      return next
-    })
+    }
   }
 
   function addRange(date: string) {
@@ -107,14 +113,14 @@ export function TaskCreation() {
     .map(date => ({ date, timeRanges: dateRanges[date] ?? [{ ...DEFAULT_TIME_RANGE }] }))
     .sort((a, b) => a.date.localeCompare(b.date))
 
-  const isValid = selectedPresidents.size > 0 && !!seventyUid && availableDateSlots.length > 0
+  const isValid = selectedPresidents.size > 0 && !!seventyUid && selectedDates.length > 0
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isValid) {
-      if (selectedPresidents.size === 0) toast.error('대상 회장을 한 명 이상 선택해주세요.')
-      else if (!seventyUid) toast.error('담당 지역 칠십인을 선택해주세요.')
-      else toast.error('가능 날짜를 하나 이상 선택해주세요.')
+      if (selectedPresidents.size === 0) toast.error(t('common.selectPresident'))
+      else if (!seventyUid) toast.error(t('common.selectSeventy'))
+      else toast.error(t('common.selectSunday'))
       return
     }
 
@@ -125,8 +131,23 @@ export function TaskCreation() {
         Array.from(selectedPresidents).map(assignedTo => {
           const president = presidents.find(p => p.uid === assignedTo)
           const unit = ALL_UNITS.find(u => u.id === president?.unitId)
+
+          if (taskType === 'select_visit') {
+            return createTask({
+              type: 'select_visit',
+              assignedTo,
+              seventyUid,
+              regionId: unit?.regionId ?? '',
+              dueDate,
+              createdBy: user.uid,
+              availableDays: [0],
+              availableDates: selectedDates,
+              note: taskNote.trim() || undefined,
+            })
+          }
+
           return createTask({
-            type: taskType,
+            type: 'select_interview',
             batchId,
             title: taskTitle.trim() || undefined,
             note: taskNote.trim() || undefined,
@@ -155,33 +176,58 @@ export function TaskCreation() {
     }
   }
 
+  const pageTitle = taskType === 'select_visit'
+    ? t('admin.visitTaskCreateTitle')
+    : t('admin.taskCreateTitle')
+
   return (
-    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext="일정 요청 관리" />}>
+    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('admin.taskCreate')} />}>
       <div className={styles.page}>
         <Card>
-          <CardHeader title="Task 생성 (접견/안식일 모임)" />
+          <CardHeader title={t('admin.taskCreate')} />
           <CardBody>
+            <div className={styles.typeToggle}>
+              <button
+                type="button"
+                className={clsx(styles.typeBtn, taskType === 'select_interview' && styles.typeBtnActive)}
+                onClick={() => handleTypeChange('select_interview')}
+              >
+                {t('task.type.select_interview')}
+              </button>
+              <button
+                type="button"
+                className={clsx(styles.typeBtn, taskType === 'select_visit' && styles.typeBtnActive)}
+                onClick={() => handleTypeChange('select_visit')}
+              >
+                {t('task.type.select_visit')}
+              </button>
+            </div>
+
             <form className={styles.form} onSubmit={handleCreate}>
-              <Input
-                label="Task 제목 (선택)"
-                value={taskTitle}
-                onChange={e => setTaskTitle(e.target.value)}
-                placeholder="예: 2분기 접견 일정"
-              />
+              <p className={styles.availHint}>{pageTitle}</p>
+
+              {taskType === 'select_interview' && (
+                <Input
+                  label={t('task.title')}
+                  value={taskTitle}
+                  onChange={e => setTaskTitle(e.target.value)}
+                  placeholder={t('task.titlePlaceholder')}
+                />
+              )}
 
               <div className={styles.textareaField}>
-                <label className={styles.textareaLabel}>요청 사항 / 메모 (선택)</label>
+                <label className={styles.textareaLabel}>{t('task.noteLabel')}</label>
                 <textarea
                   className={styles.textarea}
                   value={taskNote}
                   onChange={e => setTaskNote(e.target.value)}
-                  placeholder="회장이 Task를 받을 때 함께 볼 내용을 입력하세요."
+                  placeholder={t('task.notePlaceholder')}
                   rows={3}
                 />
               </div>
 
               <Select
-                label="담당 지역 칠십인"
+                label={t('role.seventy')}
                 value={seventyUid}
                 onChange={e => setSeventyUid(e.target.value)}
                 options={seventyOptions}
@@ -189,17 +235,20 @@ export function TaskCreation() {
 
               <div className={styles.presidentSection}>
                 <div className={styles.presidentHeader}>
-                  <span className={styles.presidentLabel}>대상 회장</span>
+                  <span className={styles.presidentLabel}>{t('task.targetPresidents')}</span>
                   {selectedPresidents.size > 0 && (
-                    <Badge variant="default">{selectedPresidents.size}명 선택됨</Badge>
+                    <Badge variant="default">{t('task.selectedCount', { count: selectedPresidents.size })}</Badge>
                   )}
                   <button type="button" className={styles.selectAllBtn} onClick={toggleAll}>
-                    {filteredPresidents.every(p => selectedPresidents.has(p.uid)) ? '해제' : '전체 선택'}
+                    {filteredPresidents.every(p => selectedPresidents.has(p.uid))
+                      ? t('common.deselectAll')
+                      : t('common.selectAll')}
                   </button>
                 </div>
                 <div className={styles.regionFilter}>
-                  <button type="button" className={clsx(styles.regionBtn, !filterRegion && styles.regionBtnActive)}
-                    onClick={() => setFilterRegion('')}>전체</button>
+                  <button type="button"
+                    className={clsx(styles.regionBtn, !filterRegion && styles.regionBtnActive)}
+                    onClick={() => setFilterRegion('')}>{t('common.all')}</button>
                   {REGIONS.map(r => (
                     <button key={r.id} type="button"
                       className={clsx(styles.regionBtn, filterRegion === r.id && styles.regionBtnActive)}
@@ -208,7 +257,9 @@ export function TaskCreation() {
                 </div>
                 <div className={styles.presidentList}>
                   {filteredPresidents.length === 0 ? (
-                    <p className={styles.noneText}>{filterRegion ? '해당 지역에 등록된 회장이 없습니다.' : '등록된 회장이 없습니다.'}</p>
+                    <p className={styles.noneText}>
+                      {filterRegion ? t('task.noPresidentsInRegion') : t('task.noPresidents')}
+                    </p>
                   ) : (
                     filteredPresidents.map(p => {
                       const unit = ALL_UNITS.find(u => u.id === p.unitId)
@@ -226,11 +277,19 @@ export function TaskCreation() {
               </div>
 
               <div className={styles.availSection}>
-                <p className={styles.availLabel}>가능 날짜 및 시간대 설정</p>
-                <p className={styles.availHint}>날짜를 선택하고 각 날짜마다 가능한 시간대를 추가하세요.</p>
-                <MultiDatePicker selected={selectedDates} onChange={handleDatesChange} />
+                <p className={styles.availLabel}>
+                  {taskType === 'select_visit' ? t('task.selectSundays') : t('task.selectDates')}
+                </p>
+                {taskType === 'select_visit' && (
+                  <p className={styles.availHint}>{t('task.visitTaskDesc')}</p>
+                )}
+                <MultiDatePicker
+                  selected={selectedDates}
+                  onChange={handleDatesChange}
+                  sundayOnly={taskType === 'select_visit'}
+                />
 
-                {availableDateSlots.length > 0 && (
+                {taskType === 'select_interview' && availableDateSlots.length > 0 && (
                   <div className={styles.dateSlotList}>
                     {availableDateSlots.map(s => (
                       <div key={s.date} className={styles.dateSlotCard}>
@@ -244,7 +303,7 @@ export function TaskCreation() {
                             onClick={() => addRange(s.date)}
                           >
                             <Plus size={12} />
-                            시간대 추가
+                            {t('task.addTimeRange')}
                           </button>
                         </div>
                         {s.timeRanges.map((range, idx) => (
@@ -278,26 +337,40 @@ export function TaskCreation() {
                   </div>
                 )}
 
-                <Input
-                  label={`${t('slotDuration.label', { defaultValue: '슬롯 길이 (분)' })}`}
-                  type="number"
-                  min="5"
-                  max="480"
-                  step="5"
-                  value={slotDuration}
-                  onChange={e => setSlotDuration(e.target.value)}
-                />
+                {taskType === 'select_visit' && selectedDates.length > 0 && (
+                  <div className={styles.selectedSundays}>
+                    {selectedDates.map(d => (
+                      <span key={d} className={styles.sundayChip}>
+                        {dayjs(d).format('M/D (ddd)')}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {taskType === 'select_interview' && (
+                  <Input
+                    label={t('slotDuration.label')}
+                    type="number"
+                    min="5"
+                    max="480"
+                    step="5"
+                    value={slotDuration}
+                    onChange={e => setSlotDuration(e.target.value)}
+                  />
+                )}
               </div>
 
               <Input
-                label="마감일"
+                label={t('task.dueDate')}
                 type="date"
                 value={dueDate}
                 onChange={e => setDueDate(e.target.value)}
               />
 
               <Button type="submit" loading={loading} disabled={!isValid}>
-                Task {selectedPresidents.size > 0 ? `${selectedPresidents.size}건 ` : ''}생성
+                {selectedPresidents.size > 0
+                  ? t('task.createCount', { count: selectedPresidents.size })
+                  : t('task.create')}
               </Button>
             </form>
           </CardBody>

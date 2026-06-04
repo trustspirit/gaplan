@@ -125,7 +125,8 @@
     "noPresidents": "No presidents registered.",
     "submitted": "submitted",
     "slotsCount": "View {{count}}",
-    "wardCount": "View {{count}} assignments"
+    "wardCount": "View {{count}} assignments",
+    "addTimeRange": "Add time slot"
   },
   "schedule": {
     "confirmVisit": "Confirm Visit Date",

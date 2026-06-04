@@ -14,6 +14,55 @@
   }
 }
 
+.typeToggle {
+  display: flex;
+  gap: $space-2;
+  margin-bottom: $space-4;
+  background: $color-background;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  padding: 4px;
+}
+
+.typeBtn {
+  flex: 1;
+  padding: $space-2 $space-4;
+  border: none;
+  border-radius: $border-radius-sm;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  background: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    color: $color-text;
+    background: $color-surface;
+  }
+}
+
+.typeBtnActive {
+  background: $color-surface;
+  color: $color-primary;
+  box-shadow: $shadow-card;
+}
+
+.selectedSundays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+}
+
+.sundayChip {
+  font-size: $font-size-xs;
+  background: rgba($color-primary, 0.1);
+  color: $color-primary;
+  border-radius: $border-radius-full;
+  padding: 2px 10px;
+  border: 1px solid rgba($color-primary, 0.2);
+}
+
 .form { display: flex; flex-direction: column; gap: $space-4; }
 
 .textareaField { display: flex; flex-direction: column; gap: $space-1; }

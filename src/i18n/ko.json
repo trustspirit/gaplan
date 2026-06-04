@@ -121,7 +121,8 @@
     "noPresidents": "등록된 회장이 없습니다.",
     "submitted": "제출",
     "slotsCount": "{{count}}개 확인",
-    "wardCount": "{{count}}개 배정 확인"
+    "wardCount": "{{count}}개 배정 확인",
+    "addTimeRange": "시간대 추가"
   },
   "schedule": {
     "confirmVisit": "방문 일정 확정",
