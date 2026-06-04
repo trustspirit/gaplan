@@ -5,7 +5,34 @@ on:
     branches: [main]
 
 jobs:
-  deploy:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      hosting: ${{ steps.filter.outputs.hosting }}
+      functions: ${{ steps.filter.outputs.functions }}
+      firestore: ${{ steps.filter.outputs.firestore }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            hosting:
+              - 'src/**'
+              - 'public/**'
+              - 'index.html'
+              - 'vite.config.ts'
+              - 'package.json'
+              - 'package-lock.json'
+            functions:
+              - 'functions/**'
+            firestore:
+              - 'firestore.rules'
+              - 'firestore.indexes.json'
+
+  deploy-hosting:
+    needs: changes
+    if: needs.changes.outputs.hosting == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,12 +42,8 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Install frontend dependencies
+      - name: Install dependencies
         run: npm install --prefer-offline --no-audit
-
-      - name: Install functions dependencies
-        run: npm install --prefer-offline --no-audit
-        working-directory: functions
 
       - name: Create .env
         env:
@@ -46,11 +69,42 @@ jobs:
         run: npm run build
 
       - name: Setup Google credentials
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
         run: |
           printf '%s' "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/gcp-key.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json" >> $GITHUB_ENV
+
+      - name: Deploy Hosting
+        run: npx firebase-tools deploy --only hosting --project gaplan-fccfe --force
+
+  deploy-backend:
+    needs: changes
+    if: needs.changes.outputs.functions == 'true' || needs.changes.outputs.firestore == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install functions dependencies
+        run: npm install --prefer-offline --no-audit
+        working-directory: functions
+
+      - name: Setup Google credentials
         env:
           GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+        run: |
+          printf '%s' "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/gcp-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json" >> $GITHUB_ENV
 
-      - name: Deploy to Firebase
-        run: npx firebase-tools deploy --only hosting,firestore,functions --project gaplan-fccfe --force
+      - name: Deploy Functions
+        if: needs.changes.outputs.functions == 'true'
+        run: npx firebase-tools deploy --only functions --project gaplan-fccfe --force
+
+      - name: Deploy Firestore rules & indexes
+        if: needs.changes.outputs.firestore == 'true'
+        run: npx firebase-tools deploy --only firestore --project gaplan-fccfe --force

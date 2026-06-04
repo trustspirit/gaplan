@@ -54,6 +54,7 @@ export async function resolveUser(firebaseUser: User): Promise<AppUser | null> {
 export function subscribeToAuthState(
   onUser: (user: AppUser | null) => void,
   onLoading: (loading: boolean) => void,
+  onAccessDenied?: () => void,
 ): () => void {
   return onAuthStateChanged(auth, async firebaseUser => {
     if (!firebaseUser) {
@@ -61,8 +62,15 @@ export function subscribeToAuthState(
       onLoading(false)
       return
     }
-    const user = await resolveUser(firebaseUser)
-    onUser(user)
-    onLoading(false)
+    try {
+      const user = await resolveUser(firebaseUser)
+      if (user === null) onAccessDenied?.()
+      onUser(user)
+    } catch (e) {
+      console.error('[auth] resolveUser failed:', e)
+      onUser(null)
+    } finally {
+      onLoading(false)
+    }
   })
 }
