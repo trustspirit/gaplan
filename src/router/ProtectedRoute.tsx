@@ -10,6 +10,9 @@ export function ProtectedRoute() {
 
   if (loading) return <div className={styles.loadingScreen}><Spinner /></div>
   if (!user) return <Navigate to="/login" replace />
+  // pending with no name yet → onboarding to collect info, then pending screen
+  if (user.role === 'pending' && !user.unitId) return <Navigate to="/onboarding" replace />
+  if (user.role === 'pending') return <Navigate to="/pending" replace />
   if (user.role === 'president' && !user.unitId) return <Navigate to="/onboarding" replace />
   return <Outlet />
 }

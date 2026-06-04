@@ -1,15 +1,20 @@
 import { GoogleAuthProvider, reauthenticateWithPopup } from 'firebase/auth'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
+import { ALL_UNITS } from '@/constants/regions'
 
 const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar'
 
 export async function subscribeToSharedCalendar(): Promise<void> {
   if (!auth.currentUser) throw new Error('로그인이 필요합니다.')
 
-  // Get user's regionId to determine which calendar to subscribe to
+  // Get user's regionId — stored directly on seventy, derived from unitId for president
   const userSnap = await getDoc(doc(db, 'users', auth.currentUser.uid))
-  const regionId: string = userSnap.data()?.regionId ?? ''
+  const userData = userSnap.data()
+  const regionId: string =
+    userData?.regionId ??
+    ALL_UNITS.find(u => u.id === userData?.unitId)?.regionId ??
+    ''
 
   // Get regional calendar ID from settings
   const settingsSnap = await getDoc(doc(db, 'settings', 'calendar'))

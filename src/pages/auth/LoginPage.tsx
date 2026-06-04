@@ -14,7 +14,11 @@ export function LoginPage() {
   const navigate = useNavigate()
 
   if (!authLoading && user) {
-    navigate(user.role === 'president' && !user.unitId ? '/onboarding' : '/dashboard', { replace: true })
+    let dest = '/dashboard'
+    if (user.role === 'pending' && !user.unitId) dest = '/onboarding'
+    else if (user.role === 'pending') dest = '/pending'
+    else if (user.role === 'president' && !user.unitId) dest = '/onboarding'
+    navigate(dest, { replace: true })
     return null
   }
 

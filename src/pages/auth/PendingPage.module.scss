@@ -1,0 +1,54 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  min-height: 100dvh;
+  @include flex-center;
+  background: $color-bg;
+  padding: $space-4;
+}
+
+.card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-xl;
+  padding: $space-8;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: $space-3;
+}
+
+.iconWrap {
+  width: 64px;
+  height: 64px;
+  border-radius: $border-radius-full;
+  background: $color-highlight-warning;
+  color: $color-warning;
+  @include flex-center;
+  margin-bottom: $space-2;
+}
+
+.title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+}
+
+.desc {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  line-height: $line-height-loose;
+}
+
+.email {
+  font-size: $font-size-xs;
+  color: $color-text-light;
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-full;
+  padding: $space-1 $space-3;
+}

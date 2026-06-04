@@ -3,6 +3,7 @@ import { ProtectedRoute } from './ProtectedRoute'
 import { RoleRoute } from './RoleRoute'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { OnboardingPage } from '@/pages/auth/OnboardingPage'
+import { PendingPage } from '@/pages/auth/PendingPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { CalendarPage } from '@/pages/calendar/CalendarPage'
 import { VisitsPage } from '@/pages/visits/VisitsPage'
@@ -20,6 +21,7 @@ export function AppRouter() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/pending" element={<PendingPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard"    element={<DashboardPage />} />
