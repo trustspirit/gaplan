@@ -12,6 +12,7 @@ import { TasksPage } from '@/pages/tasks/TasksPage'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { UserManagement } from '@/pages/admin/UserManagement'
 import { TaskCreation } from '@/pages/admin/RegionSettings'
+import { TaskProgress } from '@/pages/admin/TaskProgress'
 import { AvailabilitySettings } from '@/pages/admin/AvailabilitySettings'
 import { CalendarSettings } from '@/pages/admin/CalendarSettings'
 
@@ -34,11 +35,15 @@ export function AppRouter() {
           </Route>
 
           <Route element={<RoleRoute allow={['admin']} />}>
-            <Route path="/admin"              element={<AdminDashboard />} />
-            <Route path="/admin/users"        element={<UserManagement />} />
-            <Route path="/admin/tasks"         element={<TaskCreation />} />
-            <Route path="/admin/availability" element={<AvailabilitySettings />} />
-            <Route path="/admin/calendar"     element={<CalendarSettings />} />
+            <Route path="/admin"                   element={<AdminDashboard />} />
+            <Route path="/admin/users"             element={<UserManagement />} />
+            <Route path="/admin/tasks"             element={<TaskCreation />} />
+            <Route path="/admin/availability"      element={<AvailabilitySettings />} />
+            <Route path="/admin/calendar"          element={<CalendarSettings />} />
+          </Route>
+
+          <Route element={<RoleRoute allow={['admin', 'seventy']} />}>
+            <Route path="/admin/task-progress" element={<TaskProgress />} />
           </Route>
         </Route>
 

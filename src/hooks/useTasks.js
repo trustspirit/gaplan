@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { subscribeToTasks } from '@/services/taskService';
+import { subscribeToTasks, subscribeToAllTasks } from '@/services/taskService';
 export function useTasks(assignedTo) {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -14,5 +14,17 @@ export function useTasks(assignedTo) {
         });
         return unsub;
     }, [assignedTo]);
+    return { tasks, loading };
+}
+export function useAllTasks() {
+    const [tasks, setTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
+    useEffect(() => {
+        const unsub = subscribeToAllTasks(data => {
+            setTasks(data);
+            setLoading(false);
+        });
+        return unsub;
+    }, []);
     return { tasks, loading };
 }

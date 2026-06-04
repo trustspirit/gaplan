@@ -41,3 +41,14 @@ export async function confirmSchedule(params: ConfirmScheduleParams): Promise<Co
   const result = await fn(params)
   return result.data
 }
+
+interface AdminConfirmParams {
+  taskId: string
+  slot: { date: string; startTime: string; endTime: string }
+}
+
+export async function adminConfirmSchedule(params: AdminConfirmParams): Promise<ConfirmScheduleResult> {
+  const fn = httpsCallable<AdminConfirmParams, ConfirmScheduleResult>(functions, 'adminConfirmSchedule')
+  const result = await fn(params)
+  return result.data
+}

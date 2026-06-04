@@ -14,6 +14,7 @@ import styles from './RegionSettings.module.scss'
 const TASK_TYPE_OPTIONS = [
   { value: 'select_visit', label: '와드 방문 일정 선택 (일 단위)' },
   { value: 'select_interview', label: '접견 일정 선택 (시간 단위)' },
+  { value: 'select_meeting', label: '모임 일정 선택 (시간 단위)' },
 ]
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -26,7 +27,7 @@ export function TaskCreation() {
 
   const [selectedPresidents, setSelectedPresidents] = useState<Set<string>>(new Set())
   const [seventyUid, setSeventyUid] = useState('')
-  const [taskType, setTaskType] = useState<'select_visit' | 'select_interview'>('select_visit')
+  const [taskType, setTaskType] = useState<'select_visit' | 'select_interview' | 'select_meeting'>('select_visit')
   const [dueDate, setDueDate] = useState(dayjs().add(7, 'day').format('YYYY-MM-DD'))
   const [availableDays, setAvailableDays] = useState<number[]>([])
   const [startTime, setStartTime] = useState('09:00')
@@ -34,7 +35,7 @@ export function TaskCreation() {
   const [loading, setLoading] = useState(false)
 
   const seventyOptions = seventies.map(s => ({ value: s.uid, label: s.name }))
-  const isInterview = taskType === 'select_interview'
+  const isInterview = taskType === 'select_interview' || taskType === 'select_meeting'
 
   function toggleDay(day: number) {
     setAvailableDays(prev =>
@@ -146,7 +147,7 @@ export function TaskCreation() {
               <Select
                 label="Task 유형"
                 value={taskType}
-                onChange={e => setTaskType(e.target.value as typeof taskType)}
+                onChange={e => setTaskType(e.target.value as 'select_visit' | 'select_interview' | 'select_meeting')}
                 options={TASK_TYPE_OPTIONS}
               />
 

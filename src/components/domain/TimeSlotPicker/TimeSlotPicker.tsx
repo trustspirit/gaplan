@@ -7,26 +7,41 @@ import styles from './TimeSlotPicker.module.scss'
 
 interface TimeSlotPickerProps {
   slots: TimeSlot[]
-  selected: TimeSlot | null
-  onSelect: (slot: TimeSlot) => void
-  granularity?: 'day' | 'time'  // 'day' = ward_visit, 'time' = interview
+  granularity?: 'day' | 'time'
+  // Single select (ward_visit)
+  selected?: TimeSlot | null
+  onSelect?: (slot: TimeSlot) => void
+  // Multi select (interview / meeting)
+  multiSelect?: boolean
+  isSlotSelected?: (slot: TimeSlot) => boolean
+  onToggle?: (slot: TimeSlot) => void
 }
 
-export function TimeSlotPicker({ slots, selected, onSelect, granularity = 'time' }: TimeSlotPickerProps) {
+export function TimeSlotPicker({
+  slots,
+  granularity = 'time',
+  selected,
+  onSelect,
+  multiSelect = false,
+  isSlotSelected,
+  onToggle,
+}: TimeSlotPickerProps) {
   if (granularity === 'day') {
-    // Day-level: each slot is one selectable date card (no time shown)
+    const available = slots.filter(s => s.isAvailable)
     return (
       <div className={styles.picker}>
         <div className={styles.dayCards}>
-          {slots.filter(s => s.isAvailable).map(slot => {
+          {available.map(slot => {
             const d = dayjs(slot.date)
-            const isSelected = selected?.date === slot.date
+            const isSelected = multiSelect
+              ? (isSlotSelected?.(slot) ?? false)
+              : selected?.date === slot.date
             return (
               <button
                 key={slot.date}
                 type="button"
                 className={clsx(styles.dayCard, isSelected && styles.dayCardSelected)}
-                onClick={() => onSelect(slot)}
+                onClick={() => multiSelect ? onToggle?.(slot) : onSelect?.(slot)}
               >
                 <span className={styles.dayCardDow}>{d.format('ddd')}</span>
                 <span className={styles.dayCardDate}>{d.format('M/D')}</span>
@@ -34,14 +49,14 @@ export function TimeSlotPicker({ slots, selected, onSelect, granularity = 'time'
             )
           })}
         </div>
-        {slots.filter(s => s.isAvailable).length === 0 && (
+        {available.length === 0 && (
           <p className={styles.empty}>가능한 날짜가 없습니다.</p>
         )}
       </div>
     )
   }
 
-  // Time-level: grouped by date, show time buttons within each date
+  // Time-level: grouped by date
   const grouped = slots.reduce<Record<string, TimeSlot[]>>((acc, slot) => {
     acc[slot.date] = [...(acc[slot.date] ?? []), slot]
     return acc
@@ -53,21 +68,26 @@ export function TimeSlotPicker({ slots, selected, onSelect, granularity = 'time'
         <div key={date} className={styles.dayGroup}>
           <p className={styles.date}>{dayjs(date).format('M월 D일 (ddd)')}</p>
           <div className={styles.slots}>
-            {daySlots.map(slot => (
-              <button
-                key={`${slot.date}-${slot.startTime}`}
-                type="button"
-                className={clsx(
-                  styles.slot,
-                  !slot.isAvailable && styles.disabled,
-                  selected?.date === slot.date && selected?.startTime === slot.startTime && styles.selected,
-                )}
-                disabled={!slot.isAvailable}
-                onClick={() => onSelect(slot)}
-              >
-                {slot.startTime}
-              </button>
-            ))}
+            {daySlots.map(slot => {
+              const isSelected = multiSelect
+                ? (isSlotSelected?.(slot) ?? false)
+                : (selected?.date === slot.date && selected?.startTime === slot.startTime)
+              return (
+                <button
+                  key={`${slot.date}-${slot.startTime}`}
+                  type="button"
+                  className={clsx(
+                    styles.slot,
+                    !slot.isAvailable && styles.disabled,
+                    isSelected && styles.selected,
+                  )}
+                  disabled={!slot.isAvailable}
+                  onClick={() => multiSelect ? onToggle?.(slot) : onSelect?.(slot)}
+                >
+                  {slot.startTime}
+                </button>
+              )
+            })}
           </div>
         </div>
       ))}

@@ -59,8 +59,9 @@ function PresidentDashboard() {
   const isMobile = useIsMobile()
   const {
     activeTask, selectedSlot, setSelectedSlot,
-    submitting, availableSlots, isVisit,
-    openTask, closeTask, handleConfirm,
+    selectedSlots, toggleSlot, isSlotSelected,
+    submitting, availableSlots, isVisit, isMultiSelect,
+    openTask, closeTask, handleConfirm, handleSubmitAvailability,
   } = useTaskConfirm(user.uid, user.unitId)
 
   const upcoming = schedules
@@ -72,19 +73,34 @@ function PresidentDashboard() {
     <>
       <TimeSlotPicker
         slots={availableSlots}
+        granularity={isVisit ? 'day' : 'time'}
+        multiSelect={isMultiSelect}
         selected={selectedSlot}
         onSelect={setSelectedSlot}
-        granularity={isVisit ? 'day' : 'time'}
+        isSlotSelected={isSlotSelected}
+        onToggle={toggleSlot}
       />
-      <Button
-        onClick={handleConfirm}
-        loading={submitting}
-        disabled={!selectedSlot}
-        fullWidth
-        className={styles.confirmBtn}
-      >
-        일정 확정
-      </Button>
+      {isMultiSelect ? (
+        <Button
+          onClick={handleSubmitAvailability}
+          loading={submitting}
+          disabled={selectedSlots.length === 0}
+          fullWidth
+          className={styles.confirmBtn}
+        >
+          가능 시간 제출 {selectedSlots.length > 0 ? `(${selectedSlots.length}개)` : ''}
+        </Button>
+      ) : (
+        <Button
+          onClick={handleConfirm}
+          loading={submitting}
+          disabled={!selectedSlot}
+          fullWidth
+          className={styles.confirmBtn}
+        >
+          방문 일정 확정
+        </Button>
+      )}
     </>
   )
 
@@ -135,11 +151,19 @@ function PresidentDashboard() {
       </div>
 
       {isMobile ? (
-        <BottomSheet open={!!activeTask} onClose={closeTask} title="날짜/시간 선택">
+        <BottomSheet
+          open={!!activeTask}
+          onClose={closeTask}
+          title={isVisit ? '방문 날짜 선택' : isMultiSelect ? '가능한 시간 선택 (복수 가능)' : '날짜/시간 선택'}
+        >
           {slotPickerContent}
         </BottomSheet>
       ) : (
-        <Modal open={!!activeTask} onClose={closeTask} title="날짜/시간 선택">
+        <Modal
+          open={!!activeTask}
+          onClose={closeTask}
+          title={isVisit ? '방문 날짜 선택' : isMultiSelect ? '가능한 시간 선택 (복수 가능)' : '날짜/시간 선택'}
+        >
           {slotPickerContent}
         </Modal>
       )}

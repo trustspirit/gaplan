@@ -52,14 +52,22 @@ exports.calendarSync = functions
     .region('asia-northeast3')
     .firestore.document('schedules/{scheduleId}')
     .onWrite(async (change) => {
-    var _a, _b, _c;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
     const db = admin.firestore();
-    const settingsSnap = await db.collection('settings').doc('calendar').get();
-    const sharedCalendarId = (_a = settingsSnap.data()) === null || _a === void 0 ? void 0 : _a.sharedCalendarId;
-    if (!sharedCalendarId)
-        return;
+    // Resolve which regional calendar to use via the seventy's regionId
     const after = change.after.data();
     const before = change.before.data();
+    const seventyUid = (_a = after === null || after === void 0 ? void 0 : after.seventyUid) !== null && _a !== void 0 ? _a : before === null || before === void 0 ? void 0 : before.seventyUid;
+    const seventySnap = seventyUid
+        ? await db.collection('users').doc(seventyUid).get()
+        : null;
+    const regionId = (_c = (_b = seventySnap === null || seventySnap === void 0 ? void 0 : seventySnap.data()) === null || _b === void 0 ? void 0 : _b.regionId) !== null && _c !== void 0 ? _c : '';
+    const settingsSnap = await db.collection('settings').doc('calendar').get();
+    const calendars = (_e = (_d = settingsSnap.data()) === null || _d === void 0 ? void 0 : _d.calendars) !== null && _e !== void 0 ? _e : {};
+    // Fall back to legacy single-calendar field if present
+    const sharedCalendarId = (_f = calendars[regionId]) !== null && _f !== void 0 ? _f : (_g = settingsSnap.data()) === null || _g === void 0 ? void 0 : _g.sharedCalendarId;
+    if (!sharedCalendarId)
+        return;
     // Document deleted or schedule cancelled — remove Google Calendar event
     const eventIdToDelete = before === null || before === void 0 ? void 0 : before.googleCalendarEventId;
     const wasCancelled = !after || after.status === 'cancelled';
@@ -78,7 +86,7 @@ exports.calendarSync = functions
     if (after.googleCalendarEventId)
         return;
     const unitSnap = await db.collection('units').doc(after.unitId).get();
-    const unitName = (_c = (_b = unitSnap.data()) === null || _b === void 0 ? void 0 : _b.name) !== null && _c !== void 0 ? _c : after.unitId;
+    const unitName = (_j = (_h = unitSnap.data()) === null || _h === void 0 ? void 0 : _h.name) !== null && _j !== void 0 ? _j : after.unitId;
     const startDateTime = `${after.date}T${after.startTime}:00+09:00`;
     const endDateTime = `${after.date}T${after.endTime}:00+09:00`;
     const title = after.type === 'ward_visit' ? `${unitName} 방문` : `${unitName} 접견`;

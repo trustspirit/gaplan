@@ -14,48 +14,76 @@ export function TasksPage() {
   const isMobile = useIsMobile()
   const {
     activeTask, selectedSlot, setSelectedSlot,
-    submitting, availableSlots, isVisit,
-    openTask, closeTask, handleConfirm,
+    selectedSlots, toggleSlot, isSlotSelected,
+    submitting, availableSlots, isVisit, isMultiSelect,
+    openTask, closeTask, handleConfirm, handleSubmitAvailability,
   } = useTaskConfirm(user.uid, user.unitId)
+
+  const pendingTasks = tasks.filter(t => t.status === 'pending')
+  const respondedTasks = tasks.filter(t => t.status === 'responded')
 
   const slotPickerContent = (
     <>
       <TimeSlotPicker
         slots={availableSlots}
+        granularity={isVisit ? 'day' : 'time'}
+        multiSelect={isMultiSelect}
         selected={selectedSlot}
         onSelect={setSelectedSlot}
-        granularity={isVisit ? 'day' : 'time'}
+        isSlotSelected={isSlotSelected}
+        onToggle={toggleSlot}
       />
-      <Button
-        onClick={handleConfirm}
-        loading={submitting}
-        disabled={!selectedSlot}
-        fullWidth
-        className={styles.confirmBtn}
-      >
-        일정 확정
-      </Button>
+      {isMultiSelect ? (
+        <Button
+          onClick={handleSubmitAvailability}
+          loading={submitting}
+          disabled={selectedSlots.length === 0}
+          fullWidth
+          className={styles.confirmBtn}
+        >
+          가능 시간 제출 {selectedSlots.length > 0 ? `(${selectedSlots.length}개)` : ''}
+        </Button>
+      ) : (
+        <Button
+          onClick={handleConfirm}
+          loading={submitting}
+          disabled={!selectedSlot}
+          fullWidth
+          className={styles.confirmBtn}
+        >
+          방문 일정 확정
+        </Button>
+      )}
     </>
   )
 
   return (
     <AppShell
       role={user.role} name={user.name}
-      topBar={<TopBar name={user.name} pendingCount={tasks.length} />}
+      topBar={<TopBar name={user.name} pendingCount={pendingTasks.length} />}
     >
       <div className={styles.layout}>
         <div className={styles.mainCol}>
           <Card>
-            <CardHeader title="처리 필요 Task" />
+            <CardHeader title="처리 필요" />
             <CardBody>
               {tasksLoading
                 ? [1, 2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
-                : tasks.length === 0
-                  ? <p className={styles.empty}>모든 task가 완료되었습니다.</p>
-                  : tasks.map(t => <TaskCard key={t.id} task={t} onAction={openTask} />)
+                : pendingTasks.length === 0
+                  ? <p className={styles.empty}>처리할 항목이 없습니다.</p>
+                  : pendingTasks.map(t => <TaskCard key={t.id} task={t} onAction={openTask} />)
               }
             </CardBody>
           </Card>
+
+          {!tasksLoading && respondedTasks.length > 0 && (
+            <Card>
+              <CardHeader title="제출 완료 · 확정 대기" />
+              <CardBody>
+                {respondedTasks.map(t => <TaskCard key={t.id} task={t} />)}
+              </CardBody>
+            </Card>
+          )}
         </div>
 
         {!isMobile && (
@@ -63,7 +91,9 @@ export function TasksPage() {
             {activeTask ? (
               <div className={styles.sidePickerCard}>
                 <div className={styles.sidePickerHeader}>
-                  {isVisit ? '방문 날짜 선택' : '접견 날짜/시간 선택'}
+                  {isVisit
+                    ? '방문 날짜 선택'
+                    : '가능한 시간 선택 (복수 가능)'}
                 </div>
                 <div className={styles.sidePickerBody}>
                   {slotPickerContent}
@@ -82,7 +112,7 @@ export function TasksPage() {
         <BottomSheet
           open={!!activeTask}
           onClose={closeTask}
-          title={isVisit ? '방문 날짜 선택' : '접견 날짜/시간 선택'}
+          title={isVisit ? '방문 날짜 선택' : '가능한 시간 선택 (복수 가능)'}
         >
           {slotPickerContent}
         </BottomSheet>

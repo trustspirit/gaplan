@@ -1,7 +1,11 @@
 @use '@/styles/variables' as *;
 .card { display: flex; align-items: center; justify-content: space-between; padding: $space-3 $space-4; border: 1px solid $color-border; border-radius: $border-radius-md; background: $color-surface; gap: $space-3; margin-bottom: $space-2; }
 .urgent { border-left: 3px solid $color-danger; background: $color-highlight-danger; }
-.left { display: flex; align-items: center; gap: $space-2; flex: 1; }
+.responded { border-left: 3px solid $color-primary; background: color-mix(in srgb, var(--color-primary, #177C9C) 6%, white); opacity: 0.85; }
+.left { display: flex; align-items: center; gap: $space-2; flex: 1; min-width: 0; }
 .icon { color: $color-warning; flex-shrink: 0; }
+.iconResponded { color: $color-primary; flex-shrink: 0; }
+.labelGroup { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .label { font-size: $font-size-sm; color: $color-text; }
-.right { display: flex; align-items: center; gap: $space-2; }
+.respondedHint { font-size: $font-size-xs; color: $color-text-muted; }
+.right { display: flex; align-items: center; gap: $space-2; flex-shrink: 0; }

@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Calendar, MapPin, Users, CheckSquare, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Calendar, MapPin, Users, CheckSquare, Settings, LogOut, ClipboardList } from 'lucide-react';
 import clsx from 'clsx';
 import { Avatar } from '@/components/ui';
 import { signOut } from '@/services/authService';
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
     { to: '/visits', icon: _jsx(MapPin, { size: 20 }), label: '방문', roles: ['admin', 'seventy', 'president'] },
     { to: '/interviews', icon: _jsx(Users, { size: 20 }), label: '접견', roles: ['admin', 'seventy', 'president'] },
     { to: '/tasks', icon: _jsx(CheckSquare, { size: 20 }), label: 'Task', roles: ['president'] },
+    { to: '/admin/task-progress', icon: _jsx(ClipboardList, { size: 20 }), label: 'Task 현황', roles: ['admin', 'seventy'] },
     { to: '/admin', icon: _jsx(Settings, { size: 20 }), label: '관리', roles: ['admin'] },
 ];
 const ROLE_LABELS = {

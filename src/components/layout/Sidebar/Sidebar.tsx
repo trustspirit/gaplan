@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Calendar, MapPin, Users, CheckSquare, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, Calendar, MapPin, Users, CheckSquare, Settings, LogOut, ClipboardList } from 'lucide-react'
 import clsx from 'clsx'
 import type { UserRole } from '@/types'
 import { Avatar } from '@/components/ui'
@@ -14,8 +14,9 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/calendar',   icon: <Calendar size={20} />,        label: '캘린더',   roles: ['admin','seventy','president'] },
   { to: '/visits',     icon: <MapPin size={20} />,          label: '방문',     roles: ['admin','seventy','president'] },
   { to: '/interviews', icon: <Users size={20} />,           label: '접견',     roles: ['admin','seventy','president'] },
-  { to: '/tasks',      icon: <CheckSquare size={20} />,     label: 'Task',    roles: ['president'] },
-  { to: '/admin',      icon: <Settings size={20} />,        label: '관리',     roles: ['admin'] },
+  { to: '/tasks',               icon: <CheckSquare size={20} />,    label: 'Task',    roles: ['president'] },
+  { to: '/admin/task-progress', icon: <ClipboardList size={20} />, label: 'Task 현황', roles: ['admin', 'seventy'] },
+  { to: '/admin',               icon: <Settings size={20} />,      label: '관리',     roles: ['admin'] },
 ]
 
 const ROLE_LABELS: Record<UserRole, string> = {

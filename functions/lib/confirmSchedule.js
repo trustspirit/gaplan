@@ -59,7 +59,7 @@ exports.confirmSchedule = functions
     if (!/^\d{2}:\d{2}$/.test((_e = (_d = data.slot) === null || _d === void 0 ? void 0 : _d.startTime) !== null && _e !== void 0 ? _e : '') || !/^\d{2}:\d{2}$/.test((_g = (_f = data.slot) === null || _f === void 0 ? void 0 : _f.endTime) !== null && _g !== void 0 ? _g : '')) {
         throw new functions.https.HttpsError('invalid-argument', 'Invalid time format');
     }
-    if (!['ward_visit', 'interview'].includes(data.type)) {
+    if (!['ward_visit', 'interview', 'meeting'].includes(data.type)) {
         throw new functions.https.HttpsError('invalid-argument', 'Invalid schedule type');
     }
     const db = admin.firestore();

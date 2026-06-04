@@ -61,11 +61,13 @@ service cloud.firestore {
 
     match /tasks/{taskId} {
       allow read: if isAuth() && (
-        isAdmin() || resource.data.assignedTo == request.auth.uid
+        isAdmin() || isSeventy() || resource.data.assignedTo == request.auth.uid
       );
       allow create, delete: if isAdmin();
-      allow update: if isAdmin() || (isAuth() && resource.data.assignedTo == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+      allow update: if isAdmin() || isSeventy()
+        || (isAuth() && resource.data.assignedTo == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'respondedSlots', 'respondedAt']));
     }
 
     match /notifications/{uid}/items/{notifId} {

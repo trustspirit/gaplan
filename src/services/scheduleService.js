@@ -20,3 +20,8 @@ export async function confirmSchedule(params) {
     const result = await fn(params);
     return result.data;
 }
+export async function adminConfirmSchedule(params) {
+    const fn = httpsCallable(functions, 'adminConfirmSchedule');
+    const result = await fn(params);
+    return result.data;
+}

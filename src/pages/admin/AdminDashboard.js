@@ -21,9 +21,9 @@ const ACTION_CARDS = [
     },
     {
         icon: CalendarDays,
-        title: '가능 일정 설정',
-        desc: '지역 칠십인 가능 일정 설정',
-        link: '/admin/availability',
+        title: 'Task 진행 현황',
+        desc: '응답 여부·결과 확인 및 일정 확정',
+        link: '/admin/task-progress',
     },
     {
         icon: CalendarCheck,

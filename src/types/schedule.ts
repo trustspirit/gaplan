@@ -1,4 +1,4 @@
-export type ScheduleType = 'ward_visit' | 'interview'
+export type ScheduleType = 'ward_visit' | 'interview' | 'meeting'
 export type ScheduleStatus = 'pending' | 'confirmed' | 'cancelled'
 
 export interface Schedule {

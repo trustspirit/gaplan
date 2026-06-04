@@ -2,6 +2,8 @@ import * as admin from 'firebase-admin'
 admin.initializeApp()
 
 export { confirmSchedule } from './confirmSchedule'
+export { submitAvailability } from './submitAvailability'
+export { adminConfirmSchedule } from './adminConfirmSchedule'
 export { deleteUser } from './adminActions'
 export { calendarSync } from './calendarSync'
 export { weeklyReminder } from './weeklyReminder'
