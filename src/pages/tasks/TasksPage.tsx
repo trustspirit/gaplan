@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import { toast } from 'sonner'
+import { X } from 'lucide-react'
 import { authUserAtom } from '@/store/authAtom'
 import { useTasks } from '@/hooks/useTasks'
 import { useTaskConfirm } from '@/hooks/useTaskConfirm'
@@ -27,8 +28,12 @@ function useWardSubmit(activeTask: Task | null, onDone: () => void) {
       } else {
         toast.error(result.error ?? '제출에 실패했습니다.')
       }
-    } catch {
-      toast.error('오류가 발생했습니다.')
+    } catch (e: unknown) {
+      const msg = (e as { message?: string; code?: string })?.message
+        ?? (e as { code?: string })?.code
+        ?? '알 수 없는 오류가 발생했습니다.'
+      console.error('[submitWardAssignments]', e)
+      toast.error(msg)
     } finally {
       setSubmitting(false)
     }
@@ -53,20 +58,11 @@ export function TasksPage() {
   const pendingTasks = tasks.filter(t => t.status === 'pending')
   const respondedTasks = tasks.filter(t => t.status === 'responded')
 
-  // For ward visits: show WardAssigner; for interview/meeting: show TimeSlotPicker
   const availableWards = isVisit && activeTask
     ? getWardsByUnit(user.unitId ?? '')
     : []
 
-  const wardPickerContent = isVisit && activeTask ? (
-    <WardAssigner
-      availableDates={activeTask.availableDates ?? []}
-      wards={availableWards}
-      onSubmit={handleSubmitWards}
-      submitting={wardSubmitting}
-    />
-  ) : null
-
+  // Interview / time-based slot picker (used in sidePanel on PC + BottomSheet on mobile)
   const slotPickerContent = (
     <>
       <TimeSlotPicker
@@ -88,15 +84,13 @@ export function TasksPage() {
     </>
   )
 
-  const pickerTitle = isVisit ? '와드/지부 방문 날짜 배정' : '가능한 시간 선택 (복수 가능)'
-  const activeContent = isVisit ? wardPickerContent : slotPickerContent
-
   return (
     <AppShell
       role={user.role} name={user.name}
       topBar={<TopBar name={user.name} pendingCount={pendingTasks.length} />}
     >
       <div className={styles.layout}>
+        {/* ── Main column ── */}
         <div className={styles.mainCol}>
           <Card>
             <CardHeader title="처리 필요" />
@@ -118,14 +112,37 @@ export function TasksPage() {
               </CardBody>
             </Card>
           )}
+
+          {/* Ward visit assigner — full-width inline panel on PC (wide grid needs space) */}
+          {!isMobile && isVisit && activeTask && (
+            <Card>
+              <CardHeader
+                title="와드/지부 방문 날짜 배정"
+                action={
+                  <button type="button" className={styles.closeBtn} onClick={closeTask}>
+                    <X size={16} />
+                  </button>
+                }
+              />
+              <CardBody>
+                <WardAssigner
+                  availableDates={activeTask.availableDates ?? []}
+                  wards={availableWards}
+                  onSubmit={handleSubmitWards}
+                  submitting={wardSubmitting}
+                />
+              </CardBody>
+            </Card>
+          )}
         </div>
 
-        {!isMobile && (
+        {/* ── Side column (interview / time-based only) ── */}
+        {!isMobile && !isVisit && (
           <div className={styles.sideCol}>
             {activeTask ? (
               <div className={styles.sidePickerCard}>
-                <div className={styles.sidePickerHeader}>{pickerTitle}</div>
-                <div className={styles.sidePickerBody}>{activeContent}</div>
+                <div className={styles.sidePickerHeader}>가능한 시간 선택 (복수 가능)</div>
+                <div className={styles.sidePickerBody}>{slotPickerContent}</div>
               </div>
             ) : (
               <div className={styles.sidePlaceholder}>
@@ -136,9 +153,31 @@ export function TasksPage() {
         )}
       </div>
 
-      {isMobile && (
-        <BottomSheet open={!!activeTask} onClose={closeTask} title={pickerTitle}>
-          {activeContent}
+      {/* Mobile: both visit and interview use BottomSheet */}
+      {isMobile && isVisit && (
+        <BottomSheet
+          open={!!activeTask}
+          onClose={closeTask}
+          title="와드/지부 방문 날짜 배정"
+        >
+          {activeTask && (
+            <WardAssigner
+              availableDates={activeTask.availableDates ?? []}
+              wards={availableWards}
+              onSubmit={handleSubmitWards}
+              submitting={wardSubmitting}
+            />
+          )}
+        </BottomSheet>
+      )}
+
+      {isMobile && !isVisit && (
+        <BottomSheet
+          open={!!activeTask}
+          onClose={closeTask}
+          title="가능한 시간 선택 (복수 가능)"
+        >
+          {slotPickerContent}
         </BottomSheet>
       )}
     </AppShell>

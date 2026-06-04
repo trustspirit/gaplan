@@ -86,3 +86,18 @@
 .skeletonItem {
   margin-bottom: $space-2;
 }
+
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  border-radius: $border-radius-md;
+  cursor: pointer;
+  color: $color-text-muted;
+  transition: background 0.12s, color 0.12s;
+  &:hover { background: $color-bg; color: $color-text; }
+}
