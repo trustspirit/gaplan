@@ -8,3 +8,24 @@
     padding-bottom: calc(#{$bottom-tab-height} + #{$space-4});
   }
 }
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: $space-4;
+  align-items: start;
+
+  @include mobile {
+    grid-template-columns: 1fr;
+  }
+}
+
+.calendarCol {}
+.listCol {}
+
+.empty {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  padding: $space-4 0;
+  text-align: center;
+}

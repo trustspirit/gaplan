@@ -2,7 +2,7 @@
 @use '@/styles/mixins' as *;
 
 .sidebar {
-  width: $sidebar-width; background: $color-sidebar;
+  width: $sidebar-width; height: 100%; background: $color-sidebar;
   display: flex; flex-direction: column; align-items: center;
   padding: 14px 0 12px;
 }
