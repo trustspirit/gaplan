@@ -15,7 +15,9 @@ service cloud.firestore {
     function isPresident() { return isAuth() && userRole() == 'president'; }
 
     match /users/{uid} {
-      allow read: if isAuth() && (request.auth.uid == uid || isAdmin());
+      // Admin: all users. Seventy: all users (needed to resolve president names in task progress).
+      // President/others: own document only.
+      allow read: if isAuth() && (request.auth.uid == uid || isAdmin() || isSeventy());
       allow create: if isAuth() && request.auth.uid == uid
         && (
           // Presidents self-create via onboarding
@@ -53,13 +55,23 @@ service cloud.firestore {
     }
 
     match /schedules/{scheduleId} {
-      allow read: if isAuth();
+      // Admin: all. Seventy: only schedules they are assigned to (seventyUid).
+      // President: only their own confirmed schedules.
+      allow read: if isAuth() && (
+        isAdmin()
+        || (isSeventy() && resource.data.seventyUid == request.auth.uid)
+        || resource.data.presidentUid == request.auth.uid
+      );
       allow create, update, delete: if isAdmin();
     }
 
     match /tasks/{taskId} {
+      // Admin: all. Seventy: only tasks in their region (seventyUid matches).
+      // President: only tasks assigned to them.
       allow read: if isAuth() && (
-        isAdmin() || isSeventy() || resource.data.assignedTo == request.auth.uid
+        isAdmin()
+        || (isSeventy() && resource.data.seventyUid == request.auth.uid)
+        || resource.data.assignedTo == request.auth.uid
       );
       allow create, delete: if isAdmin();
       // Admin: unrestricted. Seventy: only their region's tasks, status-only.

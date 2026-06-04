@@ -194,7 +194,8 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName }) {
 // ── Main page ────────────────────────────────────────────────────────────────
 export function TaskProgress() {
     const user = useAtomValue(authUserAtom);
-    const { tasks, loading } = useAllTasks();
+    // Seventy: only their assigned tasks. Admin: all tasks.
+    const { tasks, loading } = useAllTasks(user.role === 'seventy' ? user.uid : undefined);
     const { users } = useUsers();
     const getUserName = (uid) => users.find(u => u.uid === uid)?.name ?? uid;
     const getUnitName = (uid) => {

@@ -16,15 +16,16 @@ export function useTasks(assignedTo) {
     }, [assignedTo]);
     return { tasks, loading };
 }
-export function useAllTasks() {
+// seventyUid: pass the seventy's UID to restrict to their tasks only
+export function useAllTasks(seventyUid) {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     useEffect(() => {
         const unsub = subscribeToAllTasks(data => {
             setTasks(data);
             setLoading(false);
-        });
+        }, seventyUid);
         return unsub;
-    }, []);
+    }, [seventyUid]);
     return { tasks, loading };
 }

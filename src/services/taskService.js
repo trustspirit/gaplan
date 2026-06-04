@@ -6,9 +6,12 @@ export function subscribeToTasks(assignedTo, callback) {
     const q = query(collection(db, 'tasks'), where('assignedTo', '==', assignedTo), where('status', 'in', ['pending', 'responded']), orderBy('dueDate', 'asc'));
     return onSnapshot(q, snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }))), err => console.error('[tasks] onSnapshot error:', err.code, err.message));
 }
-// Admin/Seventy: all tasks regardless of assignee or status
-export function subscribeToAllTasks(callback) {
-    const q = query(collection(db, 'tasks'), orderBy('dueDate', 'asc'));
+// Admin/Seventy: all tasks (seventy filtered by seventyUid via Firestore rules + query)
+export function subscribeToAllTasks(callback, seventyUid) {
+    let q = query(collection(db, 'tasks'), orderBy('dueDate', 'asc'));
+    if (seventyUid) {
+        q = query(q, where('seventyUid', '==', seventyUid));
+    }
     return onSnapshot(q, snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }))), err => console.error('[tasks] onSnapshot error:', err.code, err.message));
 }
 export async function completeTask(taskId) {

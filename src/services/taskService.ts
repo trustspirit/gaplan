@@ -21,9 +21,15 @@ export function subscribeToTasks(assignedTo: string, callback: (tasks: Task[]) =
   )
 }
 
-// Admin/Seventy: all tasks regardless of assignee or status
-export function subscribeToAllTasks(callback: (tasks: Task[]) => void): Unsubscribe {
-  const q = query(collection(db, 'tasks'), orderBy('dueDate', 'asc'))
+// Admin/Seventy: all tasks (seventy filtered by seventyUid via Firestore rules + query)
+export function subscribeToAllTasks(
+  callback: (tasks: Task[]) => void,
+  seventyUid?: string,  // when set, restrict to this seventy's tasks
+): Unsubscribe {
+  let q = query(collection(db, 'tasks'), orderBy('dueDate', 'asc'))
+  if (seventyUid) {
+    q = query(q, where('seventyUid', '==', seventyUid))
+  }
   return onSnapshot(q,
     snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Task)),
     err => console.error('[tasks] onSnapshot error:', err.code, err.message),

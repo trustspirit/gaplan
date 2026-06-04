@@ -21,7 +21,8 @@ export function useTasks(assignedTo: string) {
   return { tasks, loading }
 }
 
-export function useAllTasks() {
+// seventyUid: pass the seventy's UID to restrict to their tasks only
+export function useAllTasks(seventyUid?: string) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -29,9 +30,9 @@ export function useAllTasks() {
     const unsub = subscribeToAllTasks(data => {
       setTasks(data)
       setLoading(false)
-    })
+    }, seventyUid)
     return unsub
-  }, [])
+  }, [seventyUid])
 
   return { tasks, loading }
 }
