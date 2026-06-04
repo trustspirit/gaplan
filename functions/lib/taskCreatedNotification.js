@@ -43,11 +43,7 @@ exports.taskCreatedNotification = void 0;
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const emailTransport_1 = require("./emailTransport");
-const APP_URL = 'https://gaplan-fccfe.web.app';
-const TASK_TYPE_LABELS = {
-    select_visit: '와드 방문 일정',
-    select_interview: '접견/모임 일정',
-};
+const emailHelpers_1 = require("./emailHelpers");
 exports.taskCreatedNotification = functions
     .region('asia-northeast3')
     .firestore.document('tasks/{taskId}')
@@ -62,9 +58,9 @@ exports.taskCreatedNotification = functions
     const president = presidentSnap.data();
     if (!(president === null || president === void 0 ? void 0 : president.email))
         return;
-    const typeLabel = task.title || TASK_TYPE_LABELS[task.type] || 'Task';
+    const typeLabel = (0, emailHelpers_1.resolveTaskTypeLabel)(task.type, task.title);
     const dueDate = task.dueDate;
-    const tasksUrl = `${APP_URL}/tasks`;
+    const tasksUrl = `${emailHelpers_1.APP_URL}/tasks`;
     const subject = `[gaplan] 새 Task가 배정되었습니다: ${typeLabel}`;
     const text = [
         `${president.name} 회장님,`,
@@ -97,7 +93,19 @@ exports.taskCreatedNotification = functions
         functions.logger.error('taskCreatedNotification: email failed', err);
     }
 });
+function escapeHtml(s) {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 function buildHtmlEmail(name, typeLabel, dueDate, note, tasksUrl) {
+    const safeName = escapeHtml(name);
+    const safeTypeLabel = escapeHtml(typeLabel);
+    const safeDueDate = escapeHtml(dueDate);
+    const safeNote = note ? escapeHtml(note).replace(/\n/g, '<br>') : null;
     return `
 <!DOCTYPE html>
 <html lang="ko">
@@ -109,21 +117,21 @@ function buildHtmlEmail(name, typeLabel, dueDate, note, tasksUrl) {
     </div>
     <div style="padding:28px">
       <h2 style="margin:0 0 8px;font-size:16px;color:#212225">새 Task가 배정되었습니다</h2>
-      <p style="margin:0 0 20px;color:#808081;font-size:14px">${name} 회장님께</p>
+      <p style="margin:0 0 20px;color:#808081;font-size:14px">${safeName} 회장님께</p>
 
       <div style="background:#f7f8f8;border-radius:8px;padding:16px;margin-bottom:20px">
         <div style="display:flex;gap:8px;margin-bottom:8px">
           <span style="color:#808081;font-size:13px;min-width:60px">종류</span>
-          <span style="color:#212225;font-size:13px;font-weight:600">${typeLabel}</span>
+          <span style="color:#212225;font-size:13px;font-weight:600">${safeTypeLabel}</span>
         </div>
         <div style="display:flex;gap:8px">
           <span style="color:#808081;font-size:13px;min-width:60px">마감일</span>
-          <span style="color:#212225;font-size:13px;font-weight:600">${dueDate}</span>
+          <span style="color:#212225;font-size:13px;font-weight:600">${safeDueDate}</span>
         </div>
-        ${note ? `
+        ${safeNote ? `
         <div style="display:flex;gap:8px;margin-top:8px">
           <span style="color:#808081;font-size:13px;min-width:60px">요청 사항</span>
-          <span style="color:#212225;font-size:13px">${note.replace(/\n/g, '<br>')}</span>
+          <span style="color:#212225;font-size:13px">${safeNote}</span>
         </div>` : ''}
       </div>
 

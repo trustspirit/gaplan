@@ -46,11 +46,7 @@ const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const dayjs_1 = __importDefault(require("dayjs"));
 const emailTransport_1 = require("./emailTransport");
-const APP_URL = 'https://gaplan-fccfe.web.app';
-const TASK_TYPE_LABELS = {
-    select_visit: '와드 방문 일정',
-    select_interview: '접견/모임 일정',
-};
+const emailHelpers_1 = require("./emailHelpers");
 exports.taskReminder = functions
     .region('asia-northeast3')
     .pubsub.schedule('0 9 * * *')
@@ -76,7 +72,7 @@ exports.taskReminder = functions
         const alreadyToday = ((_a = task.notifiedAt) !== null && _a !== void 0 ? _a : []).some(t => (0, dayjs_1.default)(t.toDate()).format('YYYY-MM-DD') === todayStr);
         if (alreadyToday)
             return;
-        const typeLabel = task.title || TASK_TYPE_LABELS[task.type] || 'Task';
+        const typeLabel = (0, emailHelpers_1.resolveTaskTypeLabel)(task.type, task.title);
         const tag = daysLeft <= 0 ? `기한 초과 D+${Math.abs(daysLeft)}` : `D-${daysLeft}`;
         const urgency = daysLeft <= 0
             ? `기한이 ${Math.abs(daysLeft)}일 지났습니다.`
@@ -95,7 +91,7 @@ exports.taskReminder = functions
                 `• 마감일: ${task.dueDate}`,
                 task.note ? `• 요청 사항: ${task.note}` : null,
                 ``,
-                `지금 처리해주세요: ${APP_URL}/tasks`,
+                `지금 처리해주세요: ${emailHelpers_1.APP_URL}/tasks`,
                 ``,
                 `gaplan`,
             ].filter(Boolean).join('\n'),
