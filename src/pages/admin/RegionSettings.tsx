@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
+import clsx from 'clsx'
 import { authUserAtom } from '@/store/authAtom'
 import { createTask } from '@/services/taskService'
 import { useUsers } from '@/hooks/useUsers'
-import { ALL_UNITS } from '@/constants/regions'
+import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Select, Button, Input, Badge } from '@/components/ui'
 import { MultiDatePicker } from '@/components/domain'
@@ -32,6 +33,7 @@ export function TaskCreation() {
 
   const [selectedPresidents, setSelectedPresidents] = useState<Set<string>>(new Set())
   const [seventyUid, setSeventyUid] = useState('')
+  const [filterRegion, setFilterRegion] = useState('')
   const [taskType, setTaskType] = useState<'select_visit' | 'select_interview' | 'select_meeting'>('select_visit')
   const [dueDate, setDueDate] = useState(dayjs().add(7, 'day').format('YYYY-MM-DD'))
   // Interview/Meeting: specific dates
@@ -52,11 +54,39 @@ export function TaskCreation() {
     })
   }
 
+  const filteredPresidents = filterRegion
+    ? presidents.filter(p => {
+        const unit = ALL_UNITS.find(u => u.id === p.unitId)
+        return unit?.regionId === filterRegion
+      })
+    : presidents
+
   function toggleAll() {
-    if (selectedPresidents.size === presidents.length) {
-      setSelectedPresidents(new Set())
+    const pool = filteredPresidents
+    const allSelected = pool.every(p => selectedPresidents.has(p.uid))
+    if (allSelected) {
+      setSelectedPresidents(prev => {
+        const next = new Set(prev)
+        pool.forEach(p => next.delete(p.uid))
+        return next
+      })
     } else {
-      setSelectedPresidents(new Set(presidents.map(p => p.uid)))
+      setSelectedPresidents(prev => {
+        const next = new Set(prev)
+        pool.forEach(p => next.add(p.uid))
+        return next
+      })
+    }
+  }
+
+  function handleRegionFilter(regionId: string) {
+    setFilterRegion(regionId)
+    if (regionId) {
+      const pool = presidents.filter(p => {
+        const unit = ALL_UNITS.find(u => u.id === p.unitId)
+        return unit?.regionId === regionId
+      })
+      setSelectedPresidents(new Set(pool.map(p => p.uid)))
     }
   }
 
@@ -107,7 +137,6 @@ export function TaskCreation() {
     }
   }
 
-  const allSelected = presidents.length > 0 && selectedPresidents.size === presidents.length
 
   return (
     <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext="일정 요청 관리" />}>
@@ -130,14 +159,31 @@ export function TaskCreation() {
                     <Badge variant="default">{selectedPresidents.size}명 선택됨</Badge>
                   )}
                   <button type="button" className={styles.selectAllBtn} onClick={toggleAll}>
-                    {allSelected ? '전체 해제' : '전체 선택'}
+                    {filteredPresidents.every(p => selectedPresidents.has(p.uid)) ? '해제' : '전체 선택'}
                   </button>
                 </div>
+                <div className={styles.regionFilter}>
+                  <button
+                    type="button"
+                    className={clsx(styles.regionBtn, !filterRegion && styles.regionBtnActive)}
+                    onClick={() => setFilterRegion('')}
+                  >전체</button>
+                  {REGIONS.map(r => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      className={clsx(styles.regionBtn, filterRegion === r.id && styles.regionBtnActive)}
+                      onClick={() => handleRegionFilter(r.id)}
+                    >
+                      {r.name}
+                    </button>
+                  ))}
+                </div>
                 <div className={styles.presidentList}>
-                  {presidents.length === 0 ? (
-                    <p className={styles.noneText}>등록된 회장이 없습니다.</p>
+                  {filteredPresidents.length === 0 ? (
+                    <p className={styles.noneText}>{filterRegion ? '해당 지역에 등록된 회장이 없습니다.' : '등록된 회장이 없습니다.'}</p>
                   ) : (
-                    presidents.map(p => {
+                    filteredPresidents.map(p => {
                       const unit = ALL_UNITS.find(u => u.id === p.unitId)
                       return (
                         <label key={p.uid} className={styles.presidentRow}>

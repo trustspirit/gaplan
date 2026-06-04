@@ -15,6 +15,9 @@ export function subscribeToUsers(callback) {
 export async function updateUserRole(uid, role, regionId) {
     await updateDoc(doc(db, 'users', uid), { role, ...(regionId ? { regionId } : {}) });
 }
+export async function updateUserName(uid, name) {
+    await updateDoc(doc(db, 'users', uid), { name: name.trim() });
+}
 export async function deleteUserAccount(uid) {
     await httpsCallable(functions, 'deleteUser')({ uid });
 }

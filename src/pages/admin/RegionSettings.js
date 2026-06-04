@@ -3,10 +3,11 @@ import { useState } from 'react';
 import { useAtomValue } from 'jotai';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
+import clsx from 'clsx';
 import { authUserAtom } from '@/store/authAtom';
 import { createTask } from '@/services/taskService';
 import { useUsers } from '@/hooks/useUsers';
-import { ALL_UNITS } from '@/constants/regions';
+import { ALL_UNITS, REGIONS } from '@/constants/regions';
 import { AppShell, TopBar } from '@/components/layout';
 import { Card, CardHeader, CardBody, Select, Button, Input, Badge } from '@/components/ui';
 import { MultiDatePicker } from '@/components/domain';
@@ -29,6 +30,7 @@ export function TaskCreation() {
     const seventies = users.filter(u => u.role === 'seventy');
     const [selectedPresidents, setSelectedPresidents] = useState(new Set());
     const [seventyUid, setSeventyUid] = useState('');
+    const [filterRegion, setFilterRegion] = useState('');
     const [taskType, setTaskType] = useState('select_visit');
     const [dueDate, setDueDate] = useState(dayjs().add(7, 'day').format('YYYY-MM-DD'));
     // Interview/Meeting: specific dates
@@ -46,12 +48,38 @@ export function TaskCreation() {
             return next;
         });
     }
+    const filteredPresidents = filterRegion
+        ? presidents.filter(p => {
+            const unit = ALL_UNITS.find(u => u.id === p.unitId);
+            return unit?.regionId === filterRegion;
+        })
+        : presidents;
     function toggleAll() {
-        if (selectedPresidents.size === presidents.length) {
-            setSelectedPresidents(new Set());
+        const pool = filteredPresidents;
+        const allSelected = pool.every(p => selectedPresidents.has(p.uid));
+        if (allSelected) {
+            setSelectedPresidents(prev => {
+                const next = new Set(prev);
+                pool.forEach(p => next.delete(p.uid));
+                return next;
+            });
         }
         else {
-            setSelectedPresidents(new Set(presidents.map(p => p.uid)));
+            setSelectedPresidents(prev => {
+                const next = new Set(prev);
+                pool.forEach(p => next.add(p.uid));
+                return next;
+            });
+        }
+    }
+    function handleRegionFilter(regionId) {
+        setFilterRegion(regionId);
+        if (regionId) {
+            const pool = presidents.filter(p => {
+                const unit = ALL_UNITS.find(u => u.id === p.unitId);
+                return unit?.regionId === regionId;
+            });
+            setSelectedPresidents(new Set(pool.map(p => p.uid)));
         }
     }
     const isValid = selectedPresidents.size > 0 && !!seventyUid
@@ -101,8 +129,7 @@ export function TaskCreation() {
             setLoading(false);
         }
     };
-    const allSelected = presidents.length > 0 && selectedPresidents.size === presidents.length;
-    return (_jsx(AppShell, { role: user.role, name: user.name, topBar: _jsx(TopBar, { name: user.name, subtext: "\uC77C\uC815 \uC694\uCCAD \uAD00\uB9AC" }), children: _jsx("div", { className: styles.page, children: _jsxs(Card, { children: [_jsx(CardHeader, { title: "Task \uC0DD\uC131 (\uC77C\uC815 \uC694\uCCAD)" }), _jsx(CardBody, { children: _jsxs("form", { className: styles.form, onSubmit: handleCreate, children: [_jsx(Select, { label: "\uB2F4\uB2F9 \uC9C0\uC5ED \uCE60\uC2ED\uC778", value: seventyUid, onChange: e => setSeventyUid(e.target.value), options: seventyOptions }), _jsxs("div", { className: styles.presidentSection, children: [_jsxs("div", { className: styles.presidentHeader, children: [_jsx("span", { className: styles.presidentLabel, children: "\uB300\uC0C1 \uD68C\uC7A5" }), selectedPresidents.size > 0 && (_jsxs(Badge, { variant: "default", children: [selectedPresidents.size, "\uBA85 \uC120\uD0DD\uB428"] })), _jsx("button", { type: "button", className: styles.selectAllBtn, onClick: toggleAll, children: allSelected ? '전체 해제' : '전체 선택' })] }), _jsx("div", { className: styles.presidentList, children: presidents.length === 0 ? (_jsx("p", { className: styles.noneText, children: "\uB4F1\uB85D\uB41C \uD68C\uC7A5\uC774 \uC5C6\uC2B5\uB2C8\uB2E4." })) : (presidents.map(p => {
+    return (_jsx(AppShell, { role: user.role, name: user.name, topBar: _jsx(TopBar, { name: user.name, subtext: "\uC77C\uC815 \uC694\uCCAD \uAD00\uB9AC" }), children: _jsx("div", { className: styles.page, children: _jsxs(Card, { children: [_jsx(CardHeader, { title: "Task \uC0DD\uC131 (\uC77C\uC815 \uC694\uCCAD)" }), _jsx(CardBody, { children: _jsxs("form", { className: styles.form, onSubmit: handleCreate, children: [_jsx(Select, { label: "\uB2F4\uB2F9 \uC9C0\uC5ED \uCE60\uC2ED\uC778", value: seventyUid, onChange: e => setSeventyUid(e.target.value), options: seventyOptions }), _jsxs("div", { className: styles.presidentSection, children: [_jsxs("div", { className: styles.presidentHeader, children: [_jsx("span", { className: styles.presidentLabel, children: "\uB300\uC0C1 \uD68C\uC7A5" }), selectedPresidents.size > 0 && (_jsxs(Badge, { variant: "default", children: [selectedPresidents.size, "\uBA85 \uC120\uD0DD\uB428"] })), _jsx("button", { type: "button", className: styles.selectAllBtn, onClick: toggleAll, children: filteredPresidents.every(p => selectedPresidents.has(p.uid)) ? '해제' : '전체 선택' })] }), _jsxs("div", { className: styles.regionFilter, children: [_jsx("button", { type: "button", className: clsx(styles.regionBtn, !filterRegion && styles.regionBtnActive), onClick: () => setFilterRegion(''), children: "\uC804\uCCB4" }), REGIONS.map(r => (_jsx("button", { type: "button", className: clsx(styles.regionBtn, filterRegion === r.id && styles.regionBtnActive), onClick: () => handleRegionFilter(r.id), children: r.name }, r.id)))] }), _jsx("div", { className: styles.presidentList, children: filteredPresidents.length === 0 ? (_jsx("p", { className: styles.noneText, children: filterRegion ? '해당 지역에 등록된 회장이 없습니다.' : '등록된 회장이 없습니다.' })) : (filteredPresidents.map(p => {
                                                 const unit = ALL_UNITS.find(u => u.id === p.unitId);
                                                 return (_jsxs("label", { className: styles.presidentRow, children: [_jsx("input", { type: "checkbox", checked: selectedPresidents.has(p.uid), onChange: () => togglePresident(p.uid), className: styles.checkbox }), _jsx("span", { className: styles.presidentName, children: p.name }), unit && _jsx("span", { className: styles.presidentUnit, children: unit.name })] }, p.uid));
                                             })) })] }), _jsx(Select, { label: "Task \uC720\uD615", value: taskType, onChange: e => setTaskType(e.target.value), options: TASK_TYPE_OPTIONS }), taskType === 'select_visit' && (_jsx("p", { className: styles.visitNote, children: "\uC640\uB4DC \uBC29\uBB38\uC740 \uC77C\uC694\uC77C(\uAE08\uC2DD\uC77C \uC81C\uC678)\uC5D0\uB9CC \uC120\uD0DD \uAC00\uB2A5\uD569\uB2C8\uB2E4." })), isTimeBased && (_jsxs("div", { className: styles.availSection, children: [_jsx("p", { className: styles.availLabel, children: "\uAC00\uB2A5 \uB0A0\uC9DC \uC120\uD0DD" }), _jsx("p", { className: styles.availHint, children: "\uCE98\uB9B0\uB354\uC5D0\uC11C \uB0A0\uC9DC\uB97C \uD074\uB9AD\uD574 \uC120\uD0DD\uD558\uC138\uC694 (\uBCF5\uC218 \uC120\uD0DD \uAC00\uB2A5)" }), _jsx(MultiDatePicker, { selected: availableDates, onChange: setAvailableDates }), _jsxs("div", { className: styles.timeRow, children: [_jsx(Input, { label: "\uAC00\uB2A5 \uC2DC\uC791 \uC2DC\uAC04", type: "time", value: startTime, onChange: e => setStartTime(e.target.value) }), _jsx(Input, { label: "\uAC00\uB2A5 \uC885\uB8CC \uC2DC\uAC04", type: "time", value: endTime, onChange: e => setEndTime(e.target.value) })] }), _jsx(Select, { label: "\uC2DC\uAC04 \uB2E8\uC704", value: slotDuration, onChange: e => setSlotDuration(e.target.value), options: SLOT_DURATION_OPTIONS })] })), _jsx(Input, { label: "\uB9C8\uAC10\uC77C", type: "date", value: dueDate, onChange: e => setDueDate(e.target.value) }), _jsxs(Button, { type: "submit", loading: loading, disabled: !isValid, children: ["Task ", selectedPresidents.size > 0 ? `${selectedPresidents.size}건 ` : '', "\uC0DD\uC131"] })] }) })] }) }) }));

@@ -33,6 +33,10 @@ export async function updateUserRole(uid: string, role: UserRole, regionId?: str
   await updateDoc(doc(db, 'users', uid), { role, ...(regionId ? { regionId } : {}) })
 }
 
+export async function updateUserName(uid: string, name: string): Promise<void> {
+  await updateDoc(doc(db, 'users', uid), { name: name.trim() })
+}
+
 export async function deleteUserAccount(uid: string): Promise<void> {
   await httpsCallable(functions, 'deleteUser')({ uid })
 }

@@ -105,3 +105,36 @@
     color: $color-text;
   }
 }
+
+.editNameRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+}
+
+.editNameInput {
+  flex: 1;
+  min-width: 0;
+  padding: $space-1 $space-2;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  font-size: $font-size-sm;
+  color: $color-text;
+  background: $color-surface;
+  outline: none;
+  &:focus { border-color: $color-primary; }
+}
+
+.editNameSave {
+  flex-shrink: 0;
+  padding: $space-1 $space-2;
+  background: $color-primary;
+  color: #fff;
+  border: none;
+  border-radius: $border-radius-md;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}

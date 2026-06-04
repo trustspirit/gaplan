@@ -3,7 +3,7 @@ import { useAtomValue } from 'jotai'
 import { Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { authUserAtom } from '@/store/authAtom'
-import { inviteUser, updateUserRole, deleteUserAccount } from '@/services/userService'
+import { inviteUser, updateUserRole, updateUserName, deleteUserAccount } from '@/services/userService'
 import { useUsers } from '@/hooks/useUsers'
 import { REGIONS } from '@/constants/regions'
 import { ROLE_LABELS } from '@/constants/roles'
@@ -15,15 +15,14 @@ import styles from './UserManagement.module.scss'
 const ROLE_OPTIONS = (['admin', 'seventy', 'president'] as UserRole[]).map(r => ({ value: r, label: ROLE_LABELS[r] }))
 const REGION_OPTIONS = REGIONS.map(r => ({ value: r.id, label: r.name }))
 
-function EditRoleModal({
+function EditUserModal({
   user,
   onClose,
-  onSaved,
 }: {
   user: AppUser
   onClose: () => void
-  onSaved: () => void
 }) {
+  const [name, setName] = useState(user.name)
   const [role, setRole] = useState<UserRole>(user.role)
   const [regionId, setRegionId] = useState(user.regionId ?? '')
   const [loading, setLoading] = useState(false)
@@ -32,20 +31,30 @@ function EditRoleModal({
     e.preventDefault()
     setLoading(true)
     try {
-      await updateUserRole(user.uid, role, role === 'seventy' ? regionId : undefined)
-      toast.success(`${user.name}의 역할이 변경되었습니다.`)
-      onSaved()
+      const tasks: Promise<void>[] = []
+      if (name.trim() !== user.name) tasks.push(updateUserName(user.uid, name.trim()))
+      if (role !== user.role || (role === 'seventy' && regionId !== user.regionId)) {
+        tasks.push(updateUserRole(user.uid, role, role === 'seventy' ? regionId : undefined))
+      }
+      await Promise.all(tasks)
+      toast.success(`${name}의 정보가 변경되었습니다.`)
       onClose()
     } catch {
-      toast.error('역할 변경에 실패했습니다.')
+      toast.error('변경에 실패했습니다.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal open onClose={onClose} title={`역할 변경 — ${user.name}`}>
+    <Modal open onClose={onClose} title={`사용자 편집 — ${user.name}`}>
       <form className={styles.editForm} onSubmit={handleSave}>
+        <Input
+          label="이름"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
+        />
         <Select
           label="역할"
           value={role}
@@ -116,6 +125,7 @@ export function UserManagement() {
   const [regionId, setRegionId] = useState('')
   const [inviteLoading, setInviteLoading] = useState(false)
   const [editingUser, setEditingUser] = useState<AppUser | null>(null)
+  // editingUser replaces the old EditRoleModal
   const [deletingUser, setDeletingUser] = useState<AppUser | null>(null)
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -198,10 +208,9 @@ export function UserManagement() {
       </div>
 
       {editingUser && (
-        <EditRoleModal
+        <EditUserModal
           user={editingUser}
           onClose={() => setEditingUser(null)}
-          onSaved={() => setEditingUser(null)}
         />
       )}
       {deletingUser && (
