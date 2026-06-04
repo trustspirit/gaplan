@@ -35,7 +35,8 @@ export function TaskCreation() {
   const [seventyUid,    setSeventyUid]    = useState('')
   const [filterRegion,  setFilterRegion]  = useState('')
   const taskType = 'select_interview' as const
-  const [taskTitle,     setTaskTitle]     = useState('')
+  const [taskTitle, setTaskTitle] = useState('')
+  const [taskNote,  setTaskNote]  = useState('')
   const [dueDate,       setDueDate]       = useState(dayjs().add(7, 'day').format('YYYY-MM-DD'))
   const [selectedDates, setSelectedDates] = useState<string[]>([])
   // per-date time ranges: date → TimeRange[]
@@ -134,6 +135,7 @@ export function TaskCreation() {
             type: taskType,
             batchId,
             title: taskTitle.trim() || undefined,
+            note: taskNote.trim() || undefined,
             assignedTo,
             seventyUid,
             regionId: unit?.regionId ?? '',
@@ -151,6 +153,7 @@ export function TaskCreation() {
       setSelectedDates([])
       setDateRanges({})
       setTaskTitle('')
+      setTaskNote('')
     } catch {
       toast.error(t('task.createFailed'))
     } finally {
@@ -171,6 +174,17 @@ export function TaskCreation() {
                 onChange={e => setTaskTitle(e.target.value)}
                 placeholder="예: 2분기 접견 일정"
               />
+
+              <div className={styles.textareaField}>
+                <label className={styles.textareaLabel}>요청 사항 / 메모 (선택)</label>
+                <textarea
+                  className={styles.textarea}
+                  value={taskNote}
+                  onChange={e => setTaskNote(e.target.value)}
+                  placeholder="회장이 Task를 받을 때 함께 볼 내용을 입력하세요."
+                  rows={3}
+                />
+              </div>
 
               <Select
                 label="담당 지역 칠십인"

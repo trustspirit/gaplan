@@ -22,6 +22,7 @@ export function VisitPlanner() {
   const [availableDates, setAvailableDates] = useState<string[]>([])
   const [filterRegion, setFilterRegion] = useState('')
   const [selectedPresidents, setSelectedPresidents] = useState<Set<string>>(new Set())
+  const [taskNote, setTaskNote] = useState('')
   const [dueDate, setDueDate] = useState(dayjs().add(14, 'day').format('YYYY-MM-DD'))
   const [loading, setLoading] = useState(false)
 
@@ -84,6 +85,7 @@ export function VisitPlanner() {
             createdBy: user.uid,
             availableDays: [0],
             availableDates,
+            note: taskNote.trim() || undefined,
           })
         })
       )
@@ -91,6 +93,7 @@ export function VisitPlanner() {
       setSelectedPresidents(new Set())
       setSeventyUid('')
       setAvailableDates([])
+      setTaskNote('')
     } catch {
       toast.error('Task 생성에 실패했습니다.')
     } finally {
@@ -176,6 +179,17 @@ export function VisitPlanner() {
 
               <Input label="마감일" type="date" value={dueDate}
                 onChange={e => setDueDate(e.target.value)} />
+
+              <div className={styles.textareaField}>
+                <label className={styles.textareaLabel}>요청 사항 / 메모 (선택)</label>
+                <textarea
+                  className={styles.textarea}
+                  value={taskNote}
+                  onChange={e => setTaskNote(e.target.value)}
+                  placeholder="회장이 Task를 받을 때 함께 볼 내용을 입력하세요."
+                  rows={3}
+                />
+              </div>
 
               <Button type="submit" loading={loading} disabled={!isValid}>
                 Task {selectedPresidents.size > 0 ? `${selectedPresidents.size}건 ` : ''}생성

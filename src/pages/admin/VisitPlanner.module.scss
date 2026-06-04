@@ -25,6 +25,24 @@
 
 .form { display: flex; flex-direction: column; gap: $space-4; }
 
+.textareaField { display: flex; flex-direction: column; gap: $space-1; }
+.textareaLabel { font-size: $font-size-sm; font-weight: $font-weight-medium; color: $color-text; }
+.textarea {
+  width: 100%;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  font-size: $font-size-sm;
+  font-family: inherit;
+  color: $color-text;
+  background: $color-surface;
+  resize: vertical;
+  outline: none;
+  line-height: $line-height-loose;
+  &:focus { border-color: $color-primary; }
+  &::placeholder { color: $color-text-muted; }
+}
+
 .section { display: flex; flex-direction: column; gap: $space-2; }
 .sectionLabel { font-size: $font-size-sm; font-weight: $font-weight-medium; color: $color-text; }
 .sectionHint { font-size: $font-size-xs; color: $color-text-muted; }

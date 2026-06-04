@@ -86,6 +86,7 @@ export async function createTask(params: {
   type: 'select_visit' | 'select_interview'
   batchId?: string
   title?: string
+  note?: string
   assignedTo: string
   seventyUid: string
   regionId: string

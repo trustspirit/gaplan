@@ -188,3 +188,113 @@
   text-align: center;
   padding: $space-4 0;
 }
+
+.emptyWards {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  padding: $space-3 0;
+  text-align: center;
+}
+
+// Admin note displayed above the assigner
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  padding: $space-3;
+  background: $color-highlight-warning;
+  border: 1px solid rgba($color-warning, 0.35);
+  border-radius: $border-radius-md;
+}
+
+.noteLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: #8f4200;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.noteText {
+  font-size: $font-size-sm;
+  color: $color-text;
+  line-height: $line-height-loose;
+  white-space: pre-wrap;
+}
+
+// Shared date indicator
+.dateCellShared {
+  background: $color-highlight-warning;
+  border-color: rgba($color-warning, 0.5);
+  color: #8f4200;
+  font-weight: $font-weight-bold;
+
+  &:hover {
+    border-color: $color-primary;
+    background: color-mix(in srgb, $color-primary 8%, white);
+    color: $color-primary;
+  }
+}
+
+// Conflict warning box
+.conflictBox {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-4;
+  background: $color-highlight-warning;
+  border: 1.5px solid rgba($color-warning, 0.5);
+  border-radius: $border-radius-lg;
+}
+
+.conflictHeader {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.conflictIcon { color: $color-warning; flex-shrink: 0; }
+
+.conflictTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.conflictList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: 0 0 0 $space-4;
+}
+
+.conflictItem {
+  display: flex;
+  align-items: baseline;
+  gap: $space-2;
+  font-size: $font-size-sm;
+}
+
+.conflictDate {
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  white-space: nowrap;
+  min-width: 90px;
+}
+
+.conflictWards { color: $color-text-muted; }
+.conflictDateMissing { color: $color-text-muted; font-style: italic; }
+
+.conflictQuestion {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.conflictActions {
+  display: flex;
+  gap: $space-2;
+  justify-content: flex-end;
+
+  @include mobile { flex-direction: column; }
+}

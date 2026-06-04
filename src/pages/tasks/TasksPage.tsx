@@ -117,7 +117,7 @@ export function TasksPage() {
           {!isMobile && isVisit && activeTask && (
             <Card>
               <CardHeader
-                title="와드/지부 방문 날짜 배정"
+                title={activeTask.title ?? '와드/지부 방문 날짜 배정'}
                 action={
                   <button type="button" className={styles.closeBtn} onClick={closeTask}>
                     <X size={16} />
@@ -128,6 +128,7 @@ export function TasksPage() {
                 <WardAssigner
                   availableDates={activeTask.availableDates ?? []}
                   wards={availableWards}
+                  note={activeTask.note}
                   onSubmit={handleSubmitWards}
                   submitting={wardSubmitting}
                 />
@@ -158,12 +159,13 @@ export function TasksPage() {
         <BottomSheet
           open={!!activeTask}
           onClose={closeTask}
-          title="와드/지부 방문 날짜 배정"
+          title={activeTask?.title ?? '와드/지부 방문 날짜 배정'}
         >
           {activeTask && (
             <WardAssigner
               availableDates={activeTask.availableDates ?? []}
               wards={availableWards}
+              note={activeTask.note}
               onSubmit={handleSubmitWards}
               submitting={wardSubmitting}
             />

@@ -27,8 +27,9 @@ export interface WardAssignment {
 
 export interface Task {
   id: string
-  batchId?: string   // groups tasks created together (same admin action)
-  title?: string     // human-readable label set at creation
+  batchId?: string
+  title?: string
+  note?: string      // admin memo shown to president when they receive the task
   type: TaskType
   assignedTo: string
   seventyUid: string
