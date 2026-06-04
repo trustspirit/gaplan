@@ -1,6 +1,6 @@
 import { signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db, googleProvider, ADMIN_EMAIL } from '@/firebase';
+import { auth, db, googleProvider } from '@/firebase';
 export async function signInWithGoogle() {
     await signInWithPopup(auth, googleProvider);
 }
@@ -15,15 +15,15 @@ export async function resolveUser(firebaseUser) {
     }
     const email = firebaseUser.email ?? '';
     let role = 'president';
-    if (email === ADMIN_EMAIL) {
+    const [configSnap, inviteSnap] = await Promise.all([
+        getDoc(doc(db, 'settings', 'admin')),
+        getDoc(doc(db, 'invites', email)),
+    ]);
+    if (configSnap.data()?.email === email) {
         role = 'admin';
     }
-    else {
-        const inviteRef = doc(db, 'invites', email);
-        const inviteSnap = await getDoc(inviteRef);
-        if (inviteSnap.exists()) {
-            role = inviteSnap.data().role;
-        }
+    else if (inviteSnap.exists()) {
+        role = inviteSnap.data().role;
     }
     // president needs onboarding — don't create Firestore doc yet
     if (role === 'president')

@@ -15,5 +15,4 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app, 'asia-northeast3');
 export const googleProvider = new GoogleAuthProvider();
-export const ADMIN_EMAIL = 'ldsrogan@gmail.com';
 export const SHARED_CALENDAR_ID = import.meta.env.VITE_SHARED_CALENDAR_ID;

@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { authUserAtom } from '@/store/authAtom';
 import { createTask } from '@/services/taskService';
 import { useUsers } from '@/hooks/useUsers';
+import { ALL_UNITS } from '@/constants/regions';
 import { AppShell, TopBar } from '@/components/layout';
 import { Card, CardHeader, CardBody, Select, Button, Input } from '@/components/ui';
 import styles from './RegionSettings.module.scss';
@@ -13,7 +14,7 @@ const TASK_TYPE_OPTIONS = [
     { value: 'select_visit', label: '와드 방문 일정 선택' },
     { value: 'select_interview', label: '접견 일정 선택' },
 ];
-export function RegionSettings() {
+export function TaskCreation() {
     const user = useAtomValue(authUserAtom);
     const { users } = useUsers();
     const presidents = users.filter(u => u.role === 'president');
@@ -44,7 +45,8 @@ export function RegionSettings() {
         setLoading(true);
         try {
             const president = presidents.find(p => p.uid === assignedTo);
-            const regionId = president?.unitId ?? '';
+            const unit = ALL_UNITS.find(u => u.id === president?.unitId);
+            const regionId = unit?.regionId ?? '';
             await createTask({ type: taskType, assignedTo, seventyUid, regionId, dueDate, createdBy: user.uid });
             toast.success('Task가 생성되었습니다.');
             setAssignedTo('');

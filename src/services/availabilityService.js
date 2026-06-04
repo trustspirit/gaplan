@@ -2,6 +2,7 @@ import { collection, getDocs, doc, writeBatch, } from 'firebase/firestore';
 import { db } from '@/firebase';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
+import { isFastSunday } from '@/utils/fastSunday';
 dayjs.extend(isBetween);
 export async function getAvailabilitySlots(seventyUid) {
     const snap = await getDocs(collection(db, 'availability', seventyUid, 'slots'));
@@ -9,10 +10,15 @@ export async function getAvailabilitySlots(seventyUid) {
 }
 export async function saveAvailabilitySlots(seventyUid, slots) {
     const batch = writeBatch(db);
+    const today = dayjs().format('YYYY-MM-DD');
     const existing = await getDocs(collection(db, 'availability', seventyUid, 'slots'));
-    existing.docs
-        .filter(d => d.data().type === 'recurring')
-        .forEach(d => batch.delete(d.ref));
+    existing.docs.forEach(d => {
+        const data = d.data();
+        // Delete all recurring slots (will be replaced) + expired past override slots
+        if (data.type === 'recurring' || (data.type === 'override' && data.date < today)) {
+            batch.delete(d.ref);
+        }
+    });
     slots.forEach(slot => {
         const ref = doc(collection(db, 'availability', seventyUid, 'slots'));
         batch.set(ref, slot);
@@ -26,13 +32,7 @@ export function computeAvailableSlots(slots, confirmedDates, fromDate, toDate) {
     while (current.isBefore(end) || current.isSame(end, 'day')) {
         const dateStr = current.format('YYYY-MM-DD');
         const dayOfWeek = current.day();
-        // Skip fast Sunday (first Sunday of month)
-        const firstSunday = (() => {
-            const first = current.startOf('month');
-            const dow = first.day();
-            return first.add(dow === 0 ? 0 : 7 - dow, 'day');
-        })();
-        if (dateStr === firstSunday.format('YYYY-MM-DD')) {
+        if (isFastSunday(current)) {
             current = current.add(1, 'day');
             continue;
         }
