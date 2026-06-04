@@ -1,5 +1,6 @@
 import { collection, doc, setDoc, updateDoc, onSnapshot, serverTimestamp, } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '@/firebase';
 export async function inviteUser(email, role, assignedRegionId, invitedBy) {
     await setDoc(doc(db, 'invites', email), {
         role,
@@ -13,4 +14,7 @@ export function subscribeToUsers(callback) {
 }
 export async function updateUserRole(uid, role, regionId) {
     await updateDoc(doc(db, 'users', uid), { role, ...(regionId ? { regionId } : {}) });
+}
+export async function deleteUserAccount(uid) {
+    await httpsCallable(functions, 'deleteUser')({ uid });
 }

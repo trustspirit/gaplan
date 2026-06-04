@@ -14,19 +14,25 @@ export async function resolveUser(firebaseUser) {
         return { uid: firebaseUser.uid, ...snap.data() };
     }
     const email = firebaseUser.email ?? '';
-    let role = 'president';
     const [configSnap, inviteSnap] = await Promise.all([
         getDoc(doc(db, 'settings', 'admin')),
         getDoc(doc(db, 'invites', email)),
     ]);
+    let role;
     if (configSnap.data()?.email === email) {
         role = 'admin';
     }
     else if (inviteSnap.exists()) {
         role = inviteSnap.data().role;
     }
-    // president: return transient user (no Firestore doc yet) — ProtectedRoute redirects to onboarding
-    if (role === 'president') {
+    else {
+        // No invite and not admin → onboarding to collect name/unit, then pending state
+        role = 'pending';
+    }
+    // pending or invited president → transient user (no Firestore doc yet)
+    // pending → onboarding → saves as pending → awaits admin approval
+    // president (invited) → onboarding → saves as president → dashboard
+    if (role === 'pending' || role === 'president') {
         return { uid: firebaseUser.uid, email, name: firebaseUser.displayName ?? email, role, createdAt: new Date().toISOString() };
     }
     const newUser = {

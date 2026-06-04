@@ -18,6 +18,7 @@ const ROLE_LABELS = {
     admin: '관리자 (집행서기)',
     seventy: '지역 칠십인',
     president: '스테이크/지방부 회장',
+    pending: '승인 대기',
 };
 export function Sidebar({ role, name, mobile }) {
     const items = NAV_ITEMS.filter(i => i.roles.includes(role));

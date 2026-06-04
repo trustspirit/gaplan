@@ -11,6 +11,11 @@ export function ProtectedRoute() {
         return _jsx("div", { className: styles.loadingScreen, children: _jsx(Spinner, {}) });
     if (!user)
         return _jsx(Navigate, { to: "/login", replace: true });
+    // pending with no name yet → onboarding to collect info, then pending screen
+    if (user.role === 'pending' && !user.unitId)
+        return _jsx(Navigate, { to: "/onboarding", replace: true });
+    if (user.role === 'pending')
+        return _jsx(Navigate, { to: "/pending", replace: true });
     if (user.role === 'president' && !user.unitId)
         return _jsx(Navigate, { to: "/onboarding", replace: true });
     return _jsx(Outlet, {});
