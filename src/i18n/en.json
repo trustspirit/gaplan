@@ -268,9 +268,9 @@
     "role": "Role"
   },
   "region": {
-    "seoul": "Seoul",
-    "seoulSouth": "Seoul South",
-    "busan": "Busan"
+    "seoul": "Seoul CCM",
+    "seoulSouth": "Seoul South CCM",
+    "busan": "Busan CCM"
   },
   "slotDuration": {
     "label": "Slot Duration (minutes)",

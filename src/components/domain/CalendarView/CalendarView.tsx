@@ -190,14 +190,24 @@ export function CalendarView({
       {view === 'month' ? renderMonthView() : renderWeekView()}
 
       <div className={styles.legend}>
-        {REGIONS.map(r => {
-          const c = getRegionColor(r.id)
-          return (
-            <span key={r.id} style={{ color: c.text }}>
-              <span className={styles.legendSwatch} style={{ background: c.bg }} /> {r.name}
-            </span>
+        {(() => {
+          const visibleRegionIds = new Set(
+            schedules
+              .map(s => ALL_UNITS.find(u => u.id === s.unitId)?.regionId)
+              .filter((id): id is string => Boolean(id))
           )
-        })}
+          const legendRegions = visibleRegionIds.size > 0
+            ? REGIONS.filter(r => visibleRegionIds.has(r.id))
+            : REGIONS
+          return legendRegions.map(r => {
+            const c = getRegionColor(r.id)
+            return (
+              <span key={r.id} style={{ color: c.text }}>
+                <span className={styles.legendSwatch} style={{ background: c.bg }} /> {r.name}
+              </span>
+            )
+          })
+        })()}
         <span className={styles.legendBlocked}><span className={clsx(styles.legendSwatch, styles.swatchBlocked)} /> {t('common.fastSundayLegend')}</span>
       </div>
     </div>

@@ -43,9 +43,9 @@ export interface WardUnit {
 }
 
 export const REGIONS: Region[] = [
-  { id: 'seoul', name: '서울' },
-  { id: 'seoul-south', name: '서울남' },
-  { id: 'busan', name: '부산' },
+  { id: 'seoul', name: '서울 CCM' },
+  { id: 'seoul-south', name: '서울남 CCM' },
+  { id: 'busan', name: '부산 CCM' },
 ]
 
 export const UNITS_SEOUL: Omit<Unit, 'presidentUid'>[] = [

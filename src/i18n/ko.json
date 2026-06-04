@@ -264,9 +264,9 @@
     "role": "역할"
   },
   "region": {
-    "seoul": "서울",
-    "seoulSouth": "서울남",
-    "busan": "부산"
+    "seoul": "서울 CCM",
+    "seoulSouth": "서울남 CCM",
+    "busan": "부산 CCM"
   },
   "slotDuration": {
     "label": "슬롯 길이 (분)",
