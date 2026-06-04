@@ -48,7 +48,7 @@
         { "fieldPath": "seventyUid", "order": "ASCENDING" },
         { "fieldPath": "dueDate", "order": "ASCENDING" }
       ]
-    },
+    }
   ],
   "fieldOverrides": []
 }
