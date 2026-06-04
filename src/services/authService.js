@@ -1,11 +1,8 @@
-import { signInWithRedirect, getRedirectResult, signOut as firebaseSignOut, onAuthStateChanged, } from 'firebase/auth';
+import { signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '@/firebase';
 export async function signInWithGoogle() {
-    await signInWithRedirect(auth, googleProvider);
-}
-export async function handleRedirectResult() {
-    await getRedirectResult(auth);
+    await signInWithPopup(auth, googleProvider);
 }
 export async function signOut() {
     await firebaseSignOut(auth);
@@ -28,9 +25,10 @@ export async function resolveUser(firebaseUser) {
     else if (inviteSnap.exists()) {
         role = inviteSnap.data().role;
     }
-    // president needs onboarding — don't create Firestore doc yet
-    if (role === 'president')
-        return null;
+    // president: return transient user (no Firestore doc yet) — ProtectedRoute redirects to onboarding
+    if (role === 'president') {
+        return { uid: firebaseUser.uid, email, name: firebaseUser.displayName ?? email, role, createdAt: new Date().toISOString() };
+    }
     const newUser = {
         email,
         name: firebaseUser.displayName ?? email,
@@ -55,6 +53,7 @@ export function subscribeToAuthState(onUser, onLoading, onAccessDenied) {
         }
         catch (e) {
             console.error('[auth] resolveUser failed:', e);
+            onAccessDenied?.();
             onUser(null);
         }
         finally {
