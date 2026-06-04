@@ -14,6 +14,8 @@ export interface Schedule {
   createdBy: string
   confirmedAt?: string
   googleCalendarEventId?: string
+  wardName?: string   // ward visit: specific ward/branch name
+  notes?: string
 }
 
 export interface TimeSlot {

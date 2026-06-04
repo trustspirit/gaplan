@@ -36,14 +36,12 @@ export async function saveAvailabilitySlots(
   await batch.commit()
 }
 
-// Generate time slots for specific dates (interview / meeting tasks)
+// Generate time slots for specific dates with per-date times (interview / meeting tasks)
 export function computeInterviewSlots(
-  availableDates: string[],
-  startTime: string,
-  endTime: string,
+  dateSlots: { date: string; startTime: string; endTime: string }[],
   slotDurationMinutes = 60,
 ): TimeSlot[] {
-  return availableDates.flatMap(date => {
+  return dateSlots.flatMap(({ date, startTime, endTime }) => {
     const slots: TimeSlot[] = []
     let t = dayjs(`${date}T${startTime}`)
     const end = dayjs(`${date}T${endTime}`)
@@ -54,7 +52,7 @@ export function computeInterviewSlots(
         date,
         startTime: t.format('HH:mm'),
         endTime: slotEnd.format('HH:mm'),
-        isAvailable: true,  // stays open until admin confirms
+        isAvailable: true,
       })
       t = slotEnd
     }

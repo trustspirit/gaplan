@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import dayjs from 'dayjs';
 import { useSchedules } from '@/hooks/useSchedules';
-import { computeAvailableSlots, computeInterviewSlots } from '@/services/availabilityService';
+import { computeInterviewSlots } from '@/services/availabilityService';
 import { confirmSchedule } from '@/services/scheduleService';
 import { submitAvailability } from '@/services/taskService';
 export function useTaskConfirm(presidentUid, unitId) {
@@ -14,24 +13,11 @@ export function useTaskConfirm(presidentUid, unitId) {
     const confirmedDates = schedules.filter(s => s.status === 'confirmed').map(s => s.date);
     const isVisit = activeTask?.type === 'select_visit';
     const isMultiSelect = activeTask?.type === 'select_interview' || activeTask?.type === 'select_meeting';
-    // Ward visits: compute from recurring Sunday availability
-    const visitSlots = (isVisit && activeTask)
-        ? (activeTask.availableDays ?? []).map(day => ({
-            id: '',
-            seventyUid: activeTask.seventyUid,
-            type: 'recurring',
-            recurringDays: [day],
-            startTime: activeTask.availableStartTime ?? '09:00',
-            endTime: activeTask.availableEndTime ?? '18:00',
-            isBlocked: false,
-        }))
-        : [];
-    const visitAvailableSlots = isVisit
-        ? computeAvailableSlots(visitSlots, confirmedDates, dayjs().format('YYYY-MM-DD'), dayjs().add(90, 'day').format('YYYY-MM-DD'))
-        : [];
-    // Interview/Meeting: compute from specific dates set by admin
+    // Ward visits: WardAssigner uses availableDates directly (no slot computation needed)
+    const visitAvailableSlots = [];
+    // Interview/Meeting: compute from per-date slots set by admin
     const interviewAvailableSlots = isMultiSelect && activeTask
-        ? computeInterviewSlots(activeTask.availableDates ?? [], activeTask.availableStartTime ?? '09:00', activeTask.availableEndTime ?? '18:00', activeTask.slotDurationMinutes ?? 60)
+        ? computeInterviewSlots(activeTask.availableDateSlots ?? [], activeTask.slotDurationMinutes ?? 60)
         : [];
     const availableSlots = isVisit ? visitAvailableSlots : interviewAvailableSlots;
     const openTask = (task) => {

@@ -44,17 +44,40 @@ interface EditTaskModalProps {
 }
 
 function EditTaskModal({ task, onClose }: EditTaskModalProps) {
-  const isTimeBased = task.type !== 'select_visit'
+  const isVisit = task.type === 'select_visit'
   const [dueDate, setDueDate] = useState(task.dueDate)
+  // For ward visits: just select available Sundays
   const [availableDates, setAvailableDates] = useState<string[]>(task.availableDates ?? [])
-  const [startTime, setStartTime] = useState(task.availableStartTime ?? '09:00')
-  const [endTime, setEndTime] = useState(task.availableEndTime ?? '18:00')
+  // For interview/meeting: per-date time slots
+  const [selectedDates, setSelectedDates] = useState<string[]>(
+    (task.availableDateSlots ?? []).map(s => s.date)
+  )
+  const [dateTimes, setDateTimes] = useState<Record<string, { startTime: string; endTime: string }>>(
+    Object.fromEntries((task.availableDateSlots ?? []).map(s => [s.date, { startTime: s.startTime, endTime: s.endTime }]))
+  )
   const [slotDuration, setSlotDuration] = useState(String(task.slotDurationMinutes ?? 60))
   const [saving, setSaving] = useState(false)
 
+  function handleDatesChange(dates: string[]) {
+    setSelectedDates(dates)
+    setDateTimes(prev => {
+      const next: typeof prev = {}
+      dates.forEach(d => { next[d] = prev[d] ?? { startTime: '09:00', endTime: '18:00' } })
+      return next
+    })
+  }
+
+  const availableDateSlots = selectedDates
+    .map(d => ({ date: d, ...(dateTimes[d] ?? { startTime: '09:00', endTime: '18:00' }) }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (isTimeBased && availableDates.length === 0) {
+    if (isVisit && availableDates.length === 0) {
+      toast.error('가능 일요일을 하나 이상 선택해주세요.')
+      return
+    }
+    if (!isVisit && availableDateSlots.length === 0) {
       toast.error('가능 날짜를 하나 이상 선택해주세요.')
       return
     }
@@ -64,14 +87,9 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
         task.id,
         {
           dueDate,
-          ...(isTimeBased ? {
-            availableDates,
-            availableStartTime: startTime,
-            availableEndTime: endTime,
-            slotDurationMinutes: parseInt(slotDuration),
-          } : {}),
+          ...(isVisit ? { availableDates } : { availableDateSlots, slotDurationMinutes: parseInt(slotDuration) }),
         },
-        task.status === 'responded',  // reset if president already responded
+        task.status === 'responded',
       )
       toast.success('Task가 수정되었습니다.')
       onClose()
@@ -85,15 +103,33 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
   return (
     <Modal open onClose={onClose} title="Task 수정">
       <form className={styles.editForm} onSubmit={handleSave}>
-        {isTimeBased && (
+        {isVisit ? (
+          <div className={styles.editSection}>
+            <p className={styles.editLabel}>가능 방문 일요일 선택</p>
+            <MultiDatePicker selected={availableDates} onChange={setAvailableDates} sundayOnly />
+          </div>
+        ) : (
           <>
             <div className={styles.editSection}>
               <p className={styles.editLabel}>가능 날짜 (캘린더에서 선택)</p>
-              <MultiDatePicker selected={availableDates} onChange={setAvailableDates} />
+              <MultiDatePicker selected={selectedDates} onChange={handleDatesChange} />
+              {availableDateSlots.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
+                  {availableDateSlots.map(s => (
+                    <div key={s.date} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.8125rem' }}>
+                      <span style={{ minWidth: 70, fontWeight: 500 }}>{dayjs(s.date).format('M/D (ddd)')}</span>
+                      <input type="time" value={s.startTime} style={{ border: '1px solid #e4e4e6', borderRadius: 6, padding: '2px 6px' }}
+                        onChange={e => setDateTimes(prev => ({ ...prev, [s.date]: { ...prev[s.date], startTime: e.target.value } }))} />
+                      <span>~</span>
+                      <input type="time" value={s.endTime} style={{ border: '1px solid #e4e4e6', borderRadius: 6, padding: '2px 6px' }}
+                        onChange={e => setDateTimes(prev => ({ ...prev, [s.date]: { ...prev[s.date], endTime: e.target.value } }))} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className={styles.timeRow}>
-              <Input label="시작 시간" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
-              <Input label="종료 시간" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+              {/* slot duration placeholder - reuse Select below */}
             </div>
             <Select
               label="시간 단위"

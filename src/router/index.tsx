@@ -15,6 +15,7 @@ import { TaskCreation } from '@/pages/admin/RegionSettings'
 import { TaskProgress } from '@/pages/admin/TaskProgress'
 import { AvailabilitySettings } from '@/pages/admin/AvailabilitySettings'
 import { CalendarSettings } from '@/pages/admin/CalendarSettings'
+import { VisitPlanner } from '@/pages/admin/VisitPlanner'
 
 export function AppRouter() {
   return (
@@ -40,6 +41,7 @@ export function AppRouter() {
             <Route path="/admin/tasks"             element={<TaskCreation />} />
             <Route path="/admin/availability"      element={<AvailabilitySettings />} />
             <Route path="/admin/calendar"          element={<CalendarSettings />} />
+            <Route path="/admin/visit-planner"     element={<VisitPlanner />} />
           </Route>
 
           <Route element={<RoleRoute allow={['admin', 'seventy']} />}>

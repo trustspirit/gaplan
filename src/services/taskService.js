@@ -20,11 +20,21 @@ export async function expireTask(taskId) {
 export async function updateTaskDetails(taskId, updates, resetResponse = false) {
     await updateDoc(doc(db, 'tasks', taskId), {
         ...updates,
-        ...(resetResponse ? { status: 'pending', respondedSlots: [], respondedAt: null } : {}),
+        ...(resetResponse ? {
+            status: 'pending',
+            respondedSlots: [],
+            wardAssignments: [],
+            respondedAt: null,
+        } : {}),
     });
 }
 export async function submitAvailability(params) {
     const fn = httpsCallable(functions, 'submitAvailability');
+    const result = await fn(params);
+    return result.data;
+}
+export async function submitWardAssignments(params) {
+    const fn = httpsCallable(functions, 'submitWardAssignments');
     const result = await fn(params);
     return result.data;
 }

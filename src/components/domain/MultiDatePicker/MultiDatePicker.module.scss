@@ -67,6 +67,19 @@
 
 .otherMonth { opacity: 0.25; }
 
+.sundayDisabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.sundayLegend {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+  text-align: center;
+  padding: $space-1 0;
+}
+
 .available {
   color: $color-text;
   cursor: pointer;

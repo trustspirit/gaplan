@@ -1,0 +1,101 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.assigner {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.hint {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2;
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  flex-wrap: wrap;
+}
+
+.wardSelect {
+  flex: 1;
+  min-width: 120px;
+  padding: $space-1 $space-2;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  font-size: $font-size-sm;
+  color: $color-text;
+  background: $color-surface;
+  outline: none;
+  &:focus { border-color: $color-primary; }
+  cursor: pointer;
+}
+
+.dateBtns {
+  display: flex;
+  gap: $space-1;
+  flex-wrap: wrap;
+}
+
+.dateBtn {
+  padding: $space-1 $space-2;
+  border-radius: $border-radius-full;
+  border: 1px solid $color-border;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  background: $color-surface;
+  cursor: pointer;
+  min-height: 32px;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+  &:hover { border-color: $color-primary; color: $color-primary; }
+}
+
+.dateBtnSelected {
+  background: $color-primary;
+  border-color: $color-primary;
+  color: #fff;
+  &:hover { background: $color-primary-hover; border-color: $color-primary-hover; color: #fff; }
+}
+
+.removeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  border-radius: $border-radius-md;
+  cursor: pointer;
+  color: $color-text-muted;
+  flex-shrink: 0;
+  transition: background 0.12s, color 0.12s;
+  &:hover { background: $color-highlight-danger; color: $color-danger; }
+}
+
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-size-sm;
+  color: $color-primary;
+  background: none;
+  border: 1px dashed $color-primary;
+  border-radius: $border-radius-md;
+  padding: $space-2 $space-3;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.12s;
+  &:hover { background: color-mix(in srgb, $color-primary 6%, white); }
+}
+
+.submitBtn {
+  margin-top: $space-1;
+}

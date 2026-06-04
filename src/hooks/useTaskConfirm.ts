@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
 import { useSchedules } from '@/hooks/useSchedules'
-import { computeAvailableSlots, computeInterviewSlots } from '@/services/availabilityService'
+import { computeInterviewSlots } from '@/services/availabilityService'
 import { confirmSchedule } from '@/services/scheduleService'
 import { submitAvailability } from '@/services/taskService'
-import type { Task, TimeSlot, AvailabilitySlot } from '@/types'
+import type { Task, TimeSlot } from '@/types'
 
 export function useTaskConfirm(presidentUid: string, unitId: string | undefined) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
@@ -19,34 +19,13 @@ export function useTaskConfirm(presidentUid: string, unitId: string | undefined)
   const isVisit = activeTask?.type === 'select_visit'
   const isMultiSelect = activeTask?.type === 'select_interview' || activeTask?.type === 'select_meeting'
 
-  // Ward visits: compute from recurring Sunday availability
-  const visitSlots: AvailabilitySlot[] = (isVisit && activeTask)
-    ? (activeTask.availableDays ?? []).map(day => ({
-        id: '',
-        seventyUid: activeTask.seventyUid,
-        type: 'recurring' as const,
-        recurringDays: [day],
-        startTime: activeTask.availableStartTime ?? '09:00',
-        endTime: activeTask.availableEndTime ?? '18:00',
-        isBlocked: false,
-      }))
-    : []
+  // Ward visits: WardAssigner uses availableDates directly (no slot computation needed)
+  const visitAvailableSlots: TimeSlot[] = []
 
-  const visitAvailableSlots = isVisit
-    ? computeAvailableSlots(
-        visitSlots,
-        confirmedDates,
-        dayjs().format('YYYY-MM-DD'),
-        dayjs().add(90, 'day').format('YYYY-MM-DD'),
-      )
-    : []
-
-  // Interview/Meeting: compute from specific dates set by admin
+  // Interview/Meeting: compute from per-date slots set by admin
   const interviewAvailableSlots = isMultiSelect && activeTask
     ? computeInterviewSlots(
-        activeTask.availableDates ?? [],
-        activeTask.availableStartTime ?? '09:00',
-        activeTask.availableEndTime ?? '18:00',
+        activeTask.availableDateSlots ?? [],
         activeTask.slotDurationMinutes ?? 60,
       )
     : []

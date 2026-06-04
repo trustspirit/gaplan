@@ -1,0 +1,147 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  padding: $space-6;
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  max-width: 680px;
+
+  @media (min-width: 1200px) { padding: $space-6 $space-8; }
+
+  @include mobile {
+    padding: $space-3;
+    padding-bottom: calc(#{$bottom-tab-height} + #{$space-3});
+  }
+}
+
+.desc {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  line-height: $line-height-loose;
+  margin-bottom: $space-2;
+}
+
+.form { display: flex; flex-direction: column; gap: $space-4; }
+
+.section { display: flex; flex-direction: column; gap: $space-2; }
+.sectionLabel { font-size: $font-size-sm; font-weight: $font-weight-medium; color: $color-text; }
+.sectionHint { font-size: $font-size-xs; color: $color-text-muted; }
+
+.selectedSundays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+  margin-top: $space-1;
+}
+
+.sundayChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px $space-2;
+  background: color-mix(in srgb, $color-primary 12%, white);
+  color: $color-primary;
+  border: 1px solid color-mix(in srgb, $color-primary 30%, white);
+  border-radius: $border-radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.presidentSection { display: flex; flex-direction: column; gap: $space-2; }
+
+.presidentHeader {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.presidentLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  flex: 1;
+}
+
+.selectAllBtn {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  &:hover { text-decoration: underline; }
+}
+
+.regionFilter {
+  display: flex;
+  gap: $space-1;
+  flex-wrap: wrap;
+}
+
+.regionBtn {
+  padding: $space-1 $space-3;
+  border-radius: $border-radius-full;
+  border: 1px solid $color-border;
+  background: $color-surface;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  &:hover { background: $color-bg; color: $color-text; }
+}
+
+.regionBtnActive {
+  background: $color-sidebar;
+  border-color: $color-sidebar;
+  color: #fff;
+  &:hover { background: $color-sidebar; color: #fff; }
+}
+
+.presidentList {
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.presidentRow {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3;
+  cursor: pointer;
+  border-bottom: 1px solid $color-border;
+  transition: background 0.12s;
+  &:last-child { border-bottom: none; }
+  &:hover { background: $color-bg; }
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: $color-primary;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.presidentName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  flex: 1;
+}
+
+.presidentUnit {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.noneText {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  padding: $space-4;
+  text-align: center;
+}

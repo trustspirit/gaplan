@@ -1,6 +1,6 @@
 import { useAtomValue } from 'jotai'
 import { Link } from 'react-router-dom'
-import { Users, ListChecks, CalendarDays, CalendarCheck } from 'lucide-react'
+import { Users, ListChecks, CalendarCheck, MapPin } from 'lucide-react'
 import { authUserAtom } from '@/store/authAtom'
 import { AppShell, TopBar } from '@/components/layout'
 import { Button } from '@/components/ui'
@@ -20,10 +20,10 @@ const ACTION_CARDS = [
     link: '/admin/tasks',
   },
   {
-    icon: CalendarDays,
-    title: 'Task 진행 현황',
-    desc: '응답 여부·결과 확인 및 일정 확정',
-    link: '/admin/task-progress',
+    icon: MapPin,
+    title: '방문 일정 계획',
+    desc: '와드/지부별 방문 일요일 배정',
+    link: '/admin/visit-planner',
   },
   {
     icon: CalendarCheck,

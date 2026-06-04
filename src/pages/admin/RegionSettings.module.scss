@@ -75,6 +75,56 @@
   gap: $space-3;
 }
 
+.dateTimeList {
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+  margin-top: $space-1;
+}
+
+.dateTimeTitle {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  padding: $space-2 $space-3;
+  background: $color-bg;
+  border-bottom: 1px solid $color-border;
+}
+
+.dateTimeRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border-bottom: 1px solid $color-border;
+  &:last-child { border-bottom: none; }
+
+  @include mobile { flex-wrap: wrap; }
+}
+
+.dateTimeLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  min-width: 72px;
+}
+
+.dateTimeSep {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.timeInput {
+  padding: $space-1 $space-2;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  font-size: $font-size-sm;
+  color: $color-text;
+  background: $color-surface;
+  outline: none;
+  &:focus { border-color: $color-primary; }
+}
+
 .presidentSection {
   display: flex;
   flex-direction: column;

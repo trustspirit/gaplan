@@ -7,6 +7,17 @@ export interface RespondedSlot {
   endTime: string
 }
 
+export interface AvailableDateSlot {
+  date: string       // YYYY-MM-DD
+  startTime: string  // HH:mm
+  endTime: string    // HH:mm
+}
+
+export interface WardAssignment {
+  wardName: string
+  date: string  // YYYY-MM-DD, one of the availableDates
+}
+
 export interface Task {
   id: string
   type: TaskType
@@ -19,14 +30,15 @@ export interface Task {
   createdBy: string
   createdAt: string
   notifiedAt: string[]
-  // Ward visit: availableDays = [0] (Sundays)
   availableDays: number[]
-  // Interview/Meeting: specific dates admin selected
-  availableDates?: string[]          // YYYY-MM-DD[] for interview/meeting
-  availableStartTime?: string        // HH:mm
-  availableEndTime?: string          // HH:mm
-  slotDurationMinutes?: number       // interview/meeting slot size (default 60)
-  respondedSlots?: RespondedSlot[]   // submitted by president for interview/meeting
+  // Ward visit: specific Sundays admin selected
+  availableDates?: string[]
+  // Interview/Meeting: dates with per-date times
+  availableDateSlots?: AvailableDateSlot[]
+  slotDurationMinutes?: number
+  // President responses
+  respondedSlots?: RespondedSlot[]    // interview/meeting
+  wardAssignments?: WardAssignment[]  // ward visit
   respondedAt?: string
 }
 

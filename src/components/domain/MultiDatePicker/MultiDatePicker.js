@@ -5,9 +5,10 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 dayjs.locale('ko');
 import clsx from 'clsx';
+import { isFastSunday } from '@/utils/fastSunday';
 import styles from './MultiDatePicker.module.scss';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
-export function MultiDatePicker({ selected, onChange, minDate, maxDate }) {
+export function MultiDatePicker({ selected, onChange, minDate, maxDate, sundayOnly }) {
     const [current, setCurrent] = useState(dayjs());
     const min = dayjs(minDate ?? dayjs().format('YYYY-MM-DD'));
     const max = dayjs(maxDate ?? dayjs().add(90, 'day').format('YYYY-MM-DD'));
@@ -29,9 +30,11 @@ export function MultiDatePicker({ selected, onChange, minDate, maxDate }) {
                         const isCurrentMonth = day.month() === current.month();
                         const isPast = day.isBefore(min, 'day');
                         const isTooFar = day.isAfter(max, 'day');
-                        const isDisabled = !isCurrentMonth || isPast || isTooFar;
+                        const isNotSunday = sundayOnly && day.day() !== 0;
+                        const isFast = sundayOnly && isFastSunday(day);
+                        const isDisabled = !isCurrentMonth || isPast || isTooFar || isNotSunday || isFast;
                         const isSelected = selected.includes(dateStr);
                         const isToday = day.isSame(dayjs(), 'day');
-                        return (_jsx("button", { type: "button", disabled: isDisabled, onClick: () => !isDisabled && toggle(dateStr), className: clsx(styles.cell, !isCurrentMonth && styles.otherMonth, isToday && styles.today, isSelected && styles.selected, !isDisabled && !isSelected && styles.available), children: day.date() }, dateStr));
-                    })] }), selected.length > 0 && (_jsxs("div", { className: styles.selectedList, children: [_jsxs("p", { className: styles.selectedTitle, children: ["\uC120\uD0DD\uB41C \uB0A0\uC9DC (", selected.length, "\uC77C)"] }), _jsx("div", { className: styles.chips, children: selected.map(date => (_jsxs("button", { type: "button", className: styles.chip, onClick: () => toggle(date), children: [dayjs(date).format('M/D (ddd)'), " \u2715"] }, date))) })] }))] }));
+                        return (_jsx("button", { type: "button", disabled: isDisabled, onClick: () => !isDisabled && toggle(dateStr), className: clsx(styles.cell, !isCurrentMonth && styles.otherMonth, isToday && styles.today, isSelected && styles.selected, !isDisabled && !isSelected && styles.available, sundayOnly && (isNotSunday || isFast) && isCurrentMonth && !isPast && !isTooFar && styles.sundayDisabled), children: day.date() }, dateStr));
+                    })] }), sundayOnly && (_jsx("p", { className: styles.sundayLegend, children: "\u25CF \uBC29\uBB38 \uAC00\uB2A5 \uC77C\uC694\uC77C (\uAE08\uC2DD\uC77C \uC81C\uC678)" })), selected.length > 0 && (_jsxs("div", { className: styles.selectedList, children: [_jsxs("p", { className: styles.selectedTitle, children: ["\uC120\uD0DD\uB41C \uB0A0\uC9DC (", selected.length, "\uC77C)"] }), _jsx("div", { className: styles.chips, children: selected.map(date => (_jsxs("button", { type: "button", className: styles.chip, onClick: () => toggle(date), children: [dayjs(date).format('M/D (ddd)'), " \u2715"] }, date))) })] }))] }));
 }

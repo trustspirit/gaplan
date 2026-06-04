@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/ko'
 dayjs.locale('ko')
 import clsx from 'clsx'
+import { isFastSunday } from '@/utils/fastSunday'
 import styles from './MultiDatePicker.module.scss'
 
 const DOW = ['일', '월', '화', '수', '목', '금', '토'] as const
@@ -13,9 +14,10 @@ interface MultiDatePickerProps {
   onChange: (dates: string[]) => void
   minDate?: string            // default: today
   maxDate?: string            // default: today + 90 days
+  sundayOnly?: boolean        // when true, only non-fast Sundays are selectable
 }
 
-export function MultiDatePicker({ selected, onChange, minDate, maxDate }: MultiDatePickerProps) {
+export function MultiDatePicker({ selected, onChange, minDate, maxDate, sundayOnly }: MultiDatePickerProps) {
   const [current, setCurrent] = useState(dayjs())
   const min = dayjs(minDate ?? dayjs().format('YYYY-MM-DD'))
   const max = dayjs(maxDate ?? dayjs().add(90, 'day').format('YYYY-MM-DD'))
@@ -66,7 +68,9 @@ export function MultiDatePicker({ selected, onChange, minDate, maxDate }: MultiD
           const isCurrentMonth = day.month() === current.month()
           const isPast = day.isBefore(min, 'day')
           const isTooFar = day.isAfter(max, 'day')
-          const isDisabled = !isCurrentMonth || isPast || isTooFar
+          const isNotSunday = sundayOnly && day.day() !== 0
+          const isFast = sundayOnly && isFastSunday(day)
+          const isDisabled = !isCurrentMonth || isPast || isTooFar || isNotSunday || isFast
           const isSelected = selected.includes(dateStr)
           const isToday = day.isSame(dayjs(), 'day')
 
@@ -82,6 +86,7 @@ export function MultiDatePicker({ selected, onChange, minDate, maxDate }: MultiD
                 isToday && styles.today,
                 isSelected && styles.selected,
                 !isDisabled && !isSelected && styles.available,
+                sundayOnly && (isNotSunday || isFast) && isCurrentMonth && !isPast && !isTooFar && styles.sundayDisabled,
               )}
             >
               {day.date()}
@@ -89,6 +94,10 @@ export function MultiDatePicker({ selected, onChange, minDate, maxDate }: MultiD
           )
         })}
       </div>
+
+      {sundayOnly && (
+        <p className={styles.sundayLegend}>● 방문 가능 일요일 (금식일 제외)</p>
+      )}
 
       {selected.length > 0 && (
         <div className={styles.selectedList}>

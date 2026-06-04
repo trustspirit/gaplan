@@ -43,15 +43,19 @@ export async function updateTaskDetails(
   updates: {
     dueDate?: string
     availableDates?: string[]
-    availableStartTime?: string
-    availableEndTime?: string
+    availableDateSlots?: { date: string; startTime: string; endTime: string }[]
     slotDurationMinutes?: number
   },
   resetResponse = false,
 ): Promise<void> {
   await updateDoc(doc(db, 'tasks', taskId), {
     ...updates,
-    ...(resetResponse ? { status: 'pending', respondedSlots: [], respondedAt: null } : {}),
+    ...(resetResponse ? {
+      status: 'pending',
+      respondedSlots: [],
+      wardAssignments: [],
+      respondedAt: null,
+    } : {}),
   })
 }
 
@@ -59,10 +63,21 @@ interface SubmitAvailabilityParams {
   taskId: string
   slots: RespondedSlot[]
 }
-interface SubmitAvailabilityResult { success: boolean; error?: string }
+interface SubmitResult { success: boolean; error?: string }
 
-export async function submitAvailability(params: SubmitAvailabilityParams): Promise<SubmitAvailabilityResult> {
-  const fn = httpsCallable<SubmitAvailabilityParams, SubmitAvailabilityResult>(functions, 'submitAvailability')
+export async function submitAvailability(params: SubmitAvailabilityParams): Promise<SubmitResult> {
+  const fn = httpsCallable<SubmitAvailabilityParams, SubmitResult>(functions, 'submitAvailability')
+  const result = await fn(params)
+  return result.data
+}
+
+interface SubmitWardAssignmentsParams {
+  taskId: string
+  wardAssignments: { wardName: string; date: string }[]
+}
+
+export async function submitWardAssignments(params: SubmitWardAssignmentsParams): Promise<SubmitResult> {
+  const fn = httpsCallable<SubmitWardAssignmentsParams, SubmitResult>(functions, 'submitWardAssignments')
   const result = await fn(params)
   return result.data
 }
@@ -76,6 +91,7 @@ export async function createTask(params: {
   createdBy: string
   availableDays: number[]
   availableDates?: string[]
+  availableDateSlots?: { date: string; startTime: string; endTime: string }[]
   availableStartTime?: string
   availableEndTime?: string
   slotDurationMinutes?: number

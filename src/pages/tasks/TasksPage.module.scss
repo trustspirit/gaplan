@@ -13,14 +13,16 @@
 
   @include mobile {
     flex-direction: column;
-    padding: $space-4;
-    padding-bottom: calc(#{$bottom-tab-height} + #{$space-4});
+    padding: $space-3;
+    gap: $space-3;
+    padding-bottom: calc(#{$bottom-tab-height} + #{$space-3});
   }
 }
 
 .mainCol {
   flex: 1;
   min-width: 0;
+  width: 100%;
 }
 
 .sideCol {
