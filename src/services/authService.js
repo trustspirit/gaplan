@@ -1,8 +1,11 @@
-import { signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, } from 'firebase/auth';
+import { signInWithRedirect, getRedirectResult, signOut as firebaseSignOut, onAuthStateChanged, } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '@/firebase';
 export async function signInWithGoogle() {
-    await signInWithPopup(auth, googleProvider);
+    await signInWithRedirect(auth, googleProvider);
+}
+export async function handleRedirectResult() {
+    await getRedirectResult(auth);
 }
 export async function signOut() {
     await firebaseSignOut(auth);
@@ -37,15 +40,25 @@ export async function resolveUser(firebaseUser) {
     await setDoc(userRef, { ...newUser, createdAt: serverTimestamp() });
     return { uid: firebaseUser.uid, ...newUser };
 }
-export function subscribeToAuthState(onUser, onLoading) {
+export function subscribeToAuthState(onUser, onLoading, onAccessDenied) {
     return onAuthStateChanged(auth, async (firebaseUser) => {
         if (!firebaseUser) {
             onUser(null);
             onLoading(false);
             return;
         }
-        const user = await resolveUser(firebaseUser);
-        onUser(user);
-        onLoading(false);
+        try {
+            const user = await resolveUser(firebaseUser);
+            if (user === null)
+                onAccessDenied?.();
+            onUser(user);
+        }
+        catch (e) {
+            console.error('[auth] resolveUser failed:', e);
+            onUser(null);
+        }
+        finally {
+            onLoading(false);
+        }
     });
 }
