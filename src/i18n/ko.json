@@ -206,7 +206,13 @@
     "scheduleDelete": "일정 취소",
     "calSynced": "캘린더 등록됨",
     "calendarRegionLabel": "지역 캘린더 ID",
-    "calendarDesc2": "각 지역별로 공유 캘린더를 생성하고, Google Calendar 설정에서 캘린더 ID를 복사해 입력하세요. 확정된 일정이 해당 지역 캘린더에 자동으로 기록됩니다."
+    "calendarDesc2": "각 지역별로 공유 캘린더를 생성하고, Google Calendar 설정에서 캘린더 ID를 복사해 입력하세요. 확정된 일정이 해당 지역 캘린더에 자동으로 기록됩니다.",
+    "scheduleEdit": "일정 수정",
+    "scheduleEditSuccess": "일정이 수정되었습니다.",
+    "scheduleEditFailed": "일정 수정에 실패했습니다.",
+    "scheduleEditCalendarHint": "구글 캘린더에 등록된 일정입니다. 저장 시 캘린더도 자동으로 업데이트됩니다.",
+    "scheduleNotesPlaceholder": "메모 (선택)",
+    "scheduleTimeError": "종료 시간은 시작 시간보다 늦어야 합니다."
   },
   "visits": {
     "title": "와드 방문 일정",

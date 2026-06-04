@@ -210,7 +210,13 @@
     "scheduleDelete": "Cancel Schedule",
     "calSynced": "Synced to Calendar",
     "calendarRegionLabel": "Region Calendar ID",
-    "calendarDesc2": "Create a shared calendar per region and paste the Calendar ID from Google Calendar settings. Confirmed schedules are automatically added to the corresponding calendar."
+    "calendarDesc2": "Create a shared calendar per region and paste the Calendar ID from Google Calendar settings. Confirmed schedules are automatically added to the corresponding calendar.",
+    "scheduleEdit": "Edit Schedule",
+    "scheduleEditSuccess": "Schedule updated.",
+    "scheduleEditFailed": "Failed to update schedule.",
+    "scheduleEditCalendarHint": "This schedule is synced to Google Calendar. Saving will automatically update the calendar event.",
+    "scheduleNotesPlaceholder": "Notes (optional)",
+    "scheduleTimeError": "End time must be later than start time."
   },
   "visits": {
     "title": "Ward Visit Schedule",

@@ -92,6 +92,30 @@
   padding: 2px 7px;
 }
 
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  flex-shrink: 0;
+}
+
+.editBtn {
+  padding: $space-1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: $color-text-muted;
+  border-radius: $border-radius-sm;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    color: $color-primary;
+    background: rgba($color-primary, 0.08);
+  }
+}
+
 .cancelBtn {
   padding: $space-1;
   background: none;
@@ -108,6 +132,65 @@
     color: $color-danger;
     background: rgba($color-danger, 0.08);
   }
+}
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.editMeta {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  background: $color-background;
+  border-radius: $border-radius-sm;
+  border: 1px solid $color-border;
+}
+
+.timeRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-3;
+}
+
+.textareaField {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.textareaLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.textarea {
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  padding: $space-3;
+  font-size: $font-size-sm;
+  color: $color-text;
+  background: $color-surface;
+  resize: vertical;
+  font-family: inherit;
+  line-height: $line-height-loose;
+
+  &:focus {
+    outline: 2px solid var(--color-primary, #177C9C);
+    outline-offset: 1px;
+  }
+}
+
+.calendarHint {
+  font-size: $font-size-xs;
+  color: $color-success;
+  background: rgba($color-success, 0.08);
+  border-radius: $border-radius-sm;
+  padding: $space-2 $space-3;
 }
 
 .deleteDesc {
