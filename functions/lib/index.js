@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fastSundayBlock = exports.taskReminder = exports.weeklyReminder = exports.calendarSync = exports.deleteUser = exports.adminConfirmWardVisit = exports.adminConfirmSchedule = exports.submitWardAssignments = exports.submitAvailability = exports.confirmSchedule = void 0;
+exports.fastSundayBlock = exports.taskReminder = exports.weeklyReminder = exports.calendarSync = exports.manualCalendarSync = exports.deleteUser = exports.adminConfirmWardVisit = exports.adminConfirmSchedule = exports.submitWardAssignments = exports.submitAvailability = exports.confirmSchedule = void 0;
 const admin = __importStar(require("firebase-admin"));
 admin.initializeApp();
 var confirmSchedule_1 = require("./confirmSchedule");
@@ -48,6 +48,8 @@ var adminConfirmWardVisit_1 = require("./adminConfirmWardVisit");
 Object.defineProperty(exports, "adminConfirmWardVisit", { enumerable: true, get: function () { return adminConfirmWardVisit_1.adminConfirmWardVisit; } });
 var adminActions_1 = require("./adminActions");
 Object.defineProperty(exports, "deleteUser", { enumerable: true, get: function () { return adminActions_1.deleteUser; } });
+var manualCalendarSync_1 = require("./manualCalendarSync");
+Object.defineProperty(exports, "manualCalendarSync", { enumerable: true, get: function () { return manualCalendarSync_1.manualCalendarSync; } });
 var calendarSync_1 = require("./calendarSync");
 Object.defineProperty(exports, "calendarSync", { enumerable: true, get: function () { return calendarSync_1.calendarSync; } });
 var weeklyReminder_1 = require("./weeklyReminder");

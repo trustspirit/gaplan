@@ -5,7 +5,8 @@ export interface AppUser {
   email: string
   name: string
   role: UserRole
-  regionId?: string
+  regionId?: string        // primary region (first of regionIds, kept for backward compat)
+  regionIds?: string[]     // all assigned regions for seventy
   unitId?: string
   calendarConnected?: boolean
   createdAt: string

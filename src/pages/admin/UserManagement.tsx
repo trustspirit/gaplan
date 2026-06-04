@@ -26,8 +26,19 @@ function EditUserModal({
   const { t } = useTranslation()
   const [name, setName] = useState(user.name)
   const [role, setRole] = useState<UserRole>(user.role)
-  const [regionId, setRegionId] = useState(user.regionId ?? '')
+  // Multi-region support for seventy
+  const [selectedRegions, setSelectedRegions] = useState<Set<string>>(
+    new Set(user.regionIds ?? (user.regionId ? [user.regionId] : []))
+  )
   const [loading, setLoading] = useState(false)
+
+  function toggleRegion(regionId: string) {
+    setSelectedRegions(prev => {
+      const next = new Set(prev)
+      next.has(regionId) ? next.delete(regionId) : next.add(regionId)
+      return next
+    })
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,8 +46,12 @@ function EditUserModal({
     try {
       const tasks: Promise<void>[] = []
       if (name.trim() !== user.name) tasks.push(updateUserName(user.uid, name.trim()))
-      if (role !== user.role || (role === 'seventy' && regionId !== user.regionId)) {
-        tasks.push(updateUserRole(user.uid, role, role === 'seventy' ? regionId : undefined))
+      const newRegionIds = Array.from(selectedRegions)
+      const regionChanged = role === 'seventy' && (
+        JSON.stringify(newRegionIds.sort()) !== JSON.stringify((user.regionIds ?? []).sort())
+      )
+      if (role !== user.role || regionChanged) {
+        tasks.push(updateUserRole(user.uid, role, role === 'seventy' ? newRegionIds : undefined))
       }
       await Promise.all(tasks)
       toast.success(`${name}${t('user.editSuccess')}`)
@@ -64,12 +79,23 @@ function EditUserModal({
           options={ROLE_OPTIONS}
         />
         {role === 'seventy' && (
-          <Select
-            label={t('user.inviteRegion')}
-            value={regionId}
-            onChange={e => setRegionId(e.target.value)}
-            options={REGION_OPTIONS}
-          />
+          <div className={styles.regionCheckGroup}>
+            <p className={styles.regionCheckLabel}>{t('user.inviteRegion')} (복수 선택 가능)</p>
+            <div className={styles.regionCheckList}>
+              {REGIONS.map(r => (
+                <label key={r.id} className={styles.regionCheckRow}>
+                  <input
+                    type="checkbox"
+                    checked={selectedRegions.has(r.id)}
+                    onChange={() => toggleRegion(r.id)}
+                    className={styles.regionCheckbox}
+                    style={{ accentColor: 'var(--color-primary, #177C9C)' }}
+                  />
+                  <span className={styles.regionCheckName}>{r.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
         )}
         <div className={styles.modalActions}>
           <Button variant="ghost" type="button" onClick={onClose}>{t('common.cancel')}</Button>

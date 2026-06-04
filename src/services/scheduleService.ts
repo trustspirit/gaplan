@@ -56,6 +56,14 @@ export async function adminConfirmSchedule(params: AdminConfirmParams): Promise<
 
 interface AdminConfirmWardVisitResult { success: boolean; scheduleCount?: number; error?: string }
 
+interface ManualSyncResult { success: boolean; synced: number; failed: number; message: string }
+
+export async function manualCalendarSync(): Promise<ManualSyncResult> {
+  const fn = httpsCallable<void, ManualSyncResult>(functions, 'manualCalendarSync')
+  const result = await fn()
+  return result.data
+}
+
 export async function adminConfirmWardVisit(taskId: string): Promise<AdminConfirmWardVisitResult> {
   const fn = httpsCallable<{ taskId: string }, AdminConfirmWardVisitResult>(functions, 'adminConfirmWardVisit')
   const result = await fn({ taskId })

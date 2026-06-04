@@ -89,6 +89,50 @@
   padding-top: $space-2;
 }
 
+.regionCheckGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.regionCheckLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.regionCheckList {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+}
+
+.regionCheckRow {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3;
+  cursor: pointer;
+  border-bottom: 1px solid $color-border;
+  transition: background 0.1s;
+  &:last-child { border-bottom: none; }
+  &:hover { background: $color-bg; }
+}
+
+.regionCheckbox {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.regionCheckName {
+  font-size: $font-size-sm;
+  color: $color-text;
+}
+
 .deleteDesc {
   font-size: $font-size-sm;
   color: $color-text;

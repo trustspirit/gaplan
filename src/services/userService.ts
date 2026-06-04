@@ -29,8 +29,18 @@ export function subscribeToUsers(callback: (users: AppUser[]) => void): Unsubscr
   )
 }
 
-export async function updateUserRole(uid: string, role: UserRole, regionId?: string): Promise<void> {
-  await updateDoc(doc(db, 'users', uid), { role, ...(regionId ? { regionId } : {}) })
+export async function updateUserRole(
+  uid: string,
+  role: UserRole,
+  regionIds?: string[],   // multiple regions for seventy
+): Promise<void> {
+  const regionFields = role === 'seventy' && regionIds && regionIds.length > 0
+    ? {
+        regionIds,
+        regionId: regionIds[0],  // keep primary for backward compat
+      }
+    : {}
+  await updateDoc(doc(db, 'users', uid), { role, ...regionFields })
 }
 
 export async function updateUserName(uid: string, name: string): Promise<void> {

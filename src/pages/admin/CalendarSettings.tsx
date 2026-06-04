@@ -3,7 +3,9 @@ import { useAtomValue } from 'jotai'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
+import { RefreshCw } from 'lucide-react'
 import { authUserAtom } from '@/store/authAtom'
+import { manualCalendarSync } from '@/services/scheduleService'
 import { db } from '@/firebase'
 import { REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
@@ -15,6 +17,7 @@ export function CalendarSettings() {
   const user = useAtomValue(authUserAtom)!
   const [calendarIds, setCalendarIds] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+  const [syncing, setSyncing] = useState(false)
   const [fetching, setFetching] = useState(true)
 
   useEffect(() => {
@@ -34,6 +37,18 @@ export function CalendarSettings() {
       toast.error(t('common.saveFailed'))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleManualSync = async () => {
+    setSyncing(true)
+    try {
+      const result = await manualCalendarSync()
+      toast.success(result.message)
+    } catch (e: unknown) {
+      toast.error((e as { message?: string })?.message ?? '동기화 오류가 발생했습니다.')
+    } finally {
+      setSyncing(false)
     }
   }
 
@@ -63,6 +78,24 @@ export function CalendarSettings() {
                 <Button type="submit" loading={loading}>저장</Button>
               </form>
             )}
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader title="수동 캘린더 동기화" />
+          <CardBody>
+            <p className={styles.desc}>
+              캘린더 등록이 실패한 확정 일정들을 Google Calendar에 다시 동기화합니다.
+              (googleCalendarEventId가 없는 confirmed 일정 대상)
+            </p>
+            <Button
+              onClick={handleManualSync}
+              loading={syncing}
+              variant="secondary"
+            >
+              <RefreshCw size={14} />
+              &nbsp;지금 동기화
+            </Button>
           </CardBody>
         </Card>
       </div>
