@@ -1,11 +1,22 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui'
 import { signInWithGoogle } from '@/services/authService'
+import { authUserAtom, authLoadingAtom } from '@/store/authAtom'
 import styles from './LoginPage.module.scss'
 
 export function LoginPage() {
   const [loading, setLoading] = useState(false)
+  const user = useAtomValue(authUserAtom)
+  const authLoading = useAtomValue(authLoadingAtom)
+  const navigate = useNavigate()
+
+  if (!authLoading && user) {
+    navigate(user.role === 'president' && !user.unitId ? '/onboarding' : '/dashboard', { replace: true })
+    return null
+  }
 
   const handleSignIn = async () => {
     setLoading(true)
