@@ -1,24 +1,25 @@
 import { AlertCircle, Clock } from 'lucide-react'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 import type { Task } from '@/types'
 import { Badge, Button } from '@/components/ui'
 import styles from './TaskCard.module.scss'
 
-const TASK_LABELS: Record<string, string> = {
-  select_visit:     '와드 방문',
-  select_interview: '접견/모임 일정',
-}
-
 interface TaskCardProps { task: Task; onAction?: (task: Task) => void }
 
 export function TaskCard({ task, onAction }: TaskCardProps) {
+  const { t } = useTranslation()
   const daysLeft = dayjs(task.dueDate).diff(dayjs(), 'day')
   const isUrgent = daysLeft <= 3
   const isOverdue = daysLeft < 0
   const isResponded = task.status === 'responded'
   // Ward visit tasks in responded state can be reopened for editing
   const canReopen = isResponded && task.type === 'select_visit'
+  const TASK_LABELS: Record<string, string> = {
+    select_visit:     t('schedule.type.ward_visit'),
+    select_interview: t('task.type.select_interview'),
+  }
   const label = task.title ?? (TASK_LABELS[task.type] ?? task.type)
   const dDayLabel = isOverdue ? `D+${Math.abs(daysLeft)}` : `D-${daysLeft}`
 
@@ -33,7 +34,7 @@ export function TaskCard({ task, onAction }: TaskCardProps) {
           <span className={styles.label}>{label}</span>
           {isResponded && (
             <span className={styles.respondedHint}>
-              제출 완료 · 확정 대기 중
+              {t('task.awaitingConfirmation')}
             </span>
           )}
         </div>
@@ -43,11 +44,11 @@ export function TaskCard({ task, onAction }: TaskCardProps) {
           <Badge variant={isOverdue ? 'danger' : isUrgent ? 'danger' : 'warning'}>{dDayLabel}</Badge>
         )}
         {isResponded && !canReopen && (
-          <Badge variant="default">대기 중</Badge>
+          <Badge variant="default">{t('common.waiting')}</Badge>
         )}
         {(!isResponded || canReopen) && onAction && (
           <Button size="sm" variant={canReopen ? 'secondary' : 'primary'} onClick={() => onAction(task)}>
-            {canReopen ? '수정' : '처리'}
+            {canReopen ? t('common.edit') : t('common.process')}
           </Button>
         )}
       </div>

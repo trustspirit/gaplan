@@ -30,7 +30,10 @@
     "remove": "삭제",
     "complete": "완료",
     "yes": "예",
-    "no": "아니오"
+    "no": "아니오",
+    "process": "처리",
+    "waiting": "대기 중",
+    "goTo": "바로 가기"
   },
   "auth": {
     "greeting": "{{name}}님, 안녕하세요",
@@ -47,20 +50,6 @@
     "logoutFailed": "로그아웃에 실패했습니다.",
     "nameSaved": "이름이 변경되었습니다.",
     "nameSaveFailed": "이름 변경에 실패했습니다."
-  },
-  "onboarding": {
-    "title": "처음 오셨군요!",
-    "desc": "이름과 소속을 입력하면 관리자 승인 후 이용하실 수 있습니다.",
-    "descPresident": "소속과 이름을 입력해주세요.",
-    "nameLabel": "이름",
-    "namePlaceholder": "실명을 입력해주세요",
-    "unitLabel": "소속 스테이크/지방부",
-    "unitPlaceholder": "스테이크/지방부 선택",
-    "submit": "제출하기",
-    "submitPresident": "시작하기",
-    "submitting": "저장 중...",
-    "loginRequired": "로그인이 필요합니다.",
-    "saveFailed": "저장에 실패했습니다. 다시 시도해주세요."
   },
   "task": {
     "type": {
@@ -211,10 +200,18 @@
     "busan": "부산"
   },
   "onboarding": {
-    "title": "스테이크/지방부 선택",
-    "desc": "소속된 스테이크 또는 지방부를 선택해주세요.",
+    "title": "처음 오셨군요!",
+    "desc": "이름과 소속을 입력하면 관리자 승인 후 이용하실 수 있습니다.",
+    "descPresident": "소속과 이름을 입력해주세요.",
+    "nameLabel": "이름",
+    "namePlaceholder": "실명을 입력해주세요",
+    "unitLabel": "소속 스테이크/지방부",
+    "unitPlaceholder": "스테이크/지방부 선택",
     "select": "스테이크/지방부 선택",
-    "submit": "시작하기",
-    "submitting": "저장 중..."
+    "submit": "제출하기",
+    "submitPresident": "시작하기",
+    "submitting": "저장 중...",
+    "loginRequired": "로그인이 필요합니다.",
+    "saveFailed": "저장에 실패했습니다. 다시 시도해주세요."
   }
 }

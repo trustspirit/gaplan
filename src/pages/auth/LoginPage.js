@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAtomValue } from 'jotai';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui';
 import { signInWithGoogle } from '@/services/authService';
 import { authUserAtom, authLoadingAtom } from '@/store/authAtom';
 import styles from './LoginPage.module.scss';
 export function LoginPage() {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const user = useAtomValue(authUserAtom);
     const authLoading = useAtomValue(authLoadingAtom);
@@ -29,11 +31,11 @@ export function LoginPage() {
             await signInWithGoogle();
         }
         catch {
-            toast.error('로그인에 실패했습니다. 다시 시도해주세요.');
+            toast.error(t('auth.loginFailed'));
         }
         finally {
             setLoading(false);
         }
     };
-    return (_jsx("div", { className: styles.page, children: _jsxs("div", { className: styles.card, children: [_jsx("div", { className: styles.logo }), _jsx("h1", { className: styles.title, children: "gaplan" }), _jsx("p", { className: styles.subtitle, children: "\uC9C0\uC5ED \uCE60\uC2ED\uC778 \uC77C\uC815 \uAD00\uB9AC" }), _jsx(Button, { onClick: handleSignIn, loading: loading, fullWidth: true, size: "lg", children: "Google \uACC4\uC815\uC73C\uB85C \uB85C\uADF8\uC778" })] }) }));
+    return (_jsx("div", { className: styles.page, children: _jsxs("div", { className: styles.card, children: [_jsx("div", { className: styles.logo }), _jsx("h1", { className: styles.title, children: "gaplan" }), _jsx("p", { className: styles.subtitle, children: t('auth.loginSubtitle') }), _jsx(Button, { onClick: handleSignIn, loading: loading, fullWidth: true, size: "lg", children: t('auth.loginWith') })] }) }));
 }

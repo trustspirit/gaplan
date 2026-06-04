@@ -30,17 +30,25 @@
     "remove": "Remove",
     "complete": "Complete",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "process": "Process",
+    "waiting": "Awaiting",
+    "goTo": "Go →"
   },
   "auth": {
     "greeting": "Hello, {{name}}",
     "logout": "Sign Out",
     "changeName": "Change Name",
     "loginTitle": "Sign In",
+    "loginSubtitle": "Area Seventy Schedule Management",
     "loginWith": "Sign in with Google",
     "loggingIn": "Signing in...",
+    "loginFailed": "Sign in failed. Please try again.",
     "pendingTitle": "Awaiting Approval",
-    "pendingDesc": "Your account is pending approval from an administrator.",
+    "pendingDesc": "Your account is pending administrator approval. You can use the service after approval.",
+    "pendingHint": "Please sign in again after approval.",
+    "logout": "Sign Out",
+    "logoutFailed": "Sign out failed.",
     "nameSaved": "Name updated successfully.",
     "nameSaveFailed": "Failed to update name."
   },
@@ -196,10 +204,18 @@
     "busan": "Busan"
   },
   "onboarding": {
-    "title": "Select Stake/District",
-    "desc": "Please select your stake or district.",
+    "title": "Welcome!",
+    "desc": "Enter your name and unit, and you can use the service after administrator approval.",
+    "descPresident": "Please enter your unit and name.",
+    "nameLabel": "Name",
+    "namePlaceholder": "Enter your full name",
+    "unitLabel": "Stake/District",
+    "unitPlaceholder": "Select Stake/District",
     "select": "Select Stake/District",
-    "submit": "Get Started",
-    "submitting": "Saving..."
+    "submit": "Submit",
+    "submitPresident": "Get Started",
+    "submitting": "Saving...",
+    "loginRequired": "Sign in required.",
+    "saveFailed": "Failed to save. Please try again."
   }
 }

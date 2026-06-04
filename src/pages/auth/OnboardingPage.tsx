@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { toast } from 'sonner'
 import { useAtomValue, useSetAtom } from 'jotai'
+import { useTranslation } from 'react-i18next'
 import { auth, db } from '@/firebase'
 import { authUserAtom } from '@/store/authAtom'
 import { ALL_UNITS } from '@/constants/regions'
@@ -11,6 +12,7 @@ import { Input, Select, Button } from '@/components/ui'
 import styles from './OnboardingPage.module.scss'
 
 export function OnboardingPage() {
+  const { t } = useTranslation()
   const currentUser = useAtomValue(authUserAtom)
   const [name, setName] = useState('')
   const [unitId, setUnitId] = useState('')
@@ -31,7 +33,7 @@ export function OnboardingPage() {
     }
     const firebaseUser = auth.currentUser
     if (!firebaseUser) {
-      toast.error('로그인이 필요합니다.')
+      toast.error(t('onboarding.loginRequired'))
       navigate('/login')
       return
     }
@@ -56,7 +58,7 @@ export function OnboardingPage() {
         navigate('/dashboard')
       }
     } catch {
-      toast.error('저장에 실패했습니다. 다시 시도해주세요.')
+      toast.error(t('onboarding.saveFailed'))
     } finally {
       setLoading(false)
     }
@@ -65,17 +67,15 @@ export function OnboardingPage() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <h1 className={styles.title}>처음 오셨군요!</h1>
+        <h1 className={styles.title}>{t('onboarding.title')}</h1>
         <p className={styles.subtitle}>
-          {isPending
-            ? '이름과 소속을 입력하면 관리자 승인 후 이용하실 수 있습니다.'
-            : '소속과 이름을 입력해주세요.'}
+          {isPending ? t('onboarding.desc') : t('onboarding.descPresident')}
         </p>
         <form className={styles.form} onSubmit={handleSubmit}>
-          <Input label="이름" value={name} onChange={e => setName(e.target.value)} placeholder="홍길동" required />
-          <Select label="소속 스테이크/지방부" value={unitId} onChange={e => setUnitId(e.target.value)} options={unitOptions} required />
+          <Input label={t('onboarding.nameLabel')} value={name} onChange={e => setName(e.target.value)} placeholder="홍길동" required />
+          <Select label={t('onboarding.unitLabel')} value={unitId} onChange={e => setUnitId(e.target.value)} options={unitOptions} required />
           <Button type="submit" loading={loading} fullWidth size="lg">
-            {isPending ? '제출하기' : '시작하기'}
+            {loading ? t('onboarding.submitting') : isPending ? t('onboarding.submit') : t('onboarding.submitPresident')}
           </Button>
         </form>
       </div>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
 import { MapPin } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
@@ -10,7 +11,7 @@ import { ScheduleItem } from '@/components/domain'
 import type { Schedule } from '@/types'
 import styles from './VisitsPage.module.scss'
 
-type FilterTab = '전체' | '예정' | '완료'
+type FilterTab = 'all' | 'upcoming' | 'completed'
 
 function groupByMonth(schedules: Schedule[]): Map<string, Schedule[]> {
   const map = new Map<string, Schedule[]>()
@@ -31,8 +32,9 @@ function sortMonthKeys(keys: string[]): string[] {
 }
 
 export function VisitsPage() {
+  const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
-  const [activeTab, setActiveTab] = useState<FilterTab>('전체')
+  const [activeTab, setActiveTab] = useState<FilterTab>('all')
 
   const filters = user.role === 'president'
     ? { presidentUid: user.uid }
@@ -52,8 +54,8 @@ export function VisitsPage() {
   const thisMonthCount = allVisits.filter(s => dayjs(s.date).format('YYYY-M') === thisMonth).length
 
   const filtered = allVisits.filter(s => {
-    if (activeTab === '예정') return !dayjs(s.date).isBefore(today, 'day')
-    if (activeTab === '완료') return dayjs(s.date).isBefore(today, 'day')
+    if (activeTab === 'upcoming') return !dayjs(s.date).isBefore(today, 'day')
+    if (activeTab === 'completed') return dayjs(s.date).isBefore(today, 'day')
     return true
   })
 
@@ -84,26 +86,26 @@ export function VisitsPage() {
     .sort((a, b) => dayjs(a.date).isBefore(dayjs(b.date)) ? -1 : 1)
     .slice(0, 5)
 
-  const TABS: FilterTab[] = ['전체', '예정', '완료']
+  const TABS: FilterTab[] = ['all', 'upcoming', 'completed']
 
   return (
-    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext="와드 방문 일정" />}>
+    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('visits.title')} />}>
       <div className={styles.layout}>
         <div className={styles.mainCol}>
           <div className={styles.stats}>
             <div className={styles.statCard}>
               <span className={styles.statValue}>{thisMonthCount}</span>
-              <span className={styles.statLabel}>이번 달 방문</span>
+              <span className={styles.statLabel}>{t('visits.thisMonth')}</span>
             </div>
             <div className={styles.statDivider} />
             <div className={styles.statCard}>
               <span className={styles.statValue}>{upcomingCount}</span>
-              <span className={styles.statLabel}>예정 방문</span>
+              <span className={styles.statLabel}>{t('visits.upcoming')}</span>
             </div>
             <div className={styles.statDivider} />
             <div className={styles.statCard}>
               <span className={styles.statValue}>{completedCount}</span>
-              <span className={styles.statLabel}>완료 방문</span>
+              <span className={styles.statLabel}>{t('visits.completed')}</span>
             </div>
           </div>
 
@@ -116,7 +118,7 @@ export function VisitsPage() {
                 data-active={activeTab === tab}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab}
+                {t(`visits.tabs.${tab}`)}
               </button>
             ))}
           </div>
@@ -125,9 +127,9 @@ export function VisitsPage() {
             {orderedKeys.length === 0 ? (
               <div className={styles.empty}>
                 <MapPin size={32} className={styles.emptyIcon} />
-                <p className={styles.emptyTitle}>방문 일정이 없습니다</p>
+                <p className={styles.emptyTitle}>{t('visits.empty')}</p>
                 <p className={styles.emptyDesc}>
-                  {activeTab === '예정' ? '아직 예정된 방문이 없습니다.' : activeTab === '완료' ? '완료된 방문이 없습니다.' : '확정된 방문 일정이 없습니다.'}
+                  {activeTab === 'upcoming' ? t('visits.noUpcoming') : activeTab === 'completed' ? t('visits.noCompleted') : t('visits.noAll')}
                 </p>
               </div>
             ) : (
@@ -155,10 +157,10 @@ export function VisitsPage() {
 
         <div className={styles.sideCol}>
           <div className={styles.sideCard}>
-            <div className={styles.sideCardHeader}>다음 방문 예정</div>
+            <div className={styles.sideCardHeader}>{t('visits.nextVisits')}</div>
             <div className={styles.sideCardBody}>
               {upcomingVisits.length === 0 ? (
-                <p className={styles.sideEmpty}>예정된 방문이 없습니다.</p>
+                <p className={styles.sideEmpty}>{t('visits.noUpcoming')}</p>
               ) : (
                 upcomingVisits.map(s => (
                   <div key={s.id} className={styles.upcomingItem}>

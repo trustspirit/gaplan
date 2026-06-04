@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import { Calendar, CheckCircle2 } from 'lucide-react'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { useTasks } from '@/hooks/useTasks'
 import { useSchedules } from '@/hooks/useSchedules'
@@ -19,13 +20,14 @@ import { REGIONS } from '@/constants/regions'
 import styles from './DashboardPage.module.scss'
 
 function CalendarBanner({ connected }: { connected?: boolean }) {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
 
   const handleConnect = async () => {
     setLoading(true)
     try {
       await subscribeToSharedCalendar()
-      toast.success('구글 캘린더에 구독되었습니다!')
+      toast.success(t('schedule.calendarSuccess'))
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : '연동에 실패했습니다.')
     } finally {
@@ -37,16 +39,16 @@ function CalendarBanner({ connected }: { connected?: boolean }) {
     <div className={styles.calendarBanner}>
       <Calendar size={16} color="var(--color-primary, #177C9C)" />
       <span className={styles.calendarBannerText}>
-        구글 캘린더 구독으로 모든 확정 일정을 핸드폰에서 바로 확인하세요.
+        {t('schedule.calendarBannerText')}
       </span>
       {connected ? (
         <div className={styles.calendarConnected}>
           <CheckCircle2 size={14} />
-          구독 완료
+          {t('schedule.calendarConnected')}
         </div>
       ) : (
         <Button variant="secondary" size="sm" onClick={handleConnect} loading={loading}>
-          구독
+          {t('schedule.calendarSubscribe')}
         </Button>
       )}
     </div>
@@ -54,6 +56,7 @@ function CalendarBanner({ connected }: { connected?: boolean }) {
 }
 
 function PresidentDashboard() {
+  const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { tasks, loading: tasksLoading } = useTasks(user.uid)
   const { schedules, loading: schedulesLoading } = useSchedules({ presidentUid: user.uid })
@@ -98,24 +101,24 @@ function PresidentDashboard() {
       <div className={styles.layout}>
         <div className={styles.mainCol}>
           <Card>
-            <CardHeader title="처리 필요" />
+            <CardHeader title={t('task.needsAction')} />
             <CardBody>
               {tasksLoading
                 ? [1, 2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
                 : tasks.length === 0
-                  ? <p className={styles.empty}>처리할 항목이 없습니다.</p>
+                  ? <p className={styles.empty}>{t('task.noTasks')}</p>
                   : tasks.map(t => <TaskCard key={t.id} task={t} onAction={openTask} />)
               }
             </CardBody>
           </Card>
 
           <Card>
-            <CardHeader title="예정 일정" />
+            <CardHeader title={t('schedule.upcoming')} />
             <CardBody>
               {schedulesLoading
                 ? [1, 2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
                 : upcoming.length === 0
-                  ? <p className={styles.empty}>예정된 일정이 없습니다.</p>
+                  ? <p className={styles.empty}>{t('schedule.noUpcoming')}</p>
                   : upcoming.map(s => (
                       <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} showCalendarAdd />
                     ))
@@ -126,7 +129,7 @@ function PresidentDashboard() {
 
         <div className={styles.sideCol}>
           <Card>
-            <CardHeader title="캘린더" />
+            <CardHeader title={t('nav.calendar')} />
             <CardBody>
               <CalendarView schedules={schedules} />
             </CardBody>
@@ -148,6 +151,7 @@ function PresidentDashboard() {
 }
 
 function SeventyDashboard() {
+  const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { schedules } = useSchedules({ seventyUid: user.uid })
   const { getUnitName } = useUnits()
@@ -173,12 +177,12 @@ function SeventyDashboard() {
 
           <Card>
             <CardHeader
-              title="예정 일정"
-              action={<span style={{ fontSize: '0.8125rem', color: '#808081' }}>이번 달 {thisMonthCount}건</span>}
+              title={t('schedule.upcoming')}
+              action={<span style={{ fontSize: '0.8125rem', color: '#808081' }}>{t('schedule.thisMonth', { count: thisMonthCount })}</span>}
             />
             <CardBody>
               {upcoming.length === 0
-                ? <p className={styles.empty}>예정된 확정 일정이 없습니다.</p>
+                ? <p className={styles.empty}>{t('schedule.noUpcoming')}</p>
                 : upcoming.map(s => (
                     <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} />
                   ))
@@ -189,7 +193,7 @@ function SeventyDashboard() {
 
         <div className={styles.sideCol}>
           <Card>
-            <CardHeader title="캘린더" />
+            <CardHeader title={t('nav.calendar')} />
             <CardBody>
               <CalendarView schedules={schedules} />
             </CardBody>
@@ -201,6 +205,7 @@ function SeventyDashboard() {
 }
 
 function AdminDashboardContent() {
+  const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { schedules } = useSchedules({})
 
@@ -216,18 +221,18 @@ function AdminDashboardContent() {
   return (
     <AppShell
       role={user.role} name={user.name}
-      topBar={<TopBar name={user.name} subtext="관리자 대시보드" />}
+      topBar={<TopBar name={user.name} subtext={t('admin.dashboard')} />}
     >
       <div className={styles.layout}>
         <div className={styles.mainCol}>
           <Card>
             <CardHeader
-              title="전체 예정 일정"
-              action={<span style={{ fontSize: '0.8125rem', color: '#808081' }}>이번 달 {thisMonth.length}건</span>}
+              title={t('schedule.upcoming')}
+              action={<span style={{ fontSize: '0.8125rem', color: '#808081' }}>{t('schedule.thisMonth', { count: thisMonth.length })}</span>}
             />
             <CardBody>
               {upcoming.length === 0
-                ? <p className={styles.empty}>예정된 일정이 없습니다.</p>
+                ? <p className={styles.empty}>{t('schedule.noUpcoming')}</p>
                 : upcoming.map(s => (
                     <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} />
                   ))
@@ -238,7 +243,7 @@ function AdminDashboardContent() {
 
         <div className={styles.sideCol}>
           <Card>
-            <CardHeader title="캘린더" />
+            <CardHeader title={t('nav.calendar')} />
             <CardBody>
               <CalendarView schedules={schedules} />
             </CardBody>

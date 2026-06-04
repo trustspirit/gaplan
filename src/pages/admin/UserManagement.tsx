@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import { Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { inviteUser, updateUserRole, updateUserName, deleteUserAccount } from '@/services/userService'
 import { useUsers } from '@/hooks/useUsers'
@@ -22,6 +23,7 @@ function EditUserModal({
   user: AppUser
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   const [name, setName] = useState(user.name)
   const [role, setRole] = useState<UserRole>(user.role)
   const [regionId, setRegionId] = useState(user.regionId ?? '')
@@ -37,41 +39,41 @@ function EditUserModal({
         tasks.push(updateUserRole(user.uid, role, role === 'seventy' ? regionId : undefined))
       }
       await Promise.all(tasks)
-      toast.success(`${name}의 정보가 변경되었습니다.`)
+      toast.success(`${name}${t('user.editSuccess')}`)
       onClose()
     } catch {
-      toast.error('변경에 실패했습니다.')
+      toast.error(t('user.editFailed'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal open onClose={onClose} title={`사용자 편집 — ${user.name}`}>
+    <Modal open onClose={onClose} title={`${t('user.editUser')} — ${user.name}`}>
       <form className={styles.editForm} onSubmit={handleSave}>
         <Input
-          label="이름"
+          label={t('user.name')}
           value={name}
           onChange={e => setName(e.target.value)}
           required
         />
         <Select
-          label="역할"
+          label={t('user.role')}
           value={role}
           onChange={e => setRole(e.target.value as UserRole)}
           options={ROLE_OPTIONS}
         />
         {role === 'seventy' && (
           <Select
-            label="담당 지역"
+            label={t('user.inviteRegion')}
             value={regionId}
             onChange={e => setRegionId(e.target.value)}
             options={REGION_OPTIONS}
           />
         )}
         <div className={styles.modalActions}>
-          <Button variant="ghost" type="button" onClick={onClose}>취소</Button>
-          <Button type="submit" loading={loading}>저장</Button>
+          <Button variant="ghost" type="button" onClick={onClose}>{t('common.cancel')}</Button>
+          <Button type="submit" loading={loading}>{t('common.save')}</Button>
         </div>
       </form>
     </Modal>
@@ -87,37 +89,39 @@ function DeleteConfirmModal({
   onClose: () => void
   onDeleted: () => void
 }) {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
 
   const handleDelete = async () => {
     setLoading(true)
     try {
       await deleteUserAccount(user.uid)
-      toast.success(`${user.name} 계정이 삭제되었습니다.`)
+      toast.success(t('user.deleteSuccess'))
       onDeleted()
       onClose()
     } catch {
-      toast.error('삭제에 실패했습니다.')
+      toast.error(t('user.deleteFailed'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal open onClose={onClose} title="사용자 삭제">
+    <Modal open onClose={onClose} title={t('user.deleteUser')}>
       <p className={styles.deleteDesc}>
-        <strong>{user.name}</strong> ({user.email}) 계정을 삭제하시겠습니까?<br />
-        이 작업은 되돌릴 수 없습니다.
+        <strong>{user.name}</strong> ({user.email}) {t('user.deleteConfirm')}<br />
+        {t('user.deleteWarning')}
       </p>
       <div className={styles.modalActions}>
-        <Button variant="ghost" type="button" onClick={onClose}>취소</Button>
-        <Button variant="danger" loading={loading} onClick={handleDelete}>삭제</Button>
+        <Button variant="ghost" type="button" onClick={onClose}>{t('common.cancel')}</Button>
+        <Button variant="danger" loading={loading} onClick={handleDelete}>{t('common.delete')}</Button>
       </div>
     </Modal>
   )
 }
 
 export function UserManagement() {
+  const { t } = useTranslation()
   const currentUser = useAtomValue(authUserAtom)!
   const { users, loading: usersLoading } = useUsers()
   const [email, setEmail] = useState('')
@@ -134,30 +138,30 @@ export function UserManagement() {
     setInviteLoading(true)
     try {
       await inviteUser(email.trim(), role, role === 'seventy' ? regionId : undefined, currentUser.uid)
-      toast.success(`${email}을 초대했습니다.`)
+      toast.success(`${email}${t('user.inviteSuccess')}`)
       setEmail('')
       setRegionId('')
     } catch {
-      toast.error('초대에 실패했습니다.')
+      toast.error(t('user.inviteFailed'))
     } finally {
       setInviteLoading(false)
     }
   }
 
   return (
-    <AppShell role={currentUser.role} name={currentUser.name} topBar={<TopBar name={currentUser.name} subtext="사용자 관리" />}>
+    <AppShell role={currentUser.role} name={currentUser.name} topBar={<TopBar name={currentUser.name} subtext={t('admin.users')} />}>
       <div className={styles.page}>
         <div className={styles.inviteCol}>
           <Card>
-            <CardHeader title="사용자 초대" />
+            <CardHeader title={t('user.invite')} />
             <CardBody>
               <form className={styles.form} onSubmit={handleInvite}>
-                <Input label="이메일" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="example@gmail.com" required />
-                <Select label="역할" value={role} onChange={e => setRole(e.target.value as UserRole)} options={ROLE_OPTIONS} />
+                <Input label={t('user.inviteEmail')} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="example@gmail.com" required />
+                <Select label={t('user.inviteRole')} value={role} onChange={e => setRole(e.target.value as UserRole)} options={ROLE_OPTIONS} />
                 {role === 'seventy' && (
-                  <Select label="담당 지역" value={regionId} onChange={e => setRegionId(e.target.value)} options={REGION_OPTIONS} />
+                  <Select label={t('user.inviteRegion')} value={regionId} onChange={e => setRegionId(e.target.value)} options={REGION_OPTIONS} />
                 )}
-                <Button type="submit" loading={inviteLoading}>초대 발송</Button>
+                <Button type="submit" loading={inviteLoading}>{t('user.inviteSend')}</Button>
               </form>
             </CardBody>
           </Card>
@@ -165,7 +169,7 @@ export function UserManagement() {
 
         <div className={styles.listCol}>
           <Card>
-            <CardHeader title="전체 사용자" />
+            <CardHeader title={t('user.allUsers')} />
             <CardBody>
               {usersLoading
                 ? [1, 2, 3].map(i => <Skeleton key={i} height="44px" className={styles.skeletonRow} />)

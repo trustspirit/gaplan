@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
 import { Users } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
@@ -10,7 +11,7 @@ import { ScheduleItem } from '@/components/domain'
 import type { Schedule } from '@/types'
 import styles from './InterviewsPage.module.scss'
 
-type FilterTab = '전체' | '예정' | '완료'
+type FilterTab = 'all' | 'upcoming' | 'completed'
 
 function groupByMonth(schedules: Schedule[]): Map<string, Schedule[]> {
   const map = new Map<string, Schedule[]>()
@@ -31,8 +32,9 @@ function sortMonthKeys(keys: string[]): string[] {
 }
 
 export function InterviewsPage() {
+  const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
-  const [activeTab, setActiveTab] = useState<FilterTab>('전체')
+  const [activeTab, setActiveTab] = useState<FilterTab>('all')
 
   const filters = user.role === 'president'
     ? { presidentUid: user.uid }
@@ -52,8 +54,8 @@ export function InterviewsPage() {
   const thisMonthCount = allInterviews.filter(s => dayjs(s.date).format('YYYY-M') === thisMonth).length
 
   const filtered = allInterviews.filter(s => {
-    if (activeTab === '예정') return !dayjs(s.date).isBefore(today, 'day')
-    if (activeTab === '완료') return dayjs(s.date).isBefore(today, 'day')
+    if (activeTab === 'upcoming') return !dayjs(s.date).isBefore(today, 'day')
+    if (activeTab === 'completed') return dayjs(s.date).isBefore(today, 'day')
     return true
   })
 
@@ -84,26 +86,26 @@ export function InterviewsPage() {
     .sort((a, b) => dayjs(a.date).isBefore(dayjs(b.date)) ? -1 : 1)
     .slice(0, 5)
 
-  const TABS: FilterTab[] = ['전체', '예정', '완료']
+  const TABS: FilterTab[] = ['all', 'upcoming', 'completed']
 
   return (
-    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext="접견 일정" />}>
+    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('interviews.title')} />}>
       <div className={styles.layout}>
         <div className={styles.mainCol}>
           <div className={styles.stats}>
             <div className={styles.statCard}>
               <span className={styles.statValue}>{thisMonthCount}</span>
-              <span className={styles.statLabel}>이번 달 접견</span>
+              <span className={styles.statLabel}>{t('interviews.thisMonth')}</span>
             </div>
             <div className={styles.statDivider} />
             <div className={styles.statCard}>
               <span className={styles.statValue}>{upcomingCount}</span>
-              <span className={styles.statLabel}>예정 접견</span>
+              <span className={styles.statLabel}>{t('interviews.upcoming')}</span>
             </div>
             <div className={styles.statDivider} />
             <div className={styles.statCard}>
               <span className={styles.statValue}>{completedCount}</span>
-              <span className={styles.statLabel}>완료 접견</span>
+              <span className={styles.statLabel}>{t('interviews.completed')}</span>
             </div>
           </div>
 
@@ -116,7 +118,7 @@ export function InterviewsPage() {
                 data-active={activeTab === tab}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab}
+                {t(`visits.tabs.${tab}`)}
               </button>
             ))}
           </div>
@@ -125,9 +127,9 @@ export function InterviewsPage() {
             {orderedKeys.length === 0 ? (
               <div className={styles.empty}>
                 <Users size={32} className={styles.emptyIcon} />
-                <p className={styles.emptyTitle}>접견 일정이 없습니다</p>
+                <p className={styles.emptyTitle}>{t('interviews.empty')}</p>
                 <p className={styles.emptyDesc}>
-                  {activeTab === '예정' ? '아직 예정된 접견이 없습니다.' : activeTab === '완료' ? '완료된 접견이 없습니다.' : '확정된 접견 일정이 없습니다.'}
+                  {activeTab === 'upcoming' ? t('interviews.noUpcoming') : activeTab === 'completed' ? t('interviews.noCompleted') : t('interviews.noAll')}
                 </p>
               </div>
             ) : (
@@ -155,10 +157,10 @@ export function InterviewsPage() {
 
         <div className={styles.sideCol}>
           <div className={styles.sideCard}>
-            <div className={styles.sideCardHeader}>다음 접견 예정</div>
+            <div className={styles.sideCardHeader}>{t('interviews.nextInterviews')}</div>
             <div className={styles.sideCardBody}>
               {upcomingInterviews.length === 0 ? (
-                <p className={styles.sideEmpty}>예정된 접견이 없습니다.</p>
+                <p className={styles.sideEmpty}>{t('interviews.noUpcoming')}</p>
               ) : (
                 upcomingInterviews.map(s => (
                   <div key={s.id} className={styles.upcomingItem}>

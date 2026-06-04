@@ -1,6 +1,7 @@
 import { MapPin, Users, CalendarPlus } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
+import { useTranslation } from 'react-i18next'
 import type { Schedule } from '@/types'
 import styles from './ScheduleItem.module.scss'
 
@@ -26,6 +27,7 @@ interface ScheduleItemProps {
 }
 
 export function ScheduleItem({ schedule, unitName, past, showCalendarAdd = false }: ScheduleItemProps) {
+  const { t } = useTranslation()
   const isVisit = schedule.type === 'ward_visit'
   const date = dayjs(schedule.date)
   const dow = DOW_LABELS[date.day()]
@@ -47,12 +49,12 @@ export function ScheduleItem({ schedule, unitName, past, showCalendarAdd = false
       <div className={styles.info}>
         <div className={styles.typeBadge}>
           {isVisit ? <MapPin size={11} /> : <Users size={11} />}
-          <span>{isVisit ? '와드 방문' : '접견'}</span>
+          <span>{isVisit ? t('schedule.type.ward_visit') : t('schedule.type.interview')}</span>
         </div>
         <p className={styles.unit}>{unitName}</p>
         <p className={styles.time}>{schedule.startTime} – {schedule.endTime}</p>
       </div>
-      {isPast && <span className={styles.pastBadge}>완료</span>}
+      {isPast && <span className={styles.pastBadge}>{t('common.complete')}</span>}
       {showCalendarAdd && !isPast && (
         <a
           href={buildGCalUrl(schedule, unitName)}

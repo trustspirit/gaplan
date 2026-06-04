@@ -1,5 +1,6 @@
 import { useAtomValue } from 'jotai'
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { useTasks } from '@/hooks/useTasks'
 import { useTaskConfirm } from '@/hooks/useTaskConfirm'
@@ -11,6 +12,7 @@ import { TaskCard, TaskPickerContent, taskPickerTitle } from '@/components/domai
 import styles from './TasksPage.module.scss'
 
 export function TasksPage() {
+  const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { tasks, loading: tasksLoading } = useTasks(user.uid)
   const isMobile = useIsMobile()
@@ -52,12 +54,12 @@ export function TasksPage() {
         {/* ── Main column ── */}
         <div className={styles.mainCol}>
           <Card>
-            <CardHeader title="처리 필요" />
+            <CardHeader title={t('task.needsAction')} />
             <CardBody>
               {tasksLoading
                 ? [1, 2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
                 : pendingTasks.length === 0
-                  ? <p className={styles.empty}>처리할 항목이 없습니다.</p>
+                  ? <p className={styles.empty}>{t('task.noTasks')}</p>
                   : pendingTasks.map(t => <TaskCard key={t.id} task={t} onAction={openTask} />)
               }
             </CardBody>
@@ -65,7 +67,7 @@ export function TasksPage() {
 
           {!tasksLoading && respondedTasks.length > 0 && (
             <Card>
-              <CardHeader title="제출 완료 · 확정 대기" />
+              <CardHeader title={t('task.responded')} />
               <CardBody>
                 {respondedTasks.map(t => (
                   <TaskCard
@@ -104,7 +106,7 @@ export function TasksPage() {
               </div>
             ) : (
               <div className={styles.sidePlaceholder}>
-                Task를 선택하면 여기서 처리할 수 있습니다
+                {t('task.selectTask')}
               </div>
             )}
           </div>
