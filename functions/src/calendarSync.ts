@@ -19,12 +19,21 @@ export const calendarSync = functions
   .firestore.document('schedules/{scheduleId}')
   .onWrite(async (change) => {
     const db = admin.firestore()
-    const settingsSnap = await db.collection('settings').doc('calendar').get()
-    const sharedCalendarId = settingsSnap.data()?.sharedCalendarId
-    if (!sharedCalendarId) return
 
+    // Resolve which regional calendar to use via the seventy's regionId
     const after = change.after.data()
     const before = change.before.data()
+    const seventyUid = after?.seventyUid ?? before?.seventyUid
+    const seventySnap = seventyUid
+      ? await db.collection('users').doc(seventyUid).get()
+      : null
+    const regionId: string = seventySnap?.data()?.regionId ?? ''
+
+    const settingsSnap = await db.collection('settings').doc('calendar').get()
+    const calendars: Record<string, string> = settingsSnap.data()?.calendars ?? {}
+    // Fall back to legacy single-calendar field if present
+    const sharedCalendarId = calendars[regionId] ?? settingsSnap.data()?.sharedCalendarId
+    if (!sharedCalendarId) return
 
     // Document deleted or schedule cancelled — remove Google Calendar event
     const eventIdToDelete = before?.googleCalendarEventId
