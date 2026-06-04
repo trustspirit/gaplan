@@ -1,5 +1,40 @@
 import type { Region, Unit } from '@/types'
 
+// Region accent colors (used for calendar chips)
+export const REGION_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  'seoul':       { bg: '#e8f0fe', text: '#1a56db', border: '#93b4f8' },
+  'seoul-south': { bg: '#fce8f3', text: '#9d174d', border: '#f6a5c0' },
+  'busan':       { bg: '#e3f9f1', text: '#046c4e', border: '#84e1bc' },
+}
+
+// Per-unit (stake/district) colors — each stake gets its own shade within the region palette
+export const UNIT_COLORS: Record<string, { bg: string; text: string }> = {
+  // 서울 지역 — blues
+  'seoul-stake':       { bg: '#dbeafe', text: '#1e40af' },
+  'seoul-east-stake':  { bg: '#eff6ff', text: '#2563eb' },
+  'seoul-west-stake':  { bg: '#e0e7ff', text: '#3730a3' },
+  'gyeonggi-stake':    { bg: '#eef2ff', text: '#4338ca' },
+  // 서울남 지역 — pinks/purples
+  'seoul-south-stake': { bg: '#fdf2f8', text: '#9d174d' },
+  'daejeon-stake':     { bg: '#fce7f3', text: '#be185d' },
+  'cheongju-stake':    { bg: '#f5f3ff', text: '#7c3aed' },
+  'jeonju-stake':      { bg: '#ede9fe', text: '#6d28d9' },
+  'gwangju-stake':     { bg: '#f3e8ff', text: '#7e22ce' },
+  // 부산 지역 — greens/teals
+  'busan-stake':       { bg: '#ecfdf5', text: '#065f46' },
+  'daegu-stake':       { bg: '#d1fae5', text: '#064e3b' },
+  'changwon-stake':    { bg: '#ccfbf1', text: '#0f766e' },
+  'ulsan-district':    { bg: '#cffafe', text: '#155e75' },
+}
+
+export function getUnitColor(unitId: string): { bg: string; text: string } {
+  return UNIT_COLORS[unitId] ?? { bg: '#f3f4f6', text: '#374151' }
+}
+
+export function getRegionColor(regionId: string) {
+  return REGION_COLORS[regionId] ?? { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' }
+}
+
 export interface WardUnit {
   id: string
   name: string

@@ -7,6 +7,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
  * greedy strategy.  Admin reviews and clicks "이 일정으로 확정".
  */
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 dayjs.locale('ko');
@@ -18,6 +19,7 @@ import { generateSuggestions } from './schedulingAlgorithm';
 import { Button } from '@/components/ui';
 import styles from './ScheduleSuggestions.module.scss';
 export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }) {
+    const { t } = useTranslation();
     const [confirmingIdx, setConfirmingIdx] = useState(null);
     const respondents = tasks
         .filter(t => (t.status === 'responded' || t.status === 'completed') && t.respondedSlots?.length)
@@ -33,7 +35,7 @@ export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }) {
     }));
     const suggestions = generateSuggestions(respondents);
     if (respondents.length === 0) {
-        return (_jsx("div", { className: styles.empty, children: "\uC544\uC9C1 \uC751\uB2F5\uD55C \uD68C\uC7A5\uC774 \uC5C6\uC2B5\uB2C8\uB2E4." }));
+        return (_jsx("div", { className: styles.empty, children: t('admin.noResponse') }));
     }
     const handleConfirmOption = async (option, idx) => {
         setConfirmingIdx(idx);
@@ -41,7 +43,7 @@ export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }) {
             const results = await Promise.all(option.assignments.map(a => adminConfirmSchedule({ taskId: a.respondent.taskId, slot: a.slot })));
             const failed = results.filter(r => !r.success);
             if (failed.length === 0) {
-                toast.success(`${option.assignments.length}개 일정이 확정되었습니다!`);
+                toast.success(t('admin.scheduleConfirmed'));
                 onConfirmed?.();
             }
             else {
@@ -49,11 +51,11 @@ export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }) {
             }
         }
         catch (e) {
-            toast.error(e?.message ?? '확정 중 오류가 발생했습니다.');
+            toast.error(e?.message ?? t('common.unknownError'));
         }
         finally {
             setConfirmingIdx(null);
         }
     };
-    return (_jsxs("div", { className: styles.container, children: [_jsxs("div", { className: styles.header, children: [_jsx("p", { className: styles.headerTitle, children: "\uC790\uB3D9 \uC77C\uC815 \uC81C\uC548" }), _jsxs("p", { className: styles.headerDesc, children: [respondents.length, "\uBA85\uC758 \uC751\uB2F5\uC744 \uBC14\uD0D5\uC73C\uB85C \uC911\uBCF5 \uC5C6\uB294 \uC77C\uC815\uC744 \uC81C\uC548\uD569\uB2C8\uB2E4. \uAC80\uD1A0 \uD6C4 \uC6D0\uD558\uB294 \uC548\uC73C\uB85C \uD655\uC815\uD558\uC138\uC694."] })] }), _jsx("div", { className: styles.options, children: suggestions.map((option, idx) => (_jsxs("div", { className: clsx(styles.option, option.unassigned.length > 0 && styles.optionIncomplete), children: [_jsxs("div", { className: styles.optionHeader, children: [_jsx("span", { className: styles.optionLabel, children: option.label }), option.unassigned.length > 0 ? (_jsxs("span", { className: styles.optionWarning, children: [_jsx(AlertCircle, { size: 13 }), " ", option.unassigned.length, "\uBA85 \uBC30\uC815 \uBD88\uAC00"] })) : (_jsxs("span", { className: styles.optionComplete, children: [_jsx(CheckCircle2, { size: 13 }), " \uC804\uC6D0 \uBC30\uC815 \uC644\uB8CC"] }))] }), _jsxs("div", { className: styles.optionTable, children: [option.assignments.map((a, i) => (_jsxs("div", { className: styles.assignRow, children: [_jsx("span", { className: styles.assignName, children: a.respondent.name }), _jsxs("span", { className: styles.assignSlot, children: [dayjs(a.slot.date).format('M/D (ddd)'), " ", a.slot.startTime, "~", a.slot.endTime] })] }, i))), option.unassigned.map(r => (_jsxs("div", { className: clsx(styles.assignRow, styles.assignRowMissing), children: [_jsx("span", { className: styles.assignName, children: r.name }), _jsx("span", { className: styles.assignSlotMissing, children: "\uAC00\uB2A5\uD55C \uC2AC\uB86F \uC5C6\uC74C" })] }, r.uid)))] }), _jsx(Button, { size: "sm", onClick: () => handleConfirmOption(option, idx), loading: confirmingIdx === idx, disabled: confirmingIdx !== null, className: styles.confirmBtn, children: "\uC774 \uC77C\uC815\uC73C\uB85C \uD655\uC815" })] }, idx))) }), _jsx("p", { className: styles.notice, children: "* \uC774\uBBF8 \uD655\uC815\uB41C \uC77C\uC815\uACFC\uC758 \uC911\uBCF5 \uCCB4\uD06C\uB294 \uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uAC1C\uBCC4 \uC2AC\uB86F \uD655\uC815\uC740 \uC704 \uC751\uB2F5 \uD604\uD669 \uD14C\uC774\uBE14\uC744 \uC774\uC6A9\uD558\uC138\uC694." })] }));
+    return (_jsxs("div", { className: styles.container, children: [_jsxs("div", { className: styles.header, children: [_jsx("p", { className: styles.headerTitle, children: t('admin.suggestionTitle') }), _jsx("p", { className: styles.headerDesc, children: t('admin.suggestionDesc', { count: respondents.length }) })] }), _jsx("div", { className: styles.options, children: suggestions.map((option, idx) => (_jsxs("div", { className: clsx(styles.option, option.unassigned.length > 0 && styles.optionIncomplete), children: [_jsxs("div", { className: styles.optionHeader, children: [_jsx("span", { className: styles.optionLabel, children: option.label }), option.unassigned.length > 0 ? (_jsxs("span", { className: styles.optionWarning, children: [_jsx(AlertCircle, { size: 13 }), " ", option.unassigned.length, t('ward.unassignedCount', { defaultValue: '명 배정 불가' })] })) : (_jsxs("span", { className: styles.optionComplete, children: [_jsx(CheckCircle2, { size: 13 }), " ", t('ward.allAssigned', { defaultValue: '전원 배정 완료' })] }))] }), _jsxs("div", { className: styles.optionTable, children: [option.assignments.map((a, i) => (_jsxs("div", { className: styles.assignRow, children: [_jsx("span", { className: styles.assignName, children: a.respondent.name }), _jsxs("span", { className: styles.assignSlot, children: [dayjs(a.slot.date).format('M/D (ddd)'), " ", a.slot.startTime, "~", a.slot.endTime] })] }, i))), option.unassigned.map(r => (_jsxs("div", { className: clsx(styles.assignRow, styles.assignRowMissing), children: [_jsx("span", { className: styles.assignName, children: r.name }), _jsx("span", { className: styles.assignSlotMissing, children: t('ward.noSlotAvailable', { defaultValue: '가능한 슬롯 없음' }) })] }, r.uid)))] }), _jsx(Button, { size: "sm", onClick: () => handleConfirmOption(option, idx), loading: confirmingIdx === idx, disabled: confirmingIdx !== null, className: styles.confirmBtn, children: t('admin.confirmOption') })] }, idx))) }), _jsx("p", { className: styles.notice, children: "* \uC774\uBBF8 \uD655\uC815\uB41C \uC77C\uC815\uACFC\uC758 \uC911\uBCF5 \uCCB4\uD06C\uB294 \uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uAC1C\uBCC4 \uC2AC\uB86F \uD655\uC815\uC740 \uC704 \uC751\uB2F5 \uD604\uD669 \uD14C\uC774\uBE14\uC744 \uC774\uC6A9\uD558\uC138\uC694." })] }));
 }

@@ -8,6 +8,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
  * Admin clicks a cell → adminConfirmSchedule for that president's task + slot
  */
 import { useState, Fragment } from 'react';
+import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 dayjs.locale('ko');
@@ -38,6 +39,7 @@ function respondentColor(idx) {
     return PALETTE[idx % PALETTE.length];
 }
 export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }) {
+    const { t } = useTranslation();
     const [confirming, setConfirming] = useState(null);
     const [view, setView] = useState('heatmap');
     const [hiddenIds, setHiddenIds] = useState(new Set());
@@ -50,7 +52,7 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }) {
         .filter(t => t.status === 'responded')
         .map(t => ({ name: getPresidentName(t.assignedTo), task: t }));
     if (slots.length === 0 || respondents.length === 0) {
-        return (_jsx("div", { className: styles.empty, children: "\uC544\uC9C1 \uC751\uB2F5\uC774 \uC5C6\uAC70\uB098 \uAC00\uB2A5 \uC2DC\uAC04\uC774 \uC124\uC815\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4." }));
+        return (_jsx("div", { className: styles.empty, children: t('admin.noResponse') }));
     }
     // Index: slotKey → set of respondent taskIds that selected it
     const slotResponders = new Map();
@@ -98,7 +100,7 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }) {
                     const hidden = hiddenIds.has(r.task.id);
                     const completed = r.task.status === 'completed';
                     return (_jsxs("label", { className: clsx(styles.legendItem, hidden && styles.legendItemHidden), children: [_jsx("input", { type: "checkbox", checked: !hidden, onChange: () => toggleHidden(r.task.id), style: { accentColor: color } }), _jsx("span", { className: styles.legendDot, style: { background: color } }), _jsxs("span", { className: clsx(styles.legendName, hidden && styles.legendNameHidden), children: [r.name, completed && _jsx(CheckCircle2, { size: 12, className: styles.completedIcon })] })] }, r.task.id));
-                }) }), _jsxs("div", { className: styles.viewToggle, children: [_jsx("button", { type: "button", className: clsx(styles.viewBtn, view === 'heatmap' && styles.viewBtnActive), onClick: () => setView('heatmap'), children: "\uD83D\uDFE9 \uAC00\uC6A9 \uD604\uD669" }), _jsx("button", { type: "button", className: clsx(styles.viewBtn, view === 'participant' && styles.viewBtnActive), onClick: () => setView('participant'), children: "\uD83D\uDC64 \uCC38\uAC00\uC790\uBCC4" })] }), _jsx("div", { className: styles.tableWrap, children: view === 'heatmap' ? (_jsxs("table", { className: styles.table, children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { className: clsx(styles.th, styles.thTime), children: "\uC2DC\uAC04" }), dates.map(date => (_jsxs("th", { className: clsx(styles.th, styles.thDate), children: [_jsx("span", { className: styles.dateMonth, children: dayjs(date).format('M월') }), _jsx("span", { className: styles.dateDay, children: dayjs(date).date() }), _jsx("span", { className: styles.dateDow, children: dayjs(date).format('ddd') })] }, date)))] }) }), _jsx("tbody", { children: [...new Set(slots.map(s => s.startTime))].map(time => (_jsxs("tr", { children: [_jsx("td", { className: clsx(styles.td, styles.tdTime), children: time }), dates.map(date => {
+                }) }), _jsxs("div", { className: styles.viewToggle, children: [_jsxs("button", { type: "button", className: clsx(styles.viewBtn, view === 'heatmap' && styles.viewBtnActive), onClick: () => setView('heatmap'), children: ["\uD83D\uDFE9 ", t('admin.availabilityHeatmap')] }), _jsxs("button", { type: "button", className: clsx(styles.viewBtn, view === 'participant' && styles.viewBtnActive), onClick: () => setView('participant'), children: ["\uD83D\uDC64 ", t('admin.availabilityByParticipant')] })] }), _jsx("div", { className: styles.tableWrap, children: view === 'heatmap' ? (_jsxs("table", { className: styles.table, children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { className: clsx(styles.th, styles.thTime), children: "\uC2DC\uAC04" }), dates.map(date => (_jsxs("th", { className: clsx(styles.th, styles.thDate), children: [_jsx("span", { className: styles.dateMonth, children: dayjs(date).format('M월') }), _jsx("span", { className: styles.dateDay, children: dayjs(date).date() }), _jsx("span", { className: styles.dateDow, children: dayjs(date).format('ddd') })] }, date)))] }) }), _jsx("tbody", { children: [...new Set(slots.map(s => s.startTime))].map(time => (_jsxs("tr", { children: [_jsx("td", { className: clsx(styles.td, styles.tdTime), children: time }), dates.map(date => {
                                         const slot = slots.find(s => s.date === date && s.startTime === time);
                                         if (!slot)
                                             return _jsx("td", { className: clsx(styles.td, styles.tdEmpty) }, date);

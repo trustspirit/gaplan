@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
+import { X } from 'lucide-react'
 import { authUserAtom } from '@/store/authAtom'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
@@ -19,6 +20,11 @@ export function CalendarPage() {
       ? { seventyUid: user.uid }
       : {}
   const { schedules } = useSchedules(filters)
+
+  // Toggle: clicking the same date again deselects it
+  const handleDateClick = (date: string) => {
+    setSelectedDate(prev => prev === date ? null : date)
+  }
 
   const daySchedules = selectedDate
     ? schedules.filter(s => s.status === 'confirmed' && s.date === selectedDate)
@@ -39,18 +45,40 @@ export function CalendarPage() {
             <Card>
               <CardHeader title="일정 캘린더" />
               <CardBody>
-                <CalendarView schedules={schedules} onDateClick={setSelectedDate} />
+                <CalendarView
+                  schedules={schedules}
+                  onDateClick={handleDateClick}
+                  selectedDate={selectedDate}
+                  getUnitName={getUnitName}
+                />
               </CardBody>
             </Card>
           </div>
           <div className={styles.listCol}>
             <Card>
-              <CardHeader title={listTitle} />
+              <CardHeader
+                title={listTitle}
+                action={selectedDate ? (
+                  <button
+                    type="button"
+                    className={styles.clearBtn}
+                    onClick={() => setSelectedDate(null)}
+                    title="선택 해제"
+                  >
+                    <X size={14} />
+                  </button>
+                ) : undefined}
+              />
               <CardBody>
                 {daySchedules.length === 0
                   ? <p className={styles.empty}>일정이 없습니다.</p>
                   : daySchedules.map(s => (
-                      <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} />
+                      <ScheduleItem
+                        key={s.id}
+                        schedule={s}
+                        unitName={getUnitName(s.unitId)}
+                        showCalendarAdd={user.role === 'president'}
+                      />
                     ))
                 }
               </CardBody>
