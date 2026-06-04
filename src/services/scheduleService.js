@@ -1,4 +1,4 @@
-import { collection, query, where, onSnapshot, orderBy, doc, setDoc, serverTimestamp, } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import dayjs from 'dayjs';
 import { db, functions, auth } from '@/firebase';
@@ -26,10 +26,10 @@ export async function adminConfirmSchedule(params) {
     return result.data;
 }
 export async function updateSchedule(scheduleId, updates) {
-    await import('firebase/firestore').then(({ doc, updateDoc }) => updateDoc(doc(db, 'schedules', scheduleId), updates));
+    await updateDoc(doc(db, 'schedules', scheduleId), updates);
 }
 export async function deleteSchedule(scheduleId) {
-    await import('firebase/firestore').then(({ doc, deleteDoc }) => deleteDoc(doc(db, 'schedules', scheduleId)));
+    await deleteDoc(doc(db, 'schedules', scheduleId));
 }
 export async function createVisitSchedules(seventyUid, entries) {
     const currentUser = auth.currentUser;

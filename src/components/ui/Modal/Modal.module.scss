@@ -6,22 +6,39 @@
   background: rgba(0,0,0,0.45);
   display: flex; align-items: center; justify-content: center;
   z-index: $z-modal; padding: $space-4;
+
+  @include mobile {
+    align-items: flex-end;
+    padding: 0;
+  }
 }
 .modal {
   background: $color-surface; border-radius: $border-radius-xl;
   box-shadow: $shadow-popped;
   width: 100%; max-width: 480px; max-height: 90vh;
   display: flex; flex-direction: column; overflow: hidden;
-  @include mobile { display: none; }
+
+  @include mobile {
+    border-radius: 16px 16px 0 0;
+    max-height: 88dvh;
+    max-width: 100%;
+  }
 }
 .header {
   display: flex; align-items: center; justify-content: space-between;
   padding: $space-4 $space-4 $space-3; border-bottom: 1px solid $color-border;
+  flex-shrink: 0;
 }
 .title { font-size: $font-size-md; font-weight: $font-weight-semibold; color: $color-text; }
 .close {
   @include flex-center;
-  width: 28px; height: 28px; border-radius: $border-radius-md; color: $color-text-muted;
+  width: 32px; height: 32px; border-radius: $border-radius-md; color: $color-text-muted;
   &:hover { background: $color-border; }
 }
-.body { padding: $space-4; overflow-y: auto; flex: 1; }
+.body {
+  padding: $space-4;
+  padding-bottom: calc($space-4 + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}

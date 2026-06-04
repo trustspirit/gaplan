@@ -1,6 +1,6 @@
 import {
   collection, query, where, onSnapshot, orderBy,
-  doc, setDoc, serverTimestamp,
+  doc, setDoc, updateDoc, deleteDoc, serverTimestamp,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
@@ -58,15 +58,11 @@ export async function updateSchedule(
   scheduleId: string,
   updates: { date?: string; startTime?: string; endTime?: string; status?: string; notes?: string },
 ): Promise<void> {
-  await import('firebase/firestore').then(({ doc, updateDoc }) =>
-    updateDoc(doc(db, 'schedules', scheduleId), updates)
-  )
+  await updateDoc(doc(db, 'schedules', scheduleId), updates)
 }
 
 export async function deleteSchedule(scheduleId: string): Promise<void> {
-  await import('firebase/firestore').then(({ doc, deleteDoc }) =>
-    deleteDoc(doc(db, 'schedules', scheduleId))
-  )
+  await deleteDoc(doc(db, 'schedules', scheduleId))
 }
 
 export interface VisitScheduleEntry {

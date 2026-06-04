@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/ko'
 dayjs.locale('ko')
@@ -8,102 +7,118 @@ import type { WardUnit } from '@/constants/regions'
 import { Button } from '@/components/ui'
 import styles from './WardAssigner.module.scss'
 
-interface WardRow {
-  wardId: string
-  date: string
-}
+const DOW_KR = ['일', '월', '화', '수', '목', '금', '토']
 
 interface WardAssignerProps {
-  availableDates: string[]   // task.availableDates (Sundays)
-  wards: WardUnit[]          // wards for this stake/district
+  availableDates: string[]
+  wards: WardUnit[]
   onSubmit: (assignments: { wardName: string; date: string }[]) => Promise<void>
   submitting: boolean
 }
 
 export function WardAssigner({ availableDates, wards, onSubmit, submitting }: WardAssignerProps) {
-  const [rows, setRows] = useState<WardRow[]>([
-    { wardId: '', date: availableDates[0] ?? '' },
-  ])
+  // assignments: wardId → date (YYYY-MM-DD) | null
+  const [assignments, setAssignments] = useState<Record<string, string | null>>(
+    Object.fromEntries(wards.map(w => [w.id, null]))
+  )
 
-  function addRow() {
-    setRows(prev => [...prev, { wardId: '', date: availableDates[0] ?? '' }])
+  const assignedCount = Object.values(assignments).filter(Boolean).length
+
+  function assign(wardId: string, date: string) {
+    setAssignments(prev => ({
+      ...prev,
+      [wardId]: prev[wardId] === date ? null : date,
+    }))
   }
-
-  function removeRow(idx: number) {
-    setRows(prev => prev.filter((_, i) => i !== idx))
-  }
-
-  function setRowWard(idx: number, wardId: string) {
-    setRows(prev => prev.map((r, i) => i === idx ? { ...r, wardId } : r))
-  }
-
-  function setRowDate(idx: number, date: string) {
-    setRows(prev => prev.map((r, i) => i === idx ? { ...r, date } : r))
-  }
-
-  const isValid = rows.length > 0 && rows.every(r => r.wardId && r.date)
 
   const handleSubmit = async () => {
-    if (!isValid) return
-    const assignments = rows.map(r => ({
-      wardName: wards.find(w => w.id === r.wardId)?.name ?? r.wardId,
-      date: r.date,
-    }))
-    await onSubmit(assignments)
+    const result = wards
+      .filter(w => assignments[w.id])
+      .map(w => ({ wardName: w.name, date: assignments[w.id]! }))
+    await onSubmit(result)
+  }
+
+  if (availableDates.length === 0) {
+    return <p className={styles.empty}>배정 가능한 일요일이 없습니다.</p>
   }
 
   return (
     <div className={styles.assigner}>
-      <p className={styles.hint}>각 와드/지부에 방문 날짜를 배정하세요.</p>
+      <div className={styles.legend}>
+        <span className={styles.legendNote}>각 와드/지부에 방문할 일요일을 선택하세요. 다시 클릭하면 취소됩니다.</span>
+      </div>
 
-      {rows.map((row, idx) => (
-        <div key={idx} className={styles.row}>
-          <select
-            className={styles.wardSelect}
-            value={row.wardId}
-            onChange={e => setRowWard(idx, e.target.value)}
-          >
-            <option value="">와드/지부 선택</option>
-            {wards.map(w => (
-              <option key={w.id} value={w.id}>{w.name}</option>
-            ))}
-          </select>
+      {/* Date headers */}
+      <div className={styles.dateRow}>
+        <div className={styles.wardCol} />
+        {availableDates.map(d => {
+          const dj = dayjs(d)
+          return (
+            <div key={d} className={styles.dateHeader}>
+              <span className={styles.dateHeaderMonth}>{dj.format('M월')}</span>
+              <span className={styles.dateHeaderDay}>{dj.date()}</span>
+              <span className={styles.dateHeaderDow}>{DOW_KR[dj.day()]}</span>
+            </div>
+          )
+        })}
+      </div>
 
-          <div className={styles.dateBtns}>
-            {availableDates.map(d => (
-              <button
-                key={d}
-                type="button"
-                className={clsx(styles.dateBtn, row.date === d && styles.dateBtnSelected)}
-                onClick={() => setRowDate(idx, d)}
-              >
-                {dayjs(d).format('M/D')}
-              </button>
-            ))}
-          </div>
+      {/* Ward rows */}
+      <div className={styles.wardList}>
+        {wards.map(ward => {
+          const assigned = assignments[ward.id]
+          return (
+            <div key={ward.id} className={clsx(styles.wardRow, assigned && styles.wardRowAssigned)}>
+              <div className={styles.wardName}>
+                <span className={styles.wardNameText}>{ward.name}</span>
+                {assigned && (
+                  <span className={styles.wardAssignedBadge}>
+                    {dayjs(assigned).format('M/D')}
+                  </span>
+                )}
+              </div>
+              <div className={styles.dateCells}>
+                {availableDates.map(d => {
+                  const isSelected = assigned === d
+                  const isDateTaken = Object.entries(assignments).some(
+                    ([wid, aDate]) => wid !== ward.id && aDate === d
+                  )
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      className={clsx(
+                        styles.dateCell,
+                        isSelected && styles.dateCellSelected,
+                        isDateTaken && !isSelected && styles.dateCellTaken,
+                      )}
+                      onClick={() => assign(ward.id, d)}
+                      title={isDateTaken ? '이 날짜에 다른 와드가 배정됨' : dayjs(d).format('M월 D일')}
+                    >
+                      {isSelected ? '✓' : isDateTaken ? '·' : ''}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
 
-          {rows.length > 1 && (
-            <button type="button" className={styles.removeBtn} onClick={() => removeRow(idx)}>
-              <Trash2 size={14} />
-            </button>
-          )}
-        </div>
-      ))}
-
-      <button type="button" className={styles.addBtn} onClick={addRow}>
-        <Plus size={14} />
-        와드/지부 추가
-      </button>
-
-      <Button
-        fullWidth
-        onClick={handleSubmit}
-        loading={submitting}
-        disabled={!isValid}
-        className={styles.submitBtn}
-      >
-        배정 제출 ({rows.filter(r => r.wardId && r.date).length}개)
-      </Button>
+      <div className={styles.footer}>
+        <span className={styles.footerCount}>
+          {assignedCount > 0
+            ? `${assignedCount}개 와드/지부 배정됨`
+            : '배정된 와드/지부가 없습니다'}
+        </span>
+        <Button
+          onClick={handleSubmit}
+          loading={submitting}
+          disabled={assignedCount === 0}
+        >
+          배정 제출
+        </Button>
+      </div>
     </div>
   )
 }

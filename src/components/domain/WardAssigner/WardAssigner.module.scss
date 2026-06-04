@@ -7,95 +7,184 @@
   gap: $space-3;
 }
 
-.hint {
-  font-size: $font-size-xs;
-  color: $color-text-muted;
+.legend {
+  padding: $space-2 0;
 }
 
-.row {
+.legendNote {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  line-height: $line-height-normal;
+}
+
+// ── Date header row ──────────────────────────────────────────────────────────
+
+.dateRow {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: $color-surface;
+  padding-bottom: $space-1;
+  border-bottom: 2px solid $color-border;
+}
+
+.wardCol {
+  flex: 1;
+  min-width: 0;
+}
+
+.dateHeader {
+  width: 48px;
+  min-width: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  background: color-mix(in srgb, $color-primary 8%, white);
+  border-radius: $border-radius-md;
+  padding: $space-2 0;
+}
+
+.dateHeaderMonth {
+  font-size: 9px;
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.dateHeaderDay {
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+  line-height: 1;
+}
+
+.dateHeaderDow {
+  font-size: 9px;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+}
+
+// ── Ward rows ─────────────────────────────────────────────────────────────────
+
+.wardList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wardRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: $space-2 0;
+  border-bottom: 1px solid $color-border;
+  border-radius: $border-radius-sm;
+  transition: background 0.1s;
+  &:last-child { border-bottom: none; }
+}
+
+.wardRowAssigned {
+  background: color-mix(in srgb, $color-primary 6%, white);
+}
+
+.wardName {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: $space-2;
-  padding: $space-2;
-  background: $color-bg;
-  border: 1px solid $color-border;
-  border-radius: $border-radius-md;
-  flex-wrap: wrap;
 }
 
-.wardSelect {
-  flex: 1;
-  min-width: 120px;
-  padding: $space-1 $space-2;
-  border: 1px solid $color-border;
-  border-radius: $border-radius-md;
+.wardNameText {
   font-size: $font-size-sm;
-  color: $color-text;
-  background: $color-surface;
-  outline: none;
-  &:focus { border-color: $color-primary; }
-  cursor: pointer;
-}
-
-.dateBtns {
-  display: flex;
-  gap: $space-1;
-  flex-wrap: wrap;
-}
-
-.dateBtn {
-  padding: $space-1 $space-2;
-  border-radius: $border-radius-full;
-  border: 1px solid $color-border;
-  font-size: $font-size-xs;
   font-weight: $font-weight-medium;
-  color: $color-text-muted;
-  background: $color-surface;
-  cursor: pointer;
-  min-height: 32px;
-  transition: background 0.1s, color 0.1s, border-color 0.1s;
-  &:hover { border-color: $color-primary; color: $color-primary; }
+  color: $color-text;
+  @include truncate;
 }
 
-.dateBtnSelected {
-  background: $color-primary;
-  border-color: $color-primary;
-  color: #fff;
-  &:hover { background: $color-primary-hover; border-color: $color-primary-hover; color: #fff; }
+.wardAssignedBadge {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+  background: color-mix(in srgb, $color-primary 15%, white);
+  border-radius: $border-radius-full;
+  padding: 1px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.removeBtn {
+.dateCells {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.dateCell {
+  width: 48px;
+  height: 40px;
+  min-width: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: none;
+  border: 1.5px solid $color-border;
   border-radius: $border-radius-md;
-  cursor: pointer;
-  color: $color-text-muted;
-  flex-shrink: 0;
-  transition: background 0.12s, color 0.12s;
-  &:hover { background: $color-highlight-danger; color: $color-danger; }
-}
-
-.addBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-1;
+  background: $color-surface;
   font-size: $font-size-sm;
-  color: $color-primary;
-  background: none;
-  border: 1px dashed $color-primary;
-  border-radius: $border-radius-md;
-  padding: $space-2 $space-3;
+  font-weight: $font-weight-bold;
+  color: transparent;
   cursor: pointer;
-  align-self: flex-start;
-  transition: background 0.12s;
-  &:hover { background: color-mix(in srgb, $color-primary 6%, white); }
+  transition: all 0.12s;
+
+  &:hover {
+    border-color: $color-primary;
+    background: color-mix(in srgb, $color-primary 8%, white);
+    color: $color-primary;
+  }
 }
 
-.submitBtn {
-  margin-top: $space-1;
+.dateCellSelected {
+  background: $color-primary !important;
+  border-color: $color-primary !important;
+  color: #fff !important;
+}
+
+.dateCellTaken {
+  background: $color-bg;
+  border-color: $color-border;
+  color: $color-text-light;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $color-primary;
+    background: color-mix(in srgb, $color-primary 8%, white);
+    color: $color-primary;
+  }
+}
+
+// ── Footer ───────────────────────────────────────────────────────────────────
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  padding-top: $space-3;
+  border-top: 1px solid $color-border;
+
+  @include mobile { flex-direction: column; align-items: stretch; }
+}
+
+.footerCount {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.empty {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  text-align: center;
+  padding: $space-4 0;
 }
