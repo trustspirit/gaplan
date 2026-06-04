@@ -10,10 +10,11 @@ export const fastSundayBlock = functions
   .onRun(async () => {
     const db = admin.firestore()
 
-    // Calculate first Sunday of next month
+    // Calculate first Sunday of next month.
+    // Formula: (7 - dow) % 7  — must stay in sync with src/utils/fastSunday.ts
     const nextMonth = dayjs().add(1, 'month').startOf('month')
     const dow = nextMonth.day()
-    const daysToSunday = dow === 0 ? 0 : 7 - dow
+    const daysToSunday = (7 - dow) % 7
     const firstSunday = nextMonth.add(daysToSunday, 'day').format('YYYY-MM-DD')
 
     const usersSnap = await db.collection('users').where('role', '==', 'seventy').get()

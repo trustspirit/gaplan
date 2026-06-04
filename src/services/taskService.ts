@@ -13,10 +13,10 @@ export function subscribeToTasks(assignedTo: string, callback: (tasks: Task[]) =
     where('status', '==', 'pending'),
     orderBy('dueDate', 'asc'),
   )
-  return onSnapshot(q, snap => {
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Task)
-    )
-  })
+  return onSnapshot(q,
+    snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Task)),
+    err => console.error('[tasks] onSnapshot error:', err.code, err.message),
+  )
 }
 
 export async function completeTask(taskId: string): Promise<void> {

@@ -54,7 +54,7 @@ export function AvailabilitySettings() {
               <p className={styles.error}>슬롯 로딩에 실패했습니다. 다시 시도해주세요.</p>
             )}
             {targetUid && !loading && !error && (
-              <AvailabilityEditor slots={slots} onSave={handleSave} loading={saving} />
+              <AvailabilityEditor key={targetUid} slots={slots} onSave={handleSave} loading={saving} />
             )}
           </CardBody>
         </Card>

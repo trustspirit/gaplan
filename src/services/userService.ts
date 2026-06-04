@@ -21,9 +21,11 @@ export async function inviteUser(
 }
 
 export function subscribeToUsers(callback: (users: AppUser[]) => void): Unsubscribe {
-  return onSnapshot(collection(db, 'users'), snap => {
-    callback(snap.docs.map(d => ({ uid: d.id, ...d.data() }) as AppUser))
-  })
+  return onSnapshot(
+    collection(db, 'users'),
+    snap => callback(snap.docs.map(d => ({ uid: d.id, ...d.data() }) as AppUser)),
+    err => console.error('[users] onSnapshot error:', err.code, err.message),
+  )
 }
 
 export async function updateUserRole(uid: string, role: UserRole, regionId?: string): Promise<void> {

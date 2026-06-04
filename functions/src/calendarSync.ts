@@ -1,3 +1,8 @@
+// DEPLOYMENT REQUIREMENT: The Firebase service account must have the Google Calendar API
+// enabled in Google Cloud Console, AND the service account email must be granted
+// "Make changes to events" (Editor) access on the shared calendar.
+// Service account email: <project-id>@appspot.gserviceaccount.com
+// Guide: https://cloud.google.com/iam/docs/service-accounts#service_account_permissions
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { google } from 'googleapis'

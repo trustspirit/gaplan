@@ -7,6 +7,8 @@ import { isFastSunday } from '@/utils/fastSunday'
 import { Button } from '@/components/ui'
 import styles from './CalendarView.module.scss'
 
+const DOW = ['일', '월', '화', '수', '목', '금', '토'] as const
+
 type ViewMode = 'month' | 'week'
 
 interface CalendarViewProps {
@@ -32,7 +34,7 @@ const renderMonthView = () => {
     }
     return (
       <div className={styles.monthGrid}>
-        {['일','월','화','수','목','금','토'].map(d => (
+        {DOW.map(d => (
           <div key={d} className={styles.dow}>{d}</div>
         ))}
         {days.map(d => {
@@ -75,7 +77,6 @@ const renderMonthView = () => {
           const daySchedules = getSchedulesForDate(dateStr)
           const isToday = d.isSame(dayjs(), 'day')
           const isBlocked = isFastSunday(d)
-          const DOW = ['일', '월', '화', '수', '목', '금', '토']
           return (
             <div
               key={dateStr}

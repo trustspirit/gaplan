@@ -16,12 +16,21 @@ export const confirmSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Login required')
     }
 
-    // Validate input format to prevent malformed Firestore document IDs
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.slot?.date ?? '')) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid date format')
+    // Validate all inputs before building Firestore document IDs
+    if (!data.taskId || !/^[\w-]+$/.test(data.taskId)) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid taskId')
+    }
+    if (!data.unitId || !/^[\w-]+$/.test(data.unitId)) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid unitId')
     }
     if (!/^[\w-]+$/.test(data.seventyUid ?? '')) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid seventyUid')
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.slot?.date ?? '')) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid date format')
+    }
+    if (!/^\d{2}:\d{2}$/.test(data.slot?.startTime ?? '') || !/^\d{2}:\d{2}$/.test(data.slot?.endTime ?? '')) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid time format')
     }
     if (!['ward_visit', 'interview'].includes(data.type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid schedule type')

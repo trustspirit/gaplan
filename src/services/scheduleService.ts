@@ -21,9 +21,10 @@ export function subscribeToSchedules(
     const sixMonthsAgo = dayjs().subtract(6, 'month').format('YYYY-MM-DD')
     q = query(q, where('date', '>=', sixMonthsAgo))
   }
-  return onSnapshot(q, snap => {
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule))
-  })
+  return onSnapshot(q,
+    snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule)),
+    err => console.error('[schedules] onSnapshot error:', err.code, err.message),
+  )
 }
 
 interface ConfirmScheduleParams {

@@ -14,11 +14,21 @@ export function useAvailability(seventyUid: string) {
       setError(null)
       return
     }
+
+    let cancelled = false
+    setSlots([])   // immediately clear previous seventy's slots
     setLoading(true)
     setError(null)
+
     getAvailabilitySlots(seventyUid)
-      .then(data => { setSlots(data); setLoading(false) })
-      .catch(e => { setError(e); setLoading(false) })
+      .then(data => {
+        if (!cancelled) { setSlots(data); setLoading(false) }
+      })
+      .catch(e => {
+        if (!cancelled) { setError(e as Error); setLoading(false) }
+      })
+
+    return () => { cancelled = true }
   }, [seventyUid])
 
   return { slots, loading, error, setSlots }
