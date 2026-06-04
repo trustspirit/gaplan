@@ -2,30 +2,171 @@
 @use '@/styles/mixins' as *;
 
 .sidebar {
-  width: $sidebar-width; height: 100%; background: $color-sidebar;
-  display: flex; flex-direction: column; align-items: center;
+  width: $sidebar-width;
+  height: 100%;
+  background: $color-sidebar;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding: 14px 0 12px;
+  position: relative;
 }
-.logo { margin-bottom: 24px; }
-.logoIcon { width: 28px; height: 28px; border-radius: $border-radius-full; background: $color-primary; opacity: 0.9; }
-.nav { display: flex; flex-direction: column; gap: 2px; width: 100%; align-items: center; flex: 1; }
-.navItem {
-  width: 40px; height: 40px; border-radius: $border-radius-md;
-  @include flex-center; color: rgba(255,255,255,0.45);
-  transition: background 0.15s, color 0.15s;
-  &:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
-  &.active { background: rgba($color-primary, 0.25); color: #fff; }
-}
-.footer { padding-top: 8px; }
 
+.logo {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoText {
+  font-size: 13px;
+  font-weight: $font-weight-bold;
+  color: #fff;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  width: 28px;
+  height: 28px;
+  border-radius: $border-radius-md;
+  background: $color-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  align-items: center;
+  flex: 1;
+}
+
+.navItem {
+  width: 40px;
+  height: 40px;
+  border-radius: $border-radius-md;
+  @include flex-center;
+  color: rgba(255, 255, 255, 0.45);
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  &.active {
+    background: rgba($color-primary, 0.25);
+    color: #fff;
+  }
+}
+
+.footer {
+  padding-top: 8px;
+  position: relative;
+}
+
+.avatarButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: $border-radius-full;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.dropdown {
+  position: absolute;
+  bottom: 0;
+  left: calc(100% + 10px);
+  width: 200px;
+  background: #002244;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-overlaid;
+  z-index: $z-sidebar;
+  overflow: hidden;
+}
+
+.dropdownHeader {
+  padding: $space-3 $space-4;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdownName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: #fff;
+}
+
+.dropdownRole {
+  font-size: $font-size-xs;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: $line-height-normal;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0;
+}
+
+.dropdownSignOut {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  width: 100%;
+  padding: $space-3 $space-4;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.6);
+  transition: background 0.15s, color 0.15s;
+  text-align: left;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+  }
+}
+
+// Mobile bottom nav
 .bottomNav {
-  width: 100%; height: 100%; background: $color-sidebar;
-  display: flex; align-items: center; justify-content: space-around;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  width: 100%;
+  height: 100%;
+  background: $color-sidebar;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
+
 .tabItem {
-  flex: 1; @include flex-center; flex-direction: column; gap: 3px;
-  color: rgba(255,255,255,0.4); padding: 8px 0; transition: color 0.15s;
-  &.active { color: #fff; }
+  flex: 1;
+  @include flex-center;
+  flex-direction: column;
+  gap: 3px;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 8px 0;
+  transition: color 0.15s;
+
+  &.active {
+    color: #fff;
+  }
 }
-.tabLabel { font-size: 9px; font-weight: $font-weight-medium; }
+
+.tabLabel {
+  font-size: 9px;
+  font-weight: $font-weight-medium;
+}

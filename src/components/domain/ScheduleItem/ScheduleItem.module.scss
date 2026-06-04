@@ -1,10 +1,127 @@
 @use '@/styles/variables' as *;
-.item { display: flex; align-items: center; gap: $space-3; padding: $space-3 0; border-bottom: 1px solid $color-border; &:last-child { border-bottom: none; } }
-.dateBox { width: 36px; min-width: 36px; display: flex; flex-direction: column; align-items: center; border-radius: $border-radius-md; padding: 4px; }
-.visit .dateBox { background: $color-sidebar; }
-.interview .dateBox { background: $color-primary; }
-.day { font-size: $font-size-md; font-weight: $font-weight-bold; color: #fff; line-height: 1; }
-.month { font-size: 9px; color: rgba(255,255,255,0.7); }
-.type { display: flex; align-items: center; gap: 4px; font-size: $font-size-xs; color: $color-text-muted; margin-bottom: 2px; }
-.unit { font-size: $font-size-sm; font-weight: $font-weight-medium; color: $color-text; }
-.time { font-size: $font-size-xs; color: $color-text-muted; }
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-2;
+  border-bottom: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  transition: background 0.12s;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: $color-bg;
+  }
+
+  &.past {
+    opacity: 0.55;
+  }
+}
+
+.dateBox {
+  width: 40px;
+  min-width: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: $border-radius-md;
+  padding: 5px 4px 4px;
+}
+
+.visit .dateBox {
+  background: $color-sidebar;
+}
+
+.interview .dateBox {
+  background: $color-primary;
+}
+
+.past.visit .dateBox {
+  background: #6b8098;
+}
+
+.past.interview .dateBox {
+  background: #7aa5b5;
+}
+
+.day {
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  color: #fff;
+  line-height: 1;
+}
+
+.month {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+}
+
+.dow {
+  font-size: 10px;
+  font-weight: $font-weight-semibold;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.2;
+  margin-top: 1px;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.typeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: $font-size-xs;
+  color: #fff;
+  border-radius: $border-radius-sm;
+  padding: 1px 6px;
+  margin-bottom: $space-1;
+
+  .visit & {
+    background: $color-sidebar;
+  }
+
+  .interview & {
+    background: $color-primary;
+  }
+
+  .past.visit & {
+    background: #6b8098;
+  }
+
+  .past.interview & {
+    background: #7aa5b5;
+  }
+}
+
+.unit {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.time {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  margin-top: 1px;
+}
+
+.pastBadge {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-full;
+  padding: 2px 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}

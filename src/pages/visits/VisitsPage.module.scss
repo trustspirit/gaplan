@@ -6,13 +6,131 @@
   max-width: 640px;
 
   @include mobile {
+    padding: $space-4;
     padding-bottom: calc(#{$bottom-tab-height} + #{$space-4});
   }
 }
 
+.stats {
+  display: flex;
+  align-items: center;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  padding: $space-4 0;
+  margin-bottom: $space-4;
+  box-shadow: $shadow-raised;
+}
+
+.statCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-1;
+}
+
+.statValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+}
+
+.statDivider {
+  width: 1px;
+  height: 32px;
+  background: $color-border;
+}
+
+.tabBar {
+  display: flex;
+  gap: $space-1;
+  margin-bottom: $space-4;
+}
+
+.tabBtn {
+  padding: $space-2 $space-4;
+  border-radius: $border-radius-full;
+  border: 1px solid $color-border;
+  background: $color-surface;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: $color-bg;
+    color: $color-text;
+  }
+
+  &[data-active='true'] {
+    background: $color-sidebar;
+    border-color: $color-sidebar;
+    color: #fff;
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
+}
+
+.monthGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.monthLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: $space-2;
+  border-bottom: 1px solid $color-border;
+}
+
+.itemList {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  padding: 0 $space-3;
+  box-shadow: $shadow-raised;
+}
+
 .empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $space-12 $space-4;
+  color: $color-text-muted;
+  gap: $space-2;
+}
+
+.emptyIcon {
+  color: $color-text-light;
+  margin-bottom: $space-2;
+}
+
+.emptyTitle {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.emptyDesc {
   font-size: $font-size-sm;
   color: $color-text-muted;
   text-align: center;
-  padding: $space-6 0;
 }
