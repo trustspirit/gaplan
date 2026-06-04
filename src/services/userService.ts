@@ -3,7 +3,8 @@ import {
   onSnapshot, serverTimestamp,
   type Unsubscribe,
 } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { httpsCallable } from 'firebase/functions'
+import { db, functions } from '@/firebase'
 import type { AppUser, UserRole } from '@/types'
 
 export async function inviteUser(
@@ -30,4 +31,8 @@ export function subscribeToUsers(callback: (users: AppUser[]) => void): Unsubscr
 
 export async function updateUserRole(uid: string, role: UserRole, regionId?: string): Promise<void> {
   await updateDoc(doc(db, 'users', uid), { role, ...(regionId ? { regionId } : {}) })
+}
+
+export async function deleteUserAccount(uid: string): Promise<void> {
+  await httpsCallable(functions, 'deleteUser')({ uid })
 }
