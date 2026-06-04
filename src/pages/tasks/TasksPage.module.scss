@@ -1,13 +1,73 @@
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
-.page {
-  padding: $space-5;
-  max-width: 640px;
+.layout {
+  display: flex;
+  gap: $space-6;
+  padding: $space-6;
+  align-items: flex-start;
+
+  @media (min-width: 1200px) {
+    padding: $space-8;
+  }
 
   @include mobile {
+    flex-direction: column;
+    padding: $space-4;
     padding-bottom: calc(#{$bottom-tab-height} + #{$space-4});
   }
+}
+
+.mainCol {
+  flex: 1;
+  min-width: 0;
+}
+
+.sideCol {
+  flex: 0 0 380px;
+  width: 380px;
+
+  @include mobile {
+    display: none;
+  }
+}
+
+.sidePlaceholder {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-raised;
+  padding: $space-8 $space-6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  min-height: 160px;
+}
+
+.sidePickerCard {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-raised;
+  overflow: hidden;
+}
+
+.sidePickerHeader {
+  padding: $space-4 $space-4 $space-3;
+  border-bottom: 1px solid $color-border;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.sidePickerBody {
+  padding: $space-4;
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
 }
 
 .empty {

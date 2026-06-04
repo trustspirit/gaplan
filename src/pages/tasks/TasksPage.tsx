@@ -41,28 +41,43 @@ export function TasksPage() {
       role={user.role} name={user.name}
       topBar={<TopBar name={user.name} pendingCount={tasks.length} />}
     >
-      <div className={styles.page}>
-        <Card>
-          <CardHeader title="처리 필요 Task" />
-          <CardBody>
-            {tasksLoading
-              ? [1,2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
-              : tasks.length === 0
-                ? <p className={styles.empty}>모든 task가 완료되었습니다.</p>
-                : tasks.map(t => <TaskCard key={t.id} task={t} onAction={openTask} />)
-            }
-          </CardBody>
-        </Card>
+      <div className={styles.layout}>
+        <div className={styles.mainCol}>
+          <Card>
+            <CardHeader title="처리 필요 Task" />
+            <CardBody>
+              {tasksLoading
+                ? [1,2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
+                : tasks.length === 0
+                  ? <p className={styles.empty}>모든 task가 완료되었습니다.</p>
+                  : tasks.map(t => <TaskCard key={t.id} task={t} onAction={openTask} />)
+              }
+            </CardBody>
+          </Card>
+        </div>
+
+        {!isMobile && (
+          <div className={styles.sideCol}>
+            {activeTask ? (
+              <div className={styles.sidePickerCard}>
+                <div className={styles.sidePickerHeader}>날짜/시간 선택</div>
+                <div className={styles.sidePickerBody}>
+                  {slotPickerContent}
+                </div>
+              </div>
+            ) : (
+              <div className={styles.sidePlaceholder}>
+                Task를 선택하면 여기서 일정을 확정할 수 있습니다
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {isMobile ? (
+      {isMobile && (
         <BottomSheet open={!!activeTask} onClose={closeTask} title="날짜/시간 선택">
           {slotPickerContent}
         </BottomSheet>
-      ) : (
-        <Modal open={!!activeTask} onClose={closeTask} title="날짜/시간 선택">
-          {slotPickerContent}
-        </Modal>
       )}
     </AppShell>
   )

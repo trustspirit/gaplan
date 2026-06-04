@@ -1,9 +1,37 @@
 import { useAtomValue } from 'jotai'
 import { Link } from 'react-router-dom'
+import { Users, ListChecks, CalendarDays, CalendarCheck } from 'lucide-react'
 import { authUserAtom } from '@/store/authAtom'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Button } from '@/components/ui'
+import { Button } from '@/components/ui'
 import styles from './AdminDashboard.module.scss'
+
+const ACTION_CARDS = [
+  {
+    icon: Users,
+    title: '사용자 관리',
+    desc: '초대 및 역할 관리',
+    link: '/admin/users',
+  },
+  {
+    icon: ListChecks,
+    title: 'Task 생성',
+    desc: '스테이크/지방부 회장에게 Task 할당',
+    link: '/admin/tasks',
+  },
+  {
+    icon: CalendarDays,
+    title: '가능 일정 설정',
+    desc: '지역 칠십인 가능 일정 설정',
+    link: '/admin/availability',
+  },
+  {
+    icon: CalendarCheck,
+    title: '구글 캘린더',
+    desc: '공유 캘린더 연동 설정',
+    link: '/admin/calendar',
+  },
+] as const
 
 export function AdminDashboard() {
   const user = useAtomValue(authUserAtom)!
@@ -13,17 +41,22 @@ export function AdminDashboard() {
       topBar={<TopBar name={user.name} subtext="관리자 대시보드" />}
     >
       <div className={styles.page}>
-        <Card>
-          <CardHeader title="관리 메뉴" />
-          <CardBody>
-            <div className={styles.menu}>
-              <Link to="/admin/users"><Button variant="secondary" fullWidth>사용자 관리</Button></Link>
-              <Link to="/admin/tasks"><Button variant="secondary" fullWidth>Task 생성</Button></Link>
-              <Link to="/admin/availability"><Button variant="secondary" fullWidth>가능 일정 설정</Button></Link>
-              <Link to="/admin/calendar"><Button variant="secondary" fullWidth>구글 캘린더 연동</Button></Link>
+        <div className={styles.cardGrid}>
+          {ACTION_CARDS.map(({ icon: Icon, title, desc, link }) => (
+            <div key={link} className={styles.actionCard}>
+              <div className={styles.cardIcon}>
+                <Icon size={28} />
+              </div>
+              <div className={styles.cardContent}>
+                <h3 className={styles.cardTitle}>{title}</h3>
+                <p className={styles.cardDesc}>{desc}</p>
+              </div>
+              <Link to={link} className={styles.cardAction}>
+                <Button variant="secondary" fullWidth>바로 가기</Button>
+              </Link>
             </div>
-          </CardBody>
-        </Card>
+          ))}
+        </div>
       </div>
     </AppShell>
   )

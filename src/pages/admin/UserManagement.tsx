@@ -44,39 +44,43 @@ export function UserManagement() {
       topBar={<TopBar name={user.name} subtext="사용자 관리" />}
     >
       <div className={styles.page}>
-        <Card>
-          <CardHeader title="사용자 초대" />
-          <CardBody>
-            <form className={styles.form} onSubmit={handleInvite}>
-              <Input label="이메일" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="example@gmail.com" required />
-              <Select label="역할" value={role} onChange={e => setRole(e.target.value as UserRole)} options={ROLE_OPTIONS} />
-              {role === 'seventy' && (
-                <Select label="담당 지역" value={regionId} onChange={e => setRegionId(e.target.value)} options={REGION_OPTIONS} />
-              )}
-              <Button type="submit" loading={loading}>초대 발송</Button>
-            </form>
-          </CardBody>
-        </Card>
+        <div className={styles.inviteCol}>
+          <Card>
+            <CardHeader title="사용자 초대" />
+            <CardBody>
+              <form className={styles.form} onSubmit={handleInvite}>
+                <Input label="이메일" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="example@gmail.com" required />
+                <Select label="역할" value={role} onChange={e => setRole(e.target.value as UserRole)} options={ROLE_OPTIONS} />
+                {role === 'seventy' && (
+                  <Select label="담당 지역" value={regionId} onChange={e => setRegionId(e.target.value)} options={REGION_OPTIONS} />
+                )}
+                <Button type="submit" loading={loading}>초대 발송</Button>
+              </form>
+            </CardBody>
+          </Card>
+        </div>
 
-        <Card>
-          <CardHeader title="전체 사용자" />
-          <CardBody>
-            {usersLoading
-              ? [1,2,3].map(i => <Skeleton key={i} height="44px" className={styles.skeletonRow} />)
-              : users.map(u => (
-                <div key={u.uid} className={styles.userRow}>
-                  <Avatar name={u.name} size="sm" />
-                  <div className={styles.userInfo}>
-                    <p className={styles.userName}>{u.name}</p>
-                    <p className={styles.userEmail}>{u.email}</p>
+        <div className={styles.listCol}>
+          <Card>
+            <CardHeader title="전체 사용자" />
+            <CardBody>
+              {usersLoading
+                ? [1,2,3].map(i => <Skeleton key={i} height="44px" className={styles.skeletonRow} />)
+                : users.map(u => (
+                  <div key={u.uid} className={styles.userRow}>
+                    <Avatar name={u.name} size="sm" />
+                    <div className={styles.userInfo}>
+                      <p className={styles.userName}>{u.name}</p>
+                      <p className={styles.userEmail}>{u.email}</p>
+                    </div>
+                    <Badge variant={u.role === 'admin' ? 'danger' : u.role === 'seventy' ? 'warning' : 'default'}>
+                      {ROLE_LABELS[u.role]}
+                    </Badge>
                   </div>
-                  <Badge variant={u.role === 'admin' ? 'danger' : u.role === 'seventy' ? 'warning' : 'default'}>
-                    {ROLE_LABELS[u.role]}
-                  </Badge>
-                </div>
-              ))}
-          </CardBody>
-        </Card>
+                ))}
+            </CardBody>
+          </Card>
+        </div>
       </div>
     </AppShell>
   )

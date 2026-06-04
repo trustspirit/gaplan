@@ -78,70 +78,96 @@ export function VisitsPage() {
     }),
   ]
 
+  // Upcoming: next 5 visits (date >= today, sorted ascending)
+  const upcomingVisits = allVisits
+    .filter(s => !dayjs(s.date).isBefore(today, 'day'))
+    .sort((a, b) => dayjs(a.date).isBefore(dayjs(b.date)) ? -1 : 1)
+    .slice(0, 5)
+
   const TABS: FilterTab[] = ['전체', '예정', '완료']
 
   return (
     <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext="와드 방문 일정" />}>
-      <div className={styles.page}>
-        <div className={styles.stats}>
-          <div className={styles.statCard}>
-            <span className={styles.statValue}>{thisMonthCount}</span>
-            <span className={styles.statLabel}>이번 달 방문</span>
-          </div>
-          <div className={styles.statDivider} />
-          <div className={styles.statCard}>
-            <span className={styles.statValue}>{upcomingCount}</span>
-            <span className={styles.statLabel}>예정 방문</span>
-          </div>
-          <div className={styles.statDivider} />
-          <div className={styles.statCard}>
-            <span className={styles.statValue}>{completedCount}</span>
-            <span className={styles.statLabel}>완료 방문</span>
-          </div>
-        </div>
-
-        <div className={styles.tabBar}>
-          {TABS.map(tab => (
-            <button
-              key={tab}
-              type="button"
-              className={styles.tabBtn}
-              data-active={activeTab === tab}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        <div className={styles.content}>
-          {orderedKeys.length === 0 ? (
-            <div className={styles.empty}>
-              <MapPin size={32} className={styles.emptyIcon} />
-              <p className={styles.emptyTitle}>방문 일정이 없습니다</p>
-              <p className={styles.emptyDesc}>
-                {activeTab === '예정' ? '아직 예정된 방문이 없습니다.' : activeTab === '완료' ? '완료된 방문이 없습니다.' : '확정된 방문 일정이 없습니다.'}
-              </p>
+      <div className={styles.layout}>
+        <div className={styles.mainCol}>
+          <div className={styles.stats}>
+            <div className={styles.statCard}>
+              <span className={styles.statValue}>{thisMonthCount}</span>
+              <span className={styles.statLabel}>이번 달 방문</span>
             </div>
-          ) : (
-            orderedKeys.map(monthKey => {
-              const items = grouped.get(monthKey)!
-              return (
-                <div key={monthKey} className={styles.monthGroup}>
-                  <h3 className={styles.monthLabel}>{monthKey}</h3>
-                  <div className={styles.itemList}>
-                    {items.map(s => (
-                      <ScheduleItem
-                        key={s.id}
-                        schedule={s}
-                        unitName={getUnitName(s.unitId)}
-                      />
-                    ))}
+            <div className={styles.statDivider} />
+            <div className={styles.statCard}>
+              <span className={styles.statValue}>{upcomingCount}</span>
+              <span className={styles.statLabel}>예정 방문</span>
+            </div>
+            <div className={styles.statDivider} />
+            <div className={styles.statCard}>
+              <span className={styles.statValue}>{completedCount}</span>
+              <span className={styles.statLabel}>완료 방문</span>
+            </div>
+          </div>
+
+          <div className={styles.tabBar}>
+            {TABS.map(tab => (
+              <button
+                key={tab}
+                type="button"
+                className={styles.tabBtn}
+                data-active={activeTab === tab}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.content}>
+            {orderedKeys.length === 0 ? (
+              <div className={styles.empty}>
+                <MapPin size={32} className={styles.emptyIcon} />
+                <p className={styles.emptyTitle}>방문 일정이 없습니다</p>
+                <p className={styles.emptyDesc}>
+                  {activeTab === '예정' ? '아직 예정된 방문이 없습니다.' : activeTab === '완료' ? '완료된 방문이 없습니다.' : '확정된 방문 일정이 없습니다.'}
+                </p>
+              </div>
+            ) : (
+              orderedKeys.map(monthKey => {
+                const items = grouped.get(monthKey)!
+                return (
+                  <div key={monthKey} className={styles.monthGroup}>
+                    <h3 className={styles.monthLabel}>{monthKey}</h3>
+                    <div className={styles.itemList}>
+                      {items.map(s => (
+                        <ScheduleItem
+                          key={s.id}
+                          schedule={s}
+                          unitName={getUnitName(s.unitId)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )
-            })
-          )}
+                )
+              })
+            )}
+          </div>
+        </div>
+
+        <div className={styles.sideCol}>
+          <div className={styles.sideCard}>
+            <div className={styles.sideCardHeader}>다음 방문 예정</div>
+            <div className={styles.sideCardBody}>
+              {upcomingVisits.length === 0 ? (
+                <p className={styles.sideEmpty}>예정된 방문이 없습니다.</p>
+              ) : (
+                upcomingVisits.map(s => (
+                  <div key={s.id} className={styles.upcomingItem}>
+                    <span className={styles.upcomingDate}>{dayjs(s.date).format('M/D (ddd)')}</span>
+                    <span className={styles.upcomingUnit}>{getUnitName(s.unitId)}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </AppShell>
