@@ -1,0 +1,156 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.headerTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.headerDesc {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  line-height: $line-height-normal;
+}
+
+// ── Option cards ─────────────────────────────────────────────────────────────
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  @include desktop {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-3;
+  border: 2px solid $color-border;
+  border-radius: $border-radius-lg;
+  background: $color-surface;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: $color-primary;
+  }
+}
+
+.optionIncomplete {
+  border-color: rgba($color-warning, 0.5);
+  background: $color-highlight-warning;
+}
+
+.optionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+}
+
+.optionLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.optionComplete {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-success;
+}
+
+.optionWarning {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: #8f4200;
+}
+
+// ── Assignment rows ───────────────────────────────────────────────────────────
+
+.optionTable {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+  background: $color-surface;
+}
+
+.assignRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border-bottom: 1px solid $color-border;
+  &:last-child { border-bottom: none; }
+}
+
+.assignRowMissing {
+  background: $color-highlight-danger;
+  opacity: 0.75;
+}
+
+.assignName {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  min-width: 64px;
+  @include truncate;
+}
+
+.assignSlot {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.assignSlotMissing {
+  font-size: $font-size-xs;
+  color: $color-danger;
+  font-style: italic;
+}
+
+.confirmBtn {
+  align-self: flex-end;
+}
+
+// ── Notice ────────────────────────────────────────────────────────────────────
+
+.notice {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  line-height: $line-height-normal;
+}
+
+.empty {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  text-align: center;
+  padding: $space-4 0;
+}

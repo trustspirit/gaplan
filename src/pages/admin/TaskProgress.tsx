@@ -12,7 +12,7 @@ import { expireTask, updateTaskDetails } from '@/services/taskService'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Select, Modal } from '@/components/ui'
-import { MultiDatePicker, ResponseMatrix } from '@/components/domain'
+import { MultiDatePicker, ResponseMatrix, ScheduleSuggestions } from '@/components/domain'
 import type { Task, RespondedSlot } from '@/types'
 import styles from './TaskProgress.module.scss'
 
@@ -403,10 +403,11 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName }: RegionGroupP
           ? <p className={styles.empty}>해당 지역 Task 없음</p>
           : (
             <>
-              {/* Response Matrix for interview/sacrament batches */}
+              {/* Response Matrix + Schedule Suggestions for interview batches */}
               {matrixBatches.map(batch => {
                 const ref = batch[0]
                 const title = ref.title ?? TASK_LABELS[ref.type] ?? ref.type
+                const hasResponded = batch.some(t => t.status === 'responded' || t.status === 'completed')
                 return (
                   <div key={ref.batchId ?? ref.id} className={styles.statusSection}>
                     <p className={styles.statusLabel}>
@@ -416,6 +417,14 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName }: RegionGroupP
                       tasks={batch}
                       getPresidentName={getUserName}
                     />
+                    {hasResponded && (
+                      <div className={styles.suggestionsWrap}>
+                        <ScheduleSuggestions
+                          tasks={batch}
+                          getPresidentName={getUserName}
+                        />
+                      </div>
+                    )}
                   </div>
                 )
               })}
