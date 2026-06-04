@@ -75,7 +75,8 @@ service cloud.firestore {
     }
 
     match /settings/{doc} {
-      allow read: if isAuth();
+      // calendar settings (shared calendar IDs) are for admin/seventy only
+      allow read: if isAdmin() || isSeventy() || (isAuth() && doc != 'calendar');
       allow write: if isAdmin();
     }
   }

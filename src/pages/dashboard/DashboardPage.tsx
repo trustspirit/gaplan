@@ -117,8 +117,6 @@ function PresidentDashboard() {
     >
       <div className={styles.layout}>
         <div className={styles.mainCol}>
-          <CalendarBanner connected={user.calendarConnected} />
-
           <Card>
             <CardHeader title="처리 필요" />
             <CardBody>
@@ -139,7 +137,7 @@ function PresidentDashboard() {
                 : upcoming.length === 0
                   ? <p className={styles.empty}>예정된 일정이 없습니다.</p>
                   : upcoming.map(s => (
-                      <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} />
+                      <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} showCalendarAdd />
                     ))
               }
             </CardBody>

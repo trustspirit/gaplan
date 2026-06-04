@@ -142,6 +142,7 @@ export function VisitsPage() {
                           key={s.id}
                           schedule={s}
                           unitName={getUnitName(s.unitId)}
+                          showCalendarAdd={user.role === 'president'}
                         />
                       ))}
                     </div>
