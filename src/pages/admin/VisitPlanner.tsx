@@ -139,12 +139,14 @@ export function VisitPlanner() {
 
               <div className={styles.presidentSection}>
                 <div className={styles.presidentHeader}>
-                  <span className={styles.presidentLabel}>대상 회장</span>
+                  <span className={styles.presidentLabel}>{t('task.targetPresidents', { defaultValue: '대상 회장' })}</span>
                   {selectedPresidents.size > 0 && (
-                    <Badge variant="default">{selectedPresidents.size}명 선택됨</Badge>
+                    <Badge variant="default">{t('task.selectedCount', { count: selectedPresidents.size, defaultValue: `${selectedPresidents.size}명 선택됨` })}</Badge>
                   )}
                   <button type="button" className={styles.selectAllBtn} onClick={toggleAll}>
-                    {filteredPresidents.every(p => selectedPresidents.has(p.uid)) ? '해제' : '전체 선택'}
+                    {filteredPresidents.every(p => selectedPresidents.has(p.uid))
+                      ? t('common.deselectAll', { defaultValue: '해제' })
+                      : t('common.selectAll', { defaultValue: '전체 선택' })}
                   </button>
                 </div>
                 <div className={styles.regionFilter}>
@@ -159,7 +161,11 @@ export function VisitPlanner() {
                 </div>
                 <div className={styles.presidentList}>
                   {filteredPresidents.length === 0 ? (
-                    <p className={styles.noneText}>{filterRegion ? '해당 지역에 등록된 회장이 없습니다.' : '등록된 회장이 없습니다.'}</p>
+                    <p className={styles.noneText}>
+                      {filterRegion
+                        ? t('task.noPresidentsInRegion', { defaultValue: '해당 지역에 등록된 회장이 없습니다.' })
+                        : t('task.noPresidents', { defaultValue: '등록된 회장이 없습니다.' })}
+                    </p>
                   ) : (
                     filteredPresidents.map(p => {
                       const unit = ALL_UNITS.find(u => u.id === p.unitId)
@@ -176,22 +182,24 @@ export function VisitPlanner() {
                 </div>
               </div>
 
-              <Input label="마감일" type="date" value={dueDate}
+              <Input label={t('task.dueDate')} type="date" value={dueDate}
                 onChange={e => setDueDate(e.target.value)} />
 
               <div className={styles.textareaField}>
-                <label className={styles.textareaLabel}>요청 사항 / 메모 (선택)</label>
+                <label className={styles.textareaLabel}>{t('task.noteLabel', { defaultValue: '요청 사항 / 메모 (선택)' })}</label>
                 <textarea
                   className={styles.textarea}
                   value={taskNote}
                   onChange={e => setTaskNote(e.target.value)}
-                  placeholder="회장이 Task를 받을 때 함께 볼 내용을 입력하세요."
+                  placeholder={t('task.notePlaceholder', { defaultValue: '회장이 Task를 받을 때 함께 볼 내용을 입력하세요.' })}
                   rows={3}
                 />
               </div>
 
               <Button type="submit" loading={loading} disabled={!isValid}>
-                Task {selectedPresidents.size > 0 ? `${selectedPresidents.size}건 ` : ''}생성
+                {selectedPresidents.size > 0
+                  ? t('task.createCount', { count: selectedPresidents.size, defaultValue: `Task ${selectedPresidents.size}건 생성` })
+                  : t('task.create')}
               </Button>
             </form>
           </CardBody>

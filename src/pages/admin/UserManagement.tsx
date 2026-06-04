@@ -212,7 +212,7 @@ export function UserManagement() {
                       <div className={styles.userActions}>
                         <button
                           className={styles.iconBtn}
-                          title="역할 변경"
+                          title={t('common.edit')}
                           type="button"
                           onClick={() => setEditingUser(u)}
                         >
@@ -221,7 +221,7 @@ export function UserManagement() {
                         {u.uid !== currentUser.uid && (
                           <button
                             className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
-                            title="삭제"
+                            title={t('common.delete')}
                             type="button"
                             onClick={() => setDeletingUser(u)}
                           >

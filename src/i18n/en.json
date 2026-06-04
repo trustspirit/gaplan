@@ -52,7 +52,9 @@
     "weekView": "Week",
     "fastSunday": "Fast",
     "fastSundayLabel": "(Fast Sunday)",
-    "fastSundayLegend": "Fast Sunday"
+    "fastSundayLegend": "Fast Sunday",
+    "deselectAll": "Deselect All",
+    "selectAll": "Select All"
   },
   "auth": {
     "greeting": "Hello, {{name}}",
@@ -101,7 +103,7 @@
     "dueDate": "Due Date",
     "expire": "Expire",
     "editAndResend": "Save & Resend",
-    "resetWarning": "⚠ The existing response will be cleared and the president must respond again.",
+    "resetWarning": "The existing response will be cleared and the president must respond again.",
     "expireSuccess": "Task expired.",
     "expireFailed": "Failed to expire task.",
     "editSuccess": "Task updated.",
@@ -110,7 +112,20 @@
     "createFailed": "Failed to create tasks.",
     "visitTaskDesc": "Select available Sundays and assign tasks to presidents. Presidents will assign wards/branches to specific dates.",
     "title": "Task Title",
-    "titlePlaceholder": "e.g. Q2 Ward Visits"
+    "titlePlaceholder": "e.g. Q2 Ward Visits",
+    "editTitle": "Edit Task",
+    "selectSundays": "Select Available Sundays",
+    "selectDates": "Select Available Dates (from calendar)",
+    "noteLabel": "Notes / Memo (optional)",
+    "notePlaceholder": "Enter any message the president should see when they receive this task.",
+    "createCount": "Create {{count}} Task(s)",
+    "targetPresidents": "Target Presidents",
+    "selectedCount": "{{count}} selected",
+    "noPresidentsInRegion": "No presidents registered in this region.",
+    "noPresidents": "No presidents registered.",
+    "submitted": "submitted",
+    "slotsCount": "View {{count}}",
+    "wardCount": "View {{count}} assignments"
   },
   "schedule": {
     "confirmVisit": "Confirm Visit Date",

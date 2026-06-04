@@ -237,6 +237,40 @@
   border-top: 1px solid $color-border;
 }
 
+// ── Edit modal — date-slot time editor ───────────────────────────────────────
+
+.dateSlotList {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin-top: $space-2;
+}
+
+.dateSlotItem { display: flex; flex-direction: column; gap: $space-1; }
+
+.dateSlotDate {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.timeRangeRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-size-xs;
+}
+
+.timeInput {
+  border: 1px solid $color-border;
+  border-radius: $border-radius-sm;
+  padding: 2px 6px;
+  font-size: $font-size-xs;
+  color: $color-text;
+  background: $color-surface;
+  &:focus { outline: 2px solid var(--color-primary, #177C9C); outline-offset: 1px; }
+}
+
 // ── Edit modal ────────────────────────────────────────────────────────────────
 
 .editForm {

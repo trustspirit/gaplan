@@ -52,7 +52,9 @@
     "weekView": "주",
     "fastSunday": "금식",
     "fastSundayLabel": "(금식)",
-    "fastSundayLegend": "금식일"
+    "fastSundayLegend": "금식일",
+    "deselectAll": "해제",
+    "selectAll": "전체 선택"
   },
   "auth": {
     "greeting": "{{name}}님, 안녕하세요",
@@ -99,14 +101,27 @@
     "dueDate": "마감일",
     "expire": "만료",
     "editAndResend": "저장 및 재전달",
-    "resetWarning": "⚠ 이미 응답한 내용이 초기화되고 회장이 다시 응답해야 합니다.",
+    "resetWarning": "이미 응답한 내용이 초기화되고 회장이 다시 응답해야 합니다.",
     "expireSuccess": "Task가 만료되었습니다.",
     "expireFailed": "만료 처리에 실패했습니다.",
     "editSuccess": "Task가 수정되었습니다.",
     "editFailed": "수정에 실패했습니다.",
     "createSuccess": "Task {{count}}건이 생성되었습니다.",
     "createFailed": "Task 생성에 실패했습니다.",
-    "visitTaskDesc": "가능한 방문 일요일을 선택하고 회장들에게 Task를 배정합니다. 회장들은 Task에서 각 와드/지부에 날짜를 배정해 제출합니다."
+    "visitTaskDesc": "가능한 방문 일요일을 선택하고 회장들에게 Task를 배정합니다. 회장들은 Task에서 각 와드/지부에 날짜를 배정해 제출합니다.",
+    "editTitle": "Task 수정",
+    "selectSundays": "가능 방문 일요일 선택",
+    "selectDates": "가능 날짜 (캘린더에서 선택)",
+    "noteLabel": "요청 사항 / 메모 (선택)",
+    "notePlaceholder": "회장이 Task를 받을 때 함께 볼 내용을 입력하세요.",
+    "createCount": "Task {{count}}건 생성",
+    "targetPresidents": "대상 회장",
+    "selectedCount": "{{count}}명 선택됨",
+    "noPresidentsInRegion": "해당 지역에 등록된 회장이 없습니다.",
+    "noPresidents": "등록된 회장이 없습니다.",
+    "submitted": "제출",
+    "slotsCount": "{{count}}개 확인",
+    "wardCount": "{{count}}개 배정 확인"
   },
   "schedule": {
     "confirmVisit": "방문 일정 확정",

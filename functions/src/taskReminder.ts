@@ -7,12 +7,7 @@ import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import dayjs from 'dayjs'
 import { getTransport, getSenderEmail } from './emailTransport'
-
-const APP_URL = 'https://gaplan-fccfe.web.app'
-const TASK_TYPE_LABELS: Record<string, string> = {
-  select_visit: '와드 방문 일정',
-  select_interview: '접견/모임 일정',
-}
+import { APP_URL, resolveTaskTypeLabel } from './emailHelpers'
 
 export const taskReminder = functions
   .region('asia-northeast3')
@@ -45,7 +40,7 @@ export const taskReminder = functions
         )
         if (alreadyToday) return
 
-        const typeLabel = task.title || TASK_TYPE_LABELS[task.type] || 'Task'
+        const typeLabel = resolveTaskTypeLabel(task.type, task.title)
         const tag = daysLeft <= 0 ? `기한 초과 D+${Math.abs(daysLeft)}` : `D-${daysLeft}`
         const urgency = daysLeft <= 0
           ? `기한이 ${Math.abs(daysLeft)}일 지났습니다.`

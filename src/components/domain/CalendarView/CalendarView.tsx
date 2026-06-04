@@ -5,7 +5,7 @@ import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 import type { Schedule } from '@/types'
 import { isFastSunday } from '@/utils/fastSunday'
-import { ALL_UNITS, getUnitColor, REGIONS } from '@/constants/regions'
+import { ALL_UNITS, getUnitColor, getRegionColor, REGIONS } from '@/constants/regions'
 import { Button } from '@/components/ui'
 import styles from './CalendarView.module.scss'
 
@@ -191,12 +191,7 @@ export function CalendarView({
 
       <div className={styles.legend}>
         {REGIONS.map(r => {
-          const colors: Record<string, { bg: string; text: string }> = {
-            'seoul': { bg: '#dbeafe', text: '#1e40af' },
-            'seoul-south': { bg: '#fce8f3', text: '#9d174d' },
-            'busan': { bg: '#ecfdf5', text: '#065f46' },
-          }
-          const c = colors[r.id] ?? { bg: '#f3f4f6', text: '#374151' }
+          const c = getRegionColor(r.id)
           return (
             <span key={r.id} style={{ color: c.text }}>
               <span className={styles.legendSwatch} style={{ background: c.bg }} /> {r.name}

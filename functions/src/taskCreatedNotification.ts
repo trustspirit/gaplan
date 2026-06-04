@@ -7,13 +7,7 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { getTransport, getSenderEmail } from './emailTransport'
-
-const APP_URL = 'https://gaplan-fccfe.web.app'
-
-const TASK_TYPE_LABELS: Record<string, string> = {
-  select_visit:     '와드 방문 일정',
-  select_interview: '접견/모임 일정',
-}
+import { APP_URL, resolveTaskTypeLabel } from './emailHelpers'
 
 export const taskCreatedNotification = functions
   .region('asia-northeast3')
@@ -30,7 +24,7 @@ export const taskCreatedNotification = functions
     const president = presidentSnap.data()
     if (!president?.email) return
 
-    const typeLabel = task.title || TASK_TYPE_LABELS[task.type] || 'Task'
+    const typeLabel = resolveTaskTypeLabel(task.type, task.title)
     const dueDate = task.dueDate as string
     const tasksUrl = `${APP_URL}/tasks`
 
@@ -67,6 +61,15 @@ export const taskCreatedNotification = functions
     }
   })
 
+function escapeHtml(s: string): string {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function buildHtmlEmail(
   name: string,
   typeLabel: string,
@@ -74,6 +77,11 @@ function buildHtmlEmail(
   note: string | undefined,
   tasksUrl: string,
 ): string {
+  const safeName = escapeHtml(name)
+  const safeTypeLabel = escapeHtml(typeLabel)
+  const safeDueDate = escapeHtml(dueDate)
+  const safeNote = note ? escapeHtml(note).replace(/\n/g, '<br>') : null
+
   return `
 <!DOCTYPE html>
 <html lang="ko">
@@ -85,21 +93,21 @@ function buildHtmlEmail(
     </div>
     <div style="padding:28px">
       <h2 style="margin:0 0 8px;font-size:16px;color:#212225">새 Task가 배정되었습니다</h2>
-      <p style="margin:0 0 20px;color:#808081;font-size:14px">${name} 회장님께</p>
+      <p style="margin:0 0 20px;color:#808081;font-size:14px">${safeName} 회장님께</p>
 
       <div style="background:#f7f8f8;border-radius:8px;padding:16px;margin-bottom:20px">
         <div style="display:flex;gap:8px;margin-bottom:8px">
           <span style="color:#808081;font-size:13px;min-width:60px">종류</span>
-          <span style="color:#212225;font-size:13px;font-weight:600">${typeLabel}</span>
+          <span style="color:#212225;font-size:13px;font-weight:600">${safeTypeLabel}</span>
         </div>
         <div style="display:flex;gap:8px">
           <span style="color:#808081;font-size:13px;min-width:60px">마감일</span>
-          <span style="color:#212225;font-size:13px;font-weight:600">${dueDate}</span>
+          <span style="color:#212225;font-size:13px;font-weight:600">${safeDueDate}</span>
         </div>
-        ${note ? `
+        ${safeNote ? `
         <div style="display:flex;gap:8px;margin-top:8px">
           <span style="color:#808081;font-size:13px;min-width:60px">요청 사항</span>
-          <span style="color:#212225;font-size:13px">${note.replace(/\n/g, '<br>')}</span>
+          <span style="color:#212225;font-size:13px">${safeNote}</span>
         </div>` : ''}
       </div>
 

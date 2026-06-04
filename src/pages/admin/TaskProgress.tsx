@@ -4,7 +4,7 @@ import dayjs from 'dayjs'
 import { toast } from 'sonner'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Pencil, XCircle } from 'lucide-react'
+import { CheckCircle2, Clock, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Pencil, XCircle } from 'lucide-react'
 import { authUserAtom } from '@/store/authAtom'
 import { useAllTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
@@ -16,9 +16,6 @@ import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Select, Mod
 import { MultiDatePicker, ResponseMatrix, ScheduleSuggestions } from '@/components/domain'
 import type { Task, RespondedSlot } from '@/types'
 import styles from './TaskProgress.module.scss'
-
-// Labels resolved via t() inside components where useTranslation is available
-const SLOT_DURATION_VALUES = ['30', '60', '90', '120'] as const
 
 function StatusBadge({ status }: { status: Task['status'] }) {
   const { t } = useTranslation()
@@ -99,36 +96,36 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
   }
 
   return (
-    <Modal open onClose={onClose} title="Task 수정">
+    <Modal open onClose={onClose} title={t('task.editTitle', { defaultValue: 'Task 수정' })}>
       <form className={styles.editForm} onSubmit={handleSave}>
         {isVisit ? (
           <div className={styles.editSection}>
-            <p className={styles.editLabel}>가능 방문 일요일 선택</p>
+            <p className={styles.editLabel}>{t('task.selectSundays', { defaultValue: '가능 방문 일요일 선택' })}</p>
             <MultiDatePicker selected={availableDates} onChange={setAvailableDates} sundayOnly />
           </div>
         ) : (
           <>
             <div className={styles.editSection}>
-              <p className={styles.editLabel}>가능 날짜 (캘린더에서 선택)</p>
+              <p className={styles.editLabel}>{t('task.selectDates', { defaultValue: '가능 날짜 (캘린더에서 선택)' })}</p>
               <MultiDatePicker selected={selectedDates} onChange={handleDatesChange} />
               {availableDateSlots.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                <div className={styles.dateSlotList}>
                   {availableDateSlots.map(s => (
-                    <div key={s.date}>
-                      <div style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '4px' }}>
+                    <div key={s.date} className={styles.dateSlotItem}>
+                      <div className={styles.dateSlotDate}>
                         {dayjs(s.date).format('M/D (ddd)')}
                       </div>
                       {(dateRanges[s.date] ?? []).map((r, idx) => (
-                        <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.8125rem', marginBottom: '4px' }}>
+                        <div key={idx} className={styles.timeRangeRow}>
                           <input type="time" value={r.startTime}
-                            style={{ border: '1px solid #e4e4e6', borderRadius: 6, padding: '2px 6px' }}
+                            className={styles.timeInput}
                             onChange={e => setDateRanges(prev => ({
                               ...prev,
                               [s.date]: prev[s.date].map((x, i) => i === idx ? { ...x, startTime: e.target.value } : x)
                             }))} />
                           <span>~</span>
                           <input type="time" value={r.endTime}
-                            style={{ border: '1px solid #e4e4e6', borderRadius: 6, padding: '2px 6px' }}
+                            className={styles.timeInput}
                             onChange={e => setDateRanges(prev => ({
                               ...prev,
                               [s.date]: prev[s.date].map((x, i) => i === idx ? { ...x, endTime: e.target.value } : x)
@@ -141,7 +138,7 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
               )}
             </div>
             <Input
-              label={t('slotDuration.label', { defaultValue: '슬롯 길이 (분)' })}
+              label={t('slotDuration.label')}
               type="number"
               min="5"
               max="480"
@@ -151,17 +148,31 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
             />
           </>
         )}
-        <Input label="마감일" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+        <Input label={t('task.dueDate')} type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
         {task.status === 'responded' && (
-          <p className={styles.resetNote}>⚠ 이미 응답한 내용이 초기화되고 회장이 다시 응답해야 합니다.</p>
+          <p className={styles.resetNote}>
+            <AlertTriangle size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+            {t('task.resetWarning')}
+          </p>
         )}
         <div className={styles.modalActions}>
-          <Button variant="ghost" type="button" onClick={onClose}>취소</Button>
-          <Button type="submit" loading={saving}>저장 및 재전달</Button>
+          <Button variant="ghost" type="button" onClick={onClose}>{t('common.cancel')}</Button>
+          <Button type="submit" loading={saving}>{t('task.editAndResend')}</Button>
         </div>
       </form>
     </Modal>
   )
+}
+
+function formatRespondedAt(respondedAt: unknown): string {
+  if (!respondedAt) return ''
+  // Firestore Timestamp shape
+  if (typeof respondedAt === 'object' && respondedAt !== null && 'seconds' in respondedAt) {
+    return dayjs((respondedAt as { seconds: number }).seconds * 1000).format('M/D HH:mm')
+  }
+  // String (e.g. ISO date stored by submitAvailability CF)
+  if (typeof respondedAt === 'string') return dayjs(respondedAt).format('M/D HH:mm')
+  return ''
 }
 
 // ── Responded slot row ───────────────────────────────────────────────────────
@@ -263,7 +274,7 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
                 )}
                 {task.status === 'responded' && task.respondedAt && (
                   <span className={styles.respondedAt}>
-                    {' '}· {dayjs((task.respondedAt as unknown as { seconds: number }).seconds * 1000).format('M/D HH:mm')} 제출
+                    {' '}· {formatRespondedAt(task.respondedAt)} {t('task.submitted', { defaultValue: '제출' })}
                   </span>
                 )}
               </span>
@@ -276,13 +287,17 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
             {task.status === 'responded' && hasSlots && !isVisitTask && (
               <button type="button" className={styles.expandBtn} onClick={() => setExpanded(v => !v)}>
                 {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                {expanded ? '닫기' : `${task.respondedSlots!.length}개 확인`}
+                {expanded
+                  ? t('common.close')
+                  : t('task.slotsCount', { count: task.respondedSlots!.length, defaultValue: `${task.respondedSlots!.length}개 확인` })}
               </button>
             )}
             {task.status === 'responded' && isVisitTask && hasWardAssignments && (
               <button type="button" className={styles.expandBtn} onClick={() => setExpanded(v => !v)}>
                 {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                {expanded ? '닫기' : `${task.wardAssignments!.length}개 배정 확인`}
+                {expanded
+                  ? t('common.close')
+                  : t('task.wardCount', { count: task.wardAssignments!.length, defaultValue: `${task.wardAssignments!.length}개 배정 확인` })}
               </button>
             )}
 
