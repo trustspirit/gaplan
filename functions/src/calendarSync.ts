@@ -7,6 +7,17 @@ import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
 
+// Fallback map: derive regionId from unitId when seventy user doesn't have it set
+const UNIT_REGION_MAP: Record<string, string> = {
+  'seoul-stake': 'seoul', 'seoul-east-stake': 'seoul',
+  'seoul-west-stake': 'seoul', 'gyeonggi-stake': 'seoul',
+  'seoul-south-stake': 'seoul-south', 'daejeon-stake': 'seoul-south',
+  'cheongju-stake': 'seoul-south', 'jeonju-stake': 'seoul-south',
+  'gwangju-stake': 'seoul-south',
+  'busan-stake': 'busan', 'daegu-stake': 'busan',
+  'changwon-stake': 'busan', 'ulsan-district': 'busan',
+}
+
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
     scopes: ['https://www.googleapis.com/auth/calendar.events'],
@@ -27,7 +38,14 @@ export const calendarSync = functions
     const seventySnap = seventyUid
       ? await db.collection('users').doc(seventyUid).get()
       : null
-    const regionId: string = seventySnap?.data()?.regionId ?? ''
+    // Determine regionId from the schedule's unitId (which stake/district this visit is for).
+    // This correctly routes to the right regional calendar even when one seventy
+    // serves multiple regions. Fall back to seventy's own regionId, then empty.
+    const scheduleUnitId = after?.unitId ?? before?.unitId ?? ''
+    const regionId: string =
+      UNIT_REGION_MAP[scheduleUnitId] ??
+      seventySnap?.data()?.regionId ??
+      ''
 
     const settingsSnap = await db.collection('settings').doc('calendar').get()
     const calendars: Record<string, string> = settingsSnap.data()?.calendars ?? {}

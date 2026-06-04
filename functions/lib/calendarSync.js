@@ -42,6 +42,16 @@ exports.calendarSync = void 0;
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const googleapis_1 = require("googleapis");
+// Fallback map: derive regionId from unitId when seventy user doesn't have it set
+const UNIT_REGION_MAP = {
+    'seoul-stake': 'seoul', 'seoul-east-stake': 'seoul',
+    'seoul-west-stake': 'seoul', 'gyeonggi-stake': 'seoul',
+    'seoul-south-stake': 'seoul-south', 'daejeon-stake': 'seoul-south',
+    'cheongju-stake': 'seoul-south', 'jeonju-stake': 'seoul-south',
+    'gwangju-stake': 'seoul-south',
+    'busan-stake': 'busan', 'daegu-stake': 'busan',
+    'changwon-stake': 'busan', 'ulsan-district': 'busan',
+};
 function getCalendarClient() {
     const auth = new googleapis_1.google.auth.GoogleAuth({
         scopes: ['https://www.googleapis.com/auth/calendar.events'],
@@ -52,7 +62,7 @@ exports.calendarSync = functions
     .region('asia-northeast3')
     .firestore.document('schedules/{scheduleId}')
     .onWrite(async (change) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
     const db = admin.firestore();
     // Resolve which regional calendar to use via the seventy's regionId
     const after = change.after.data();
@@ -61,11 +71,15 @@ exports.calendarSync = functions
     const seventySnap = seventyUid
         ? await db.collection('users').doc(seventyUid).get()
         : null;
-    const regionId = (_c = (_b = seventySnap === null || seventySnap === void 0 ? void 0 : seventySnap.data()) === null || _b === void 0 ? void 0 : _b.regionId) !== null && _c !== void 0 ? _c : '';
+    // Determine regionId from the schedule's unitId (which stake/district this visit is for).
+    // This correctly routes to the right regional calendar even when one seventy
+    // serves multiple regions. Fall back to seventy's own regionId, then empty.
+    const scheduleUnitId = (_c = (_b = after === null || after === void 0 ? void 0 : after.unitId) !== null && _b !== void 0 ? _b : before === null || before === void 0 ? void 0 : before.unitId) !== null && _c !== void 0 ? _c : '';
+    const regionId = (_f = (_d = UNIT_REGION_MAP[scheduleUnitId]) !== null && _d !== void 0 ? _d : (_e = seventySnap === null || seventySnap === void 0 ? void 0 : seventySnap.data()) === null || _e === void 0 ? void 0 : _e.regionId) !== null && _f !== void 0 ? _f : '';
     const settingsSnap = await db.collection('settings').doc('calendar').get();
-    const calendars = (_e = (_d = settingsSnap.data()) === null || _d === void 0 ? void 0 : _d.calendars) !== null && _e !== void 0 ? _e : {};
+    const calendars = (_h = (_g = settingsSnap.data()) === null || _g === void 0 ? void 0 : _g.calendars) !== null && _h !== void 0 ? _h : {};
     // Fall back to legacy single-calendar field if present
-    const sharedCalendarId = (_f = calendars[regionId]) !== null && _f !== void 0 ? _f : (_g = settingsSnap.data()) === null || _g === void 0 ? void 0 : _g.sharedCalendarId;
+    const sharedCalendarId = (_j = calendars[regionId]) !== null && _j !== void 0 ? _j : (_k = settingsSnap.data()) === null || _k === void 0 ? void 0 : _k.sharedCalendarId;
     if (!sharedCalendarId)
         return;
     // Document deleted or schedule cancelled — remove Google Calendar event
@@ -90,7 +104,7 @@ exports.calendarSync = functions
     const unitSnap = after.unitId
         ? await db.collection('units').doc(after.unitId).get()
         : null;
-    const unitName = (_k = (_j = (_h = unitSnap === null || unitSnap === void 0 ? void 0 : unitSnap.data()) === null || _h === void 0 ? void 0 : _h.name) !== null && _j !== void 0 ? _j : after.unitId) !== null && _k !== void 0 ? _k : '';
+    const unitName = (_o = (_m = (_l = unitSnap === null || unitSnap === void 0 ? void 0 : unitSnap.data()) === null || _l === void 0 ? void 0 : _l.name) !== null && _m !== void 0 ? _m : after.unitId) !== null && _o !== void 0 ? _o : '';
     const startDateTime = `${after.date}T${after.startTime}:00+09:00`;
     const endDateTime = `${after.date}T${after.endTime}:00+09:00`;
     // Ward visits include the ward/branch name in the title
