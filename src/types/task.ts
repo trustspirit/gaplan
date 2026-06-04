@@ -1,7 +1,6 @@
-// select_visit    = day-level ward visit (Sundays)
-// select_interview = time-level interview/one-on-one
-// select_sacrament = Sacrament Meeting / Sunday gathering
-export type TaskType = 'select_visit' | 'select_interview' | 'select_sacrament'
+// select_visit    = day-level ward visit (Sundays only)
+// select_interview = date + time-range based (interviews, meetings, sacrament, etc.)
+export type TaskType = 'select_visit' | 'select_interview'
 export type TaskStatus = 'pending' | 'responded' | 'completed' | 'expired'
 
 export interface RespondedSlot {

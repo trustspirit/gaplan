@@ -5,9 +5,8 @@ import clsx from 'clsx';
 import { Badge, Button } from '@/components/ui';
 import styles from './TaskCard.module.scss';
 const TASK_LABELS = {
-    select_visit: '와드 방문 일정 선택',
-    select_interview: '접견 일정 선택',
-    select_meeting: '모임 일정 선택',
+    select_visit: '와드 방문',
+    select_interview: '접견/모임 일정',
 };
 export function TaskCard({ task, onAction }) {
     const daysLeft = dayjs(task.dueDate).diff(dayjs(), 'day');

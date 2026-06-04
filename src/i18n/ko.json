@@ -47,8 +47,7 @@
   "task": {
     "type": {
       "select_visit": "와드 방문",
-      "select_interview": "접견",
-      "select_meeting": "모임"
+      "select_interview": "접견/모임"
     },
     "status": {
       "pending": "미응답",

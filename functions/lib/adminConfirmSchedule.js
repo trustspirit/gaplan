@@ -68,8 +68,8 @@ exports.adminConfirmSchedule = functions
     if (taskData.status !== 'responded') {
         return { success: false, error: '아직 회장이 가능 시간을 제출하지 않았습니다.' };
     }
-    if (!['select_interview', 'select_meeting'].includes(taskData.type)) {
-        throw new functions.https.HttpsError('invalid-argument', 'Only interview/meeting tasks can be confirmed this way');
+    if (taskData.type !== 'select_interview') {
+        throw new functions.https.HttpsError('invalid-argument', 'Only interview tasks can be confirmed this way');
     }
     // Verify the selected slot is one the president submitted
     const respondedSlots = (_h = taskData.respondedSlots) !== null && _h !== void 0 ? _h : [];
@@ -77,7 +77,7 @@ exports.adminConfirmSchedule = functions
     if (!slotValid) {
         throw new functions.https.HttpsError('invalid-argument', '제출된 가능 시간 중에 없는 슬롯입니다.');
     }
-    const scheduleType = taskData.type === 'select_meeting' ? 'meeting' : 'interview';
+    const scheduleType = 'interview';
     const scheduleId = `${taskData.seventyUid}_${data.slot.date}_${data.slot.startTime.replace(':', '')}`;
     const scheduleRef = db.collection('schedules').doc(scheduleId);
     return db.runTransaction(async (tx) => {

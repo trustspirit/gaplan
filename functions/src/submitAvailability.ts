@@ -40,8 +40,8 @@ export const submitAvailability = functions
       if (taskData.assignedTo !== context.auth!.uid) {
         throw new functions.https.HttpsError('permission-denied', 'Not your task')
       }
-      if (!['select_interview', 'select_meeting'].includes(taskData.type)) {
-        throw new functions.https.HttpsError('invalid-argument', 'Only interview/meeting tasks support availability submission')
+      if (taskData.type !== 'select_interview') {
+        throw new functions.https.HttpsError('invalid-argument', 'Only interview tasks support availability submission')
       }
       if (taskData.status === 'completed') {
         return { success: false, error: '이미 완료된 Task입니다.' }

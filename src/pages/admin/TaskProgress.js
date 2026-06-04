@@ -17,8 +17,7 @@ import { MultiDatePicker, ResponseMatrix } from '@/components/domain';
 import styles from './TaskProgress.module.scss';
 const TASK_LABELS = {
     select_visit: '와드 방문',
-    select_interview: '접견',
-    select_sacrament: '안식일 모임',
+    select_interview: '접견/모임',
 };
 const SLOT_DURATION_OPTIONS = [
     { value: '30', label: '30분' },
@@ -157,7 +156,7 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName }) {
     const renderRows = (list) => list.map(t => (_jsx(TaskRow, { task: t, presidentName: getUserName(t.assignedTo), unitName: getUnitName(t.assignedTo) }, t.id)));
     // Group interview/sacrament tasks by batchId for the ResponseMatrix
     const batchGroups = {};
-    const timeTasks = tasks.filter(t => t.type === 'select_interview' || t.type === 'select_sacrament');
+    const timeTasks = tasks.filter(t => t.type === 'select_interview');
     for (const t of timeTasks) {
         const key = t.batchId ?? t.id;
         if (!batchGroups[key])

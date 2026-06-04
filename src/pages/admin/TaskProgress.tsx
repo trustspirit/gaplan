@@ -17,9 +17,8 @@ import type { Task, RespondedSlot } from '@/types'
 import styles from './TaskProgress.module.scss'
 
 const TASK_LABELS: Record<string, string> = {
-  select_visit:       '와드 방문',
-  select_interview:   '접견',
-  select_sacrament:   '안식일 모임',
+  select_visit:     '와드 방문',
+  select_interview: '접견/모임',
 }
 
 const SLOT_DURATION_OPTIONS = [
@@ -331,7 +330,7 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName }: RegionGroupP
 
   // Group interview/sacrament tasks by batchId for the ResponseMatrix
   const batchGroups: Record<string, Task[]> = {}
-  const timeTasks = tasks.filter(t => t.type === 'select_interview' || t.type === 'select_sacrament')
+  const timeTasks = tasks.filter(t => t.type === 'select_interview')
   for (const t of timeTasks) {
     const key = t.batchId ?? t.id
     if (!batchGroups[key]) batchGroups[key] = []

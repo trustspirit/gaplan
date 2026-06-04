@@ -6,9 +6,8 @@ import { Badge, Button } from '@/components/ui'
 import styles from './TaskCard.module.scss'
 
 const TASK_LABELS: Record<string, string> = {
-  select_visit: '와드 방문 일정 선택',
-  select_interview: '접견 일정 선택',
-  select_meeting: '모임 일정 선택',
+  select_visit:     '와드 방문',
+  select_interview: '접견/모임 일정',
 }
 
 interface TaskCardProps { task: Task; onAction?: (task: Task) => void }

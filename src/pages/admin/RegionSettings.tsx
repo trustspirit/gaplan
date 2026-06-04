@@ -15,11 +15,6 @@ import { MultiDatePicker } from '@/components/domain'
 import type { AvailableDateSlot, TimeRange } from '@/types'
 import styles from './RegionSettings.module.scss'
 
-const TASK_TYPE_OPTIONS = [
-  { value: 'select_interview',  label: '접견 일정 선택 (시간 단위)' },
-  { value: 'select_sacrament',  label: '안식일 모임 (시간 단위)' },
-]
-
 const SLOT_DURATION_OPTIONS = [
   { value: '30',  label: '30분 단위' },
   { value: '60',  label: '1시간 단위' },
@@ -39,7 +34,7 @@ export function TaskCreation() {
   const [selectedPresidents, setSelectedPresidents] = useState<Set<string>>(new Set())
   const [seventyUid,    setSeventyUid]    = useState('')
   const [filterRegion,  setFilterRegion]  = useState('')
-  const [taskType,      setTaskType]      = useState<'select_interview' | 'select_sacrament'>('select_interview')
+  const taskType = 'select_interview' as const
   const [taskTitle,     setTaskTitle]     = useState('')
   const [dueDate,       setDueDate]       = useState(dayjs().add(7, 'day').format('YYYY-MM-DD'))
   const [selectedDates, setSelectedDates] = useState<string[]>([])
@@ -221,13 +216,6 @@ export function TaskCreation() {
                   )}
                 </div>
               </div>
-
-              <Select
-                label="Task 유형"
-                value={taskType}
-                onChange={e => setTaskType(e.target.value as typeof taskType)}
-                options={TASK_TYPE_OPTIONS}
-              />
 
               <div className={styles.availSection}>
                 <p className={styles.availLabel}>가능 날짜 및 시간대 설정</p>

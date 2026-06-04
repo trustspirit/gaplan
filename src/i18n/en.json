@@ -48,8 +48,7 @@
     "type": {
       "select_visit": "Ward Visit",
       "select_interview": "Interview",
-      "select_meeting": "Sacrament Meeting",
-      "select_sacrament": "Sacrament Meeting"
+      "select_interview": "Interview / Meeting"
     },
     "status": {
       "pending": "Pending",
