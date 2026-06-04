@@ -53,4 +53,4 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
 
       - name: Deploy to Firebase
-        run: npx firebase-tools deploy --only hosting,firestore,functions --project gaplan-fccfe
+        run: npx firebase-tools deploy --only hosting,firestore,functions --project gaplan-fccfe --force
