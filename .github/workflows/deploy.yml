@@ -16,10 +16,10 @@ jobs:
           cache: 'npm'
 
       - name: Install frontend dependencies
-        run: npm install
+        run: npm ci
 
       - name: Install functions dependencies
-        run: npm install
+        run: npm ci
         working-directory: functions
 
       - name: Create .env
@@ -45,7 +45,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Setup Google credentials
+        run: |
+          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/gcp-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json" >> $GITHUB_ENV
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+
       - name: Deploy to Firebase
         run: npx firebase-tools deploy --only hosting,firestore,functions --project gaplan-fccfe
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

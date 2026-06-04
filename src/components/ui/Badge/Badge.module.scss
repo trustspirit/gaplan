@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '@/styles/variables' as *;
 .badge {
   display: inline-flex; align-items: center; gap: $space-1;
@@ -6,5 +7,5 @@
 }
 .default  { background: $color-border; color: $color-text-muted; }
 .warning  { background: $color-highlight-warning; color: #8f4200; border-color: rgba($color-warning, 0.4); }
-.success  { background: $color-highlight-success; color: darken($color-success, 20%); }
+.success  { background: $color-highlight-success; color: color.adjust($color-success, $lightness: -20%); }
 .danger   { background: $color-highlight-danger; color: $color-danger; }

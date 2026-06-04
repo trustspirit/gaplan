@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
@@ -16,7 +17,7 @@
 .primary { background: $color-primary; color: #fff; &:hover:not(:disabled) { background: $color-primary-hover; } }
 .secondary { background: transparent; color: $color-primary; border: 1px solid $color-primary; &:hover:not(:disabled) { background: rgba($color-primary, 0.06); } }
 .ghost { background: transparent; color: $color-text; &:hover:not(:disabled) { background: $color-border; } }
-.danger { background: $color-danger; color: #fff; &:hover:not(:disabled) { background: darken($color-danger, 8%); } }
+.danger { background: $color-danger; color: #fff; &:hover:not(:disabled) { background: color.adjust($color-danger, $lightness: -8%); } }
 .sm { padding: $space-1 $space-3; font-size: $font-size-sm; }
 .md { padding: $space-2 $space-4; font-size: $font-size-base; }
 .lg { padding: $space-3 $space-6; font-size: $font-size-md; }
