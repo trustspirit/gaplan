@@ -4,6 +4,7 @@ import { useAtomValue } from 'jotai';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Pencil, XCircle } from 'lucide-react';
 import { authUserAtom } from '@/store/authAtom';
 import { useAllTasks } from '@/hooks/useTasks';
@@ -12,29 +13,23 @@ import { adminConfirmSchedule, adminConfirmWardVisit } from '@/services/schedule
 import { expireTask, updateTaskDetails } from '@/services/taskService';
 import { ALL_UNITS, REGIONS } from '@/constants/regions';
 import { AppShell, TopBar } from '@/components/layout';
-import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Select, Modal } from '@/components/ui';
+import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Modal } from '@/components/ui';
 import { MultiDatePicker, ResponseMatrix, ScheduleSuggestions } from '@/components/domain';
 import styles from './TaskProgress.module.scss';
-const TASK_LABELS = {
-    select_visit: '와드 방문',
-    select_interview: '접견/모임',
-};
-const SLOT_DURATION_OPTIONS = [
-    { value: '30', label: '30분' },
-    { value: '60', label: '1시간' },
-    { value: '90', label: '1.5시간' },
-    { value: '120', label: '2시간' },
-];
+// Labels resolved via t() inside components where useTranslation is available
+const SLOT_DURATION_VALUES = ['30', '60', '90', '120'];
 function StatusBadge({ status }) {
+    const { t } = useTranslation();
     if (status === 'completed')
-        return _jsx(Badge, { variant: "success", children: "\uC644\uB8CC" });
+        return _jsx(Badge, { variant: "success", children: t('task.status.completed') });
     if (status === 'responded')
-        return _jsx(Badge, { variant: "default", children: "\uC751\uB2F5 \uC644\uB8CC" });
+        return _jsx(Badge, { variant: "default", children: t('task.statusBadge.responded') });
     if (status === 'expired')
-        return _jsx(Badge, { variant: "danger", children: "\uB9CC\uB8CC" });
-    return _jsx(Badge, { variant: "warning", children: "\uBBF8\uC751\uB2F5" });
+        return _jsx(Badge, { variant: "danger", children: t('task.status.expired') });
+    return _jsx(Badge, { variant: "warning", children: t('task.status.pending') });
 }
 function EditTaskModal({ task, onClose }) {
+    const { t } = useTranslation();
     const isVisit = task.type === 'select_visit';
     const [dueDate, setDueDate] = useState(task.dueDate);
     // For ward visits: just select available Sundays
@@ -74,11 +69,11 @@ function EditTaskModal({ task, onClose }) {
                 dueDate,
                 ...(isVisit ? { availableDates } : { availableDateSlots, slotDurationMinutes: parseInt(slotDuration) }),
             }, task.status === 'responded');
-            toast.success('Task가 수정되었습니다.');
+            toast.success(t('task.editSuccess'));
             onClose();
         }
         catch {
-            toast.error('수정에 실패했습니다.');
+            toast.error(t('task.editFailed'));
         }
         finally {
             setSaving(false);
@@ -90,7 +85,7 @@ function EditTaskModal({ task, onClose }) {
                                                         })) }), _jsx("span", { children: "~" }), _jsx("input", { type: "time", value: r.endTime, style: { border: '1px solid #e4e4e6', borderRadius: 6, padding: '2px 6px' }, onChange: e => setDateRanges(prev => ({
                                                             ...prev,
                                                             [s.date]: prev[s.date].map((x, i) => i === idx ? { ...x, endTime: e.target.value } : x)
-                                                        })) })] }, idx)))] }, s.date))) }))] }), _jsx(Select, { label: "\uC2DC\uAC04 \uB2E8\uC704", value: slotDuration, onChange: e => setSlotDuration(e.target.value), options: SLOT_DURATION_OPTIONS })] })), _jsx(Input, { label: "\uB9C8\uAC10\uC77C", type: "date", value: dueDate, onChange: e => setDueDate(e.target.value) }), task.status === 'responded' && (_jsx("p", { className: styles.resetNote, children: "\u26A0 \uC774\uBBF8 \uC751\uB2F5\uD55C \uB0B4\uC6A9\uC774 \uCD08\uAE30\uD654\uB418\uACE0 \uD68C\uC7A5\uC774 \uB2E4\uC2DC \uC751\uB2F5\uD574\uC57C \uD569\uB2C8\uB2E4." })), _jsxs("div", { className: styles.modalActions, children: [_jsx(Button, { variant: "ghost", type: "button", onClick: onClose, children: "\uCDE8\uC18C" }), _jsx(Button, { type: "submit", loading: saving, children: "\uC800\uC7A5 \uBC0F \uC7AC\uC804\uB2EC" })] })] }) }));
+                                                        })) })] }, idx)))] }, s.date))) }))] }), _jsx(Input, { label: t('slotDuration.label', { defaultValue: '슬롯 길이 (분)' }), type: "number", min: "5", max: "480", step: "5", value: slotDuration, onChange: e => setSlotDuration(e.target.value) })] })), _jsx(Input, { label: "\uB9C8\uAC10\uC77C", type: "date", value: dueDate, onChange: e => setDueDate(e.target.value) }), task.status === 'responded' && (_jsx("p", { className: styles.resetNote, children: "\u26A0 \uC774\uBBF8 \uC751\uB2F5\uD55C \uB0B4\uC6A9\uC774 \uCD08\uAE30\uD654\uB418\uACE0 \uD68C\uC7A5\uC774 \uB2E4\uC2DC \uC751\uB2F5\uD574\uC57C \uD569\uB2C8\uB2E4." })), _jsxs("div", { className: styles.modalActions, children: [_jsx(Button, { variant: "ghost", type: "button", onClick: onClose, children: "\uCDE8\uC18C" }), _jsx(Button, { type: "submit", loading: saving, children: "\uC800\uC7A5 \uBC0F \uC7AC\uC804\uB2EC" })] })] }) }));
 }
 // ── Responded slot row ───────────────────────────────────────────────────────
 function RespondedSlotRow({ slot, taskId, onConfirmed }) {
@@ -116,13 +111,14 @@ function RespondedSlotRow({ slot, taskId, onConfirmed }) {
     return (_jsxs("div", { className: styles.slotRow, children: [_jsx("span", { className: styles.slotDate, children: dayjs(slot.date).format('M/D (ddd)') }), _jsxs("span", { className: styles.slotTime, children: [slot.startTime, " ~ ", slot.endTime] }), _jsx(Button, { size: "sm", onClick: handleConfirm, loading: loading, children: "\uC774 \uC2DC\uAC04\uC73C\uB85C \uD655\uC815" })] }));
 }
 function TaskRow({ task, presidentName, unitName }) {
+    const { t } = useTranslation();
     const [expanded, setExpanded] = useState(false);
     const [editing, setEditing] = useState(false);
     const [expiring, setExpiring] = useState(false);
     const [confirming, setConfirming] = useState(false);
     const daysLeft = dayjs(task.dueDate).diff(dayjs(), 'day');
     const isOverdue = daysLeft < 0;
-    const typeLabel = task.title ?? (TASK_LABELS[task.type] ?? task.type);
+    const typeLabel = task.title ?? t(`task.type.${task.type}`, { defaultValue: task.type });
     const hasSlots = (task.respondedSlots?.length ?? 0) > 0;
     const hasWardAssignments = (task.wardAssignments?.length ?? 0) > 0;
     const isVisitTask = task.type === 'select_visit';
@@ -133,10 +129,10 @@ function TaskRow({ task, presidentName, unitName }) {
         setExpiring(true);
         try {
             await expireTask(task.id);
-            toast.success('Task가 만료되었습니다.');
+            toast.success(t('task.expireSuccess'));
         }
         catch {
-            toast.error('만료 처리에 실패했습니다.');
+            toast.error(t('task.expireFailed'));
         }
         finally {
             setExpiring(false);
@@ -147,14 +143,14 @@ function TaskRow({ task, presidentName, unitName }) {
         try {
             const result = await adminConfirmWardVisit(task.id);
             if (result.success) {
-                toast.success(`${result.scheduleCount}개 와드 방문 일정이 확정되었습니다!`);
+                toast.success(t('admin.wardConfirmSuccess', { count: result.scheduleCount }));
             }
             else {
-                toast.error(result.error ?? '확정에 실패했습니다.');
+                toast.error(result.error ?? t('common.confirmFailed'));
             }
         }
         catch (e) {
-            toast.error(e?.message ?? '오류가 발생했습니다.');
+            toast.error(e?.message ?? t('common.unknownError'));
         }
         finally {
             setConfirming(false);
@@ -169,6 +165,7 @@ function TaskRow({ task, presidentName, unitName }) {
                                                     : _jsx(AlertCircle, { size: 16, className: styles.iconPending }) }), _jsxs("div", { className: styles.taskInfo, children: [_jsx("span", { className: styles.taskPresident, children: presidentName }), _jsxs("span", { className: styles.taskMeta, children: [unitName, " \u00B7 ", typeLabel, " \u00B7 \uB9C8\uAC10 ", dayjs(task.dueDate).format('M/D'), task.status === 'pending' && (_jsx("span", { className: clsx(styles.dDay, isOverdue && styles.dDayOverdue), children: isOverdue ? ` (D+${Math.abs(daysLeft)})` : ` (D-${daysLeft})` })), task.status === 'responded' && task.respondedAt && (_jsxs("span", { className: styles.respondedAt, children: [' ', "\u00B7 ", dayjs(task.respondedAt.seconds * 1000).format('M/D HH:mm'), " \uC81C\uCD9C"] }))] })] })] }), _jsxs("div", { className: styles.taskRowRight, children: [_jsx(StatusBadge, { status: task.status }), task.status === 'responded' && hasSlots && !isVisitTask && (_jsxs("button", { type: "button", className: styles.expandBtn, onClick: () => setExpanded(v => !v), children: [expanded ? _jsx(ChevronUp, { size: 14 }) : _jsx(ChevronDown, { size: 14 }), expanded ? '닫기' : `${task.respondedSlots.length}개 확인`] })), task.status === 'responded' && isVisitTask && hasWardAssignments && (_jsxs("button", { type: "button", className: styles.expandBtn, onClick: () => setExpanded(v => !v), children: [expanded ? _jsx(ChevronUp, { size: 14 }) : _jsx(ChevronDown, { size: 14 }), expanded ? '닫기' : `${task.wardAssignments.length}개 배정 확인`] })), canEdit && (_jsx("button", { type: "button", className: styles.actionBtn, onClick: () => setEditing(true), title: "\uC218\uC815", children: _jsx(Pencil, { size: 14 }) })), canExpire && (_jsx("button", { type: "button", className: clsx(styles.actionBtn, styles.actionBtnDanger), onClick: handleExpire, disabled: expiring, title: "\uB9CC\uB8CC", children: _jsx(XCircle, { size: 14 }) }))] })] }), expanded && task.respondedSlots && !isVisitTask && (_jsxs("div", { className: styles.slotsPanel, children: [_jsx("p", { className: styles.slotsPanelTitle, children: "\uD68C\uC7A5\uC774 \uC81C\uCD9C\uD55C \uAC00\uB2A5 \uC2DC\uAC04" }), task.respondedSlots.map(slot => (_jsx(RespondedSlotRow, { slot: slot, taskId: task.id, onConfirmed: () => setExpanded(false) }, `${slot.date}-${slot.startTime}`)))] })), expanded && isVisitTask && task.wardAssignments && (_jsxs("div", { className: styles.slotsPanel, children: [_jsx("p", { className: styles.slotsPanelTitle, children: "\uD68C\uC7A5\uC774 \uC81C\uCD9C\uD55C \uC640\uB4DC \uBC30\uC815" }), task.wardAssignments.map((a, i) => (_jsxs("div", { className: styles.slotRow, children: [_jsx("span", { className: styles.slotDate, children: dayjs(a.date).format('M/D (ddd)') }), _jsx("span", { className: styles.slotTime, children: a.wardName })] }, i))), task.status === 'responded' && (_jsx("div", { className: styles.wardConfirmRow, children: _jsxs(Button, { onClick: handleConfirmWardVisit, loading: confirming, size: "sm", children: ["\uC804\uCCB4 \uBC30\uC815 \uD655\uC815 (", task.wardAssignments.length, "\uAC1C \uC77C\uC815 \uC0DD\uC131)"] }) }))] }))] }), editing && _jsx(EditTaskModal, { task: task, onClose: () => setEditing(false) })] }));
 }
 function RegionGroup({ regionId, tasks, getUserName, getUnitName }) {
+    const { t } = useTranslation();
     const regionName = REGIONS.find(r => r.id === regionId)?.name ?? regionId;
     const responded = tasks.filter(t => t.status === 'responded');
     const pending = tasks.filter(t => t.status === 'pending');
@@ -189,7 +186,7 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName }) {
                     ? _jsx("p", { className: styles.empty, children: "\uD574\uB2F9 \uC9C0\uC5ED Task \uC5C6\uC74C" })
                     : (_jsxs(_Fragment, { children: [matrixBatches.map(batch => {
                                 const ref = batch[0];
-                                const title = ref.title ?? TASK_LABELS[ref.type] ?? ref.type;
+                                const title = ref.title ?? t(`task.type.${ref.type}`, { defaultValue: ref.type });
                                 const hasResponded = batch.some(t => t.status === 'responded' || t.status === 'completed');
                                 return (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: [title, " \uC751\uB2F5 \uD604\uD669 (", batch.filter(t => t.status === 'responded' || t.status === 'completed').length, "/", batch.length, ")"] }), _jsx(ResponseMatrix, { tasks: batch, getPresidentName: getUserName }), hasResponded && (_jsx("div", { className: styles.suggestionsWrap, children: _jsx(ScheduleSuggestions, { tasks: batch, getPresidentName: getUserName }) }))] }, ref.batchId ?? ref.id));
                             }), responded.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: ["\uD655\uC815 \uB300\uAE30 (", responded.length, ")"] }), renderRows(responded.filter(t => t.type === 'select_visit'))] })), pending.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: ["\uBBF8\uC751\uB2F5 (", pending.length, ")"] }), renderRows(pending)] })), completed.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: styles.statusLabel, children: ["\uC644\uB8CC (", completed.length, ")"] }), renderRows(completed.filter(t => t.type === 'select_visit'))] })), expired.length > 0 && (_jsxs("div", { className: styles.statusSection, children: [_jsxs("p", { className: clsx(styles.statusLabel, styles.statusLabelExpired), children: ["\uB9CC\uB8CC (", expired.length, ")"] }), renderRows(expired)] }))] })) })] }));

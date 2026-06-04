@@ -3,6 +3,7 @@ import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
 import { X, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
@@ -13,6 +14,7 @@ import { CalendarView, ScheduleItem } from '@/components/domain'
 import styles from './CalendarPage.module.scss'
 
 export function CalendarPage() {
+  const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
@@ -23,7 +25,7 @@ export function CalendarPage() {
       const result = await manualCalendarSync()
       toast.success(result.message)
     } catch (e: unknown) {
-      toast.error((e as { message?: string })?.message ?? '동기화 오류가 발생했습니다.')
+      toast.error((e as { message?: string })?.message ?? t('common.syncError'))
     } finally {
       setSyncing(false)
     }
@@ -49,20 +51,20 @@ export function CalendarPage() {
         .slice(0, 10)
 
   const listTitle = selectedDate
-    ? dayjs(selectedDate).format('M월 D일 (ddd) 일정')
-    : '예정 일정 (상위 10건)'
+    ? t('calendar.selectedDateTitle', { date: dayjs(selectedDate).format('M/D (ddd)') })
+    : t('calendar.upcomingTitle')
 
   return (
     <AppShell
       role={user.role} name={user.name}
-      topBar={<TopBar name={user.name} subtext="캘린더" />}
+      topBar={<TopBar name={user.name} subtext={t('calendar.subtext')} />}
     >
       <div className={styles.page}>
         <div className={styles.layout}>
           <div className={styles.calendarCol}>
             <Card>
               <CardHeader
-                title="일정 캘린더"
+                title={t('calendar.title')}
                 action={
                   // Admin/Seventy can manually re-sync schedules to Google Calendar
                   (user.role === 'admin' || user.role === 'seventy') ? (
@@ -71,7 +73,7 @@ export function CalendarPage() {
                       size="sm"
                       onClick={handleManualSync}
                       loading={syncing}
-                      title="Google Calendar 수동 동기화"
+                      title={t('calendar.syncTitle')}
                     >
                       <RefreshCw size={14} />
                     </Button>
@@ -97,7 +99,7 @@ export function CalendarPage() {
                     type="button"
                     className={styles.clearBtn}
                     onClick={() => setSelectedDate(null)}
-                    title="선택 해제"
+                    title={t('calendar.clearSelection')}
                   >
                     <X size={14} />
                   </button>
@@ -105,7 +107,7 @@ export function CalendarPage() {
               />
               <CardBody>
                 {daySchedules.length === 0
-                  ? <p className={styles.empty}>일정이 없습니다.</p>
+                  ? <p className={styles.empty}>{t('calendar.noSchedule')}</p>
                   : daySchedules.map(s => (
                       <ScheduleItem
                         key={s.id}

@@ -2,13 +2,13 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
-import 'dayjs/locale/ko';
-dayjs.locale('ko');
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { isFastSunday } from '@/utils/fastSunday';
 import styles from './MultiDatePicker.module.scss';
-const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 export function MultiDatePicker({ selected, onChange, minDate, maxDate, sundayOnly }) {
+    const { t } = useTranslation();
+    const DOW = Array.from({ length: 7 }, (_, i) => dayjs().day(i).format('ddd'));
     const [current, setCurrent] = useState(dayjs());
     const min = dayjs(minDate ?? dayjs().format('YYYY-MM-DD'));
     const max = dayjs(maxDate ?? dayjs().add(90, 'day').format('YYYY-MM-DD'));
@@ -36,5 +36,5 @@ export function MultiDatePicker({ selected, onChange, minDate, maxDate, sundayOn
                         const isSelected = selected.includes(dateStr);
                         const isToday = day.isSame(dayjs(), 'day');
                         return (_jsx("button", { type: "button", disabled: isDisabled, onClick: () => !isDisabled && toggle(dateStr), className: clsx(styles.cell, !isCurrentMonth && styles.otherMonth, isToday && styles.today, isSelected && styles.selected, !isDisabled && !isSelected && styles.available, sundayOnly && (isNotSunday || isFast) && isCurrentMonth && !isPast && !isTooFar && styles.sundayDisabled), children: day.date() }, dateStr));
-                    })] }), sundayOnly && (_jsx("p", { className: styles.sundayLegend, children: "\u25CF \uBC29\uBB38 \uAC00\uB2A5 \uC77C\uC694\uC77C (\uAE08\uC2DD\uC77C \uC81C\uC678)" })), selected.length > 0 && (_jsxs("div", { className: styles.selectedList, children: [_jsxs("p", { className: styles.selectedTitle, children: ["\uC120\uD0DD\uB41C \uB0A0\uC9DC (", selected.length, "\uC77C)"] }), _jsx("div", { className: styles.chips, children: selected.map(date => (_jsxs("button", { type: "button", className: styles.chip, onClick: () => toggle(date), children: [dayjs(date).format('M/D (ddd)'), " \u2715"] }, date))) })] }))] }));
+                    })] }), sundayOnly && (_jsxs("p", { className: styles.sundayLegend, children: ["\u25CF ", t('calendar.legendAvailable'), " (", t('common.fastSundayLegend'), " \uC81C\uC678)"] })), selected.length > 0 && (_jsxs("div", { className: styles.selectedList, children: [_jsx("p", { className: styles.selectedTitle, children: t('ward.selectedDates', { count: selected.length, defaultValue: `선택된 날짜 (${selected.length}일)` }) }), _jsx("div", { className: styles.chips, children: selected.map(date => (_jsxs("button", { type: "button", className: styles.chip, onClick: () => toggle(date), children: [dayjs(date).format('M/D (ddd)'), " \u2715"] }, date))) })] }))] }));
 }

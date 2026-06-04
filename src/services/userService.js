@@ -12,8 +12,14 @@ export async function inviteUser(email, role, assignedRegionId, invitedBy) {
 export function subscribeToUsers(callback) {
     return onSnapshot(collection(db, 'users'), snap => callback(snap.docs.map(d => ({ uid: d.id, ...d.data() }))), err => console.error('[users] onSnapshot error:', err.code, err.message));
 }
-export async function updateUserRole(uid, role, regionId) {
-    await updateDoc(doc(db, 'users', uid), { role, ...(regionId ? { regionId } : {}) });
+export async function updateUserRole(uid, role, regionIds) {
+    const regionFields = role === 'seventy' && regionIds && regionIds.length > 0
+        ? {
+            regionIds,
+            regionId: regionIds[0], // keep primary for backward compat
+        }
+        : {};
+    await updateDoc(doc(db, 'users', uid), { role, ...regionFields });
 }
 export async function updateUserName(uid, name) {
     await updateDoc(doc(db, 'users', uid), { name: name.trim() });

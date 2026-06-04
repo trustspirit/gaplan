@@ -1,14 +1,11 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import dayjs from 'dayjs'
-import 'dayjs/locale/ko'
-dayjs.locale('ko')
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 import { isFastSunday } from '@/utils/fastSunday'
 import type { TimeSlot } from '@/types'
 import styles from './VisitDatePicker.module.scss'
-
-const DOW = ['일', '월', '화', '수', '목', '금', '토'] as const
 
 interface VisitDatePickerProps {
   slots: TimeSlot[]           // from computeAvailableSlots (Sundays only expected)
@@ -17,6 +14,8 @@ interface VisitDatePickerProps {
 }
 
 export function VisitDatePicker({ slots, selected, onSelect }: VisitDatePickerProps) {
+  const { t } = useTranslation()
+  const DOW = Array.from({ length: 7 }, (_, i) => dayjs().day(i).format('ddd'))
   const [current, setCurrent] = useState(dayjs())
 
   const slotByDate = new Map(slots.map(s => [s.date, s]))
@@ -86,7 +85,7 @@ export function VisitDatePicker({ slots, selected, onSelect }: VisitDatePickerPr
             >
               <span className={styles.day}>{d.date()}</span>
               {isFast && isCurrentMonth && (
-                <span className={styles.fastLabel}>금식</span>
+                <span className={styles.fastLabel}>{t('common.fastSunday')}</span>
               )}
             </button>
           )
@@ -94,14 +93,14 @@ export function VisitDatePicker({ slots, selected, onSelect }: VisitDatePickerPr
       </div>
 
       {availableCount === 0 && (
-        <p className={styles.empty}>이 달에 가능한 방문 날짜가 없습니다.</p>
+        <p className={styles.empty}>{t('schedule.noDates')}</p>
       )}
 
       <div className={styles.legend}>
         <span className={clsx(styles.legendDot, styles.legendAvailable)} />
-        <span className={styles.legendText}>방문 가능</span>
+        <span className={styles.legendText}>{t('calendar.legendAvailable')}</span>
         <span className={clsx(styles.legendDot, styles.legendFast)} />
-        <span className={styles.legendText}>금식일</span>
+        <span className={styles.legendText}>{t('common.fastSundayLegend')}</span>
       </div>
     </div>
   )

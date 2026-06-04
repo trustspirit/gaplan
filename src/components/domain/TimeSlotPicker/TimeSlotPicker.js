@@ -1,10 +1,10 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import clsx from 'clsx';
 import dayjs from 'dayjs';
-import 'dayjs/locale/ko';
-dayjs.locale('ko');
+import { useTranslation } from 'react-i18next';
 import styles from './TimeSlotPicker.module.scss';
 export function TimeSlotPicker({ slots, granularity = 'time', selected, onSelect, multiSelect = false, isSlotSelected, onToggle, }) {
+    const { t } = useTranslation();
     if (granularity === 'day') {
         const available = slots.filter(s => s.isAvailable);
         return (_jsxs("div", { className: styles.picker, children: [_jsx("div", { className: styles.dayCards, children: available.map(slot => {
@@ -13,7 +13,7 @@ export function TimeSlotPicker({ slots, granularity = 'time', selected, onSelect
                             ? (isSlotSelected?.(slot) ?? false)
                             : selected?.date === slot.date;
                         return (_jsxs("button", { type: "button", className: clsx(styles.dayCard, isSelected && styles.dayCardSelected), onClick: () => multiSelect ? onToggle?.(slot) : onSelect?.(slot), children: [_jsx("span", { className: styles.dayCardDow, children: d.format('ddd') }), _jsx("span", { className: styles.dayCardDate, children: d.format('M/D') })] }, slot.date));
-                    }) }), available.length === 0 && (_jsx("p", { className: styles.empty, children: "\uAC00\uB2A5\uD55C \uB0A0\uC9DC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4." }))] }));
+                    }) }), available.length === 0 && (_jsx("p", { className: styles.empty, children: t('schedule.noDates') }))] }));
     }
     // Time-level: grouped by date
     const grouped = slots.reduce((acc, slot) => {
@@ -25,5 +25,5 @@ export function TimeSlotPicker({ slots, granularity = 'time', selected, onSelect
                                 ? (isSlotSelected?.(slot) ?? false)
                                 : (selected?.date === slot.date && selected?.startTime === slot.startTime);
                             return (_jsx("button", { type: "button", className: clsx(styles.slot, !slot.isAvailable && styles.disabled, isSelected && styles.selected), disabled: !slot.isAvailable, onClick: () => multiSelect ? onToggle?.(slot) : onSelect?.(slot), children: slot.startTime }, `${slot.date}-${slot.startTime}`));
-                        }) })] }, date))), slots.length === 0 && _jsx("p", { className: styles.empty, children: "\uAC00\uB2A5\uD55C \uC2AC\uB86F\uC774 \uC5C6\uC2B5\uB2C8\uB2E4." })] }));
+                        }) })] }, date))), slots.length === 0 && _jsx("p", { className: styles.empty, children: t('schedule.noSlots') })] }));
 }

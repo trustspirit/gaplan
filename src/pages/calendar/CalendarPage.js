@@ -2,17 +2,35 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
 import { useAtomValue } from 'jotai';
 import dayjs from 'dayjs';
-import { X } from 'lucide-react';
+import { X, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { authUserAtom } from '@/store/authAtom';
 import { useSchedules } from '@/hooks/useSchedules';
 import { useUnits } from '@/hooks/useUnits';
+import { manualCalendarSync } from '@/services/scheduleService';
 import { AppShell, TopBar } from '@/components/layout';
-import { Card, CardHeader, CardBody } from '@/components/ui';
+import { Card, CardHeader, CardBody, Button } from '@/components/ui';
 import { CalendarView, ScheduleItem } from '@/components/domain';
 import styles from './CalendarPage.module.scss';
 export function CalendarPage() {
+    const { t } = useTranslation();
     const user = useAtomValue(authUserAtom);
     const [selectedDate, setSelectedDate] = useState(null);
+    const [syncing, setSyncing] = useState(false);
+    const handleManualSync = async () => {
+        setSyncing(true);
+        try {
+            const result = await manualCalendarSync();
+            toast.success(result.message);
+        }
+        catch (e) {
+            toast.error(e?.message ?? t('common.syncError'));
+        }
+        finally {
+            setSyncing(false);
+        }
+    };
     const { getUnitName } = useUnits();
     const filters = user.role === 'president'
         ? { presidentUid: user.uid }
@@ -31,9 +49,11 @@ export function CalendarPage() {
             .sort((a, b) => a.date.localeCompare(b.date))
             .slice(0, 10);
     const listTitle = selectedDate
-        ? dayjs(selectedDate).format('M월 D일 (ddd) 일정')
-        : '예정 일정 (상위 10건)';
-    return (_jsx(AppShell, { role: user.role, name: user.name, topBar: _jsx(TopBar, { name: user.name, subtext: "\uCE98\uB9B0\uB354" }), children: _jsx("div", { className: styles.page, children: _jsxs("div", { className: styles.layout, children: [_jsx("div", { className: styles.calendarCol, children: _jsxs(Card, { children: [_jsx(CardHeader, { title: "\uC77C\uC815 \uCE98\uB9B0\uB354" }), _jsx(CardBody, { children: _jsx(CalendarView, { schedules: schedules, onDateClick: handleDateClick, selectedDate: selectedDate, getUnitName: getUnitName }) })] }) }), _jsx("div", { className: styles.listCol, children: _jsxs(Card, { children: [_jsx(CardHeader, { title: listTitle, action: selectedDate ? (_jsx("button", { type: "button", className: styles.clearBtn, onClick: () => setSelectedDate(null), title: "\uC120\uD0DD \uD574\uC81C", children: _jsx(X, { size: 14 }) })) : undefined }), _jsx(CardBody, { children: daySchedules.length === 0
-                                        ? _jsx("p", { className: styles.empty, children: "\uC77C\uC815\uC774 \uC5C6\uC2B5\uB2C8\uB2E4." })
+        ? t('calendar.selectedDateTitle', { date: dayjs(selectedDate).format('M/D (ddd)') })
+        : t('calendar.upcomingTitle');
+    return (_jsx(AppShell, { role: user.role, name: user.name, topBar: _jsx(TopBar, { name: user.name, subtext: t('calendar.subtext') }), children: _jsx("div", { className: styles.page, children: _jsxs("div", { className: styles.layout, children: [_jsx("div", { className: styles.calendarCol, children: _jsxs(Card, { children: [_jsx(CardHeader, { title: t('calendar.title'), action: 
+                                    // Admin/Seventy can manually re-sync schedules to Google Calendar
+                                    (user.role === 'admin' || user.role === 'seventy') ? (_jsx(Button, { variant: "ghost", size: "sm", onClick: handleManualSync, loading: syncing, title: t('calendar.syncTitle'), children: _jsx(RefreshCw, { size: 14 }) })) : undefined }), _jsx(CardBody, { children: _jsx(CalendarView, { schedules: schedules, onDateClick: handleDateClick, selectedDate: selectedDate, getUnitName: getUnitName }) })] }) }), _jsx("div", { className: styles.listCol, children: _jsxs(Card, { children: [_jsx(CardHeader, { title: listTitle, action: selectedDate ? (_jsx("button", { type: "button", className: styles.clearBtn, onClick: () => setSelectedDate(null), title: t('calendar.clearSelection'), children: _jsx(X, { size: 14 }) })) : undefined }), _jsx(CardBody, { children: daySchedules.length === 0
+                                        ? _jsx("p", { className: styles.empty, children: t('calendar.noSchedule') })
                                         : daySchedules.map(s => (_jsx(ScheduleItem, { schedule: s, unitName: getUnitName(s.unitId), showCalendarAdd: user.role === 'president' }, s.id))) })] }) })] }) }) }));
 }

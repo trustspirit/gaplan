@@ -3,6 +3,7 @@ import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
 import { toast } from 'sonner'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 import { CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Pencil, XCircle } from 'lucide-react'
 import { authUserAtom } from '@/store/authAtom'
 import { useAllTasks } from '@/hooks/useTasks'
@@ -16,23 +17,15 @@ import { MultiDatePicker, ResponseMatrix, ScheduleSuggestions } from '@/componen
 import type { Task, RespondedSlot } from '@/types'
 import styles from './TaskProgress.module.scss'
 
-const TASK_LABELS: Record<string, string> = {
-  select_visit:     '와드 방문',
-  select_interview: '접견/모임',
-}
-
-const SLOT_DURATION_OPTIONS = [
-  { value: '30', label: '30분' },
-  { value: '60', label: '1시간' },
-  { value: '90', label: '1.5시간' },
-  { value: '120', label: '2시간' },
-]
+// Labels resolved via t() inside components where useTranslation is available
+const SLOT_DURATION_VALUES = ['30', '60', '90', '120'] as const
 
 function StatusBadge({ status }: { status: Task['status'] }) {
-  if (status === 'completed') return <Badge variant="success">완료</Badge>
-  if (status === 'responded') return <Badge variant="default">응답 완료</Badge>
-  if (status === 'expired') return <Badge variant="danger">만료</Badge>
-  return <Badge variant="warning">미응답</Badge>
+  const { t } = useTranslation()
+  if (status === 'completed') return <Badge variant="success">{t('task.status.completed')}</Badge>
+  if (status === 'responded') return <Badge variant="default">{t('task.statusBadge.responded')}</Badge>
+  if (status === 'expired') return <Badge variant="danger">{t('task.status.expired')}</Badge>
+  return <Badge variant="warning">{t('task.status.pending')}</Badge>
 }
 
 // ── Edit Task Modal (for pending tasks) ─────────────────────────────────────
@@ -43,6 +36,7 @@ interface EditTaskModalProps {
 }
 
 function EditTaskModal({ task, onClose }: EditTaskModalProps) {
+  const { t } = useTranslation()
   const isVisit = task.type === 'select_visit'
   const [dueDate, setDueDate] = useState(task.dueDate)
   // For ward visits: just select available Sundays
@@ -95,10 +89,10 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
         },
         task.status === 'responded',
       )
-      toast.success('Task가 수정되었습니다.')
+      toast.success(t('task.editSuccess'))
       onClose()
     } catch {
-      toast.error('수정에 실패했습니다.')
+      toast.error(t('task.editFailed'))
     } finally {
       setSaving(false)
     }
@@ -146,11 +140,14 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
                 </div>
               )}
             </div>
-            <Select
-              label="시간 단위"
+            <Input
+              label={t('slotDuration.label', { defaultValue: '슬롯 길이 (분)' })}
+              type="number"
+              min="5"
+              max="480"
+              step="5"
               value={slotDuration}
               onChange={e => setSlotDuration(e.target.value)}
-              options={SLOT_DURATION_OPTIONS}
             />
           </>
         )}
@@ -196,13 +193,14 @@ function RespondedSlotRow({ slot, taskId, onConfirmed }: { slot: RespondedSlot; 
 interface TaskRowProps { task: Task; presidentName: string; unitName: string }
 
 function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
   const [expiring, setExpiring] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const daysLeft = dayjs(task.dueDate).diff(dayjs(), 'day')
   const isOverdue = daysLeft < 0
-  const typeLabel = task.title ?? (TASK_LABELS[task.type] ?? task.type)
+  const typeLabel = task.title ?? t(`task.type.${task.type}`, { defaultValue: task.type })
   const hasSlots = (task.respondedSlots?.length ?? 0) > 0
   const hasWardAssignments = (task.wardAssignments?.length ?? 0) > 0
   const isVisitTask = task.type === 'select_visit'
@@ -214,8 +212,8 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
     setExpiring(true)
     try {
       await expireTask(task.id)
-      toast.success('Task가 만료되었습니다.')
-    } catch { toast.error('만료 처리에 실패했습니다.') }
+      toast.success(t('task.expireSuccess'))
+    } catch { toast.error(t('task.expireFailed')) }
     finally { setExpiring(false) }
   }
 
@@ -224,12 +222,12 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
     try {
       const result = await adminConfirmWardVisit(task.id)
       if (result.success) {
-        toast.success(`${result.scheduleCount}개 와드 방문 일정이 확정되었습니다!`)
+        toast.success(t('admin.wardConfirmSuccess', { count: result.scheduleCount }))
       } else {
-        toast.error(result.error ?? '확정에 실패했습니다.')
+        toast.error(result.error ?? t('common.confirmFailed'))
       }
     } catch (e: unknown) {
-      toast.error((e as { message?: string })?.message ?? '오류가 발생했습니다.')
+      toast.error((e as { message?: string })?.message ?? t('common.unknownError'))
     } finally {
       setConfirming(false)
     }
@@ -359,6 +357,7 @@ interface RegionGroupProps {
 }
 
 function RegionGroup({ regionId, tasks, getUserName, getUnitName }: RegionGroupProps) {
+  const { t } = useTranslation()
   const regionName = REGIONS.find(r => r.id === regionId)?.name ?? regionId
   const responded = tasks.filter(t => t.status === 'responded')
   const pending = tasks.filter(t => t.status === 'pending')
@@ -406,7 +405,7 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName }: RegionGroupP
               {/* Response Matrix + Schedule Suggestions for interview batches */}
               {matrixBatches.map(batch => {
                 const ref = batch[0]
-                const title = ref.title ?? TASK_LABELS[ref.type] ?? ref.type
+                const title = ref.title ?? t(`task.type.${ref.type}`, { defaultValue: ref.type })
                 const hasResponded = batch.some(t => t.status === 'responded' || t.status === 'completed')
                 return (
                   <div key={ref.batchId ?? ref.id} className={styles.statusSection}>

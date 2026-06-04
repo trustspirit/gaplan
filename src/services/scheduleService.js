@@ -25,6 +25,11 @@ export async function adminConfirmSchedule(params) {
     const result = await fn(params);
     return result.data;
 }
+export async function manualCalendarSync() {
+    const fn = httpsCallable(functions, 'manualCalendarSync');
+    const result = await fn();
+    return result.data;
+}
 export async function adminConfirmWardVisit(taskId) {
     const fn = httpsCallable(functions, 'adminConfirmWardVisit');
     const result = await fn({ taskId });

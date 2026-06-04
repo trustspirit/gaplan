@@ -1,7 +1,6 @@
 import clsx from 'clsx'
 import dayjs from 'dayjs'
-import 'dayjs/locale/ko'
-dayjs.locale('ko')
+import { useTranslation } from 'react-i18next'
 import type { TimeSlot } from '@/types'
 import styles from './TimeSlotPicker.module.scss'
 
@@ -26,6 +25,7 @@ export function TimeSlotPicker({
   isSlotSelected,
   onToggle,
 }: TimeSlotPickerProps) {
+  const { t } = useTranslation()
   if (granularity === 'day') {
     const available = slots.filter(s => s.isAvailable)
     return (
@@ -50,7 +50,7 @@ export function TimeSlotPicker({
           })}
         </div>
         {available.length === 0 && (
-          <p className={styles.empty}>가능한 날짜가 없습니다.</p>
+          <p className={styles.empty}>{t('schedule.noDates')}</p>
         )}
       </div>
     )
@@ -91,7 +91,7 @@ export function TimeSlotPicker({
           </div>
         </div>
       ))}
-      {slots.length === 0 && <p className={styles.empty}>가능한 슬롯이 없습니다.</p>}
+      {slots.length === 0 && <p className={styles.empty}>{t('schedule.noSlots')}</p>}
     </div>
   )
 }

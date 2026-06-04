@@ -3,6 +3,7 @@ import { useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { createTask } from '@/services/taskService'
 import { useUsers } from '@/hooks/useUsers'
@@ -13,6 +14,7 @@ import { MultiDatePicker } from '@/components/domain'
 import styles from './VisitPlanner.module.scss'
 
 export function VisitPlanner() {
+  const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { users } = useUsers()
   const presidents = users.filter(u => u.role === 'president')
@@ -64,9 +66,9 @@ export function VisitPlanner() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isValid) {
-      if (!seventyUid) toast.error('담당 지역 칠십인을 선택해주세요.')
-      else if (availableDates.length === 0) toast.error('가능 방문 일요일을 하나 이상 선택해주세요.')
-      else toast.error('대상 회장을 한 명 이상 선택해주세요.')
+      if (!seventyUid) toast.error(t('common.selectSeventy'))
+      else if (availableDates.length === 0) toast.error(t('common.selectSunday'))
+      else toast.error(t('common.selectPresident'))
       return
     }
 
@@ -89,39 +91,36 @@ export function VisitPlanner() {
           })
         })
       )
-      toast.success(`와드 방문 Task ${selectedPresidents.size}건이 생성되었습니다.`)
+      toast.success(t('task.createSuccess', { count: selectedPresidents.size }))
       setSelectedPresidents(new Set())
       setSeventyUid('')
       setAvailableDates([])
       setTaskNote('')
     } catch {
-      toast.error('Task 생성에 실패했습니다.')
+      toast.error(t('task.createFailed'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext="방문 일정 계획" />}>
+    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('admin.visitPlanner')} />}>
       <div className={styles.page}>
         <Card>
-          <CardHeader title="와드 방문 Task 생성" />
+          <CardHeader title={t('admin.visitTaskCreateTitle')} />
           <CardBody>
-            <p className={styles.desc}>
-              가능한 방문 일요일을 선택하고 회장들에게 Task를 배정합니다.
-              회장들은 Task에서 각 와드/지부에 날짜를 배정해 제출합니다.
-            </p>
+            <p className={styles.desc}>{t('task.visitTaskDesc')}</p>
             <form className={styles.form} onSubmit={handleCreate}>
               <Select
-                label="담당 지역 칠십인"
+                label={t('role.seventy')}
                 value={seventyUid}
                 onChange={e => setSeventyUid(e.target.value)}
                 options={seventyOptions}
               />
 
               <div className={styles.section}>
-                <p className={styles.sectionLabel}>가능 방문 일요일 선택</p>
-                <p className={styles.sectionHint}>금식일을 제외한 일요일만 선택할 수 있습니다.</p>
+                <p className={styles.sectionLabel}>{t('ward.noSundaysAvailable', { defaultValue: '가능 방문 일요일 선택' })}</p>
+                <p className={styles.sectionHint}>{t('ward.sundayOnlyHint', { defaultValue: '금식일을 제외한 일요일만 선택할 수 있습니다.' })}</p>
                 <MultiDatePicker
                   selected={availableDates}
                   onChange={setAvailableDates}

@@ -1,13 +1,10 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import dayjs from 'dayjs'
-import 'dayjs/locale/ko'
-dayjs.locale('ko')
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 import { isFastSunday } from '@/utils/fastSunday'
 import styles from './MultiDatePicker.module.scss'
-
-const DOW = ['일', '월', '화', '수', '목', '금', '토'] as const
 
 interface MultiDatePickerProps {
   selected: string[]          // YYYY-MM-DD[]
@@ -18,6 +15,8 @@ interface MultiDatePickerProps {
 }
 
 export function MultiDatePicker({ selected, onChange, minDate, maxDate, sundayOnly }: MultiDatePickerProps) {
+  const { t } = useTranslation()
+  const DOW = Array.from({ length: 7 }, (_, i) => dayjs().day(i).format('ddd'))
   const [current, setCurrent] = useState(dayjs())
   const min = dayjs(minDate ?? dayjs().format('YYYY-MM-DD'))
   const max = dayjs(maxDate ?? dayjs().add(90, 'day').format('YYYY-MM-DD'))
@@ -96,12 +95,12 @@ export function MultiDatePicker({ selected, onChange, minDate, maxDate, sundayOn
       </div>
 
       {sundayOnly && (
-        <p className={styles.sundayLegend}>● 방문 가능 일요일 (금식일 제외)</p>
+        <p className={styles.sundayLegend}>● {t('calendar.legendAvailable')} ({t('common.fastSundayLegend')} 제외)</p>
       )}
 
       {selected.length > 0 && (
         <div className={styles.selectedList}>
-          <p className={styles.selectedTitle}>선택된 날짜 ({selected.length}일)</p>
+          <p className={styles.selectedTitle}>{t('ward.selectedDates', { count: selected.length, defaultValue: `선택된 날짜 (${selected.length}일)` })}</p>
           <div className={styles.chips}>
             {selected.map(date => (
               <button

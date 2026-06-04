@@ -2,13 +2,13 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
-import 'dayjs/locale/ko';
-dayjs.locale('ko');
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { isFastSunday } from '@/utils/fastSunday';
 import styles from './VisitDatePicker.module.scss';
-const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 export function VisitDatePicker({ slots, selected, onSelect }) {
+    const { t } = useTranslation();
+    const DOW = Array.from({ length: 7 }, (_, i) => dayjs().day(i).format('ddd'));
     const [current, setCurrent] = useState(dayjs());
     const slotByDate = new Map(slots.map(s => [s.date, s]));
     const start = current.startOf('month').startOf('week');
@@ -30,6 +30,6 @@ export function VisitDatePicker({ slots, selected, onSelect }) {
                         const isAvailable = isSunday && !isFast && !!slot?.isAvailable;
                         const isSelected = selected?.date === dateStr;
                         const isPast = d.isBefore(dayjs(), 'day');
-                        return (_jsxs("button", { type: "button", disabled: !isAvailable, onClick: () => isAvailable && slot && onSelect(slot), className: clsx(styles.cell, !isCurrentMonth && styles.otherMonth, isSunday && isCurrentMonth && !isFast && !isPast && styles.sunday, isFast && isCurrentMonth && styles.fastSunday, isToday && styles.today, isSelected && styles.selected), children: [_jsx("span", { className: styles.day, children: d.date() }), isFast && isCurrentMonth && (_jsx("span", { className: styles.fastLabel, children: "\uAE08\uC2DD" }))] }, dateStr));
-                    })] }), availableCount === 0 && (_jsx("p", { className: styles.empty, children: "\uC774 \uB2EC\uC5D0 \uAC00\uB2A5\uD55C \uBC29\uBB38 \uB0A0\uC9DC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4." })), _jsxs("div", { className: styles.legend, children: [_jsx("span", { className: clsx(styles.legendDot, styles.legendAvailable) }), _jsx("span", { className: styles.legendText, children: "\uBC29\uBB38 \uAC00\uB2A5" }), _jsx("span", { className: clsx(styles.legendDot, styles.legendFast) }), _jsx("span", { className: styles.legendText, children: "\uAE08\uC2DD\uC77C" })] })] }));
+                        return (_jsxs("button", { type: "button", disabled: !isAvailable, onClick: () => isAvailable && slot && onSelect(slot), className: clsx(styles.cell, !isCurrentMonth && styles.otherMonth, isSunday && isCurrentMonth && !isFast && !isPast && styles.sunday, isFast && isCurrentMonth && styles.fastSunday, isToday && styles.today, isSelected && styles.selected), children: [_jsx("span", { className: styles.day, children: d.date() }), isFast && isCurrentMonth && (_jsx("span", { className: styles.fastLabel, children: t('common.fastSunday') }))] }, dateStr));
+                    })] }), availableCount === 0 && (_jsx("p", { className: styles.empty, children: t('schedule.noDates') })), _jsxs("div", { className: styles.legend, children: [_jsx("span", { className: clsx(styles.legendDot, styles.legendAvailable) }), _jsx("span", { className: styles.legendText, children: t('calendar.legendAvailable') }), _jsx("span", { className: clsx(styles.legendDot, styles.legendFast) }), _jsx("span", { className: styles.legendText, children: t('common.fastSundayLegend') })] })] }));
 }

@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import dayjs from 'dayjs'
-import 'dayjs/locale/ko'
-dayjs.locale('ko')
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 import type { Schedule } from '@/types'
 import { isFastSunday } from '@/utils/fastSunday'
-import { ALL_UNITS, getUnitColor } from '@/constants/regions'
+import { ALL_UNITS, getUnitColor, REGIONS } from '@/constants/regions'
 import { Button } from '@/components/ui'
 import styles from './CalendarView.module.scss'
 
-const DOW = ['일', '월', '화', '수', '목', '금', '토'] as const
+// Day-of-week abbreviations derived from dayjs locale (auto-updates with language switch)
+const getDOW = () => Array.from({ length: 7 }, (_, i) => dayjs().day(i).format('ddd')) as string[]
 const MAX_CHIPS = 2   // max chips shown per cell before "+N"
 
 type ViewMode = 'month' | 'week'
@@ -56,8 +56,11 @@ export function CalendarView({
   getUnitName,
   defaultView = 'month',
 }: CalendarViewProps) {
+  const { t } = useTranslation()
   const [view, setView] = useState<ViewMode>(defaultView)
   const [current, setCurrent] = useState(dayjs())
+  // Re-derive DOW whenever language changes
+  const DOW = getDOW()
 
   const getSchedulesForDate = (date: string) =>
     schedules.filter(s => s.date === date && s.status === 'confirmed')
@@ -146,7 +149,7 @@ export function CalendarView({
                 isToday && styles.weekDayLabelToday,
                 isBlocked && styles.weekDayBlocked,
               )}>
-                {DOW[d.day()]} {d.format('M/D')}{isBlocked ? ' (금식)' : ''}
+                {DOW[d.day()]} {d.format('M/D')}{isBlocked ? ` ${t('common.fastSundayLabel')}` : ''}
               </span>
               <div className={styles.weekSchedules}>
                 {daySchedules.length === 0 ? (
@@ -179,18 +182,28 @@ export function CalendarView({
           <ChevronRight size={16} />
         </Button>
         <div className={styles.viewToggle}>
-          <Button variant={view === 'month' ? 'primary' : 'ghost'} size="sm" onClick={() => setView('month')}>월</Button>
-          <Button variant={view === 'week' ? 'primary' : 'ghost'} size="sm" onClick={() => setView('week')}>주</Button>
+          <Button variant={view === 'month' ? 'primary' : 'ghost'} size="sm" onClick={() => setView('month')}>{t('common.monthView')}</Button>
+          <Button variant={view === 'week' ? 'primary' : 'ghost'} size="sm" onClick={() => setView('week')}>{t('common.weekView')}</Button>
         </div>
       </div>
 
       {view === 'month' ? renderMonthView() : renderWeekView()}
 
       <div className={styles.legend}>
-        <span style={{ color: '#1e40af' }}><span className={styles.legendSwatch} style={{ background: '#dbeafe' }} /> 서울</span>
-        <span style={{ color: '#9d174d' }}><span className={styles.legendSwatch} style={{ background: '#fce8f3' }} /> 서울남</span>
-        <span style={{ color: '#065f46' }}><span className={styles.legendSwatch} style={{ background: '#ecfdf5' }} /> 부산</span>
-        <span className={styles.legendBlocked}><span className={clsx(styles.legendSwatch, styles.swatchBlocked)} /> 금식일</span>
+        {REGIONS.map(r => {
+          const colors: Record<string, { bg: string; text: string }> = {
+            'seoul': { bg: '#dbeafe', text: '#1e40af' },
+            'seoul-south': { bg: '#fce8f3', text: '#9d174d' },
+            'busan': { bg: '#ecfdf5', text: '#065f46' },
+          }
+          const c = colors[r.id] ?? { bg: '#f3f4f6', text: '#374151' }
+          return (
+            <span key={r.id} style={{ color: c.text }}>
+              <span className={styles.legendSwatch} style={{ background: c.bg }} /> {r.name}
+            </span>
+          )
+        })}
+        <span className={styles.legendBlocked}><span className={clsx(styles.legendSwatch, styles.swatchBlocked)} /> {t('common.fastSundayLegend')}</span>
       </div>
     </div>
   )

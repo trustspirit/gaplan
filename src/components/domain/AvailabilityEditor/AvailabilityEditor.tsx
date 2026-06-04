@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
+import dayjs from 'dayjs'
 import type { AvailabilitySlot } from '@/types'
 import { Button, Input } from '@/components/ui'
 import styles from './AvailabilityEditor.module.scss'
-
-const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 
 interface AvailabilityEditorProps {
   slots: AvailabilitySlot[]
@@ -12,6 +12,10 @@ interface AvailabilityEditorProps {
   loading?: boolean
 }
 export function AvailabilityEditor({ slots, onSave, loading }: AvailabilityEditorProps) {
+  const { t } = useTranslation()
+  // Use dayjs locale-aware day abbreviations
+  const DAYS = Array.from({ length: 7 }, (_, i) => dayjs().day(i).format('ddd'))
+
   const existingRecurring = slots.filter(s => s.type === 'recurring' && !s.isBlocked)
   const [recurringDays, setRecurringDays] = useState<number[]>(
     existingRecurring.flatMap(s => s.recurringDays ?? [])
@@ -31,7 +35,7 @@ export function AvailabilityEditor({ slots, onSave, loading }: AvailabilityEdito
 
   return (
     <div className={styles.editor}>
-      <p className={styles.section}>가능 요일 선택</p>
+      <p className={styles.section}>{t('availability.selectDays')}</p>
       <div className={styles.days}>
         {DAYS.map((d, i) => (
           <button
@@ -44,10 +48,10 @@ export function AvailabilityEditor({ slots, onSave, loading }: AvailabilityEdito
         ))}
       </div>
       <div className={styles.timeRow}>
-        <Input label="시작 시간" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
-        <Input label="종료 시간" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+        <Input label={t('common.startTime')} type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+        <Input label={t('common.endTime')} type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
       </div>
-      <Button onClick={handleSave} loading={loading} fullWidth>저장</Button>
+      <Button onClick={handleSave} loading={loading} fullWidth>{t('common.save')}</Button>
     </div>
   )
 }

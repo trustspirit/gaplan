@@ -18,8 +18,16 @@ function EditUserModal({ user, onClose, }) {
     const { t } = useTranslation();
     const [name, setName] = useState(user.name);
     const [role, setRole] = useState(user.role);
-    const [regionId, setRegionId] = useState(user.regionId ?? '');
+    // Multi-region support for seventy
+    const [selectedRegions, setSelectedRegions] = useState(new Set(user.regionIds ?? (user.regionId ? [user.regionId] : [])));
     const [loading, setLoading] = useState(false);
+    function toggleRegion(regionId) {
+        setSelectedRegions(prev => {
+            const next = new Set(prev);
+            next.has(regionId) ? next.delete(regionId) : next.add(regionId);
+            return next;
+        });
+    }
     const handleSave = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -27,8 +35,10 @@ function EditUserModal({ user, onClose, }) {
             const tasks = [];
             if (name.trim() !== user.name)
                 tasks.push(updateUserName(user.uid, name.trim()));
-            if (role !== user.role || (role === 'seventy' && regionId !== user.regionId)) {
-                tasks.push(updateUserRole(user.uid, role, role === 'seventy' ? regionId : undefined));
+            const newRegionIds = Array.from(selectedRegions);
+            const regionChanged = role === 'seventy' && (JSON.stringify(newRegionIds.sort()) !== JSON.stringify((user.regionIds ?? []).sort()));
+            if (role !== user.role || regionChanged) {
+                tasks.push(updateUserRole(user.uid, role, role === 'seventy' ? newRegionIds : undefined));
             }
             await Promise.all(tasks);
             toast.success(`${name}${t('user.editSuccess')}`);
@@ -41,7 +51,7 @@ function EditUserModal({ user, onClose, }) {
             setLoading(false);
         }
     };
-    return (_jsx(Modal, { open: true, onClose: onClose, title: `${t('user.editUser')} — ${user.name}`, children: _jsxs("form", { className: styles.editForm, onSubmit: handleSave, children: [_jsx(Input, { label: t('user.name'), value: name, onChange: e => setName(e.target.value), required: true }), _jsx(Select, { label: t('user.role'), value: role, onChange: e => setRole(e.target.value), options: ROLE_OPTIONS }), role === 'seventy' && (_jsx(Select, { label: t('user.inviteRegion'), value: regionId, onChange: e => setRegionId(e.target.value), options: REGION_OPTIONS })), _jsxs("div", { className: styles.modalActions, children: [_jsx(Button, { variant: "ghost", type: "button", onClick: onClose, children: t('common.cancel') }), _jsx(Button, { type: "submit", loading: loading, children: t('common.save') })] })] }) }));
+    return (_jsx(Modal, { open: true, onClose: onClose, title: `${t('user.editUser')} — ${user.name}`, children: _jsxs("form", { className: styles.editForm, onSubmit: handleSave, children: [_jsx(Input, { label: t('user.name'), value: name, onChange: e => setName(e.target.value), required: true }), _jsx(Select, { label: t('user.role'), value: role, onChange: e => setRole(e.target.value), options: ROLE_OPTIONS }), role === 'seventy' && (_jsxs("div", { className: styles.regionCheckGroup, children: [_jsxs("p", { className: styles.regionCheckLabel, children: [t('user.inviteRegion'), " (\uBCF5\uC218 \uC120\uD0DD \uAC00\uB2A5)"] }), _jsx("div", { className: styles.regionCheckList, children: REGIONS.map(r => (_jsxs("label", { className: styles.regionCheckRow, children: [_jsx("input", { type: "checkbox", checked: selectedRegions.has(r.id), onChange: () => toggleRegion(r.id), className: styles.regionCheckbox, style: { accentColor: 'var(--color-primary, #177C9C)' } }), _jsx("span", { className: styles.regionCheckName, children: r.name })] }, r.id))) })] })), _jsxs("div", { className: styles.modalActions, children: [_jsx(Button, { variant: "ghost", type: "button", onClick: onClose, children: t('common.cancel') }), _jsx(Button, { type: "submit", loading: loading, children: t('common.save') })] })] }) }));
 }
 function DeleteConfirmModal({ user, onClose, onDeleted, }) {
     const { t } = useTranslation();

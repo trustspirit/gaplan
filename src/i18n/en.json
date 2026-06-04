@@ -37,10 +37,22 @@
     "saveFailed": "Failed to save.",
     "confirmFailed": "Failed to confirm.",
     "unknownError": "An unknown error occurred.",
+    "syncError": "Sync error occurred.",
+    "loginError": "Login failed. Please try again.",
     "selectRequired": "Please select .",
     "selectSeventy": "Please select an Area Seventy.",
+    "selectSunday": "Please select at least one available Sunday.",
     "selectPresident": "Please select at least one president.",
-    "reopen": "Edit"
+    "reopen": "Edit",
+    "refresh": "Refresh",
+    "error": "An error occurred.",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "monthView": "Month",
+    "weekView": "Week",
+    "fastSunday": "Fast",
+    "fastSundayLabel": "(Fast Sunday)",
+    "fastSundayLegend": "Fast Sunday"
   },
   "auth": {
     "greeting": "Hello, {{name}}",
@@ -226,6 +238,29 @@
     "seoul": "Seoul",
     "seoulSouth": "Seoul South",
     "busan": "Busan"
+  },
+  "slotDuration": {
+    "label": "Slot Duration (minutes)",
+    "hint": "e.g. 30 = 30-min slots, 60 = 1-hour slots"
+  },
+  "calendar": {
+    "title": "Schedule Calendar",
+    "subtext": "Calendar",
+    "syncTitle": "Sync to Google Calendar",
+    "clearSelection": "Clear selection",
+    "noSchedule": "No schedule.",
+    "upcomingTitle": "Upcoming (top 10)",
+    "selectedDateTitle": "{{date}} Schedule",
+    "legendAvailable": "Visit available",
+    "syncManual": "Sync Now",
+    "syncCardTitle": "Manual Calendar Sync",
+    "syncCardDesc": "Re-sync confirmed schedules that failed to sync to Google Calendar."
+  },
+  "availability": {
+    "selectDays": "Select Available Days",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "save": "Save"
   },
   "onboarding": {
     "title": "Welcome!",

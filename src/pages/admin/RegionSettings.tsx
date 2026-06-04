@@ -15,12 +15,6 @@ import { MultiDatePicker } from '@/components/domain'
 import type { AvailableDateSlot, TimeRange } from '@/types'
 import styles from './RegionSettings.module.scss'
 
-const SLOT_DURATION_OPTIONS = [
-  { value: '30',  label: '30분 단위' },
-  { value: '60',  label: '1시간 단위' },
-  { value: '90',  label: '1.5시간 단위' },
-  { value: '120', label: '2시간 단위' },
-]
 
 const DEFAULT_TIME_RANGE: TimeRange = { startTime: '09:00', endTime: '10:00' }
 
@@ -284,11 +278,14 @@ export function TaskCreation() {
                   </div>
                 )}
 
-                <Select
-                  label="시간 단위"
+                <Input
+                  label={`${t('slotDuration.label', { defaultValue: '슬롯 길이 (분)' })}`}
+                  type="number"
+                  min="5"
+                  max="480"
+                  step="5"
                   value={slotDuration}
                   onChange={e => setSlotDuration(e.target.value)}
-                  options={SLOT_DURATION_OPTIONS}
                 />
               </div>
 

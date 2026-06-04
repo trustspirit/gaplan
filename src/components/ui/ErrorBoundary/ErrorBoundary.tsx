@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react'
+import i18n from '@/i18n'
 import styles from './ErrorBoundary.module.scss'
 
 interface Props { children: ReactNode; fallback?: ReactNode }
@@ -15,9 +16,9 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return this.props.fallback ?? (
         <div className={styles.container}>
-          <p>오류가 발생했습니다.</p>
+          <p>{i18n.t('common.error')}</p>
           <button className={styles.reloadBtn} onClick={() => window.location.reload()}>
-            새로고침
+            {i18n.t('common.refresh')}
           </button>
         </div>
       )
