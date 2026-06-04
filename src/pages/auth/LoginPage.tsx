@@ -10,10 +10,9 @@ export function LoginPage() {
   const handleSignIn = async () => {
     setLoading(true)
     try {
-      await signInWithGoogle()
+      await signInWithGoogle() // 페이지가 Google 로그인으로 이동
     } catch {
       toast.error('로그인에 실패했습니다. 다시 시도해주세요.')
-    } finally {
       setLoading(false)
     }
   }
