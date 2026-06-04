@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { useAvailability } from '@/hooks/useAvailability'
 import { useUsers } from '@/hooks/useUsers'
@@ -12,6 +13,7 @@ import type { AvailabilitySlot } from '@/types'
 import styles from './AvailabilitySettings.module.scss'
 
 export function AvailabilitySettings() {
+  const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { users } = useUsers()
   const seventies = users.filter(u => u.role === 'seventy')
@@ -26,9 +28,9 @@ export function AvailabilitySettings() {
     setSaving(true)
     try {
       await saveAvailabilitySlots(targetUid, newSlots)
-      toast.success('가능 일정이 저장되었습니다.')
+      toast.success(t('admin.availabilitySaved'))
     } catch {
-      toast.error('저장에 실패했습니다.')
+      toast.error(t('common.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -37,11 +39,11 @@ export function AvailabilitySettings() {
   return (
     <AppShell
       role={user.role} name={user.name}
-      topBar={<TopBar name={user.name} subtext="가능 일정 설정" />}
+      topBar={<TopBar name={user.name} subtext={t('admin.availabilityTitle')} />}
     >
       <div className={styles.page}>
         <Card>
-          <CardHeader title="가능 일정 설정" />
+          <CardHeader title={t('admin.availabilityTitle')} />
           <CardBody>
             <Select
               label="지역 칠십인 선택"

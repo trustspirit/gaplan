@@ -7,6 +7,7 @@
  * Admin clicks a cell → adminConfirmSchedule for that president's task + slot
  */
 import { useState, Fragment } from 'react'
+import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import 'dayjs/locale/ko'
 dayjs.locale('ko')
@@ -50,6 +51,7 @@ function respondentColor(idx: number) {
 }
 
 export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: ResponseMatrixProps) {
+  const { t } = useTranslation()
   const [confirming, setConfirming] = useState<string | null>(null)
   const [view, setView] = useState<'heatmap' | 'participant'>('heatmap')
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set())
@@ -66,7 +68,7 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: Respons
 
   if (slots.length === 0 || respondents.length === 0) {
     return (
-      <div className={styles.empty}>아직 응답이 없거나 가능 시간이 설정되지 않았습니다.</div>
+      <div className={styles.empty}>{t('admin.noResponse')}</div>
     )
   }
 
@@ -147,12 +149,12 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: Respons
           type="button"
           className={clsx(styles.viewBtn, view === 'heatmap' && styles.viewBtnActive)}
           onClick={() => setView('heatmap')}
-        >🟩 가용 현황</button>
+        >🟩 {t('admin.availabilityHeatmap')}</button>
         <button
           type="button"
           className={clsx(styles.viewBtn, view === 'participant' && styles.viewBtnActive)}
           onClick={() => setView('participant')}
-        >👤 참가자별</button>
+        >👤 {t('admin.availabilityByParticipant')}</button>
       </div>
 
       {/* Matrix table */}

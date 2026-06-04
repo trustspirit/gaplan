@@ -33,7 +33,14 @@
     "no": "No",
     "process": "Process",
     "waiting": "Awaiting",
-    "goTo": "Go →"
+    "goTo": "Go →",
+    "saveFailed": "Failed to save.",
+    "confirmFailed": "Failed to confirm.",
+    "unknownError": "An unknown error occurred.",
+    "selectRequired": "Please select .",
+    "selectSeventy": "Please select an Area Seventy.",
+    "selectPresident": "Please select at least one president.",
+    "reopen": "Edit"
   },
   "auth": {
     "greeting": "Hello, {{name}}",
@@ -148,7 +155,24 @@
     "calendar": "Google Calendar",
     "calendarDesc": "Shared calendar integration",
     "scheduleEdit": "Edit Schedule",
-    "scheduleDelete": "Delete Schedule"
+    "scheduleDelete": "Delete Schedule",
+    "calendarSaved": "Google Calendar saved.",
+    "availabilityTitle": "Availability Settings",
+    "availabilitySaved": "Availability saved.",
+    "taskCreateTitle": "Create Task (Interview / Meeting)",
+    "visitTaskCreateTitle": "Create Ward Visit Task",
+    "respondedSlots": "President's Available Times",
+    "wardAssignments": "Ward Assignments Submitted",
+    "confirmAll": "Confirm All Assignments",
+    "wardConfirmCount": "Create {{count}} schedules",
+    "scheduleConfirmed": "Schedule confirmed!",
+    "wardConfirmSuccess": "{{count}} ward visit schedule(s) confirmed!",
+    "suggestionTitle": "Auto Schedule Suggestions",
+    "suggestionDesc": "{{count}} responses analyzed — conflict-free options shown below. Review and confirm your preferred option.",
+    "confirmOption": "Confirm This Schedule",
+    "noResponse": "No responses yet or no available times configured.",
+    "availabilityHeatmap": "Availability",
+    "availabilityByParticipant": "By Participant"
   },
   "visits": {
     "title": "Ward Visit Schedule",

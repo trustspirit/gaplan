@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import 'dayjs/locale/ko'
 dayjs.locale('ko')
@@ -27,6 +28,7 @@ interface Warning {
 }
 
 export function WardAssigner({ availableDates, wards, note, initialAssignments, onSubmit, submitting }: WardAssignerProps) {
+  const { t } = useTranslation()
   const [assignments, setAssignments] = useState<Record<string, string | null>>(() => {
     // Pre-fill from previously submitted assignments if editing a responded task
     const base = Object.fromEntries(wards.map(w => [w.id, null as string | null]))
@@ -112,7 +114,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
   }
 
   if (availableDates.length === 0) {
-    return <p className={styles.empty}>배정 가능한 일요일이 없습니다.</p>
+    return <p className={styles.empty}>{t('ward.noSundaysAvailable')}</p>
   }
 
   return (
@@ -120,13 +122,13 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
       {/* Admin note */}
       {note && (
         <div className={styles.note}>
-          <span className={styles.noteLabel}>관리자 메모</span>
+          <span className={styles.noteLabel}>{t('task.noteLabel', { defaultValue: '관리자 메모' })}</span>
           <p className={styles.noteText}>{note}</p>
         </div>
       )}
 
       <div className={styles.legend}>
-        <span className={styles.legendNote}>각 와드/지부에 방문할 일요일을 선택하세요. 다시 클릭하면 취소됩니다.</span>
+        <span className={styles.legendNote}>{t('ward.assignHint')}</span>
       </div>
 
       {/* Date headers */}
@@ -147,7 +149,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
       {/* Ward rows */}
       <div className={styles.wardList}>
         {wards.length === 0 ? (
-          <p className={styles.emptyWards}>소속 와드/지부 정보가 없습니다.</p>
+          <p className={styles.emptyWards}>{t('ward.noWards', { defaultValue: '소속 와드/지부 정보가 없습니다.' })}</p>
         ) : (
           wards.map(ward => {
             const assigned = assignments[ward.id]
@@ -179,7 +181,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
                         onClick={() => assign(ward.id, d)}
                         title={
                           otherWardOnDate
-                            ? `${otherWardOnDate.name}도 이 날짜에 배정됨`
+                            ? `${otherWardOnDate.name} — ${t('ward.takenDateHint')}`
                             : dayjs(d).format('M월 D일')
                         }
                       >
@@ -199,7 +201,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
         <div className={styles.conflictBox}>
           <div className={styles.conflictHeader}>
             <AlertTriangle size={16} className={styles.conflictIcon} />
-            <span className={styles.conflictTitle}>제출 전 확인하세요</span>
+            <span className={styles.conflictTitle}>{t('ward.warningTitle', { defaultValue: '제출 전 확인하세요' })}</span>
           </div>
           <ul className={styles.conflictList}>
             {warnings.map((w, i) => (
@@ -212,10 +214,10 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
               </li>
             ))}
           </ul>
-          <p className={styles.conflictQuestion}>그래도 이 배정으로 제출하시겠습니까?</p>
+          <p className={styles.conflictQuestion}>{t('ward.confirmAnyway', { defaultValue: '그래도 이 배정으로 제출하시겠습니까?' })}</p>
           <div className={styles.conflictActions}>
-            <Button variant="secondary" onClick={handleCancelWarning}>← 다시 수정</Button>
-            <Button onClick={handleSubmit} loading={submitting}>확인 후 제출</Button>
+            <Button variant="secondary" onClick={handleCancelWarning}>← {t('common.cancel')} ({t('ward.backToEdit', { defaultValue: '다시 수정' })})</Button>
+            <Button onClick={handleSubmit} loading={submitting}>{t('ward.confirmAndSubmit', { defaultValue: '확인 후 제출' })}</Button>
           </div>
         </div>
       )}
@@ -225,15 +227,15 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
         <div className={styles.footer}>
           <span className={styles.footerCount}>
             {assignedCount > 0
-              ? `${assignedCount}개 와드/지부 배정됨`
-              : '배정된 와드/지부가 없습니다'}
+              ? t('ward.assignedCount', { count: assignedCount })
+              : t('ward.noneAssigned')}
           </span>
           <Button
             onClick={handleSubmit}
             loading={submitting}
             disabled={assignedCount === 0}
           >
-            배정 제출
+            {t('ward.submitAssignment')}
           </Button>
         </div>
       )}

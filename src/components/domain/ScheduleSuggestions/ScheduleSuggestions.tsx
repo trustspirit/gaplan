@@ -6,6 +6,7 @@
  * greedy strategy.  Admin reviews and clicks "이 일정으로 확정".
  */
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import 'dayjs/locale/ko'
 dayjs.locale('ko')
@@ -26,6 +27,7 @@ interface ScheduleSuggestionsProps {
 }
 
 export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }: ScheduleSuggestionsProps) {
+  const { t } = useTranslation()
   const [confirmingIdx, setConfirmingIdx] = useState<number | null>(null)
 
   const respondents: Respondent[] = tasks
@@ -45,9 +47,7 @@ export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }: Sc
 
   if (respondents.length === 0) {
     return (
-      <div className={styles.empty}>
-        아직 응답한 회장이 없습니다.
-      </div>
+      <div className={styles.empty}>{t('admin.noResponse')}</div>
     )
   }
 
@@ -61,13 +61,13 @@ export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }: Sc
       )
       const failed = results.filter(r => !r.success)
       if (failed.length === 0) {
-        toast.success(`${option.assignments.length}개 일정이 확정되었습니다!`)
+        toast.success(t('admin.scheduleConfirmed'))
         onConfirmed?.()
       } else {
         toast.error(`${failed.length}건 확정 실패: ${failed[0].error}`)
       }
     } catch (e: unknown) {
-      toast.error((e as { message?: string })?.message ?? '확정 중 오류가 발생했습니다.')
+      toast.error((e as { message?: string })?.message ?? t('common.unknownError'))
     } finally {
       setConfirmingIdx(null)
     }
@@ -76,10 +76,9 @@ export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }: Sc
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <p className={styles.headerTitle}>자동 일정 제안</p>
+        <p className={styles.headerTitle}>{t('admin.suggestionTitle')}</p>
         <p className={styles.headerDesc}>
-          {respondents.length}명의 응답을 바탕으로 중복 없는 일정을 제안합니다.
-          검토 후 원하는 안으로 확정하세요.
+          {t('admin.suggestionDesc', { count: respondents.length })}
         </p>
       </div>
 
@@ -90,11 +89,11 @@ export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }: Sc
               <span className={styles.optionLabel}>{option.label}</span>
               {option.unassigned.length > 0 ? (
                 <span className={styles.optionWarning}>
-                  <AlertCircle size={13} /> {option.unassigned.length}명 배정 불가
+                  <AlertCircle size={13} /> {option.unassigned.length}{t('ward.unassignedCount', { defaultValue: '명 배정 불가' })}
                 </span>
               ) : (
                 <span className={styles.optionComplete}>
-                  <CheckCircle2 size={13} /> 전원 배정 완료
+                  <CheckCircle2 size={13} /> {t('ward.allAssigned', { defaultValue: '전원 배정 완료' })}
                 </span>
               )}
             </div>
@@ -111,7 +110,7 @@ export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }: Sc
               {option.unassigned.map(r => (
                 <div key={r.uid} className={clsx(styles.assignRow, styles.assignRowMissing)}>
                   <span className={styles.assignName}>{r.name}</span>
-                  <span className={styles.assignSlotMissing}>가능한 슬롯 없음</span>
+                  <span className={styles.assignSlotMissing}>{t('ward.noSlotAvailable', { defaultValue: '가능한 슬롯 없음' })}</span>
                 </div>
               ))}
             </div>
@@ -123,7 +122,7 @@ export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }: Sc
               disabled={confirmingIdx !== null}
               className={styles.confirmBtn}
             >
-              이 일정으로 확정
+              {t('admin.confirmOption')}
             </Button>
           </div>
         ))}
