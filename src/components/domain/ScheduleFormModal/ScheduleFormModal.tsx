@@ -53,7 +53,8 @@ export function ScheduleFormModal({ initialDate, onClose, onSaved }: ScheduleFor
     .filter(u => u.role === 'president' && u.unitId === unitId && !!unitId)
     .map(u => ({ value: u.uid, label: u.name }))
 
-  const handleSave = async () => {
+  const handleSave = async (e?: React.FormEvent) => {
+    e?.preventDefault()
     setError(null)
     if (!date || !startTime || !endTime) { setError('날짜와 시간을 입력해주세요.'); return }
     if (startTime >= endTime) { setError('종료 시간은 시작 시간보다 늦어야 합니다.'); return }
@@ -115,85 +116,87 @@ export function ScheduleFormModal({ initialDate, onClose, onSaved }: ScheduleFor
 
         {error && <div className={styles.errorBanner}>{error}</div>}
 
-        <div className={styles.fields}>
-          {/* Seventy selector — admin only */}
-          {user.role === 'admin' && (
+        <form onSubmit={handleSave}>
+          <div className={styles.fields}>
+            {/* Seventy selector — admin only */}
+            {user.role === 'admin' && (
+              <Select
+                label="담당 칠십인"
+                value={seventyUid}
+                onChange={e => setSeventyUid(e.target.value)}
+                options={seventyOptions}
+              />
+            )}
+
+            {/* Stake/District — required for ward_visit/interview, optional for meeting */}
             <Select
-              label="담당 칠십인"
-              value={seventyUid}
-              onChange={e => setSeventyUid(e.target.value)}
-              options={seventyOptions}
+              label={type === 'meeting' ? '스테이크/지방부 (선택)' : '스테이크/지방부'}
+              value={unitId}
+              onChange={e => setUnitId(e.target.value)}
+              options={unitOptions}
             />
-          )}
 
-          {/* Stake/District — required for ward_visit/interview, optional for meeting */}
-          <Select
-            label={type === 'meeting' ? '스테이크/지방부 (선택)' : '스테이크/지방부'}
-            value={unitId}
-            onChange={e => setUnitId(e.target.value)}
-            options={unitOptions}
-          />
+            {/* Ward — ward_visit only */}
+            {type === 'ward_visit' && (
+              <Select
+                label="와드/지부"
+                value={wardName}
+                onChange={e => setWardName(e.target.value)}
+                options={wardOptions}
+                disabled={!unitId}
+              />
+            )}
 
-          {/* Ward — ward_visit only */}
-          {type === 'ward_visit' && (
-            <Select
-              label="와드/지부"
-              value={wardName}
-              onChange={e => setWardName(e.target.value)}
-              options={wardOptions}
-              disabled={!unitId}
-            />
-          )}
+            {/* President — interview only, optional */}
+            {type === 'interview' && (
+              <Select
+                label="회장 (선택)"
+                value={presidentUid}
+                onChange={e => setPresidentUid(e.target.value)}
+                options={presidentOptions}
+                disabled={!unitId}
+              />
+            )}
 
-          {/* President — interview only, optional */}
-          {type === 'interview' && (
-            <Select
-              label="회장 (선택)"
-              value={presidentUid}
-              onChange={e => setPresidentUid(e.target.value)}
-              options={presidentOptions}
-              disabled={!unitId}
-            />
-          )}
-
-          <Input
-            type="date"
-            label="날짜"
-            value={date}
-            onChange={e => setDate(e.target.value)}
-          />
-
-          <div className={styles.timeRow}>
             <Input
-              type="time"
-              label="시작 시간"
-              value={startTime}
-              onChange={e => setStartTime(e.target.value)}
+              type="date"
+              label="날짜"
+              value={date}
+              onChange={e => setDate(e.target.value)}
             />
-            <Input
-              type="time"
-              label="종료 시간"
-              value={endTime}
-              onChange={e => setEndTime(e.target.value)}
-            />
+
+            <div className={styles.timeRow}>
+              <Input
+                type="time"
+                label="시작 시간"
+                value={startTime}
+                onChange={e => setStartTime(e.target.value)}
+              />
+              <Input
+                type="time"
+                label="종료 시간"
+                value={endTime}
+                onChange={e => setEndTime(e.target.value)}
+              />
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>메모 (선택)</label>
+              <textarea
+                className={styles.textarea}
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder="메모를 입력하세요"
+                rows={3}
+              />
+            </div>
           </div>
 
-          <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>메모 (선택)</label>
-            <textarea
-              className={styles.textarea}
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder="메모를 입력하세요"
-              rows={3}
-            />
+          <div className={styles.footer}>
+            <Button variant="ghost" onClick={onClose} disabled={saving}>취소</Button>
+            <Button type="submit" loading={saving}>일정 저장</Button>
           </div>
-        </div>
-
-        <div className={styles.footer}>
-          <Button variant="ghost" onClick={onClose} disabled={saving}>취소</Button>
-          <Button onClick={handleSave} loading={saving}>일정 저장</Button>
-        </div>
+        </form>
       </div>
     </div>,
     document.body

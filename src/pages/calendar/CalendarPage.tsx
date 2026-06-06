@@ -67,8 +67,8 @@ export function CalendarPage() {
               <CardHeader
                 title={t('calendar.title')}
                 action={
-                  // Admin/Seventy can manually re-sync schedules to Google Calendar
-                  (user.role === 'admin' || user.role === 'seventy') ? (
+                  // Admin can manually re-sync schedules to Google Calendar
+                  user.role === 'admin' ? (
                     <Button
                       variant="ghost"
                       size="sm"

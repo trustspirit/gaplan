@@ -108,6 +108,8 @@
   border-radius: $border-radius-sm;
   display: flex;
   align-items: center;
+  min-width: 36px;
+  min-height: 36px;
   transition: color 0.15s, background 0.15s;
 
   &:hover {
@@ -125,6 +127,8 @@
   border-radius: $border-radius-sm;
   display: flex;
   align-items: center;
+  min-width: 36px;
+  min-height: 36px;
   transition: color 0.15s, background 0.15s;
   flex-shrink: 0;
 

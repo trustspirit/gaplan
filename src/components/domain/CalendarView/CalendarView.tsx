@@ -157,7 +157,7 @@ export function CalendarView({
             onClick={() => setWeekOffset(o => Math.max(0, o - 3))}
             disabled={weekOffset === 0}
           >
-            ‹
+            <ChevronLeft size={16} />
           </button>
           <span className={styles.mobileDayNavLabel}>
             {allDays[weekOffset]?.format('M/D')} – {allDays[Math.min(weekOffset + 2, 6)]?.format('M/D')}
@@ -168,7 +168,7 @@ export function CalendarView({
             onClick={() => setWeekOffset(o => Math.min(4, o + 3))}
             disabled={weekOffset >= 4}
           >
-            ›
+            <ChevronRight size={16} />
           </button>
         </div>
 
