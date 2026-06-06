@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { httpsCallable } from 'firebase/functions'
 import { useAtomValue } from 'jotai'
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { functions } from '@/firebase'
 import { useUsers } from '@/hooks/useUsers'
@@ -21,6 +22,7 @@ interface ScheduleFormModalProps {
 }
 
 export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }: ScheduleFormModalProps) {
+  const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { users } = useUsers()
 
@@ -57,11 +59,11 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault()
     setError(null)
-    if (!date || !startTime || !endTime) { setError('날짜와 시간을 입력해주세요.'); return }
-    if (startTime >= endTime) { setError('종료 시간은 시작 시간보다 늦어야 합니다.'); return }
-    if (user.role === 'admin' && !seventyUid) { setError('담당 칠십인을 선택해주세요.'); return }
-    if (type === 'ward_visit' && (!unitId || !wardName)) { setError('스테이크/지방부와 와드/지부를 선택해주세요.'); return }
-    if (type === 'interview' && !unitId) { setError('스테이크/지방부를 선택해주세요.'); return }
+    if (!date || !startTime || !endTime) { setError(t('schedule.errorDateTimeRequired')); return }
+    if (startTime >= endTime) { setError(t('admin.scheduleTimeError')); return }
+    if (user.role === 'admin' && !seventyUid) { setError(t('schedule.errorSeventyRequired')); return }
+    if (type === 'ward_visit' && (!unitId || !wardName)) { setError(t('schedule.errorStakeWardRequired')); return }
+    if (type === 'interview' && !unitId) { setError(t('schedule.errorStakeRequired')); return }
 
     setSaving(true)
     try {
@@ -78,25 +80,26 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
       })
       onSaved()
       onClose()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '저장 중 오류가 발생했습니다.')
+    } catch (e: unknown) {
+      const err = e as { message?: string; details?: string }
+      setError(err?.details ?? err?.message ?? t('common.unknownError'))
     } finally {
       setSaving(false)
     }
   }
 
   const TYPE_TABS: Array<{ value: ScheduleType; label: string }> = [
-    { value: 'ward_visit', label: '와드 방문' },
-    { value: 'interview', label: '접견' },
-    { value: 'meeting', label: '모임' },
+    { value: 'ward_visit', label: t('schedule.type.ward_visit') },
+    { value: 'interview', label: t('schedule.type.interview') },
+    { value: 'meeting', label: t('schedule.type.meeting') },
   ]
 
   return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.sheet} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
-          <h3 className={styles.title}>새 일정 등록</h3>
-          <button type="button" onClick={onClose} className={styles.closeBtn} aria-label="닫기">
+          <h3 className={styles.title}>{t('schedule.newTitle')}</h3>
+          <button type="button" onClick={onClose} className={styles.closeBtn} aria-label={t('common.close')}>
             <X size={18} />
           </button>
         </div>
@@ -124,7 +127,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
             {/* Seventy selector — admin only */}
             {user.role === 'admin' && (
               <Select
-                label="담당 칠십인"
+                label={t('schedule.seventyLabel')}
                 value={seventyUid}
                 onChange={e => setSeventyUid(e.target.value)}
                 options={seventyOptions}
@@ -133,7 +136,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
 
             {/* Stake/District — required for ward_visit/interview, optional for meeting */}
             <Select
-              label={type === 'meeting' ? '스테이크/지방부 (선택)' : '스테이크/지방부'}
+              label={type === 'meeting' ? t('schedule.stakeLabelOptional') : t('schedule.stakeLabel')}
               value={unitId}
               onChange={e => setUnitId(e.target.value)}
               options={unitOptions}
@@ -142,7 +145,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
             {/* Ward — ward_visit only */}
             {type === 'ward_visit' && (
               <Select
-                label="와드/지부"
+                label={t('schedule.wardLabel')}
                 value={wardName}
                 onChange={e => setWardName(e.target.value)}
                 options={wardOptions}
@@ -153,7 +156,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
             {/* President — interview only, optional */}
             {type === 'interview' && (
               <Select
-                label="회장 (선택)"
+                label={t('schedule.presidentLabelOptional')}
                 value={presidentUid}
                 onChange={e => setPresidentUid(e.target.value)}
                 options={presidentOptions}
@@ -163,7 +166,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
 
             <Input
               type="date"
-              label="날짜"
+              label={t('schedule.dateLabel')}
               value={date}
               onChange={e => setDate(e.target.value)}
             />
@@ -171,33 +174,33 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
             <div className={styles.timeRow}>
               <Input
                 type="time"
-                label="시작 시간"
+                label={t('common.startTime')}
                 value={startTime}
                 onChange={e => setStartTime(e.target.value)}
               />
               <Input
                 type="time"
-                label="종료 시간"
+                label={t('common.endTime')}
                 value={endTime}
                 onChange={e => setEndTime(e.target.value)}
               />
             </div>
 
             <div className={styles.fieldGroup}>
-              <label className={styles.fieldLabel}>메모 (선택)</label>
+              <label className={styles.fieldLabel}>{t('schedule.notesLabelOptional')}</label>
               <textarea
                 className={styles.textarea}
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
-                placeholder="메모를 입력하세요"
+                placeholder={t('schedule.notesLabelOptional')}
                 rows={3}
               />
             </div>
           </div>
 
           <div className={styles.footer}>
-            <Button variant="ghost" onClick={onClose} disabled={saving}>취소</Button>
-            <Button type="submit" loading={saving}>일정 저장</Button>
+            <Button variant="ghost" onClick={onClose} disabled={saving}>{t('common.cancel')}</Button>
+            <Button type="submit" loading={saving}>{t('schedule.saveBtn')}</Button>
           </div>
         </form>
       </div>

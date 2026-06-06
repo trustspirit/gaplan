@@ -86,10 +86,28 @@ export const adminEditSchedule = functions
       }
     }
 
+    // Double-booking guard — only when date or startTime changes
+    if (allowed.date !== undefined || allowed.startTime !== undefined) {
+      const current = snap.data()!
+      const checkDate = (allowed.date as string | undefined) ?? current.date
+      const checkStart = (allowed.startTime as string | undefined) ?? current.startTime
+      const duplicate = await db.collection('schedules')
+        .where('seventyUid', '==', current.seventyUid)
+        .where('date', '==', checkDate)
+        .where('startTime', '==', checkStart)
+        .where('status', '==', 'confirmed')
+        .limit(1)
+        .get()
+      const conflict = duplicate.docs.find(d => d.id !== scheduleId)
+      if (conflict) {
+        throw new functions.https.HttpsError('already-exists', '해당 시간에 이미 확정된 일정이 있습니다.')
+      }
+    }
+
     // calendarSync trigger handles GCal update automatically
     await scheduleRef.update({
       ...allowed,
-      updatedAt: new Date().toISOString(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedBy: context.auth.uid,
     })
 

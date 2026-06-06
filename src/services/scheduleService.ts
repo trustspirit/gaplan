@@ -1,16 +1,16 @@
 import {
   collection, query, where, onSnapshot, orderBy,
-  doc, setDoc, serverTimestamp,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import dayjs from 'dayjs'
-import { db, functions, auth } from '@/firebase'
+import { db, functions } from '@/firebase'
 import type { Schedule, TimeSlot } from '@/types'
 
 export function subscribeToSchedules(
   filters: { presidentUid?: string; seventyUid?: string },
   callback: (schedules: Schedule[]) => void,
+  onError?: (error: Error) => void,
 ): Unsubscribe {
   let q = query(collection(db, 'schedules'), orderBy('date', 'asc'))
   if (filters.presidentUid)
@@ -24,7 +24,7 @@ export function subscribeToSchedules(
   }
   return onSnapshot(q,
     snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule)),
-    err => console.error('[schedules] onSnapshot error:', err.code, err.message),
+    err => { console.error('[schedules] onSnapshot error:', err.code, err.message); onError?.(err) },
   )
 }
 
@@ -86,35 +86,3 @@ export async function deleteScheduleViaCF(scheduleId: string): Promise<void> {
   await adminDeleteScheduleFn({ scheduleId })
 }
 
-export interface VisitScheduleEntry {
-  unitId: string
-  presidentUid: string | null
-  date: string  // YYYY-MM-DD
-}
-
-export async function createVisitSchedules(
-  seventyUid: string,
-  entries: VisitScheduleEntry[],
-): Promise<void> {
-  const currentUser = auth.currentUser
-  if (!currentUser) throw new Error('인증이 필요합니다.')
-
-  await Promise.all(
-    entries.map(entry => {
-      const scheduleId = `${seventyUid}_${entry.unitId}_${entry.date}`
-      const ref = doc(db, 'schedules', scheduleId)
-      return setDoc(ref, {
-        type: 'ward_visit',
-        seventyUid,
-        unitId: entry.unitId,
-        presidentUid: entry.presidentUid,
-        date: entry.date,
-        startTime: '10:00',
-        endTime: '13:00',
-        status: 'confirmed',
-        createdBy: currentUser.uid,
-        confirmedAt: serverTimestamp(),
-      })
-    })
-  )
-}

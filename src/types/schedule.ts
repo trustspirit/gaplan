@@ -6,7 +6,7 @@ export interface Schedule {
   type: ScheduleType
   seventyUid: string
   unitId: string
-  presidentUid: string
+  presidentUid: string | null
   date: string
   startTime: string
   endTime: string
