@@ -55,8 +55,7 @@ export function ScheduleItem({
 
       {/* Date column — wrapper level so bg/border span full height */}
       <div className={clsx(styles.dateCol, isPast && styles.past)}>
-        <span className={styles.month}>{date.format('M월')}</span>
-        <span className={styles.day}>{date.format('D')}</span>
+        <span className={styles.date}>{date.format('M월 D')}</span>
         <span className={styles.dow}>{dow}</span>
       </div>
 
