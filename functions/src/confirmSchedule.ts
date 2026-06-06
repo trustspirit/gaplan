@@ -32,8 +32,8 @@ export const confirmSchedule = functions
     if (!/^\d{2}:\d{2}$/.test(data.slot?.startTime ?? '') || !/^\d{2}:\d{2}$/.test(data.slot?.endTime ?? '')) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid time format')
     }
-    if (!['ward_visit', 'interview', 'meeting'].includes(data.type)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid schedule type')
+    if (!['ward_visit', 'interview'].includes(data.type)) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid type for task confirmation flow')
     }
 
     const db = admin.firestore()

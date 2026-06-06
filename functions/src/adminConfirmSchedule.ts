@@ -74,6 +74,7 @@ export const adminConfirmSchedule = functions
         startTime: data.slot.startTime,
         endTime: data.slot.endTime,
         status: 'confirmed',
+        taskId: data.taskId,
         createdBy: callerUid,
         confirmedAt: admin.firestore.FieldValue.serverTimestamp(),
       })

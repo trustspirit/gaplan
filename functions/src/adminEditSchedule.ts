@@ -25,7 +25,7 @@ export const adminEditSchedule = functions
     const callerSnap = await db.collection('users').doc(context.auth.uid).get()
     const callerRole = callerSnap.data()?.role
     if (!['admin', 'seventy'].includes(callerRole)) {
-      throw new functions.https.HttpsError('permission-denied', 'Admin only')
+      throw new functions.https.HttpsError('permission-denied', 'Admin or seventy only')
     }
 
     const { scheduleId, updates } = data
@@ -74,6 +74,16 @@ export const adminEditSchedule = functions
 
     if (callerRole === 'seventy' && snap.data()?.seventyUid !== context.auth.uid) {
       throw new functions.https.HttpsError('permission-denied', 'Seventy can only edit their own schedules')
+    }
+
+    // Validate startTime < endTime cross-field
+    if (allowed.startTime !== undefined || allowed.endTime !== undefined) {
+      const current = snap.data()!
+      const effectiveStart = (allowed.startTime as string | undefined) ?? current.startTime
+      const effectiveEnd = (allowed.endTime as string | undefined) ?? current.endTime
+      if (effectiveStart >= effectiveEnd) {
+        throw new functions.https.HttpsError('invalid-argument', 'endTime must be after startTime')
+      }
     }
 
     // calendarSync trigger handles GCal update automatically
