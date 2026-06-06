@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, Users, CalendarPlus } from 'lucide-react'
+import { MapPin, Users, CalendarPlus, Coffee } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
@@ -43,6 +43,7 @@ export function ScheduleItem({
   const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
   const isVisit = schedule.type === 'ward_visit'
+  const isMeeting = schedule.type === 'meeting'
   const date = dayjs(schedule.date)
   const dow = DOW_LABELS[date.day()]
   const isPast = past ?? date.isBefore(dayjs(), 'day')
@@ -50,13 +51,13 @@ export function ScheduleItem({
   return (
     <div className={styles.wrapper}>
       {/* Left color bar */}
-      <div className={clsx(styles.colorBar, isVisit ? styles.visitBar : styles.interviewBar)} />
+      <div className={clsx(styles.colorBar, isVisit ? styles.visitBar : isMeeting ? styles.meetingBar : styles.interviewBar)} />
 
       {/* Existing content */}
       <div
         className={clsx(
           styles.item,
-          isVisit ? styles.visit : styles.interview,
+          isVisit ? styles.visit : isMeeting ? styles.meeting : styles.interview,
           isPast && styles.past,
         )}
       >
@@ -67,8 +68,8 @@ export function ScheduleItem({
         </div>
         <div className={styles.info}>
           <div className={styles.typeBadge}>
-            {isVisit ? <MapPin size={11} /> : <Users size={11} />}
-            <span>{isVisit ? t('schedule.type.ward_visit') : t('schedule.type.interview')}</span>
+            {isVisit ? <MapPin size={11} /> : isMeeting ? <Coffee size={11} /> : <Users size={11} />}
+            <span>{t(`schedule.type.${schedule.type}`)}</span>
           </div>
           <p className={styles.unit}>
             {unitName}
