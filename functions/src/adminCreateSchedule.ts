@@ -33,6 +33,11 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('permission-denied', 'Seventy can only create schedules for themselves')
     }
 
+    const seventySnap = await db.collection('users').doc(data.seventyUid).get()
+    if (!seventySnap.exists || seventySnap.data()?.role !== 'seventy') {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid seventyUid: user not found or not a seventy')
+    }
+
     const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes } = data
 
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
