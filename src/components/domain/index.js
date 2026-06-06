@@ -9,3 +9,5 @@ export { WardAssigner } from './WardAssigner/WardAssigner';
 export { ResponseMatrix } from './ResponseMatrix/ResponseMatrix';
 export { ScheduleSuggestions } from './ScheduleSuggestions/ScheduleSuggestions';
 export { TaskPickerContent, taskPickerTitle } from './TaskPickerContent/TaskPickerContent';
+export { EditScheduleModal } from './EditScheduleModal/EditScheduleModal';
+export { ScheduleFormModal } from './ScheduleFormModal/ScheduleFormModal';

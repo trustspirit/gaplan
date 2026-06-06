@@ -42,8 +42,11 @@ export async function submitWardAssignments(params) {
     return result.data;
 }
 export async function createTask(params) {
+    const tokenBytes = new Uint8Array(16);
+    crypto.getRandomValues(tokenBytes);
+    const respondToken = Array.from(tokenBytes).map(b => b.toString(16).padStart(2, '0')).join('');
     const ref = await addDoc(collection(db, 'tasks'), {
-        ...params, status: 'pending', notifiedAt: [], createdAt: serverTimestamp(),
+        ...params, respondToken, status: 'pending', notifiedAt: [], createdAt: serverTimestamp(),
     });
     return ref.id;
 }

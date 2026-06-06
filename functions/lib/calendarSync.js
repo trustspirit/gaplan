@@ -107,13 +107,15 @@ exports.calendarSync = functions
     const unitName = (_o = (_m = (_l = unitSnap === null || unitSnap === void 0 ? void 0 : unitSnap.data()) === null || _l === void 0 ? void 0 : _l.name) !== null && _m !== void 0 ? _m : after.unitId) !== null && _o !== void 0 ? _o : '';
     const startDateTime = `${after.date}T${after.startTime}:00+09:00`;
     const endDateTime = `${after.date}T${after.endTime}:00+09:00`;
-    // Ward visits include the ward/branch name in the title
     let title;
     if (after.type === 'ward_visit') {
         title = after.wardName ? `${unitName} - ${after.wardName} 방문` : `${unitName} 방문`;
     }
-    else {
+    else if (after.type === 'interview') {
         title = `${unitName} 접견`;
+    }
+    else {
+        title = unitName ? `${unitName} 모임` : '모임';
     }
     const calendar = getCalendarClient();
     const existingEventId = before === null || before === void 0 ? void 0 : before.googleCalendarEventId;

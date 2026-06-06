@@ -30,9 +30,9 @@ export function getRegionColor(regionId) {
     return REGION_COLORS[regionId] ?? { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' };
 }
 export const REGIONS = [
-    { id: 'seoul', name: '서울' },
-    { id: 'seoul-south', name: '서울남' },
-    { id: 'busan', name: '부산' },
+    { id: 'seoul', name: '서울 CCM' },
+    { id: 'seoul-south', name: '서울남 CCM' },
+    { id: 'busan', name: '부산 CCM' },
 ];
 export const UNITS_SEOUL = [
     { id: 'seoul-stake', name: '서울 스테이크', type: 'stake', regionId: 'seoul' },

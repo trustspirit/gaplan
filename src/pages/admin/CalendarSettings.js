@@ -4,14 +4,76 @@ import { useAtomValue } from 'jotai';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Trash2, Calendar, Pencil } from 'lucide-react';
+import dayjs from 'dayjs';
 import { authUserAtom } from '@/store/authAtom';
-import { manualCalendarSync } from '@/services/scheduleService';
+import { manualCalendarSync, deleteSchedule, updateSchedule } from '@/services/scheduleService';
+import { useSchedules } from '@/hooks/useSchedules';
 import { db } from '@/firebase';
 import { REGIONS } from '@/constants/regions';
 import { AppShell, TopBar } from '@/components/layout';
-import { Card, CardHeader, CardBody, Input, Button } from '@/components/ui';
+import { Card, CardHeader, CardBody, Input, Button, Modal } from '@/components/ui';
+import { ScheduleFormModal } from '@/components/domain';
 import styles from './CalendarSettings.module.scss';
+function scheduleTypeLabel(schedule, t) {
+    return schedule.type === 'ward_visit'
+        ? t('schedule.type.ward_visit')
+        : schedule.type === 'interview'
+            ? t('schedule.type.interview')
+            : t('schedule.type.meeting');
+}
+function EditScheduleModal({ schedule, onClose, }) {
+    const { t } = useTranslation();
+    const [date, setDate] = useState(schedule.date);
+    const [startTime, setStartTime] = useState(schedule.startTime);
+    const [endTime, setEndTime] = useState(schedule.endTime);
+    const [notes, setNotes] = useState(schedule.notes ?? '');
+    const [loading, setLoading] = useState(false);
+    const handleSave = async (e) => {
+        e.preventDefault();
+        if (endTime <= startTime) {
+            toast.error(t('admin.scheduleTimeError'));
+            return;
+        }
+        setLoading(true);
+        try {
+            await updateSchedule(schedule.id, { date, startTime, endTime, notes: notes.trim() || undefined });
+            toast.success(t('admin.scheduleEditSuccess'));
+            onClose();
+        }
+        catch {
+            toast.error(t('admin.scheduleEditFailed'));
+        }
+        finally {
+            setLoading(false);
+        }
+    };
+    return (_jsx(Modal, { open: true, onClose: onClose, title: t('admin.scheduleEdit'), children: _jsxs("form", { className: styles.editForm, onSubmit: handleSave, children: [_jsxs("div", { className: styles.editMeta, children: [_jsx("span", { className: styles.scheduleType, children: scheduleTypeLabel(schedule, t) }), schedule.wardName && _jsx("span", { className: styles.scheduleWard, children: schedule.wardName })] }), _jsx(Input, { label: t('task.dueDate'), type: "date", value: date, onChange: e => setDate(e.target.value), required: true }), _jsxs("div", { className: styles.timeRow, children: [_jsx(Input, { label: t('common.startTime'), type: "time", value: startTime, onChange: e => setStartTime(e.target.value), required: true }), _jsx(Input, { label: t('common.endTime'), type: "time", value: endTime, onChange: e => setEndTime(e.target.value), required: true })] }), _jsxs("div", { className: styles.textareaField, children: [_jsx("label", { className: styles.textareaLabel, children: t('task.noteLabel') }), _jsx("textarea", { className: styles.textarea, value: notes, onChange: e => setNotes(e.target.value), rows: 3, placeholder: t('admin.scheduleNotesPlaceholder') })] }), schedule.googleCalendarEventId && (_jsx("p", { className: styles.calendarHint, children: t('admin.scheduleEditCalendarHint') })), _jsxs("div", { className: styles.modalActions, children: [_jsx(Button, { variant: "ghost", type: "button", onClick: onClose, children: t('common.cancel') }), _jsx(Button, { type: "submit", loading: loading, children: t('common.save') })] })] }) }));
+}
+function DeleteScheduleModal({ schedule, onClose, onDeleted, }) {
+    const { t } = useTranslation();
+    const [loading, setLoading] = useState(false);
+    const handleDelete = async () => {
+        setLoading(true);
+        try {
+            await deleteSchedule(schedule.id);
+            toast.success(t('admin.scheduleCancelSuccess'));
+            onDeleted();
+            onClose();
+        }
+        catch {
+            toast.error(t('admin.scheduleCancelFailed'));
+        }
+        finally {
+            setLoading(false);
+        }
+    };
+    return (_jsxs(Modal, { open: true, onClose: onClose, title: t('admin.scheduleCancelTitle'), children: [_jsxs("p", { className: styles.deleteDesc, children: [_jsx("strong", { children: dayjs(schedule.date).format('YYYY.MM.DD (ddd)') }), schedule.startTime && ` ${schedule.startTime}–${schedule.endTime}`, _jsx("br", {}), scheduleTypeLabel(schedule, t), schedule.wardName && ` · ${schedule.wardName}`, _jsx("br", {}), t('admin.scheduleCancelWarning')] }), _jsxs("div", { className: styles.modalActions, children: [_jsx(Button, { variant: "ghost", type: "button", onClick: onClose, children: t('common.cancel') }), _jsx(Button, { variant: "danger", loading: loading, onClick: handleDelete, children: t('admin.scheduleDelete') })] })] }));
+}
+function ScheduleRow({ schedule, onEdit, onCancel, }) {
+    const { t } = useTranslation();
+    return (_jsxs("div", { className: styles.scheduleRow, children: [_jsxs("div", { className: styles.scheduleDate, children: [_jsx(Calendar, { size: 13, className: styles.scheduleDateIcon }), _jsx("span", { children: dayjs(schedule.date).format('YYYY.MM.DD (ddd)') }), schedule.startTime && (_jsxs("span", { className: styles.scheduleTime, children: [schedule.startTime, "\u2013", schedule.endTime] }))] }), _jsxs("div", { className: styles.scheduleMeta, children: [_jsx("span", { className: styles.scheduleType, children: scheduleTypeLabel(schedule, t) }), schedule.wardName && _jsx("span", { className: styles.scheduleWard, children: schedule.wardName }), schedule.googleCalendarEventId && (_jsx("span", { className: styles.calSynced, children: t('admin.calSynced') }))] }), _jsxs("div", { className: styles.rowActions, children: [_jsx("button", { type: "button", className: styles.editBtn, title: t('admin.scheduleEdit'), onClick: onEdit, children: _jsx(Pencil, { size: 14 }) }), _jsx("button", { type: "button", className: styles.cancelBtn, title: t('admin.scheduleDelete'), onClick: onCancel, children: _jsx(Trash2, { size: 14 }) })] })] }));
+}
 export function CalendarSettings() {
     const { t } = useTranslation();
     const user = useAtomValue(authUserAtom);
@@ -19,6 +81,13 @@ export function CalendarSettings() {
     const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [fetching, setFetching] = useState(true);
+    const [editTarget, setEditTarget] = useState(null);
+    const [cancelTarget, setCancelTarget] = useState(null);
+    const [formOpen, setFormOpen] = useState(false);
+    const { schedules } = useSchedules({});
+    const confirmedSchedules = schedules
+        .filter(s => s.status === 'confirmed')
+        .sort((a, b) => a.date.localeCompare(b.date));
     useEffect(() => {
         getDoc(doc(db, 'settings', 'calendar')).then(snap => {
             const data = snap.data();
@@ -47,11 +116,11 @@ export function CalendarSettings() {
             toast.success(result.message);
         }
         catch (e) {
-            toast.error(e?.message ?? '동기화 오류가 발생했습니다.');
+            toast.error(e?.message ?? t('common.syncError'));
         }
         finally {
             setSyncing(false);
         }
     };
-    return (_jsx(AppShell, { role: user.role, name: user.name, topBar: _jsx(TopBar, { name: user.name, subtext: t('admin.calendar') }), children: _jsxs("div", { className: styles.page, children: [_jsxs(Card, { children: [_jsx(CardHeader, { title: t('admin.calendar') }), _jsxs(CardBody, { children: [_jsx("p", { className: styles.desc, children: "\uAC01 \uC9C0\uC5ED\uBCC4\uB85C \uACF5\uC720 \uCE98\uB9B0\uB354\uB97C \uC0DD\uC131\uD558\uACE0, Google Calendar \uC124\uC815\uC5D0\uC11C \uCE98\uB9B0\uB354 ID\uB97C \uBCF5\uC0AC\uD574 \uC785\uB825\uD558\uC138\uC694. \uD655\uC815\uB41C \uC77C\uC815\uC774 \uD574\uB2F9 \uC9C0\uC5ED \uCE98\uB9B0\uB354\uC5D0 \uC790\uB3D9\uC73C\uB85C \uAE30\uB85D\uB429\uB2C8\uB2E4." }), fetching ? (_jsx("p", { className: styles.desc, children: "\uBD88\uB7EC\uC624\uB294 \uC911..." })) : (_jsxs("form", { className: styles.form, onSubmit: handleSave, children: [REGIONS.map(region => (_jsx(Input, { label: `${region.name} 지역 캘린더 ID`, value: calendarIds[region.id] ?? '', onChange: e => setCalendarIds(prev => ({ ...prev, [region.id]: e.target.value })), placeholder: "xxxxxxxx@group.calendar.google.com" }, region.id))), _jsx(Button, { type: "submit", loading: loading, children: "\uC800\uC7A5" })] }))] })] }), _jsxs(Card, { children: [_jsx(CardHeader, { title: "\uC218\uB3D9 \uCE98\uB9B0\uB354 \uB3D9\uAE30\uD654" }), _jsxs(CardBody, { children: [_jsx("p", { className: styles.desc, children: "\uCE98\uB9B0\uB354 \uB4F1\uB85D\uC774 \uC2E4\uD328\uD55C \uD655\uC815 \uC77C\uC815\uB4E4\uC744 Google Calendar\uC5D0 \uB2E4\uC2DC \uB3D9\uAE30\uD654\uD569\uB2C8\uB2E4. (googleCalendarEventId\uAC00 \uC5C6\uB294 confirmed \uC77C\uC815 \uB300\uC0C1)" }), _jsxs(Button, { onClick: handleManualSync, loading: syncing, variant: "secondary", children: [_jsx(RefreshCw, { size: 14 }), "\u00A0\uC9C0\uAE08 \uB3D9\uAE30\uD654"] })] })] })] }) }));
+    return (_jsxs(AppShell, { role: user.role, name: user.name, topBar: _jsx(TopBar, { name: user.name, subtext: t('admin.calendar') }), children: [_jsxs("div", { className: styles.page, children: [_jsxs(Card, { children: [_jsx(CardHeader, { title: t('admin.calendar') }), _jsxs(CardBody, { children: [_jsx("p", { className: styles.desc, children: t('admin.calendarDesc2') }), fetching ? (_jsx("p", { className: styles.desc, children: t('common.loading') })) : (_jsxs("form", { className: styles.form, onSubmit: handleSave, children: [REGIONS.map(region => (_jsx(Input, { label: `${region.name} ${t('admin.calendarRegionLabel')}`, value: calendarIds[region.id] ?? '', onChange: e => setCalendarIds(prev => ({ ...prev, [region.id]: e.target.value })), placeholder: "xxxxxxxx@group.calendar.google.com" }, region.id))), _jsx(Button, { type: "submit", loading: loading, children: t('common.save') })] }))] })] }), _jsxs(Card, { children: [_jsx(CardHeader, { title: t('admin.confirmedSchedules'), action: _jsx(Button, { variant: "primary", size: "sm", onClick: () => setFormOpen(true), children: "+ \uC77C\uC815 \uCD94\uAC00" }) }), formOpen && (_jsx(ScheduleFormModal, { onClose: () => setFormOpen(false), onSaved: () => { setFormOpen(false); toast.success('일정이 등록되었습니다.'); } })), _jsxs(CardBody, { children: [_jsx("p", { className: styles.desc, children: t('admin.confirmedSchedulesDesc') }), confirmedSchedules.length === 0 ? (_jsx("p", { className: styles.empty, children: t('admin.noConfirmedSchedules') })) : (_jsx("div", { className: styles.scheduleList, children: confirmedSchedules.map(s => (_jsx(ScheduleRow, { schedule: s, onEdit: () => setEditTarget(s), onCancel: () => setCancelTarget(s) }, s.id))) }))] })] }), _jsxs(Card, { children: [_jsx(CardHeader, { title: t('calendar.syncCardTitle') }), _jsxs(CardBody, { children: [_jsx("p", { className: styles.desc, children: t('calendar.syncCardDesc') }), _jsxs(Button, { onClick: handleManualSync, loading: syncing, variant: "secondary", children: [_jsx(RefreshCw, { size: 14 }), "\u00A0", t('calendar.syncManual')] })] })] })] }), editTarget && (_jsx(EditScheduleModal, { schedule: editTarget, onClose: () => setEditTarget(null) })), cancelTarget && (_jsx(DeleteScheduleModal, { schedule: cancelTarget, onClose: () => setCancelTarget(null), onDeleted: () => setCancelTarget(null) }))] }));
 }
