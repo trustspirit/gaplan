@@ -11,8 +11,7 @@ import { useUnits } from '@/hooks/useUnits'
 import { AppShell, TopBar } from '@/components/layout'
 import { Button } from '@/components/ui'
 import { ScheduleItem, ScheduleFormModal } from '@/components/domain'
-import type { Schedule } from '@/types'
-import { groupByMonth, sortMonthKeys } from '@/utils/scheduleGrouping'
+import { useSchedulePageData } from '@/hooks/useSchedulePageData'
 import styles from './VisitsPage.module.scss'
 
 type FilterTab = 'all' | 'upcoming' | 'completed'
@@ -33,46 +32,14 @@ export function VisitsPage() {
   const { schedules } = useSchedules(filters)
   const { getUnitName } = useUnits()
 
-  const today = dayjs()
-  const thisMonth = today.format('YYYY-M')
-
-  const allVisits = schedules.filter(s => s.type === 'ward_visit' && s.status === 'confirmed')
-  const upcomingCount = allVisits.filter(s => !dayjs(s.date).isBefore(today, 'day')).length
-  const completedCount = allVisits.filter(s => dayjs(s.date).isBefore(today, 'day')).length
-  const thisMonthCount = allVisits.filter(s => dayjs(s.date).format('YYYY-M') === thisMonth).length
-
-  const filtered = allVisits.filter(s => {
-    if (activeTab === 'upcoming') return !dayjs(s.date).isBefore(today, 'day')
-    if (activeTab === 'completed') return dayjs(s.date).isBefore(today, 'day')
-    return true
-  })
-
-  const sorted = [...filtered].sort((a, b) =>
-    dayjs(a.date).isBefore(dayjs(b.date)) ? -1 : 1
-  )
-
-  const grouped = groupByMonth(sorted)
-  const monthKeys = sortMonthKeys(Array.from(grouped.keys()))
-
-  // Sort: current month first, then future, then past
-  const currentMonthKey = today.format('YYYY년 M월')
-  const orderedKeys = [
-    ...monthKeys.filter(k => k === currentMonthKey),
-    ...monthKeys.filter(k => {
-      const d = dayjs(k, 'YYYY년 M월')
-      return d.isAfter(today, 'month')
-    }),
-    ...monthKeys.filter(k => {
-      const d = dayjs(k, 'YYYY년 M월')
-      return d.isBefore(today, 'month')
-    }),
-  ]
-
-  // Upcoming: next 5 visits (date >= today, sorted ascending)
-  const upcomingVisits = allVisits
-    .filter(s => !dayjs(s.date).isBefore(today, 'day'))
-    .sort((a, b) => dayjs(a.date).isBefore(dayjs(b.date)) ? -1 : 1)
-    .slice(0, 5)
+  const {
+    orderedKeys,
+    grouped,
+    upcomingList: upcomingVisits,
+    thisMonthCount,
+    upcomingCount,
+    completedCount,
+  } = useSchedulePageData(schedules, 'ward_visit', activeTab)
 
   const TABS: FilterTab[] = ['all', 'upcoming', 'completed']
 
@@ -157,7 +124,7 @@ export function VisitsPage() {
           <ScheduleFormModal
             initialType="ward_visit"
             onClose={() => setFormOpen(false)}
-            onSaved={() => { setFormOpen(false); toast.success('일정이 등록되었습니다.') }}
+            onSaved={() => { setFormOpen(false); toast.success(t('schedule.savedSuccess')) }}
           />
         )}
         <div className={styles.sideCol}>

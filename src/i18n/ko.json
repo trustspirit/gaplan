@@ -134,6 +134,7 @@
     "selectTimeSlots": "가능한 시간 선택 (복수 가능)",
     "submitAvailability": "가능 시간 제출 ({{count}}개)",
     "submitAvailabilityEmpty": "가능 시간 제출",
+    "savedSuccess": "일정이 등록되었습니다.",
     "confirmed": "일정이 확정되었습니다!",
     "visitConfirmed": "방문 일정이 확정되었습니다!",
     "availabilitySubmitted": "가능한 시간을 제출했습니다. 담당자가 확정 후 알려드립니다.",
@@ -242,6 +243,11 @@
     "noUpcoming": "아직 예정된 접견이 없습니다.",
     "noCompleted": "완료된 접견이 없습니다.",
     "noAll": "확정된 접견 일정이 없습니다.",
+    "tabs": {
+      "all": "전체",
+      "upcoming": "예정",
+      "completed": "완료"
+    },
     "nextInterviews": "다음 접견 예정"
   },
   "user": {

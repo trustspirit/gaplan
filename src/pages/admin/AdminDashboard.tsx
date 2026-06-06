@@ -52,7 +52,7 @@ export function AdminDashboard() {
       {formOpen && (
         <ScheduleFormModal
           onClose={() => setFormOpen(false)}
-          onSaved={() => { setFormOpen(false); toast.success('일정이 등록되었습니다.') }}
+          onSaved={() => { setFormOpen(false); toast.success(t('schedule.savedSuccess')) }}
         />
       )}
     </AppShell>

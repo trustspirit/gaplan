@@ -96,23 +96,25 @@ export function CalendarPage() {
               <CardHeader
                 title={listTitle}
                 action={
-                  <div className={styles.headerActions}>
-                    {user.role === 'admin' && (
-                      <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
-                        + 일정 추가
-                      </Button>
-                    )}
-                    {selectedDate && (
-                      <button
-                        type="button"
-                        className={styles.clearBtn}
-                        onClick={() => setSelectedDate(null)}
-                        title={t('calendar.clearSelection')}
-                      >
-                        <X size={14} />
-                      </button>
-                    )}
-                  </div>
+                  (user.role === 'admin' || selectedDate) ? (
+                    <div className={styles.headerActions}>
+                      {user.role === 'admin' && (
+                        <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
+                          + 일정 추가
+                        </Button>
+                      )}
+                      {selectedDate && (
+                        <button
+                          type="button"
+                          className={styles.clearBtn}
+                          onClick={() => setSelectedDate(null)}
+                          title={t('calendar.clearSelection')}
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ) : undefined
                 }
               />
               <CardBody>
@@ -136,7 +138,7 @@ export function CalendarPage() {
         <ScheduleFormModal
           initialDate={selectedDate ?? undefined}
           onClose={() => setFormOpen(false)}
-          onSaved={() => { setFormOpen(false); toast.success('일정이 등록되었습니다.') }}
+          onSaved={() => { setFormOpen(false); toast.success(t('schedule.savedSuccess')) }}
         />
       )}
     </AppShell>

@@ -1,6 +1,6 @@
 import {
   collection, query, where, onSnapshot, orderBy,
-  doc, setDoc, updateDoc, deleteDoc, serverTimestamp,
+  doc, setDoc, serverTimestamp,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
@@ -68,17 +68,6 @@ export async function adminConfirmWardVisit(taskId: string): Promise<AdminConfir
   const fn = httpsCallable<{ taskId: string }, AdminConfirmWardVisitResult>(functions, 'adminConfirmWardVisit')
   const result = await fn({ taskId })
   return result.data
-}
-
-export async function updateSchedule(
-  scheduleId: string,
-  updates: { date?: string; startTime?: string; endTime?: string; status?: string; notes?: string },
-): Promise<void> {
-  await updateDoc(doc(db, 'schedules', scheduleId), updates)
-}
-
-export async function deleteSchedule(scheduleId: string): Promise<void> {
-  await deleteDoc(doc(db, 'schedules', scheduleId))
 }
 
 const adminEditScheduleFn = httpsCallable(functions, 'adminEditSchedule')

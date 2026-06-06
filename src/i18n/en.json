@@ -136,6 +136,7 @@
     "selectTimeSlots": "Select Available Times (multiple)",
     "submitAvailability": "Submit Availability ({{count}})",
     "submitAvailabilityEmpty": "Submit Availability",
+    "savedSuccess": "Schedule saved.",
     "confirmed": "Schedule confirmed!",
     "visitConfirmed": "Visit date confirmed!",
     "availabilitySubmitted": "Availability submitted. You will be notified once confirmed.",
@@ -244,6 +245,11 @@
     "noUpcoming": "No upcoming interviews.",
     "noCompleted": "No completed interviews.",
     "noAll": "No confirmed interview schedule.",
+    "tabs": {
+      "all": "All",
+      "upcoming": "Upcoming",
+      "completed": "Completed"
+    },
     "nextInterviews": "Next Interviews"
   },
   "user": {

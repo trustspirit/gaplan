@@ -180,7 +180,7 @@
 
 .tabBtn {
   padding: $space-2 $space-4;
-  min-height: 36px;
+  min-height: 44px;
   border-radius: $border-radius-full;
   border: 1px solid $color-border;
   background: $color-surface;
@@ -197,8 +197,8 @@
   }
 
   &[data-active='true'] {
-    background: $color-sidebar;
-    border-color: $color-sidebar;
+    background: $color-primary;
+    border-color: $color-primary;
     color: #fff;
   }
 }

@@ -101,19 +101,21 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
           </button>
         </div>
 
-        {/* Type segmented control */}
-        <div className={styles.segmented}>
-          {TYPE_TABS.map(tab => (
-            <button
-              key={tab.value}
-              type="button"
-              className={type === tab.value ? styles.segBtnActive : styles.segBtn}
-              onClick={() => { setType(tab.value); setUnitId(''); setWardName(''); setPresidentUid('') }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Type segmented control — hidden when initialType is locked */}
+        {!initialType && (
+          <div className={styles.segmented}>
+            {TYPE_TABS.map(tab => (
+              <button
+                key={tab.value}
+                type="button"
+                className={type === tab.value ? styles.segBtnActive : styles.segBtn}
+                onClick={() => { setType(tab.value); setUnitId(''); setWardName(''); setPresidentUid('') }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {error && <div className={styles.errorBanner}>{error}</div>}
 
