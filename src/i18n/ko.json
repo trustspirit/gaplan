@@ -122,7 +122,9 @@
     "submitted": "제출",
     "slotsCount": "{{count}}개 확인",
     "wardCount": "{{count}}개 배정 확인",
-    "addTimeRange": "시간대 추가"
+    "addTimeRange": "시간대 추가",
+    "title": "Task 제목",
+    "titlePlaceholder": "예: 2분기 와드 방문"
   },
   "schedule": {
     "confirmVisit": "방문 일정 확정",

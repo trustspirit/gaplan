@@ -29,9 +29,11 @@ function StatusBadge({ status }: { status: Task['status'] }) {
 
 function TaskDetailModal({
   task,
+  presidentName,
   onClose,
 }: {
   task: Task
+  presidentName: string
   onClose: () => void
 }) {
   return (
@@ -48,7 +50,7 @@ function TaskDetailModal({
           </div>
           <div className={styles.detailRow}>
             <span className={styles.detailLabel}>담당자</span>
-            <span className={styles.detailValue}>{task.assignedTo}</span>
+            <span className={styles.detailValue}>{presidentName}</span>
           </div>
           <div className={styles.detailRow}>
             <span className={styles.detailLabel}>마감일</span>
@@ -424,7 +426,7 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
       </div>
 
       {editing && <EditTaskModal task={task} onClose={() => setEditing(false)} />}
-      {detailOpen && <TaskDetailModal task={task} onClose={() => setDetailOpen(false)} />}
+      {detailOpen && <TaskDetailModal task={task} presidentName={presidentName} onClose={() => setDetailOpen(false)} />}
     </>
   )
 }
