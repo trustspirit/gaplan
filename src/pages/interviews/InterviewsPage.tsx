@@ -82,7 +82,7 @@ export function InterviewsPage() {
         <div className={styles.mainCol}>
           {user.role === 'admin' && (
             <div className={styles.pageHeader}>
-              <Button variant="outline" size="sm" onClick={() => navigate('/admin/region-settings')}>
+              <Button variant="secondary" size="sm" onClick={() => navigate('/admin/region-settings')}>
                 태스크 생성
               </Button>
               <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
