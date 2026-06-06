@@ -79,7 +79,7 @@ export function VisitsPage() {
             </div>
           </div>
 
-          <ScheduleDateRangeFilter setting={rangeSetting} onChange={saveRange} />
+          <ScheduleDateRangeFilter setting={rangeSetting} currentRange={range} onChange={saveRange} />
 
           <div className={styles.tabBar}>
             {TABS.map(tab => (

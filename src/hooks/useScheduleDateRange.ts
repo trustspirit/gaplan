@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
+import { atom, useAtom } from 'jotai'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import dayjs from 'dayjs'
 import { db } from '@/firebase'
@@ -16,6 +17,14 @@ export interface DateRange {
   end: string
 }
 
+interface RangeCache {
+  uid: string
+  setting: ScheduleDateRangeSetting
+}
+
+// Module-level atom — shared across all page instances, single Firestore read per session
+const _rangeCache = atom<RangeCache | null>(null)
+
 function presetRange(preset: 'q1' | 'q2', year: number): DateRange {
   return preset === 'q1'
     ? { start: `${year}-01-01`, end: `${year}-06-30` }
@@ -23,25 +32,38 @@ function presetRange(preset: 'q1' | 'q2', year: number): DateRange {
 }
 
 export function useScheduleDateRange(uid: string) {
+  const [cache, setCache] = useAtom(_rangeCache)
   const currentYear = dayjs().year()
-  const currentMonth = dayjs().month() + 1
-  const defaultPreset: DateRangePreset = currentMonth <= 6 ? 'q1' : 'q2'
+  const defaultPreset: DateRangePreset = (dayjs().month() + 1) <= 6 ? 'q1' : 'q2'
 
-  const [setting, setSetting] = useState<ScheduleDateRangeSetting>({ preset: defaultPreset })
-  const [loading, setLoading] = useState(true)
+  const setting: ScheduleDateRangeSetting =
+    cache?.uid === uid ? cache.setting : { preset: defaultPreset }
+  const loading = cache?.uid !== uid
+  const loadedForUid = cache?.uid ?? null
 
   useEffect(() => {
+    if (loadedForUid === uid) return
     getDoc(doc(db, 'userSettings', uid))
       .then(snap => {
         const data = snap.data()
-        if (data?.scheduleDateRange) setSetting(data.scheduleDateRange as ScheduleDateRangeSetting)
+        const saved = (data?.scheduleDateRange as ScheduleDateRangeSetting) ?? { preset: defaultPreset }
+        setCache({ uid, setting: saved })
       })
-      .finally(() => setLoading(false))
-  }, [uid])
+      .catch(e => {
+        console.error('[useScheduleDateRange] load failed:', e)
+        setCache({ uid, setting: { preset: defaultPreset } })
+      })
+  }, [uid, loadedForUid]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = async (next: ScheduleDateRangeSetting) => {
-    setSetting(next)
-    await setDoc(doc(db, 'userSettings', uid), { scheduleDateRange: next }, { merge: true })
+    const prev = cache
+    setCache({ uid, setting: next })
+    try {
+      await setDoc(doc(db, 'userSettings', uid), { scheduleDateRange: next }, { merge: true })
+    } catch (e) {
+      setCache(prev)
+      console.error('[useScheduleDateRange] save failed:', e)
+    }
   }
 
   const range = useMemo((): DateRange => {

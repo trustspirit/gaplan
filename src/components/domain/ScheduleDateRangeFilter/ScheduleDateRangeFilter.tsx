@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ScheduleDateRangeSetting } from '@/hooks/useScheduleDateRange'
+import type { ScheduleDateRangeSetting, DateRange } from '@/hooks/useScheduleDateRange'
 import styles from './ScheduleDateRangeFilter.module.scss'
 
 interface Props {
   setting: ScheduleDateRangeSetting
+  currentRange: DateRange
   onChange: (setting: ScheduleDateRangeSetting) => void
 }
 
-export function ScheduleDateRangeFilter({ setting, onChange }: Props) {
+export function ScheduleDateRangeFilter({ setting, currentRange, onChange }: Props) {
   const { t } = useTranslation()
   const [localStart, setLocalStart] = useState(setting.customStart ?? '')
   const [localEnd, setLocalEnd] = useState(setting.customEnd ?? '')
@@ -28,6 +29,15 @@ export function ScheduleDateRangeFilter({ setting, onChange }: Props) {
     setLocalEnd(val)
     if (localStart && val && localStart <= val)
       onChange({ preset: 'custom', customStart: localStart, customEnd: val })
+  }
+
+  const handleCustomClick = () => {
+    // Pre-fill from the current effective range when switching to custom for the first time
+    const start = localStart || currentRange.start
+    const end = localEnd || currentRange.end
+    setLocalStart(start)
+    setLocalEnd(end)
+    onChange({ preset: 'custom', customStart: start, customEnd: end })
   }
 
   return (
@@ -53,7 +63,7 @@ export function ScheduleDateRangeFilter({ setting, onChange }: Props) {
           type="button"
           className={styles.presetBtn}
           data-active={setting.preset === 'custom'}
-          onClick={() => onChange({ preset: 'custom', customStart: localStart, customEnd: localEnd })}
+          onClick={handleCustomClick}
         >
           {t('schedule.filterCustom')}
         </button>

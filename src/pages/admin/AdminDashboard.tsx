@@ -31,9 +31,13 @@ export function AdminDashboard() {
   const { getUnitName } = useUnits()
   const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
 
-  const periodSchedules = schedules
+  const MAX_DASHBOARD_SCHEDULES = 30
+
+  const allPeriodSchedules = schedules
     .filter(s => s.status === 'confirmed' && s.date >= range.start && s.date <= range.end)
     .sort((a, b) => a.date.localeCompare(b.date))
+  const periodSchedules = allPeriodSchedules.slice(0, MAX_DASHBOARD_SCHEDULES)
+  const hiddenCount = allPeriodSchedules.length - periodSchedules.length
 
   return (
     <AppShell
@@ -48,23 +52,28 @@ export function AdminDashboard() {
         </div>
 
         <div className={styles.upcomingSection}>
-          <ScheduleDateRangeFilter setting={rangeSetting} onChange={saveRange} />
+          <ScheduleDateRangeFilter setting={rangeSetting} currentRange={range} onChange={saveRange} />
           <h2 className={styles.sectionTitle}>{t('schedule.periodSchedules')}</h2>
           {periodSchedules.length === 0 ? (
             <p className={styles.emptyPeriod}>{t('schedule.noUpcoming')}</p>
           ) : (
-            <div className={styles.scheduleList}>
-              {periodSchedules.map(s => (
-                <ScheduleItem
-                  key={s.id}
-                  schedule={s}
-                  unitName={getUnitName(s.unitId)}
-                  canEdit
-                  onEdit={() => setEditTarget(s)}
-                  onDelete={() => setEditTarget(s)}
-                />
-              ))}
-            </div>
+            <>
+              <div className={styles.scheduleList}>
+                {periodSchedules.map(s => (
+                  <ScheduleItem
+                    key={s.id}
+                    schedule={s}
+                    unitName={getUnitName(s.unitId)}
+                    canEdit
+                    onEdit={() => setEditTarget(s)}
+                    onDelete={() => setEditTarget(s)}
+                  />
+                ))}
+              </div>
+              {hiddenCount > 0 && (
+                <p className={styles.moreHint}>+{hiddenCount}건 · 전체 목록은 일정 페이지에서 확인하세요.</p>
+              )}
+            </>
           )}
         </div>
 

@@ -23,12 +23,17 @@ export function useSchedulePageData(
   const today = dayjs()
   const thisMonth = today.format('YYYY-M')
 
-  const all = schedules
-    .filter(s => s.type === type && s.status === 'confirmed')
-    .filter(s => !dateRange || (s.date >= dateRange.start && s.date <= dateRange.end))
-  const thisMonthCount = all.filter(s => dayjs(s.date).format('YYYY-M') === thisMonth).length
-  const upcomingCount = all.filter(s => !dayjs(s.date).isBefore(today, 'day')).length
-  const completedCount = all.filter(s => dayjs(s.date).isBefore(today, 'day')).length
+  // Base set: type + status only — stats and sidebar always reflect full picture
+  const allConfirmed = schedules.filter(s => s.type === type && s.status === 'confirmed')
+
+  // Range-filtered set: used only for the grouped list view
+  const all = dateRange
+    ? allConfirmed.filter(s => s.date >= dateRange.start && s.date <= dateRange.end)
+    : allConfirmed
+
+  const thisMonthCount = allConfirmed.filter(s => dayjs(s.date).format('YYYY-M') === thisMonth).length
+  const upcomingCount = allConfirmed.filter(s => !dayjs(s.date).isBefore(today, 'day')).length
+  const completedCount = allConfirmed.filter(s => dayjs(s.date).isBefore(today, 'day')).length
 
   const filtered = all.filter(s => {
     if (activeTab === 'upcoming') return !dayjs(s.date).isBefore(today, 'day')
@@ -37,7 +42,7 @@ export function useSchedulePageData(
   })
 
   const sorted = [...filtered].sort((a, b) =>
-    dayjs(a.date).isBefore(dayjs(b.date)) ? -1 : 1
+    a.date < b.date ? -1 : a.date > b.date ? 1 : 0
   )
 
   const grouped = groupByMonth(sorted)
@@ -50,9 +55,10 @@ export function useSchedulePageData(
     ...monthKeys.filter(k => dayjs(k, 'YYYY년 M월').isBefore(today, 'month')),
   ]
 
-  const upcomingList = all
+  // upcomingList: from unfiltered base so sidebar always shows real next items
+  const upcomingList = allConfirmed
     .filter(s => !dayjs(s.date).isBefore(today, 'day'))
-    .sort((a, b) => dayjs(a.date).isBefore(dayjs(b.date)) ? -1 : 1)
+    .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0)
     .slice(0, upcomingLimit)
 
   return { orderedKeys, grouped, upcomingList, thisMonthCount, upcomingCount, completedCount }

@@ -33,6 +33,13 @@
   margin-bottom: $space-3;
 }
 
+.moreHint {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  padding: $space-3 $space-4;
+  border-top: 1px solid $color-border;
+}
+
 .emptyPeriod {
   font-size: $font-size-sm;
   color: $color-text-muted;
