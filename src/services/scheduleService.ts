@@ -81,6 +81,22 @@ export async function deleteSchedule(scheduleId: string): Promise<void> {
   await deleteDoc(doc(db, 'schedules', scheduleId))
 }
 
+const adminEditScheduleFn = httpsCallable(functions, 'adminEditSchedule')
+const adminDeleteScheduleFn = httpsCallable(functions, 'adminDeleteSchedule')
+
+export async function editScheduleViaCF(scheduleId: string, updates: {
+  date?: string
+  startTime?: string
+  endTime?: string
+  notes?: string
+}): Promise<void> {
+  await adminEditScheduleFn({ scheduleId, updates })
+}
+
+export async function deleteScheduleViaCF(scheduleId: string): Promise<void> {
+  await adminDeleteScheduleFn({ scheduleId })
+}
+
 export interface VisitScheduleEntry {
   unitId: string
   presidentUid: string | null
