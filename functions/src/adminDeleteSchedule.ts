@@ -12,13 +12,19 @@ export const adminDeleteSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
+    const db = admin.firestore()
+    const callerSnap = await db.collection('users').doc(context.auth.uid).get()
+    const callerRole = callerSnap.data()?.role
+    if (!['admin', 'seventy'].includes(callerRole)) {
+      throw new functions.https.HttpsError('permission-denied', 'Admin only')
+    }
+
     const { scheduleId } = data
 
     if (!scheduleId) {
       throw new functions.https.HttpsError('invalid-argument', 'scheduleId required')
     }
 
-    const db = admin.firestore()
     const scheduleRef = db.collection('schedules').doc(scheduleId)
     const snap = await scheduleRef.get()
 
@@ -28,6 +34,7 @@ export const adminDeleteSchedule = functions
 
     const schedule = snap.data()!
 
+    // calendarSync trigger handles GCal deletion when status becomes 'cancelled'
     await scheduleRef.update({ status: 'cancelled' })
 
     if (schedule.taskId) {
