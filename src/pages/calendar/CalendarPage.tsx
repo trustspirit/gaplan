@@ -10,7 +10,7 @@ import { useUnits } from '@/hooks/useUnits'
 import { manualCalendarSync } from '@/services/scheduleService'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Button } from '@/components/ui'
-import { CalendarView, ScheduleItem } from '@/components/domain'
+import { CalendarView, ScheduleItem, ScheduleFormModal } from '@/components/domain'
 import styles from './CalendarPage.module.scss'
 
 export function CalendarPage() {
@@ -18,6 +18,7 @@ export function CalendarPage() {
   const user = useAtomValue(authUserAtom)!
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
+  const [formOpen, setFormOpen] = useState(false)
 
   const handleManualSync = async () => {
     setSyncing(true)
@@ -95,14 +96,21 @@ export function CalendarPage() {
               <CardHeader
                 title={listTitle}
                 action={selectedDate ? (
-                  <button
-                    type="button"
-                    className={styles.clearBtn}
-                    onClick={() => setSelectedDate(null)}
-                    title={t('calendar.clearSelection')}
-                  >
-                    <X size={14} />
-                  </button>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    {user.role === 'admin' && (
+                      <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
+                        + 일정 추가
+                      </Button>
+                    )}
+                    <button
+                      type="button"
+                      className={styles.clearBtn}
+                      onClick={() => setSelectedDate(null)}
+                      title={t('calendar.clearSelection')}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                 ) : undefined}
               />
               <CardBody>
@@ -122,6 +130,13 @@ export function CalendarPage() {
           </div>
         </div>
       </div>
+      {formOpen && (
+        <ScheduleFormModal
+          initialDate={selectedDate ?? undefined}
+          onClose={() => setFormOpen(false)}
+          onSaved={() => setFormOpen(false)}
+        />
+      )}
     </AppShell>
   )
 }

@@ -7,7 +7,8 @@ import { authUserAtom } from '@/store/authAtom'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
 import { AppShell, TopBar } from '@/components/layout'
-import { ScheduleItem } from '@/components/domain'
+import { Button } from '@/components/ui'
+import { ScheduleItem, ScheduleFormModal } from '@/components/domain'
 import type { Schedule } from '@/types'
 import styles from './VisitsPage.module.scss'
 
@@ -35,6 +36,7 @@ export function VisitsPage() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
+  const [formOpen, setFormOpen] = useState(false)
 
   const filters = user.role === 'president'
     ? { presidentUid: user.uid }
@@ -92,6 +94,13 @@ export function VisitsPage() {
     <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('visits.title')} />}>
       <div className={styles.layout}>
         <div className={styles.mainCol}>
+          {user.role === 'admin' && (
+            <div className={styles.pageHeader}>
+              <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
+                + 일정 추가
+              </Button>
+            </div>
+          )}
           <div className={styles.stats}>
             <div className={styles.statCard}>
               <span className={styles.statValue}>{thisMonthCount}</span>
@@ -155,6 +164,12 @@ export function VisitsPage() {
           </div>
         </div>
 
+        {formOpen && (
+          <ScheduleFormModal
+            onClose={() => setFormOpen(false)}
+            onSaved={() => setFormOpen(false)}
+          />
+        )}
         <div className={styles.sideCol}>
           <div className={styles.sideCard}>
             <div className={styles.sideCardHeader}>{t('visits.nextVisits')}</div>

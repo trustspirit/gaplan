@@ -12,6 +12,7 @@ import { db } from '@/firebase'
 import { REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Input, Button, Modal } from '@/components/ui'
+import { ScheduleFormModal } from '@/components/domain'
 import type { Schedule } from '@/types'
 import styles from './CalendarSettings.module.scss'
 
@@ -210,6 +211,7 @@ export function CalendarSettings() {
   const [fetching, setFetching] = useState(true)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const [cancelTarget, setCancelTarget] = useState<Schedule | null>(null)
+  const [formOpen, setFormOpen] = useState(false)
 
   const { schedules } = useSchedules({})
   const confirmedSchedules = schedules
@@ -275,7 +277,20 @@ export function CalendarSettings() {
         </Card>
 
         <Card>
-          <CardHeader title={t('admin.confirmedSchedules')} />
+          <CardHeader
+            title={t('admin.confirmedSchedules')}
+            action={
+              <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
+                + 일정 추가
+              </Button>
+            }
+          />
+          {formOpen && (
+            <ScheduleFormModal
+              onClose={() => setFormOpen(false)}
+              onSaved={() => { setFormOpen(false); toast.success('일정이 등록되었습니다.') }}
+            />
+          )}
           <CardBody>
             <p className={styles.desc}>{t('admin.confirmedSchedulesDesc')}</p>
             {confirmedSchedules.length === 0 ? (
