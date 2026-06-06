@@ -11,10 +11,11 @@ import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
 import { useTaskConfirm } from '@/hooks/useTaskConfirm'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
 import { subscribeToSharedCalendar } from '@/services/calendarService'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Skeleton, Button, Modal, BottomSheet } from '@/components/ui'
-import { TaskCard, ScheduleItem, CalendarView, TaskPickerContent, taskPickerTitle } from '@/components/domain'
+import { TaskCard, ScheduleItem, CalendarView, TaskPickerContent, taskPickerTitle, ScheduleDateRangeFilter } from '@/components/domain'
 import { useWardSubmit } from '@/hooks/useWardSubmit'
 import { REGIONS } from '@/constants/regions'
 import styles from './DashboardPage.module.scss'
@@ -208,15 +209,16 @@ function AdminDashboardContent() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { schedules } = useSchedules({})
+  const { getUnitName } = useUnits()
+  const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
 
   const thisMonth = schedules.filter(
     s => s.status === 'confirmed' && dayjs(s.date).format('YYYY-M') === dayjs().format('YYYY-M')
   )
   const upcoming = schedules
-    .filter(s => s.status === 'confirmed' && dayjs(s.date).isAfter(dayjs().subtract(1, 'day')))
+    .filter(s => s.status === 'confirmed' && s.date >= range.start && s.date <= range.end)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 8)
-  const { getUnitName } = useUnits()
 
   return (
     <AppShell
@@ -225,6 +227,7 @@ function AdminDashboardContent() {
     >
       <div className={styles.layout}>
         <div className={styles.mainCol}>
+          <ScheduleDateRangeFilter setting={rangeSetting} currentRange={range} onChange={saveRange} />
           <Card>
             <CardHeader
               title={t('schedule.upcoming')}

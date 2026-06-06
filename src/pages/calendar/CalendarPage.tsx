@@ -7,11 +7,12 @@ import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
+import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
 import { manualCalendarSync } from '@/services/scheduleService'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Button } from '@/components/ui'
 import type { Schedule } from '@/types'
-import { CalendarView, ScheduleItem, ScheduleFormModal, EditScheduleModal } from '@/components/domain'
+import { CalendarView, ScheduleItem, ScheduleFormModal, EditScheduleModal, ScheduleDateRangeFilter } from '@/components/domain'
 import styles from './CalendarPage.module.scss'
 
 export function CalendarPage() {
@@ -40,6 +41,7 @@ export function CalendarPage() {
       ? { seventyUid: user.uid }
       : {}
   const { schedules } = useSchedules(filters)
+  const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
 
   // Toggle: clicking the same date again deselects it
   const handleDateClick = (date: string) => {
@@ -49,9 +51,8 @@ export function CalendarPage() {
   const daySchedules = selectedDate
     ? schedules.filter(s => s.status === 'confirmed' && s.date === selectedDate)
     : schedules
-        .filter(s => s.status === 'confirmed' && s.date >= dayjs().format('YYYY-MM-DD'))
+        .filter(s => s.status === 'confirmed' && s.date >= range.start && s.date <= range.end)
         .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(0, 10)
 
   const listTitle = selectedDate
     ? t('calendar.selectedDateTitle', { date: dayjs(selectedDate).format('M/D (ddd)') })
@@ -94,6 +95,9 @@ export function CalendarPage() {
             </Card>
           </div>
           <div className={styles.listCol}>
+            {!selectedDate && (
+              <ScheduleDateRangeFilter setting={rangeSetting} currentRange={range} onChange={saveRange} />
+            )}
             <Card>
               <CardHeader
                 title={listTitle}

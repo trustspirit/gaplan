@@ -4,13 +4,13 @@ import { Link } from 'react-router-dom'
 import { Users, ListChecks, CalendarCheck, MapPin } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import dayjs from 'dayjs'
 import { authUserAtom } from '@/store/authAtom'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
-import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
 import { AppShell, TopBar } from '@/components/layout'
 import { Button } from '@/components/ui'
-import { ScheduleItem, ScheduleFormModal, EditScheduleModal, ScheduleDateRangeFilter } from '@/components/domain'
+import { ScheduleItem, ScheduleFormModal, EditScheduleModal } from '@/components/domain'
 import type { Schedule } from '@/types'
 import styles from './AdminDashboard.module.scss'
 
@@ -29,15 +29,15 @@ export function AdminDashboard() {
 
   const { schedules } = useSchedules({})
   const { getUnitName } = useUnits()
-  const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
 
   const MAX_DASHBOARD_SCHEDULES = 30
+  const today = dayjs().format('YYYY-MM-DD')
 
-  const allPeriodSchedules = schedules
-    .filter(s => s.status === 'confirmed' && s.date >= range.start && s.date <= range.end)
+  const allUpcoming = schedules
+    .filter(s => s.status === 'confirmed' && s.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date))
-  const periodSchedules = allPeriodSchedules.slice(0, MAX_DASHBOARD_SCHEDULES)
-  const hiddenCount = allPeriodSchedules.length - periodSchedules.length
+  const periodSchedules = allUpcoming.slice(0, MAX_DASHBOARD_SCHEDULES)
+  const hiddenCount = allUpcoming.length - periodSchedules.length
 
   return (
     <AppShell
@@ -52,8 +52,7 @@ export function AdminDashboard() {
         </div>
 
         <div className={styles.upcomingSection}>
-          <ScheduleDateRangeFilter setting={rangeSetting} currentRange={range} onChange={saveRange} />
-          <h2 className={styles.sectionTitle}>{t('schedule.periodSchedules')}</h2>
+          <h2 className={styles.sectionTitle}>{t('schedule.upcoming')}</h2>
           {periodSchedules.length === 0 ? (
             <p className={styles.emptyPeriod}>{t('schedule.noUpcoming')}</p>
           ) : (
