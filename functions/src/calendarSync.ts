@@ -79,12 +79,13 @@ export const calendarSync = functions
     const startDateTime = `${after.date}T${after.startTime}:00+09:00`
     const endDateTime = `${after.date}T${after.endTime}:00+09:00`
 
-    // Ward visits include the ward/branch name in the title
     let title: string
     if (after.type === 'ward_visit') {
       title = after.wardName ? `${unitName} - ${after.wardName} 방문` : `${unitName} 방문`
-    } else {
+    } else if (after.type === 'interview') {
       title = `${unitName} 접견`
+    } else {
+      title = unitName ? `${unitName} 모임` : '모임'
     }
 
     const calendar = getCalendarClient()

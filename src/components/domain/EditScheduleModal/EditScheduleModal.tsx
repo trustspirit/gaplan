@@ -11,7 +11,7 @@ interface Schedule {
   date: string
   startTime: string
   endTime: string
-  note?: string
+  notes?: string
 }
 
 interface Props {
@@ -24,7 +24,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved }: Props) {
   const [date, setDate] = useState(schedule.date)
   const [startTime, setStartTime] = useState(schedule.startTime)
   const [endTime, setEndTime] = useState(schedule.endTime)
-  const [note, setNote] = useState(schedule.note ?? '')
+  const [note, setNote] = useState(schedule.notes ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -35,7 +35,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved }: Props) {
     try {
       await adminEditScheduleFn({
         scheduleId: schedule.id,
-        updates: { date, startTime, endTime, ...(note ? { note } : {}) },
+        updates: { date, startTime, endTime, notes: note },
       })
       onSaved()
       onClose()

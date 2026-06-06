@@ -7,7 +7,7 @@ interface AdminEditScheduleRequest {
     date?: string
     startTime?: string
     endTime?: string
-    note?: string
+    notes?: string
   }
 }
 
@@ -54,11 +54,11 @@ export const adminEditSchedule = functions
       }
       allowed.endTime = updates.endTime
     }
-    if (updates.note !== undefined) {
-      if (typeof updates.note !== 'string' || updates.note.length > 500) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid note')
+    if (updates.notes !== undefined) {
+      if (typeof updates.notes !== 'string' || updates.notes.length > 500) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid notes')
       }
-      allowed.note = updates.note
+      allowed.notes = updates.notes
     }
 
     if (Object.keys(allowed).length === 0) {
