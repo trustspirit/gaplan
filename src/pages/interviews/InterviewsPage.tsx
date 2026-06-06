@@ -9,27 +9,10 @@ import { useUnits } from '@/hooks/useUnits'
 import { AppShell, TopBar } from '@/components/layout'
 import { ScheduleItem } from '@/components/domain'
 import type { Schedule } from '@/types'
+import { groupByMonth, sortMonthKeys } from '@/utils/scheduleGrouping'
 import styles from './InterviewsPage.module.scss'
 
 type FilterTab = 'all' | 'upcoming' | 'completed'
-
-function groupByMonth(schedules: Schedule[]): Map<string, Schedule[]> {
-  const map = new Map<string, Schedule[]>()
-  for (const s of schedules) {
-    const key = dayjs(s.date).format('YYYY년 M월')
-    if (!map.has(key)) map.set(key, [])
-    map.get(key)!.push(s)
-  }
-  return map
-}
-
-function sortMonthKeys(keys: string[]): string[] {
-  return [...keys].sort((a, b) => {
-    const da = dayjs(a, 'YYYY년 M월')
-    const db = dayjs(b, 'YYYY년 M월')
-    return da.isBefore(db) ? -1 : 1
-  })
-}
 
 export function InterviewsPage() {
   const { t } = useTranslation()

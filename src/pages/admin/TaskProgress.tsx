@@ -37,54 +37,48 @@ function TaskDetailModal({
   onClose: () => void
 }) {
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalSheet} onClick={e => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h3 className={styles.modalTitle}>태스크 상세</h3>
-          <button type="button" onClick={onClose} className={styles.closeBtn}>✕</button>
+    <Modal open onClose={onClose} title="태스크 상세">
+      <div className={styles.modalBody}>
+        <div className={styles.detailRow}>
+          <span className={styles.detailLabel}>상태</span>
+          <StatusBadge status={task.status} />
         </div>
-        <div className={styles.modalBody}>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>상태</span>
-            <span className={styles.detailValue}>{task.status}</span>
-          </div>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>담당자</span>
-            <span className={styles.detailValue}>{presidentName}</span>
-          </div>
-          <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>마감일</span>
-            <span className={styles.detailValue}>{task.dueDate}</span>
-          </div>
-          {task.note && (
-            <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>메모</span>
-              <span className={styles.detailValue}>{task.note}</span>
-            </div>
-          )}
-          {task.respondedSlots && task.respondedSlots.length > 0 && (
-            <div className={styles.detailSection}>
-              <div className={styles.detailSectionTitle}>응답한 시간</div>
-              {task.respondedSlots.map((slot, i) => (
-                <div key={i} className={styles.detailSlotRow}>
-                  {slot.date} {slot.startTime}–{slot.endTime}
-                </div>
-              ))}
-            </div>
-          )}
-          {task.wardAssignments && task.wardAssignments.length > 0 && (
-            <div className={styles.detailSection}>
-              <div className={styles.detailSectionTitle}>와드 배정</div>
-              {task.wardAssignments.map((wa, i) => (
-                <div key={i} className={styles.detailSlotRow}>
-                  {wa.wardName}: {wa.date}
-                </div>
-              ))}
-            </div>
-          )}
+        <div className={styles.detailRow}>
+          <span className={styles.detailLabel}>담당자</span>
+          <span className={styles.detailValue}>{presidentName}</span>
         </div>
+        <div className={styles.detailRow}>
+          <span className={styles.detailLabel}>마감일</span>
+          <span className={styles.detailValue}>{task.dueDate}</span>
+        </div>
+        {task.note && (
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>메모</span>
+            <span className={styles.detailValue}>{task.note}</span>
+          </div>
+        )}
+        {task.respondedSlots && task.respondedSlots.length > 0 && (
+          <div className={styles.detailSection}>
+            <div className={styles.detailSectionTitle}>응답한 시간</div>
+            {task.respondedSlots.map((slot, i) => (
+              <div key={i} className={styles.detailSlotRow}>
+                {slot.date} {slot.startTime}–{slot.endTime}
+              </div>
+            ))}
+          </div>
+        )}
+        {task.wardAssignments && task.wardAssignments.length > 0 && (
+          <div className={styles.detailSection}>
+            <div className={styles.detailSectionTitle}>와드 배정</div>
+            {task.wardAssignments.map((wa, i) => (
+              <div key={i} className={styles.detailSlotRow}>
+                {wa.wardName}: {wa.date}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </Modal>
   )
 }
 
