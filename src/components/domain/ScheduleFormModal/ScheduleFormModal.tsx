@@ -35,8 +35,8 @@ export function ScheduleFormModal({ initialDate, onClose, onSaved }: ScheduleFor
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Reset ward when stake changes
-  useEffect(() => { setWardName('') }, [unitId])
+  // Reset ward and president when stake changes
+  useEffect(() => { setWardName(''); setPresidentUid('') }, [unitId])
 
   // Close on Escape key
   useEffect(() => {
@@ -94,7 +94,7 @@ export function ScheduleFormModal({ initialDate, onClose, onSaved }: ScheduleFor
       <div className={styles.sheet} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <h3 className={styles.title}>새 일정 등록</h3>
-          <button type="button" onClick={onClose} className={styles.closeBtn}>
+          <button type="button" onClick={onClose} className={styles.closeBtn} aria-label="닫기">
             <X size={18} />
           </button>
         </div>

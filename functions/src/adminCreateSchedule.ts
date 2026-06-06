@@ -23,35 +23,12 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const db = admin.firestore()
-    const callerSnap = await db.collection('users').doc(context.auth.uid).get()
-    const callerRole = callerSnap.data()?.role
-    if (!['admin', 'seventy'].includes(callerRole)) {
-      throw new functions.https.HttpsError('permission-denied', 'Admin or seventy only')
-    }
-    if (callerRole === 'seventy' && context.auth.uid !== data.seventyUid) {
-      throw new functions.https.HttpsError('permission-denied', 'Seventy can only create schedules for themselves')
-    }
-
-    const seventySnap = await db.collection('users').doc(data.seventyUid).get()
-    if (!seventySnap.exists || seventySnap.data()?.role !== 'seventy') {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid seventyUid: user not found or not a seventy')
-    }
-
+    // Destructure first so cheap validations can run before any DB reads
     const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes } = data
 
-    if (presidentUid) {
-      const presidentSnap = await db.collection('users').doc(presidentUid).get()
-      if (!presidentSnap.exists || presidentSnap.data()?.role !== 'president') {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid presidentUid: user not found or not a president')
-      }
-    }
-
+    // Basic validations — no DB reads needed
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
-    }
-    if (!seventyUid || typeof seventyUid !== 'string') {
-      throw new functions.https.HttpsError('invalid-argument', 'seventyUid required')
     }
     if (!DATE_RE.test(date)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid date format (YYYY-MM-DD)')
@@ -76,6 +53,32 @@ export const adminCreateSchedule = functions
     }
     if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {
       throw new functions.https.HttpsError('invalid-argument', 'notes max 500 chars')
+    }
+
+    // DB reads — callerSnap and seventySnap are independent, fetch in parallel
+    const db = admin.firestore()
+    const [callerSnap, seventySnap] = await Promise.all([
+      db.collection('users').doc(context.auth.uid).get(),
+      db.collection('users').doc(seventyUid).get(),
+    ])
+
+    const callerRole = callerSnap.data()?.role
+    if (!['admin', 'seventy'].includes(callerRole)) {
+      throw new functions.https.HttpsError('permission-denied', 'Admin or seventy only')
+    }
+    if (callerRole === 'seventy' && context.auth.uid !== seventyUid) {
+      throw new functions.https.HttpsError('permission-denied', 'Seventy can only create schedules for themselves')
+    }
+
+    if (!seventySnap.exists || seventySnap.data()?.role !== 'seventy') {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid seventyUid: user not found or not a seventy')
+    }
+
+    if (presidentUid) {
+      const presidentSnap = await db.collection('users').doc(presidentUid).get()
+      if (!presidentSnap.exists || presidentSnap.data()?.role !== 'president') {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid presidentUid: user not found or not a president')
+      }
     }
 
     await db.collection('schedules').add({

@@ -102,7 +102,7 @@
 }
 
 .segBtnActive {
-  @extend .segBtn;
+  composes: segBtn;
   background: $color-surface;
   color: $color-primary;
   box-shadow: $shadow-raised;
