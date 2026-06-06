@@ -61,8 +61,8 @@ export function ScheduleItem({
         )}
       >
         <div className={styles.dateBox}>
-          <span className={styles.day}>{date.format('D')}</span>
           <span className={styles.month}>{date.format('M월')}</span>
+          <span className={styles.day}>{date.format('D')}</span>
           <span className={styles.dow}>{dow}</span>
         </div>
         <div className={styles.info}>
