@@ -165,7 +165,10 @@ export function VisitsPage() {
                 upcomingVisits.map(s => (
                   <div key={s.id} className={styles.upcomingItem}>
                     <span className={styles.upcomingDate}>{dayjs(s.date).format('M/D (ddd)')}</span>
-                    <span className={styles.upcomingUnit}>{getUnitName(s.unitId)}</span>
+                    <span className={styles.upcomingUnit}>
+                      {getUnitName(s.unitId)}
+                      {s.wardName && <span className={styles.upcomingWard}> · {s.wardName}</span>}
+                    </span>
                   </div>
                 ))
               )}

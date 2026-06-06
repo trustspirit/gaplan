@@ -196,6 +196,11 @@
   text-overflow: ellipsis;
 }
 
+.wardName {
+  font-weight: $font-weight-normal;
+  color: $color-text-muted;
+}
+
 .time {
   font-size: $font-size-xs;
   color: $color-text-muted;

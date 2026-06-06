@@ -82,6 +82,11 @@
   text-overflow: ellipsis;
 }
 
+.upcomingWard {
+  color: $color-text-muted;
+  font-weight: $font-weight-normal;
+}
+
 .sideEmpty {
   padding: $space-6 $space-4;
   font-size: $font-size-sm;

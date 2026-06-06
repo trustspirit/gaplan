@@ -9,8 +9,9 @@ import styles from './ScheduleItem.module.scss'
 const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토']
 
 function buildGCalUrl(schedule: Schedule, unitName: string): string {
+  const locationLabel = schedule.wardName ? `${unitName} ${schedule.wardName}` : unitName
   const title = schedule.type === 'ward_visit'
-    ? `와드 방문 - ${unitName}`
+    ? `와드 방문 - ${locationLabel}`
     : schedule.type === 'interview'
       ? `접견 - ${unitName}`
       : `모임 - ${unitName}`
@@ -69,7 +70,10 @@ export function ScheduleItem({
             {isVisit ? <MapPin size={11} /> : <Users size={11} />}
             <span>{isVisit ? t('schedule.type.ward_visit') : t('schedule.type.interview')}</span>
           </div>
-          <p className={styles.unit}>{unitName}</p>
+          <p className={styles.unit}>
+            {unitName}
+            {schedule.wardName && <span className={styles.wardName}> · {schedule.wardName}</span>}
+          </p>
           <p className={styles.time}>{schedule.startTime} – {schedule.endTime}</p>
         </div>
         {isPast && <span className={styles.pastBadge}>{t('common.complete')}</span>}
