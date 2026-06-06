@@ -38,6 +38,13 @@ export function ScheduleFormModal({ initialDate, onClose, onSaved }: ScheduleFor
   // Reset ward when stake changes
   useEffect(() => { setWardName('') }, [unitId])
 
+  // Close on Escape key
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [onClose])
+
   const seventyUsers = users.filter(u => u.role === 'seventy')
   const wardOptions = unitId ? getWardsByUnit(unitId).map(w => ({ value: w.name, label: w.name })) : []
   const unitOptions = ALL_UNITS.map(u => ({ value: u.id, label: u.name }))
@@ -84,7 +91,7 @@ export function ScheduleFormModal({ initialDate, onClose, onSaved }: ScheduleFor
 
   return createPortal(
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.sheet} onClick={e => e.stopPropagation()}>
+      <div className={styles.sheet} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <h3 className={styles.title}>새 일정 등록</h3>
           <button type="button" onClick={onClose} className={styles.closeBtn}>
