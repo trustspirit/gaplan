@@ -8,16 +8,7 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
-
-const UNIT_REGION_MAP: Record<string, string> = {
-  'seoul-stake': 'seoul', 'seoul-east-stake': 'seoul',
-  'seoul-west-stake': 'seoul', 'gyeonggi-stake': 'seoul',
-  'seoul-south-stake': 'seoul-south', 'daejeon-stake': 'seoul-south',
-  'cheongju-stake': 'seoul-south', 'jeonju-stake': 'seoul-south',
-  'gwangju-stake': 'seoul-south',
-  'busan-stake': 'busan', 'daegu-stake': 'busan',
-  'changwon-stake': 'busan', 'ulsan-district': 'busan',
-}
+import { UNIT_REGION_MAP } from './unitRegionMap'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -66,13 +57,20 @@ export const manualCalendarSync = functions
         continue
       }
 
+      const unitSnap = s.unitId
+        ? await db.collection('units').doc(s.unitId).get()
+        : null
+      const unitName = unitSnap?.data()?.name ?? s.unitId ?? ''
+
       const startDateTime = `${s.date}T${s.startTime}:00+09:00`
       const endDateTime = `${s.date}T${s.endTime}:00+09:00`
       let title: string
       if (s.type === 'ward_visit') {
-        title = s.wardName ? `${s.wardName} 방문` : `와드 방문`
+        title = s.wardName ? `${unitName} - ${s.wardName} 방문` : `${unitName} 방문`
+      } else if (s.type === 'interview') {
+        title = `${unitName} 접견`
       } else {
-        title = `접견`
+        title = unitName ? `${unitName} 모임` : '모임'
       }
 
       try {

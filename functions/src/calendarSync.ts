@@ -6,17 +6,7 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
-
-// Fallback map: derive regionId from unitId when seventy user doesn't have it set
-const UNIT_REGION_MAP: Record<string, string> = {
-  'seoul-stake': 'seoul', 'seoul-east-stake': 'seoul',
-  'seoul-west-stake': 'seoul', 'gyeonggi-stake': 'seoul',
-  'seoul-south-stake': 'seoul-south', 'daejeon-stake': 'seoul-south',
-  'cheongju-stake': 'seoul-south', 'jeonju-stake': 'seoul-south',
-  'gwangju-stake': 'seoul-south',
-  'busan-stake': 'busan', 'daegu-stake': 'busan',
-  'changwon-stake': 'busan', 'ulsan-district': 'busan',
-}
+import { UNIT_REGION_MAP } from './unitRegionMap'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -68,7 +58,7 @@ export const calendarSync = functions
 
     if (!after || after.status !== 'confirmed') return
     // Only skip creation if there's already an event AND the date/time haven't changed
-    const dateChanged = before?.date !== after.date || before?.startTime !== after.startTime
+    const dateChanged = before?.date !== after.date || before?.startTime !== after.startTime || before?.endTime !== after.endTime
     if (after.googleCalendarEventId && !dateChanged) return
 
     const unitSnap = after.unitId
