@@ -26,7 +26,11 @@ export const taskCreatedNotification = functions
 
     const typeLabel = resolveTaskTypeLabel(task.type, task.title)
     const dueDate = task.dueDate as string
+    const taskId = snap.id
     const tasksUrl = `${APP_URL}/tasks`
+    const respondUrl = task.respondToken
+      ? `${APP_URL}/respond/${taskId}?t=${task.respondToken}`
+      : null
 
     const subject = `[gaplan] 새 Task가 배정되었습니다: ${typeLabel}`
     const text = [
@@ -40,6 +44,7 @@ export const taskCreatedNotification = functions
       '',
       `아래 링크를 클릭해 Task를 확인하고 처리해주세요:`,
       tasksUrl,
+      respondUrl ? `\n공개 링크 (로그인 불필요):\n${respondUrl}` : null,
       '',
       'gaplan',
     ].filter(l => l !== null).join('\n')
@@ -50,7 +55,7 @@ export const taskCreatedNotification = functions
         to: president.email,
         subject,
         text,
-        html: buildHtmlEmail(president.name, typeLabel, dueDate, task.note, tasksUrl),
+        html: buildHtmlEmail(president.name, typeLabel, dueDate, task.note, tasksUrl, respondUrl),
       })
       // Mark as notified so daily reminder doesn't duplicate
       await snap.ref.update({
@@ -76,11 +81,13 @@ function buildHtmlEmail(
   dueDate: string,
   note: string | undefined,
   tasksUrl: string,
+  respondUrl: string | null = null,
 ): string {
   const safeName = escapeHtml(name)
   const safeTypeLabel = escapeHtml(typeLabel)
   const safeDueDate = escapeHtml(dueDate)
   const safeNote = note ? escapeHtml(note).replace(/\n/g, '<br>') : null
+  const safeRespondUrl = respondUrl ? escapeHtml(respondUrl) : null
 
   return `
 <!DOCTYPE html>
@@ -116,6 +123,11 @@ function buildHtmlEmail(
                padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600">
         Task 확인하고 처리하기 →
       </a>
+      ${safeRespondUrl ? `
+      <p style="margin-top:16px;padding:12px;background:#f0f9ff;border-radius:8px;font-size:14px;">
+        <strong>공개 링크 (로그인 불필요):</strong><br/>
+        <a href="${safeRespondUrl}" style="color:#177C9C;">${safeRespondUrl}</a>
+      </p>` : ''}
     </div>
   </div>
 </body>
