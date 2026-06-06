@@ -1,0 +1,122 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.container {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  background: white;
+  overflow: hidden;
+}
+
+.rangeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.rangeLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: $color-sidebar;
+}
+
+.rangeInputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.timeInput {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  width: 90px;
+  min-height: 44px;
+
+  @include mobile {
+    font-size: 16px;
+    width: 110px;
+  }
+}
+
+.separator {
+  color: #6b7280;
+}
+
+.scrollWrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.grid {
+  display: grid;
+  gap: 2px;
+}
+
+.headerCell {
+  text-align: center;
+  padding: 4px 0;
+}
+
+.dayOfWeek {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 2px;
+}
+
+.dateLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.timeLabel {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: white;
+  text-align: right;
+  padding-right: 4px;
+  font-size: 10px;
+  color: #9ca3af;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cell {
+  height: 22px;
+  border-radius: 3px;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+  transition: background-color 0.08s;
+  background: #f3f4f6;
+
+  &:hover {
+    background: #e5e7eb;
+  }
+
+  &.painted {
+    background: $color-primary;
+  }
+
+  &.painted:hover {
+    background: darken($color-primary, 8%);
+  }
+}
+
+.emptyHint {
+  padding: 40px;
+  text-align: center;
+  font-size: 14px;
+  color: #9ca3af;
+  background: #f9fafb;
+  border-radius: 8px;
+}
