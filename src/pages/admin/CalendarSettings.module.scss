@@ -73,7 +73,7 @@
 .scheduleType {
   font-size: $font-size-xs;
   color: $color-text-muted;
-  background: $color-background;
+  background: $color-bg;
   border: 1px solid $color-border;
   border-radius: $border-radius-sm;
   padding: 2px 7px;
@@ -145,7 +145,7 @@
   align-items: center;
   gap: $space-2;
   padding: $space-2 $space-3;
-  background: $color-background;
+  background: $color-bg;
   border-radius: $border-radius-sm;
   border: 1px solid $color-border;
 }
