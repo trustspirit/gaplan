@@ -1,18 +1,17 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { httpsCallable } from 'firebase/functions'
 import { useAtomValue } from 'jotai'
 import { X } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { functions } from '@/firebase'
 import { useUsers } from '@/hooks/useUsers'
 import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
+import type { ScheduleType } from '@/types'
 import { Button, Select, Input } from '@/components/ui'
 import styles from './ScheduleFormModal.module.scss'
 
 const adminCreateScheduleFn = httpsCallable(functions, 'adminCreateSchedule')
-
-type ScheduleType = 'ward_visit' | 'interview' | 'meeting'
 
 interface ScheduleFormModalProps {
   initialDate?: string
@@ -21,7 +20,6 @@ interface ScheduleFormModalProps {
 }
 
 export function ScheduleFormModal({ initialDate, onClose, onSaved }: ScheduleFormModalProps) {
-  const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { users } = useUsers()
 
@@ -84,9 +82,7 @@ export function ScheduleFormModal({ initialDate, onClose, onSaved }: ScheduleFor
     { value: 'meeting', label: '모임' },
   ]
 
-  void t
-
-  return (
+  return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.sheet} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
@@ -193,6 +189,7 @@ export function ScheduleFormModal({ initialDate, onClose, onSaved }: ScheduleFor
           <Button onClick={handleSave} loading={saving}>일정 저장</Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
