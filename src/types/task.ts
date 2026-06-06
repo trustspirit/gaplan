@@ -50,6 +50,8 @@ export interface Task {
   respondedSlots?: RespondedSlot[]    // interview/sacrament
   wardAssignments?: WardAssignment[]  // ward visit
   respondedAt?: string
+  respondToken?: string  // 16-char hex; public respond link token
+  unitId?: string        // president's unit; used in public WardAssigner
 }
 
 export interface Notification {
