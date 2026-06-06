@@ -95,23 +95,25 @@ export function CalendarPage() {
             <Card>
               <CardHeader
                 title={listTitle}
-                action={selectedDate ? (
+                action={
                   <div className={styles.headerActions}>
                     {user.role === 'admin' && (
                       <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
                         + 일정 추가
                       </Button>
                     )}
-                    <button
-                      type="button"
-                      className={styles.clearBtn}
-                      onClick={() => setSelectedDate(null)}
-                      title={t('calendar.clearSelection')}
-                    >
-                      <X size={14} />
-                    </button>
+                    {selectedDate && (
+                      <button
+                        type="button"
+                        className={styles.clearBtn}
+                        onClick={() => setSelectedDate(null)}
+                        title={t('calendar.clearSelection')}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
                   </div>
-                ) : undefined}
+                }
               />
               <CardBody>
                 {daySchedules.length === 0

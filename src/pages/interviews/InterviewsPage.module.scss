@@ -89,6 +89,13 @@
   text-align: center;
 }
 
+.pageHeader {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-2;
+  margin-bottom: $space-3;
+}
+
 .stats {
   display: flex;
   align-items: center;

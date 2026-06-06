@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { useAtomValue } from 'jotai'
+import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import { Users } from 'lucide-react'
+import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
 import { AppShell, TopBar } from '@/components/layout'
-import { ScheduleItem } from '@/components/domain'
+import { Button } from '@/components/ui'
+import { ScheduleItem, ScheduleFormModal } from '@/components/domain'
 import type { Schedule } from '@/types'
 import { groupByMonth, sortMonthKeys } from '@/utils/scheduleGrouping'
 import styles from './InterviewsPage.module.scss'
@@ -17,7 +20,9 @@ type FilterTab = 'all' | 'upcoming' | 'completed'
 export function InterviewsPage() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
+  const [formOpen, setFormOpen] = useState(false)
 
   const filters = user.role === 'president'
     ? { presidentUid: user.uid }
@@ -75,6 +80,16 @@ export function InterviewsPage() {
     <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('interviews.title')} />}>
       <div className={styles.layout}>
         <div className={styles.mainCol}>
+          {user.role === 'admin' && (
+            <div className={styles.pageHeader}>
+              <Button variant="outline" size="sm" onClick={() => navigate('/admin/region-settings')}>
+                태스크 생성
+              </Button>
+              <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
+                + 접견 일정 추가
+              </Button>
+            </div>
+          )}
           <div className={styles.stats}>
             <div className={styles.statCard}>
               <span className={styles.statValue}>{thisMonthCount}</span>
@@ -138,6 +153,13 @@ export function InterviewsPage() {
           </div>
         </div>
 
+        {formOpen && (
+          <ScheduleFormModal
+            initialType="interview"
+            onClose={() => setFormOpen(false)}
+            onSaved={() => { setFormOpen(false); toast.success('일정이 등록되었습니다.') }}
+          />
+        )}
         <div className={styles.sideCol}>
           <div className={styles.sideCard}>
             <div className={styles.sideCardHeader}>{t('interviews.nextInterviews')}</div>

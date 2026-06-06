@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAtomValue } from 'jotai'
+import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import { MapPin } from 'lucide-react'
 import { toast } from 'sonner'
@@ -19,6 +20,7 @@ type FilterTab = 'all' | 'upcoming' | 'completed'
 export function VisitsPage() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
   const [formOpen, setFormOpen] = useState(false)
 
@@ -80,8 +82,11 @@ export function VisitsPage() {
         <div className={styles.mainCol}>
           {user.role === 'admin' && (
             <div className={styles.pageHeader}>
+              <Button variant="outline" size="sm" onClick={() => navigate('/admin/visit-planner')}>
+                태스크 생성
+              </Button>
               <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
-                + 일정 추가
+                + 방문 일정 추가
               </Button>
             </div>
           )}
@@ -150,6 +155,7 @@ export function VisitsPage() {
 
         {formOpen && (
           <ScheduleFormModal
+            initialType="ward_visit"
             onClose={() => setFormOpen(false)}
             onSaved={() => { setFormOpen(false); toast.success('일정이 등록되었습니다.') }}
           />

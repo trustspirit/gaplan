@@ -15,15 +15,16 @@ const adminCreateScheduleFn = httpsCallable(functions, 'adminCreateSchedule')
 
 interface ScheduleFormModalProps {
   initialDate?: string
+  initialType?: ScheduleType
   onClose: () => void
   onSaved: () => void
 }
 
-export function ScheduleFormModal({ initialDate, onClose, onSaved }: ScheduleFormModalProps) {
+export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }: ScheduleFormModalProps) {
   const user = useAtomValue(authUserAtom)!
   const { users } = useUsers()
 
-  const [type, setType] = useState<ScheduleType>('ward_visit')
+  const [type, setType] = useState<ScheduleType>(initialType ?? 'ward_visit')
   const [seventyUid, setSeventyUid] = useState(user.role === 'seventy' ? user.uid : '')
   const [unitId, setUnitId] = useState('')
   const [wardName, setWardName] = useState('')
