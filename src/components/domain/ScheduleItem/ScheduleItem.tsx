@@ -54,8 +54,12 @@ export function ScheduleItem({
       <div className={clsx(styles.colorBar, isVisit ? styles.visitBar : isMeeting ? styles.meetingBar : styles.interviewBar)} />
 
       {/* Date column — wrapper level so bg/border span full height */}
-      <div className={clsx(styles.dateCol, isPast && styles.past)}>
-        <span className={styles.date}>{date.format('M월 D')}</span>
+      <div className={clsx(
+        styles.dateCol,
+        isVisit ? styles.visit : isMeeting ? styles.meeting : styles.interview,
+        isPast && styles.past,
+      )}>
+        <span className={styles.date}>{date.format('M.D')}</span>
         <span className={styles.dow}>{dow}</span>
       </div>
 

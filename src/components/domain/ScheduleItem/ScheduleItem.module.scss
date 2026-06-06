@@ -140,9 +140,14 @@
 
 .dow {
   font-size: $font-size-xs;
-  color: $color-text-muted;
+  font-weight: $font-weight-medium;
   line-height: 1.3;
 }
+
+.visit .dow { color: $color-sidebar; }
+.interview .dow { color: $color-primary; }
+.meeting .dow { color: #7c6fcd; }
+.past .dow { color: $color-text-muted; }
 
 .info {
   flex: 1;
