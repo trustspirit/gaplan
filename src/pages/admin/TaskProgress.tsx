@@ -25,6 +25,67 @@ function StatusBadge({ status }: { status: Task['status'] }) {
   return <Badge variant="warning">{t('task.status.pending')}</Badge>
 }
 
+// ── Task Detail Modal (for completed tasks) ──────────────────────────────────
+
+function TaskDetailModal({
+  task,
+  onClose,
+}: {
+  task: Task
+  onClose: () => void
+}) {
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalSheet} onClick={e => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h3 className={styles.modalTitle}>태스크 상세</h3>
+          <button type="button" onClick={onClose} className={styles.closeBtn}>✕</button>
+        </div>
+        <div className={styles.modalBody}>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>상태</span>
+            <span className={styles.detailValue}>{task.status}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>담당자</span>
+            <span className={styles.detailValue}>{task.assignedTo}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>마감일</span>
+            <span className={styles.detailValue}>{task.dueDate}</span>
+          </div>
+          {task.note && (
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>메모</span>
+              <span className={styles.detailValue}>{task.note}</span>
+            </div>
+          )}
+          {task.respondedSlots && task.respondedSlots.length > 0 && (
+            <div className={styles.detailSection}>
+              <div className={styles.detailSectionTitle}>응답한 시간</div>
+              {task.respondedSlots.map((slot, i) => (
+                <div key={i} className={styles.detailSlotRow}>
+                  {slot.date} {slot.startTime}–{slot.endTime}
+                </div>
+              ))}
+            </div>
+          )}
+          {task.wardAssignments && task.wardAssignments.length > 0 && (
+            <div className={styles.detailSection}>
+              <div className={styles.detailSectionTitle}>와드 배정</div>
+              {task.wardAssignments.map((wa, i) => (
+                <div key={i} className={styles.detailSlotRow}>
+                  {wa.wardName}: {wa.date}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Edit Task Modal (for pending tasks) ─────────────────────────────────────
 
 interface EditTaskModalProps {
@@ -209,6 +270,7 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
   const [editing, setEditing] = useState(false)
   const [expiring, setExpiring] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
   const daysLeft = dayjs(task.dueDate).diff(dayjs(), 'day')
   const isOverdue = daysLeft < 0
   const typeLabel = task.title ?? t(`task.type.${task.type}`, { defaultValue: task.type })
@@ -246,11 +308,15 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
 
   return (
     <>
-      <div className={clsx(
-        styles.taskRow,
-        task.status === 'responded' && styles.taskRowResponded,
-        isExpired && styles.taskRowExpired,
-      )}>
+      <div
+        className={clsx(
+          styles.taskRow,
+          task.status === 'responded' && styles.taskRowResponded,
+          isExpired && styles.taskRowExpired,
+          task.status === 'completed' && styles.clickable,
+        )}
+        onClick={() => { if (task.status === 'completed') setDetailOpen(true) }}
+      >
         <div className={styles.taskRowMain}>
           <div className={styles.taskRowLeft}>
             <div className={styles.taskIcon}>
@@ -358,6 +424,7 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
       </div>
 
       {editing && <EditTaskModal task={task} onClose={() => setEditing(false)} />}
+      {detailOpen && <TaskDetailModal task={task} onClose={() => setDetailOpen(false)} />}
     </>
   )
 }
