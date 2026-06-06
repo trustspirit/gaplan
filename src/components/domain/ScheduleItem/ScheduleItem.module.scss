@@ -32,7 +32,7 @@
 .kebabWrapper {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex-shrink: 0;
 }
 
@@ -42,12 +42,12 @@
   font-size: 20px;
   cursor: pointer;
   color: #9ca3af;
-  padding: 0 12px;
-  min-height: 44px;
-  min-width: 44px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 
   &:hover { color: #374151; }
 }

@@ -20,6 +20,27 @@
   margin-bottom: $space-4;
 }
 
+.upcomingSection {
+  margin-bottom: $space-6;
+}
+
+.sectionTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: $space-3;
+}
+
+.scheduleList {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-raised;
+}
+
 .cardGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;

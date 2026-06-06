@@ -1,19 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { httpsCallable } from 'firebase/functions'
 import { useTranslation } from 'react-i18next'
 import { functions } from '@/firebase'
+import { useUsers } from '@/hooks/useUsers'
+import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
+import type { Schedule } from '@/types'
 import styles from './EditScheduleModal.module.scss'
 
 const adminEditScheduleFn = httpsCallable(functions, 'adminEditSchedule')
 const adminDeleteScheduleFn = httpsCallable(functions, 'adminDeleteSchedule')
-
-interface Schedule {
-  id: string
-  date: string
-  startTime: string
-  endTime: string
-  notes?: string
-}
 
 interface Props {
   schedule: Schedule
@@ -23,13 +18,34 @@ interface Props {
 
 export function EditScheduleModal({ schedule, onClose, onSaved }: Props) {
   const { t } = useTranslation()
+  const { users } = useUsers()
+
   const [date, setDate] = useState(schedule.date)
   const [startTime, setStartTime] = useState(schedule.startTime)
   const [endTime, setEndTime] = useState(schedule.endTime)
+  const [unitId, setUnitId] = useState(schedule.unitId ?? '')
+  const [wardName, setWardName] = useState(schedule.wardName ?? '')
+  const [presidentUid, setPresidentUid] = useState(schedule.presidentUid ?? '')
   const [note, setNote] = useState(schedule.notes ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const isFirstUnitChange = useRef(true)
+  useEffect(() => {
+    if (isFirstUnitChange.current) { isFirstUnitChange.current = false; return }
+    setWardName('')
+    setPresidentUid('')
+  }, [unitId])
+
+  const isVisit = schedule.type === 'ward_visit'
+  const isInterview = schedule.type === 'interview'
+
+  const unitOptions = ALL_UNITS.map(u => ({ value: u.id, label: u.name }))
+  const wardOptions = unitId ? getWardsByUnit(unitId).map(w => ({ value: w.name, label: w.name })) : []
+  const presidentOptions = users
+    .filter(u => u.role === 'president' && u.unitId === unitId && !!unitId)
+    .map(u => ({ value: u.uid, label: u.name }))
 
   const handleSave = async () => {
     setSaving(true)
@@ -37,7 +53,15 @@ export function EditScheduleModal({ schedule, onClose, onSaved }: Props) {
     try {
       await adminEditScheduleFn({
         scheduleId: schedule.id,
-        updates: { date, startTime, endTime, notes: note },
+        updates: {
+          date,
+          startTime,
+          endTime,
+          notes: note || null,
+          unitId: unitId || undefined,
+          ...(isVisit ? { wardName: wardName || null } : {}),
+          ...(isInterview ? { presidentUid: presidentUid || null } : {}),
+        },
       })
       onSaved()
       onClose()
@@ -75,6 +99,51 @@ export function EditScheduleModal({ schedule, onClose, onSaved }: Props) {
         {error && <div className={styles.errorBanner}>{error}</div>}
 
         <div className={styles.fields}>
+          {/* Stake/District */}
+          <label className={styles.fieldLabel}>
+            {t(schedule.type === 'meeting' ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel')}
+          </label>
+          <select
+            className={styles.fieldSelect}
+            value={unitId}
+            onChange={e => setUnitId(e.target.value)}
+          >
+            <option value="">{t('common.select')}</option>
+            {unitOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+
+          {/* Ward — ward_visit only */}
+          {isVisit && (
+            <>
+              <label className={styles.fieldLabel}>{t('schedule.wardLabel')}</label>
+              <select
+                className={styles.fieldSelect}
+                value={wardName}
+                onChange={e => setWardName(e.target.value)}
+                disabled={!unitId}
+              >
+                <option value="">{t('common.select')}</option>
+                {wardOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </>
+          )}
+
+          {/* President — interview only, optional */}
+          {isInterview && (
+            <>
+              <label className={styles.fieldLabel}>{t('schedule.presidentLabelOptional')}</label>
+              <select
+                className={styles.fieldSelect}
+                value={presidentUid}
+                onChange={e => setPresidentUid(e.target.value)}
+                disabled={!unitId}
+              >
+                <option value="">{t('common.select')}</option>
+                {presidentOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </>
+          )}
+
           <label className={styles.fieldLabel}>{t('schedule.dateLabel')}</label>
           <input type="date" className={styles.fieldInput} value={date} onChange={e => setDate(e.target.value)} />
 

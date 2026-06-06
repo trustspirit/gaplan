@@ -4,10 +4,14 @@ import { Link } from 'react-router-dom'
 import { Users, ListChecks, CalendarCheck, MapPin } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import dayjs from 'dayjs'
 import { authUserAtom } from '@/store/authAtom'
+import { useSchedules } from '@/hooks/useSchedules'
+import { useUnits } from '@/hooks/useUnits'
 import { AppShell, TopBar } from '@/components/layout'
 import { Button } from '@/components/ui'
-import { ScheduleFormModal } from '@/components/domain'
+import { ScheduleItem, ScheduleFormModal, EditScheduleModal } from '@/components/domain'
+import type { Schedule } from '@/types'
 import styles from './AdminDashboard.module.scss'
 
 const ACTION_CARD_DEFS = [
@@ -21,6 +25,16 @@ export function AdminDashboard() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const [formOpen, setFormOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<Schedule | null>(null)
+
+  const { schedules } = useSchedules({})
+  const { getUnitName } = useUnits()
+
+  const upcomingSchedules = schedules
+    .filter(s => s.status === 'confirmed' && s.date >= dayjs().format('YYYY-MM-DD'))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 7)
+
   return (
     <AppShell
       role={user.role} name={user.name}
@@ -29,9 +43,28 @@ export function AdminDashboard() {
       <div className={styles.page}>
         <div className={styles.quickActions}>
           <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
-            + 일정 추가
+            + {t('schedule.newTitle')}
           </Button>
         </div>
+
+        {upcomingSchedules.length > 0 && (
+          <div className={styles.upcomingSection}>
+            <h2 className={styles.sectionTitle}>{t('schedule.upcoming')}</h2>
+            <div className={styles.scheduleList}>
+              {upcomingSchedules.map(s => (
+                <ScheduleItem
+                  key={s.id}
+                  schedule={s}
+                  unitName={getUnitName(s.unitId)}
+                  canEdit
+                  onEdit={() => setEditTarget(s)}
+                  onDelete={() => setEditTarget(s)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className={styles.cardGrid}>
           {ACTION_CARD_DEFS.map(({ icon: Icon, titleKey, descKey, link }) => (
             <div key={link} className={styles.actionCard}>
@@ -49,10 +82,18 @@ export function AdminDashboard() {
           ))}
         </div>
       </div>
+
       {formOpen && (
         <ScheduleFormModal
           onClose={() => setFormOpen(false)}
           onSaved={() => { setFormOpen(false); toast.success(t('schedule.savedSuccess')) }}
+        />
+      )}
+      {editTarget && (
+        <EditScheduleModal
+          schedule={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={() => { setEditTarget(null); toast.success(t('admin.scheduleEditSuccess')) }}
         />
       )}
     </AppShell>

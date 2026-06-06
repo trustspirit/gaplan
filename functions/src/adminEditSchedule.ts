@@ -7,7 +7,10 @@ interface AdminEditScheduleRequest {
     date?: string
     startTime?: string
     endTime?: string
-    notes?: string
+    notes?: string | null
+    unitId?: string
+    wardName?: string | null
+    presidentUid?: string | null
   }
 }
 
@@ -55,10 +58,28 @@ export const adminEditSchedule = functions
       allowed.endTime = updates.endTime
     }
     if (updates.notes !== undefined) {
-      if (typeof updates.notes !== 'string' || updates.notes.length > 500) {
+      if (updates.notes !== null && (typeof updates.notes !== 'string' || updates.notes.length > 500)) {
         throw new functions.https.HttpsError('invalid-argument', 'Invalid notes')
       }
       allowed.notes = updates.notes
+    }
+    if (updates.unitId !== undefined) {
+      if (typeof updates.unitId !== 'string' || updates.unitId.length === 0) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid unitId')
+      }
+      allowed.unitId = updates.unitId
+    }
+    if (updates.wardName !== undefined) {
+      if (updates.wardName !== null && typeof updates.wardName !== 'string') {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid wardName')
+      }
+      allowed.wardName = updates.wardName
+    }
+    if (updates.presidentUid !== undefined) {
+      if (updates.presidentUid !== null && typeof updates.presidentUid !== 'string') {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid presidentUid')
+      }
+      allowed.presidentUid = updates.presidentUid
     }
 
     if (Object.keys(allowed).length === 0) {
