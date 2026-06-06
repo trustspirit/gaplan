@@ -41,29 +41,15 @@ const TIME_RE = /^\d{2}:\d{2}$/;
 exports.adminCreateSchedule = functions
     .region('asia-northeast3')
     .https.onCall(async (data, context) => {
-    var _a, _b;
+    var _a, _b, _c;
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
     }
-    const db = admin.firestore();
-    const callerSnap = await db.collection('users').doc(context.auth.uid).get();
-    const callerRole = (_a = callerSnap.data()) === null || _a === void 0 ? void 0 : _a.role;
-    if (!['admin', 'seventy'].includes(callerRole)) {
-        throw new functions.https.HttpsError('permission-denied', 'Admin or seventy only');
-    }
-    if (callerRole === 'seventy' && context.auth.uid !== data.seventyUid) {
-        throw new functions.https.HttpsError('permission-denied', 'Seventy can only create schedules for themselves');
-    }
-    const seventySnap = await db.collection('users').doc(data.seventyUid).get();
-    if (!seventySnap.exists || ((_b = seventySnap.data()) === null || _b === void 0 ? void 0 : _b.role) !== 'seventy') {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid seventyUid: user not found or not a seventy');
-    }
+    // Destructure first so cheap validations can run before any DB reads
     const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes } = data;
+    // Basic validations — no DB reads needed
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
         throw new functions.https.HttpsError('invalid-argument', 'Invalid type');
-    }
-    if (!seventyUid || typeof seventyUid !== 'string') {
-        throw new functions.https.HttpsError('invalid-argument', 'seventyUid required');
     }
     if (!DATE_RE.test(date)) {
         throw new functions.https.HttpsError('invalid-argument', 'Invalid date format (YYYY-MM-DD)');
@@ -84,14 +70,39 @@ exports.adminCreateSchedule = functions
     if (type === 'interview' && !unitId) {
         throw new functions.https.HttpsError('invalid-argument', 'unitId required for interview');
     }
+    if (type !== 'ward_visit' && wardName) {
+        throw new functions.https.HttpsError('invalid-argument', 'wardName is only allowed for ward_visit type');
+    }
     if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {
         throw new functions.https.HttpsError('invalid-argument', 'notes max 500 chars');
+    }
+    // DB reads — callerSnap and seventySnap are independent, fetch in parallel
+    const db = admin.firestore();
+    const [callerSnap, seventySnap] = await Promise.all([
+        db.collection('users').doc(context.auth.uid).get(),
+        db.collection('users').doc(seventyUid).get(),
+    ]);
+    const callerRole = (_a = callerSnap.data()) === null || _a === void 0 ? void 0 : _a.role;
+    if (!['admin', 'seventy'].includes(callerRole)) {
+        throw new functions.https.HttpsError('permission-denied', 'Admin or seventy only');
+    }
+    if (callerRole === 'seventy' && context.auth.uid !== seventyUid) {
+        throw new functions.https.HttpsError('permission-denied', 'Seventy can only create schedules for themselves');
+    }
+    if (!seventySnap.exists || ((_b = seventySnap.data()) === null || _b === void 0 ? void 0 : _b.role) !== 'seventy') {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid seventyUid: user not found or not a seventy');
+    }
+    if (presidentUid) {
+        const presidentSnap = await db.collection('users').doc(presidentUid).get();
+        if (!presidentSnap.exists || ((_c = presidentSnap.data()) === null || _c === void 0 ? void 0 : _c.role) !== 'president') {
+            throw new functions.https.HttpsError('invalid-argument', 'Invalid presidentUid: user not found or not a president');
+        }
     }
     await db.collection('schedules').add({
         type,
         seventyUid,
         unitId: unitId !== null && unitId !== void 0 ? unitId : '',
-        wardName: wardName ? wardName.trim() : null,
+        wardName: (type === 'ward_visit' && wardName) ? wardName.trim() : null,
         presidentUid: presidentUid !== null && presidentUid !== void 0 ? presidentUid : null,
         date,
         startTime,
