@@ -32,7 +32,7 @@
 .kebabWrapper {
   position: relative;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   flex-shrink: 0;
 }
 
@@ -59,9 +59,7 @@
 }
 
 .menu {
-  position: absolute;
-  right: 8px;
-  top: 100%;
+  position: fixed;
   z-index: 100;
   background: white;
   border: 1px solid #e5e7eb;

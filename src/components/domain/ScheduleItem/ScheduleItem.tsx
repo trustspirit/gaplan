@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { MapPin, Users, CalendarPlus, Coffee } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { MapPin, Users, CalendarPlus, Coffee, MoreVertical } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
@@ -42,6 +42,8 @@ export function ScheduleItem({
 }: ScheduleItemProps) {
   const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
   const isVisit = schedule.type === 'ward_visit'
   const isMeeting = schedule.type === 'meeting'
   const date = dayjs(schedule.date)
@@ -100,17 +102,25 @@ export function ScheduleItem({
       {canEdit && (
         <div className={styles.kebabWrapper}>
           <button
+            ref={btnRef}
             type="button"
             className={styles.kebabBtn}
-            onClick={e => { e.stopPropagation(); setMenuOpen(prev => !prev) }}
+            onClick={e => {
+              e.stopPropagation()
+              if (!menuOpen && btnRef.current) {
+                const rect = btnRef.current.getBoundingClientRect()
+                setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+              }
+              setMenuOpen(prev => !prev)
+            }}
             aria-label="더보기"
           >
-            ⋮
+            <MoreVertical size={16} />
           </button>
-          {menuOpen && (
+          {menuOpen && menuPos && (
             <>
               <div className={styles.menuOverlay} onClick={() => setMenuOpen(false)} />
-              <div className={styles.menu}>
+              <div className={styles.menu} style={{ top: menuPos.top, right: menuPos.right }}>
                 <button type="button" onClick={() => { setMenuOpen(false); onEdit?.() }}>편집</button>
                 <button type="button" className={styles.deleteMenuItem} onClick={() => { setMenuOpen(false); onDelete?.() }}>삭제</button>
               </div>

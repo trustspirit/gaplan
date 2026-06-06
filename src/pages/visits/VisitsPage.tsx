@@ -13,8 +13,6 @@ import { Button } from '@/components/ui'
 import type { Schedule } from '@/types'
 import { ScheduleItem, ScheduleFormModal, EditScheduleModal } from '@/components/domain'
 import { useSchedulePageData } from '@/hooks/useSchedulePageData'
-import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
-import { ScheduleDateRangeFilter } from '@/components/domain'
 import styles from './VisitsPage.module.scss'
 
 type FilterTab = 'all' | 'upcoming' | 'completed'
@@ -35,7 +33,6 @@ export function VisitsPage() {
 
   const { schedules } = useSchedules(filters)
   const { getUnitName } = useUnits()
-  const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
 
   const {
     orderedKeys,
@@ -44,7 +41,7 @@ export function VisitsPage() {
     thisMonthCount,
     upcomingCount,
     completedCount,
-  } = useSchedulePageData(schedules, 'ward_visit', activeTab, range)
+  } = useSchedulePageData(schedules, 'ward_visit', activeTab)
 
   const TABS: FilterTab[] = ['all', 'upcoming', 'completed']
 
@@ -78,8 +75,6 @@ export function VisitsPage() {
               <span className={styles.statLabel}>{t('visits.completed')}</span>
             </div>
           </div>
-
-          <ScheduleDateRangeFilter setting={rangeSetting} currentRange={range} onChange={saveRange} />
 
           <div className={styles.tabBar}>
             {TABS.map(tab => (
