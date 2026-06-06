@@ -96,7 +96,7 @@ export function CalendarPage() {
               <CardHeader
                 title={listTitle}
                 action={selectedDate ? (
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <div className={styles.headerActions}>
                     {user.role === 'admin' && (
                       <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
                         + 일정 추가
@@ -134,7 +134,7 @@ export function CalendarPage() {
         <ScheduleFormModal
           initialDate={selectedDate ?? undefined}
           onClose={() => setFormOpen(false)}
-          onSaved={() => setFormOpen(false)}
+          onSaved={() => { setFormOpen(false); toast.success('일정이 등록되었습니다.') }}
         />
       )}
     </AppShell>

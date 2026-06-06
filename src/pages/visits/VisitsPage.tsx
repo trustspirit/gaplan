@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
 import { MapPin } from 'lucide-react'
+import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { useSchedules } from '@/hooks/useSchedules'
@@ -167,7 +168,7 @@ export function VisitsPage() {
         {formOpen && (
           <ScheduleFormModal
             onClose={() => setFormOpen(false)}
-            onSaved={() => setFormOpen(false)}
+            onSaved={() => { setFormOpen(false); toast.success('일정이 등록되었습니다.') }}
           />
         )}
         <div className={styles.sideCol}>

@@ -40,6 +40,13 @@ export const adminCreateSchedule = functions
 
     const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes } = data
 
+    if (presidentUid) {
+      const presidentSnap = await db.collection('users').doc(presidentUid).get()
+      if (!presidentSnap.exists || presidentSnap.data()?.role !== 'president') {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid presidentUid: user not found or not a president')
+      }
+    }
+
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
     }
@@ -64,6 +71,9 @@ export const adminCreateSchedule = functions
     if (type === 'interview' && !unitId) {
       throw new functions.https.HttpsError('invalid-argument', 'unitId required for interview')
     }
+    if (type !== 'ward_visit' && wardName) {
+      throw new functions.https.HttpsError('invalid-argument', 'wardName is only allowed for ward_visit type')
+    }
     if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {
       throw new functions.https.HttpsError('invalid-argument', 'notes max 500 chars')
     }
@@ -72,7 +82,7 @@ export const adminCreateSchedule = functions
       type,
       seventyUid,
       unitId: unitId ?? '',
-      wardName: wardName ? wardName.trim() : null,
+      wardName: (type === 'ward_visit' && wardName) ? wardName.trim() : null,
       presidentUid: presidentUid ?? null,
       date,
       startTime,

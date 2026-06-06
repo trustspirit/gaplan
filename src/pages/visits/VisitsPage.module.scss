@@ -236,3 +236,9 @@
   color: $color-text-muted;
   text-align: center;
 }
+
+.pageHeader {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: $space-3;
+}

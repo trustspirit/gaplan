@@ -50,7 +50,7 @@ export function ScheduleFormModal({ initialDate, onClose, onSaved }: ScheduleFor
   const unitOptions = ALL_UNITS.map(u => ({ value: u.id, label: u.name }))
   const seventyOptions = seventyUsers.map(u => ({ value: u.uid, label: u.name }))
   const presidentOptions = users
-    .filter(u => u.role === 'president' && (!unitId || u.unitId === unitId))
+    .filter(u => u.role === 'president' && u.unitId === unitId && !!unitId)
     .map(u => ({ value: u.uid, label: u.name }))
 
   const handleSave = async () => {
@@ -127,14 +127,12 @@ export function ScheduleFormModal({ initialDate, onClose, onSaved }: ScheduleFor
           )}
 
           {/* Stake/District — required for ward_visit/interview, optional for meeting */}
-          {(type === 'ward_visit' || type === 'interview' || type === 'meeting') && (
-            <Select
-              label={type === 'meeting' ? '스테이크/지방부 (선택)' : '스테이크/지방부'}
-              value={unitId}
-              onChange={e => setUnitId(e.target.value)}
-              options={unitOptions}
-            />
-          )}
+          <Select
+            label={type === 'meeting' ? '스테이크/지방부 (선택)' : '스테이크/지방부'}
+            value={unitId}
+            onChange={e => setUnitId(e.target.value)}
+            options={unitOptions}
+          />
 
           {/* Ward — ward_visit only */}
           {type === 'ward_visit' && (
@@ -154,6 +152,7 @@ export function ScheduleFormModal({ initialDate, onClose, onSaved }: ScheduleFor
               value={presidentUid}
               onChange={e => setPresidentUid(e.target.value)}
               options={presidentOptions}
+              disabled={!unitId}
             />
           )}
 

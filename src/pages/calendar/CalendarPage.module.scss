@@ -30,6 +30,12 @@
   text-align: center;
 }
 
+.headerActions {
+  display: flex;
+  gap: $space-2;
+  align-items: center;
+}
+
 .clearBtn {
   display: flex;
   align-items: center;
