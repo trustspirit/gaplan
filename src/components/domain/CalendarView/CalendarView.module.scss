@@ -172,6 +172,190 @@
   color: $color-text-light;
 }
 
+// ── Time-axis week view ───────────────────────────────────────────────────────
+
+.mobileDayNav {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+  margin-bottom: $space-1;
+
+  @include mobile { display: flex; }
+}
+
+.mobileDayNavBtn {
+  background: none;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-sm;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 10px;
+  color: $color-text;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:disabled { opacity: 0.3; cursor: default; }
+}
+
+.mobileDayNavLabel {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+}
+
+.timeAxisWrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.timeAxis {
+  display: flex;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+}
+
+.timeGutter {
+  flex-shrink: 0;
+  width: 44px;
+  border-right: 1px solid $color-border;
+  background: $color-bg;
+
+  @include mobile { width: 36px; }
+}
+
+.timeGutterHeader {
+  height: 40px;
+  border-bottom: 1px solid $color-border;
+}
+
+.timeLabel {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 2px 6px 0 0;
+  font-size: 9px;
+  color: $color-text-muted;
+  border-bottom: 1px solid $color-border;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.dayColumns {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+
+.dayCol {
+  flex: 1;
+  min-width: 0;
+  border-right: 1px solid $color-border;
+  cursor: pointer;
+  transition: background 0.1s;
+
+  &:last-child { border-right: none; }
+  &:hover { background: $color-bg; }
+}
+
+.dayColToday { background: color-mix(in srgb, $color-primary 3%, white); }
+.dayColBlocked { background: rgba($color-border, 0.4); cursor: default; }
+.dayColSelected { background: color-mix(in srgb, $color-primary 6%, white) !important; }
+
+.dayColHiddenMobile {
+  @include mobile { display: none; }
+}
+
+.dayHeader {
+  height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-bottom: 1px solid $color-border;
+  background: $color-bg;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.dayHeaderToday { background: color-mix(in srgb, $color-primary 5%, white); }
+
+.dayHeaderDow {
+  font-size: 9px;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+  text-transform: uppercase;
+}
+
+.dayHeaderNum {
+  font-size: 13px;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  line-height: 1;
+}
+
+.dayHeaderNumToday {
+  background: $color-primary;
+  color: #fff;
+  border-radius: $border-radius-full;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.dayBody {
+  position: relative;
+}
+
+.hourLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-bottom: 1px solid rgba($color-border, 0.6);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.scheduleBlock {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  border-radius: 4px;
+  padding: 2px 4px;
+  overflow: hidden;
+  font-size: 9px;
+  line-height: 1.3;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
+.scheduleBlockLabel {
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scheduleBlockTime {
+  font-size: 8px;
+  opacity: 0.8;
+  white-space: nowrap;
+
+  @include mobile { display: none; }
+}
+
 // ── Legend ────────────────────────────────────────────────────────────────────
 
 .legend {

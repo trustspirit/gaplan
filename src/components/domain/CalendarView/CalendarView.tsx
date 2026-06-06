@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
@@ -59,8 +59,12 @@ export function CalendarView({
   const { t } = useTranslation()
   const [view, setView] = useState<ViewMode>(defaultView)
   const [current, setCurrent] = useState(dayjs())
+  const [weekOffset, setWeekOffset] = useState(0) // mobile 3-day sliding offset
   // Re-derive DOW whenever language changes
   const DOW = getDOW()
+
+  // Reset mobile 3-day offset when week changes
+  useEffect(() => { setWeekOffset(0) }, [current])
 
   const getSchedulesForDate = (date: string) =>
     schedules.filter(s => s.date === date && s.status === 'confirmed')
@@ -121,48 +125,137 @@ export function CalendarView({
     )
   }
 
-  // ── Week view ──────────────────────────────────────────────────────────────
+  // ── Week view (time-axis block calendar) ──────────────────────────────────
   const renderWeekView = () => {
     const weekStart = current.startOf('week')
-    const days = Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day'))
+    const allDays = Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day'))
+
+    const HOUR_START = 8
+    const HOUR_END = 22
+    const HOURS = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i)
+    const HOUR_HEIGHT = 56 // px per hour
+
+    function timeToOffset(time: string): number {
+      const [h, m] = time.split(':').map(Number)
+      return (h - HOUR_START + m / 60) * HOUR_HEIGHT
+    }
+
+    function timeToDuration(start: string, end: string): number {
+      const [sh, sm] = start.split(':').map(Number)
+      const [eh, em] = end.split(':').map(Number)
+      const mins = (eh * 60 + em) - (sh * 60 + sm)
+      return (mins / 60) * HOUR_HEIGHT
+    }
 
     return (
-      <div className={styles.weekGrid}>
-        {days.map(d => {
-          const dateStr = d.format('YYYY-MM-DD')
-          const daySchedules = getSchedulesForDate(dateStr)
-          const isToday = d.isSame(dayjs(), 'day')
-          const isBlocked = isFastSunday(d)
-          const isSelected = selectedDate === dateStr
+      <div className={styles.timeAxisWrap}>
+        {/* Mobile 3-day nav */}
+        <div className={styles.mobileDayNav}>
+          <button
+            type="button"
+            className={styles.mobileDayNavBtn}
+            onClick={() => setWeekOffset(o => Math.max(0, o - 3))}
+            disabled={weekOffset === 0}
+          >
+            ‹
+          </button>
+          <span className={styles.mobileDayNavLabel}>
+            {allDays[weekOffset]?.format('M/D')} – {allDays[Math.min(weekOffset + 2, 6)]?.format('M/D')}
+          </span>
+          <button
+            type="button"
+            className={styles.mobileDayNavBtn}
+            onClick={() => setWeekOffset(o => Math.min(4, o + 3))}
+            disabled={weekOffset >= 4}
+          >
+            ›
+          </button>
+        </div>
 
-          return (
-            <div
-              key={dateStr}
-              className={clsx(
-                styles.weekRow,
-                isSelected && styles.weekRowSelected,
-              )}
-              onClick={() => !isBlocked && onDateClick?.(dateStr)}
-            >
-              <span className={clsx(
-                styles.weekDayLabel,
-                isToday && styles.weekDayLabelToday,
-                isBlocked && styles.weekDayBlocked,
-              )}>
-                {DOW[d.day()]} {d.format('M/D')}{isBlocked ? ` ${t('common.fastSundayLabel')}` : ''}
-              </span>
-              <div className={styles.weekSchedules}>
-                {daySchedules.length === 0 ? (
-                  <span className={styles.weekEmpty}>—</span>
-                ) : (
-                  daySchedules.map(s => (
-                    <ScheduleChip key={s.id} schedule={s} getUnitName={getUnitName} />
-                  ))
-                )}
+        <div className={styles.timeAxis}>
+          {/* Time gutter */}
+          <div className={styles.timeGutter}>
+            <div className={styles.timeGutterHeader} />
+            {HOURS.map(h => (
+              <div key={h} className={styles.timeLabel} style={{ height: HOUR_HEIGHT }}>
+                {String(h).padStart(2, '0')}:00
               </div>
-            </div>
-          )
-        })}
+            ))}
+          </div>
+
+          {/* Day columns */}
+          <div className={styles.dayColumns}>
+            {allDays.map((d, idx) => {
+              const dateStr = d.format('YYYY-MM-DD')
+              const daySchedules = getSchedulesForDate(dateStr)
+              const isToday = d.isSame(dayjs(), 'day')
+              const isBlocked = isFastSunday(d)
+              const isSelected = selectedDate === dateStr
+              const isMobileVisible = idx >= weekOffset && idx <= weekOffset + 2
+
+              return (
+                <div
+                  key={dateStr}
+                  className={clsx(
+                    styles.dayCol,
+                    isToday && styles.dayColToday,
+                    isBlocked && styles.dayColBlocked,
+                    isSelected && styles.dayColSelected,
+                    !isMobileVisible && styles.dayColHiddenMobile,
+                  )}
+                  onClick={() => !isBlocked && onDateClick?.(dateStr)}
+                >
+                  {/* Day header */}
+                  <div className={clsx(styles.dayHeader, isToday && styles.dayHeaderToday)}>
+                    <span className={styles.dayHeaderDow}>{DOW[d.day()]}</span>
+                    <span className={clsx(styles.dayHeaderNum, isToday && styles.dayHeaderNumToday)}>
+                      {d.format('D')}
+                    </span>
+                  </div>
+
+                  {/* Time grid background + schedule blocks */}
+                  <div className={styles.dayBody} style={{ height: HOURS.length * HOUR_HEIGHT }}>
+                    {/* Hour grid lines */}
+                    {HOURS.map(h => (
+                      <div
+                        key={h}
+                        className={styles.hourLine}
+                        style={{ top: (h - HOUR_START) * HOUR_HEIGHT, height: HOUR_HEIGHT }}
+                      />
+                    ))}
+
+                    {/* Schedule blocks */}
+                    {daySchedules.map(s => {
+                      const top = timeToOffset(s.startTime)
+                      const height = Math.max(timeToDuration(s.startTime, s.endTime), 20)
+                      const color = getUnitColor(s.unitId)
+                      return (
+                        <div
+                          key={s.id}
+                          className={styles.scheduleBlock}
+                          style={{
+                            top,
+                            height,
+                            background: color.bg,
+                            color: color.text,
+                          }}
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <span className={styles.scheduleBlockLabel}>
+                            {chipLabel(s, getUnitName)}
+                          </span>
+                          <span className={styles.scheduleBlockTime}>
+                            {s.startTime}–{s.endTime}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </div>
     )
   }
