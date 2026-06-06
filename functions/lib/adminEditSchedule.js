@@ -41,7 +41,7 @@ const TIME_RE = /^\d{2}:\d{2}$/;
 exports.adminEditSchedule = functions
     .region('asia-northeast3')
     .https.onCall(async (data, context) => {
-    var _a;
+    var _a, _b;
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
     }
@@ -88,6 +88,9 @@ exports.adminEditSchedule = functions
     const snap = await scheduleRef.get();
     if (!snap.exists) {
         throw new functions.https.HttpsError('not-found', 'Schedule not found');
+    }
+    if (callerRole === 'seventy' && ((_b = snap.data()) === null || _b === void 0 ? void 0 : _b.seventyUid) !== context.auth.uid) {
+        throw new functions.https.HttpsError('permission-denied', 'Seventy can only edit their own schedules');
     }
     // calendarSync trigger handles GCal update automatically
     await scheduleRef.update(Object.assign(Object.assign({}, allowed), { updatedAt: new Date().toISOString(), updatedBy: context.auth.uid }));

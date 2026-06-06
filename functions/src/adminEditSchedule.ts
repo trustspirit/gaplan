@@ -72,6 +72,10 @@ export const adminEditSchedule = functions
       throw new functions.https.HttpsError('not-found', 'Schedule not found')
     }
 
+    if (callerRole === 'seventy' && snap.data()?.seventyUid !== context.auth.uid) {
+      throw new functions.https.HttpsError('permission-denied', 'Seventy can only edit their own schedules')
+    }
+
     // calendarSync trigger handles GCal update automatically
     await scheduleRef.update({
       ...allowed,

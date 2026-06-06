@@ -34,6 +34,10 @@ export const adminDeleteSchedule = functions
 
     const schedule = snap.data()!
 
+    if (callerRole === 'seventy' && schedule.seventyUid !== context.auth.uid) {
+      throw new functions.https.HttpsError('permission-denied', 'Seventy can only delete their own schedules')
+    }
+
     // calendarSync trigger handles GCal deletion when status becomes 'cancelled'
     await scheduleRef.update({ status: 'cancelled' })
 
