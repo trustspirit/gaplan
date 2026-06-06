@@ -164,6 +164,10 @@
     "calendarBannerText": "구글 캘린더 구독으로 모든 확정 일정을 핸드폰에서 바로 확인하세요.",
     "calendarConnected": "구독 완료",
     "calendarSuccess": "구글 캘린더에 구독되었습니다!",
+    "filterQ1": "1분기 (1~6월)",
+    "filterQ2": "2분기 (7~12월)",
+    "filterCustom": "직접 입력",
+    "periodSchedules": "기간 내 일정",
     "type": {
       "ward_visit": "와드 방문",
       "interview": "접견",

@@ -1,0 +1,76 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin-bottom: $space-4;
+}
+
+.presets {
+  display: flex;
+  gap: $space-1;
+  flex-wrap: wrap;
+}
+
+.presetBtn {
+  padding: $space-2 $space-3;
+  min-height: 36px;
+  border-radius: $border-radius-full;
+  border: 1px solid $color-border;
+  background: $color-surface;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: $color-bg;
+    color: $color-text;
+  }
+
+  &[data-active='true'] {
+    background: $color-primary;
+    border-color: $color-primary;
+    color: #fff;
+  }
+}
+
+.customRange {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+
+  @include mobile {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.dateInput {
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  padding: $space-2 $space-3;
+  font-size: $font-size-sm;
+  min-height: 36px;
+  background: $color-surface;
+  color: $color-text;
+
+  @include mobile {
+    font-size: 16px;
+    width: 100%;
+  }
+}
+
+.rangeSep {
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  flex-shrink: 0;
+
+  @include mobile {
+    display: none;
+  }
+}

@@ -4,13 +4,13 @@ import { Link } from 'react-router-dom'
 import { Users, ListChecks, CalendarCheck, MapPin } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import dayjs from 'dayjs'
 import { authUserAtom } from '@/store/authAtom'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
+import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
 import { AppShell, TopBar } from '@/components/layout'
 import { Button } from '@/components/ui'
-import { ScheduleItem, ScheduleFormModal, EditScheduleModal } from '@/components/domain'
+import { ScheduleItem, ScheduleFormModal, EditScheduleModal, ScheduleDateRangeFilter } from '@/components/domain'
 import type { Schedule } from '@/types'
 import styles from './AdminDashboard.module.scss'
 
@@ -29,11 +29,11 @@ export function AdminDashboard() {
 
   const { schedules } = useSchedules({})
   const { getUnitName } = useUnits()
+  const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
 
-  const upcomingSchedules = schedules
-    .filter(s => s.status === 'confirmed' && s.date >= dayjs().format('YYYY-MM-DD'))
+  const periodSchedules = schedules
+    .filter(s => s.status === 'confirmed' && s.date >= range.start && s.date <= range.end)
     .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 7)
 
   return (
     <AppShell
@@ -47,11 +47,14 @@ export function AdminDashboard() {
           </Button>
         </div>
 
-        {upcomingSchedules.length > 0 && (
-          <div className={styles.upcomingSection}>
-            <h2 className={styles.sectionTitle}>{t('schedule.upcoming')}</h2>
+        <div className={styles.upcomingSection}>
+          <ScheduleDateRangeFilter setting={rangeSetting} onChange={saveRange} />
+          <h2 className={styles.sectionTitle}>{t('schedule.periodSchedules')}</h2>
+          {periodSchedules.length === 0 ? (
+            <p className={styles.emptyPeriod}>{t('schedule.noUpcoming')}</p>
+          ) : (
             <div className={styles.scheduleList}>
-              {upcomingSchedules.map(s => (
+              {periodSchedules.map(s => (
                 <ScheduleItem
                   key={s.id}
                   schedule={s}
@@ -62,8 +65,8 @@ export function AdminDashboard() {
                 />
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className={styles.cardGrid}>
           {ACTION_CARD_DEFS.map(({ icon: Icon, titleKey, descKey, link }) => (

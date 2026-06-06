@@ -17,12 +17,15 @@ export function useSchedulePageData(
   schedules: Schedule[],
   type: ScheduleType,
   activeTab: FilterTab,
+  dateRange?: { start: string; end: string },
   upcomingLimit = 5,
 ): SchedulePageData {
   const today = dayjs()
   const thisMonth = today.format('YYYY-M')
 
-  const all = schedules.filter(s => s.type === type && s.status === 'confirmed')
+  const all = schedules
+    .filter(s => s.type === type && s.status === 'confirmed')
+    .filter(s => !dateRange || (s.date >= dateRange.start && s.date <= dateRange.end))
   const thisMonthCount = all.filter(s => dayjs(s.date).format('YYYY-M') === thisMonth).length
   const upcomingCount = all.filter(s => !dayjs(s.date).isBefore(today, 'day')).length
   const completedCount = all.filter(s => dayjs(s.date).isBefore(today, 'day')).length

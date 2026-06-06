@@ -13,6 +13,8 @@ import { Button } from '@/components/ui'
 import type { Schedule } from '@/types'
 import { ScheduleItem, ScheduleFormModal, EditScheduleModal } from '@/components/domain'
 import { useSchedulePageData } from '@/hooks/useSchedulePageData'
+import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
+import { ScheduleDateRangeFilter } from '@/components/domain'
 import styles from './InterviewsPage.module.scss'
 
 type FilterTab = 'all' | 'upcoming' | 'completed'
@@ -33,6 +35,7 @@ export function InterviewsPage() {
 
   const { schedules } = useSchedules(filters)
   const { getUnitName } = useUnits()
+  const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
 
   const {
     orderedKeys,
@@ -41,7 +44,7 @@ export function InterviewsPage() {
     thisMonthCount,
     upcomingCount,
     completedCount,
-  } = useSchedulePageData(schedules, 'interview', activeTab)
+  } = useSchedulePageData(schedules, 'interview', activeTab, range)
 
   const TABS: FilterTab[] = ['all', 'upcoming', 'completed']
 
@@ -75,6 +78,8 @@ export function InterviewsPage() {
               <span className={styles.statLabel}>{t('interviews.completed')}</span>
             </div>
           </div>
+
+          <ScheduleDateRangeFilter setting={rangeSetting} onChange={saveRange} />
 
           <div className={styles.tabBar}>
             {TABS.map(tab => (

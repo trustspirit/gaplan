@@ -166,6 +166,10 @@
     "calendarBannerText": "Subscribe to Google Calendar to view all confirmed schedules on your phone.",
     "calendarConnected": "Subscribed",
     "calendarSuccess": "Subscribed to Google Calendar!",
+    "filterQ1": "Q1 (Jan–Jun)",
+    "filterQ2": "Q2 (Jul–Dec)",
+    "filterCustom": "Custom",
+    "periodSchedules": "Schedules in Period",
     "type": {
       "ward_visit": "Ward Visit",
       "interview": "Interview",

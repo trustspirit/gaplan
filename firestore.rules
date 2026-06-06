@@ -96,5 +96,9 @@ service cloud.firestore {
       allow read: if isAuth();
       allow write: if isAdmin();
     }
+
+    match /userSettings/{uid} {
+      allow read, write: if isAuth() && request.auth.uid == uid;
+    }
   }
 }

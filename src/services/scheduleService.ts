@@ -18,9 +18,11 @@ export function subscribeToSchedules(
   else if (filters.seventyUid)
     q = query(q, where('seventyUid', '==', filters.seventyUid))
   else {
-    // Admin view: limit to ±6 months to avoid unbounded collection scan
+    // Admin view: cover full current year + rolling 6 months for past schedules
     const sixMonthsAgo = dayjs().subtract(6, 'month').format('YYYY-MM-DD')
-    q = query(q, where('date', '>=', sixMonthsAgo))
+    const startOfYear = dayjs().startOf('year').format('YYYY-MM-DD')
+    const queryStart = sixMonthsAgo < startOfYear ? sixMonthsAgo : startOfYear
+    q = query(q, where('date', '>=', queryStart))
   }
   return onSnapshot(q,
     snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule)),

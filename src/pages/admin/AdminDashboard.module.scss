@@ -33,6 +33,12 @@
   margin-bottom: $space-3;
 }
 
+.emptyPeriod {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  padding: $space-4 0;
+}
+
 .scheduleList {
   background: $color-surface;
   border: 1px solid $color-border;
