@@ -42,16 +42,7 @@ exports.calendarSync = void 0;
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const googleapis_1 = require("googleapis");
-// Fallback map: derive regionId from unitId when seventy user doesn't have it set
-const UNIT_REGION_MAP = {
-    'seoul-stake': 'seoul', 'seoul-east-stake': 'seoul',
-    'seoul-west-stake': 'seoul', 'gyeonggi-stake': 'seoul',
-    'seoul-south-stake': 'seoul-south', 'daejeon-stake': 'seoul-south',
-    'cheongju-stake': 'seoul-south', 'jeonju-stake': 'seoul-south',
-    'gwangju-stake': 'seoul-south',
-    'busan-stake': 'busan', 'daegu-stake': 'busan',
-    'changwon-stake': 'busan', 'ulsan-district': 'busan',
-};
+const unitRegionMap_1 = require("./unitRegionMap");
 function getCalendarClient() {
     const auth = new googleapis_1.google.auth.GoogleAuth({
         scopes: ['https://www.googleapis.com/auth/calendar.events'],
@@ -75,7 +66,7 @@ exports.calendarSync = functions
     // This correctly routes to the right regional calendar even when one seventy
     // serves multiple regions. Fall back to seventy's own regionId, then empty.
     const scheduleUnitId = (_c = (_b = after === null || after === void 0 ? void 0 : after.unitId) !== null && _b !== void 0 ? _b : before === null || before === void 0 ? void 0 : before.unitId) !== null && _c !== void 0 ? _c : '';
-    const regionId = (_f = (_d = UNIT_REGION_MAP[scheduleUnitId]) !== null && _d !== void 0 ? _d : (_e = seventySnap === null || seventySnap === void 0 ? void 0 : seventySnap.data()) === null || _e === void 0 ? void 0 : _e.regionId) !== null && _f !== void 0 ? _f : '';
+    const regionId = (_f = (_d = unitRegionMap_1.UNIT_REGION_MAP[scheduleUnitId]) !== null && _d !== void 0 ? _d : (_e = seventySnap === null || seventySnap === void 0 ? void 0 : seventySnap.data()) === null || _e === void 0 ? void 0 : _e.regionId) !== null && _f !== void 0 ? _f : '';
     const settingsSnap = await db.collection('settings').doc('calendar').get();
     const calendars = (_h = (_g = settingsSnap.data()) === null || _g === void 0 ? void 0 : _g.calendars) !== null && _h !== void 0 ? _h : {};
     // Fall back to legacy single-calendar field if present
@@ -98,7 +89,7 @@ exports.calendarSync = functions
     if (!after || after.status !== 'confirmed')
         return;
     // Only skip creation if there's already an event AND the date/time haven't changed
-    const dateChanged = (before === null || before === void 0 ? void 0 : before.date) !== after.date || (before === null || before === void 0 ? void 0 : before.startTime) !== after.startTime;
+    const dateChanged = (before === null || before === void 0 ? void 0 : before.date) !== after.date || (before === null || before === void 0 ? void 0 : before.startTime) !== after.startTime || (before === null || before === void 0 ? void 0 : before.endTime) !== after.endTime;
     if (after.googleCalendarEventId && !dateChanged)
         return;
     const unitSnap = after.unitId

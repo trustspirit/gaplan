@@ -41,6 +41,14 @@ export async function updateSchedule(scheduleId, updates) {
 export async function deleteSchedule(scheduleId) {
     await deleteDoc(doc(db, 'schedules', scheduleId));
 }
+const adminEditScheduleFn = httpsCallable(functions, 'adminEditSchedule');
+const adminDeleteScheduleFn = httpsCallable(functions, 'adminDeleteSchedule');
+export async function editScheduleViaCF(scheduleId, updates) {
+    await adminEditScheduleFn({ scheduleId, updates });
+}
+export async function deleteScheduleViaCF(scheduleId) {
+    await adminDeleteScheduleFn({ scheduleId });
+}
 export async function createVisitSchedules(seventyUid, entries) {
     const currentUser = auth.currentUser;
     if (!currentUser)

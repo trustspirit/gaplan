@@ -41,7 +41,7 @@ const TIME_RE = /^\d{2}:\d{2}$/;
 exports.adminEditSchedule = functions
     .region('asia-northeast3')
     .https.onCall(async (data, context) => {
-    var _a, _b;
+    var _a, _b, _c, _d;
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
     }
@@ -49,7 +49,7 @@ exports.adminEditSchedule = functions
     const callerSnap = await db.collection('users').doc(context.auth.uid).get();
     const callerRole = (_a = callerSnap.data()) === null || _a === void 0 ? void 0 : _a.role;
     if (!['admin', 'seventy'].includes(callerRole)) {
-        throw new functions.https.HttpsError('permission-denied', 'Admin only');
+        throw new functions.https.HttpsError('permission-denied', 'Admin or seventy only');
     }
     const { scheduleId, updates } = data;
     if (!scheduleId || !updates) {
@@ -91,6 +91,15 @@ exports.adminEditSchedule = functions
     }
     if (callerRole === 'seventy' && ((_b = snap.data()) === null || _b === void 0 ? void 0 : _b.seventyUid) !== context.auth.uid) {
         throw new functions.https.HttpsError('permission-denied', 'Seventy can only edit their own schedules');
+    }
+    // Validate startTime < endTime cross-field
+    if (allowed.startTime !== undefined || allowed.endTime !== undefined) {
+        const current = snap.data();
+        const effectiveStart = (_c = allowed.startTime) !== null && _c !== void 0 ? _c : current.startTime;
+        const effectiveEnd = (_d = allowed.endTime) !== null && _d !== void 0 ? _d : current.endTime;
+        if (effectiveStart >= effectiveEnd) {
+            throw new functions.https.HttpsError('invalid-argument', 'endTime must be after startTime');
+        }
     }
     // calendarSync trigger handles GCal update automatically
     await scheduleRef.update(Object.assign(Object.assign({}, allowed), { updatedAt: new Date().toISOString(), updatedBy: context.auth.uid }));

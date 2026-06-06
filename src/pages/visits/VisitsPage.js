@@ -11,24 +11,8 @@ import { useUnits } from '@/hooks/useUnits';
 import { AppShell, TopBar } from '@/components/layout';
 import { Button } from '@/components/ui';
 import { ScheduleItem, ScheduleFormModal } from '@/components/domain';
+import { groupByMonth, sortMonthKeys } from '@/utils/scheduleGrouping';
 import styles from './VisitsPage.module.scss';
-function groupByMonth(schedules) {
-    const map = new Map();
-    for (const s of schedules) {
-        const key = dayjs(s.date).format('YYYY년 M월');
-        if (!map.has(key))
-            map.set(key, []);
-        map.get(key).push(s);
-    }
-    return map;
-}
-function sortMonthKeys(keys) {
-    return [...keys].sort((a, b) => {
-        const da = dayjs(a, 'YYYY년 M월');
-        const db = dayjs(b, 'YYYY년 M월');
-        return da.isBefore(db) ? -1 : 1;
-    });
-}
 export function VisitsPage() {
     const { t } = useTranslation();
     const user = useAtomValue(authUserAtom);

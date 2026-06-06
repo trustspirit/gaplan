@@ -44,15 +44,7 @@ exports.manualCalendarSync = void 0;
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const googleapis_1 = require("googleapis");
-const UNIT_REGION_MAP = {
-    'seoul-stake': 'seoul', 'seoul-east-stake': 'seoul',
-    'seoul-west-stake': 'seoul', 'gyeonggi-stake': 'seoul',
-    'seoul-south-stake': 'seoul-south', 'daejeon-stake': 'seoul-south',
-    'cheongju-stake': 'seoul-south', 'jeonju-stake': 'seoul-south',
-    'gwangju-stake': 'seoul-south',
-    'busan-stake': 'busan', 'daegu-stake': 'busan',
-    'changwon-stake': 'busan', 'ulsan-district': 'busan',
-};
+const unitRegionMap_1 = require("./unitRegionMap");
 function getCalendarClient() {
     const auth = new googleapis_1.google.auth.GoogleAuth({
         scopes: ['https://www.googleapis.com/auth/calendar.events'],
@@ -62,7 +54,7 @@ function getCalendarClient() {
 exports.manualCalendarSync = functions
     .region('asia-northeast3')
     .https.onCall(async (_data, context) => {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d, _e, _f, _g, _h;
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Login required');
     }
@@ -86,21 +78,28 @@ exports.manualCalendarSync = functions
     let failed = 0;
     for (const docSnap of pending) {
         const s = docSnap.data();
-        const regionId = (_e = UNIT_REGION_MAP[(_d = s.unitId) !== null && _d !== void 0 ? _d : '']) !== null && _e !== void 0 ? _e : '';
+        const regionId = (_e = unitRegionMap_1.UNIT_REGION_MAP[(_d = s.unitId) !== null && _d !== void 0 ? _d : '']) !== null && _e !== void 0 ? _e : '';
         const calendarId = calendars[regionId];
         if (!calendarId) {
             functions.logger.warn(`manualCalendarSync: no calendar for regionId="${regionId}" (unitId=${s.unitId})`);
             failed++;
             continue;
         }
+        const unitSnap = s.unitId
+            ? await db.collection('units').doc(s.unitId).get()
+            : null;
+        const unitName = (_h = (_g = (_f = unitSnap === null || unitSnap === void 0 ? void 0 : unitSnap.data()) === null || _f === void 0 ? void 0 : _f.name) !== null && _g !== void 0 ? _g : s.unitId) !== null && _h !== void 0 ? _h : '';
         const startDateTime = `${s.date}T${s.startTime}:00+09:00`;
         const endDateTime = `${s.date}T${s.endTime}:00+09:00`;
         let title;
         if (s.type === 'ward_visit') {
-            title = s.wardName ? `${s.wardName} 방문` : `와드 방문`;
+            title = s.wardName ? `${unitName} - ${s.wardName} 방문` : `${unitName} 방문`;
+        }
+        else if (s.type === 'interview') {
+            title = `${unitName} 접견`;
         }
         else {
-            title = `접견`;
+            title = unitName ? `${unitName} 모임` : '모임';
         }
         try {
             const event = await calendar.events.insert({

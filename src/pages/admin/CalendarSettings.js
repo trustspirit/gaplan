@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { RefreshCw, Trash2, Calendar, Pencil } from 'lucide-react';
 import dayjs from 'dayjs';
 import { authUserAtom } from '@/store/authAtom';
-import { manualCalendarSync, deleteSchedule, updateSchedule } from '@/services/scheduleService';
+import { manualCalendarSync, editScheduleViaCF, deleteScheduleViaCF } from '@/services/scheduleService';
 import { useSchedules } from '@/hooks/useSchedules';
 import { db } from '@/firebase';
 import { REGIONS } from '@/constants/regions';
@@ -37,7 +37,7 @@ function EditScheduleModal({ schedule, onClose, }) {
         }
         setLoading(true);
         try {
-            await updateSchedule(schedule.id, { date, startTime, endTime, notes: notes.trim() || undefined });
+            await editScheduleViaCF(schedule.id, { date, startTime, endTime, notes: notes.trim() || undefined });
             toast.success(t('admin.scheduleEditSuccess'));
             onClose();
         }
@@ -56,7 +56,7 @@ function DeleteScheduleModal({ schedule, onClose, onDeleted, }) {
     const handleDelete = async () => {
         setLoading(true);
         try {
-            await deleteSchedule(schedule.id);
+            await deleteScheduleViaCF(schedule.id);
             toast.success(t('admin.scheduleCancelSuccess'));
             onDeleted();
             onClose();

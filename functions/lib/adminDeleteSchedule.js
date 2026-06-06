@@ -62,19 +62,32 @@ exports.adminDeleteSchedule = functions
     if (callerRole === 'seventy' && schedule.seventyUid !== context.auth.uid) {
         throw new functions.https.HttpsError('permission-denied', 'Seventy can only delete their own schedules');
     }
+    // Idempotency guard — already cancelled, nothing to do
+    if (schedule.status === 'cancelled') {
+        return { success: true };
+    }
     // calendarSync trigger handles GCal deletion when status becomes 'cancelled'
     await scheduleRef.update({ status: 'cancelled' });
     if (schedule.taskId) {
-        const taskRef = db.collection('tasks').doc(schedule.taskId);
-        const taskSnap = await taskRef.get();
-        if (taskSnap.exists) {
-            const task = taskSnap.data();
-            const hasResponses = ((_c = (_b = task.respondedSlots) === null || _b === void 0 ? void 0 : _b.length) !== null && _c !== void 0 ? _c : 0) > 0 ||
-                ((_e = (_d = task.wardAssignments) === null || _d === void 0 ? void 0 : _d.length) !== null && _e !== void 0 ? _e : 0) > 0;
-            await taskRef.update({
-                status: hasResponses ? 'responded' : 'pending',
-                scheduleId: admin.firestore.FieldValue.delete(),
-            });
+        const siblingsSnap = await db.collection('schedules')
+            .where('taskId', '==', schedule.taskId)
+            .where('status', '==', 'confirmed')
+            .get();
+        // Only restore task if no other confirmed schedules remain for this task
+        // (the current schedule was just set to cancelled, so count remaining confirmed ones)
+        const remainingConfirmed = siblingsSnap.docs.filter(d => d.id !== scheduleId).length;
+        if (remainingConfirmed === 0) {
+            const taskRef = db.collection('tasks').doc(schedule.taskId);
+            const taskSnap = await taskRef.get();
+            if (taskSnap.exists) {
+                const task = taskSnap.data();
+                const hasResponses = ((_c = (_b = task.respondedSlots) === null || _b === void 0 ? void 0 : _b.length) !== null && _c !== void 0 ? _c : 0) > 0 ||
+                    ((_e = (_d = task.wardAssignments) === null || _d === void 0 ? void 0 : _d.length) !== null && _e !== void 0 ? _e : 0) > 0;
+                await taskRef.update({
+                    status: hasResponses ? 'responded' : 'pending',
+                    scheduleId: admin.firestore.FieldValue.delete(),
+                });
+            }
         }
     }
     return { success: true };

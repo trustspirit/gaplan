@@ -98,6 +98,17 @@ exports.adminCreateSchedule = functions
             throw new functions.https.HttpsError('invalid-argument', 'Invalid presidentUid: user not found or not a president');
         }
     }
+    // Double-booking guard
+    const existing = await db.collection('schedules')
+        .where('seventyUid', '==', seventyUid)
+        .where('date', '==', date)
+        .where('startTime', '==', startTime)
+        .where('status', '==', 'confirmed')
+        .limit(1)
+        .get();
+    if (!existing.empty) {
+        throw new functions.https.HttpsError('already-exists', '해당 시간에 이미 확정된 일정이 있습니다.');
+    }
     await db.collection('schedules').add({
         type,
         seventyUid,
