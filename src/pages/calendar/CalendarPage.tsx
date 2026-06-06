@@ -10,7 +10,8 @@ import { useUnits } from '@/hooks/useUnits'
 import { manualCalendarSync } from '@/services/scheduleService'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Button } from '@/components/ui'
-import { CalendarView, ScheduleItem, ScheduleFormModal } from '@/components/domain'
+import type { Schedule } from '@/types'
+import { CalendarView, ScheduleItem, ScheduleFormModal, EditScheduleModal } from '@/components/domain'
 import styles from './CalendarPage.module.scss'
 
 export function CalendarPage() {
@@ -19,6 +20,7 @@ export function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<Schedule | null>(null)
 
   const handleManualSync = async () => {
     setSyncing(true)
@@ -126,6 +128,9 @@ export function CalendarPage() {
                         schedule={s}
                         unitName={getUnitName(s.unitId)}
                         showCalendarAdd={user.role === 'president'}
+                        canEdit={user.role === 'admin' || user.role === 'seventy'}
+                        onEdit={() => setEditTarget(s)}
+                        onDelete={() => setEditTarget(s)}
                       />
                     ))
                 }
@@ -139,6 +144,13 @@ export function CalendarPage() {
           initialDate={selectedDate ?? undefined}
           onClose={() => setFormOpen(false)}
           onSaved={() => { setFormOpen(false); toast.success(t('schedule.savedSuccess')) }}
+        />
+      )}
+      {editTarget && (
+        <EditScheduleModal
+          schedule={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={() => { setEditTarget(null); toast.success(t('admin.scheduleEditSuccess')) }}
         />
       )}
     </AppShell>

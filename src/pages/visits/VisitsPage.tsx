@@ -10,7 +10,8 @@ import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
 import { AppShell, TopBar } from '@/components/layout'
 import { Button } from '@/components/ui'
-import { ScheduleItem, ScheduleFormModal } from '@/components/domain'
+import type { Schedule } from '@/types'
+import { ScheduleItem, ScheduleFormModal, EditScheduleModal } from '@/components/domain'
 import { useSchedulePageData } from '@/hooks/useSchedulePageData'
 import styles from './VisitsPage.module.scss'
 
@@ -22,6 +23,7 @@ export function VisitsPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
   const [formOpen, setFormOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<Schedule | null>(null)
 
   const filters = user.role === 'president'
     ? { presidentUid: user.uid }
@@ -110,6 +112,9 @@ export function VisitsPage() {
                           schedule={s}
                           unitName={getUnitName(s.unitId)}
                           showCalendarAdd={user.role === 'president'}
+                          canEdit={user.role === 'admin' || user.role === 'seventy'}
+                          onEdit={() => setEditTarget(s)}
+                          onDelete={() => setEditTarget(s)}
                         />
                       ))}
                     </div>
@@ -125,6 +130,13 @@ export function VisitsPage() {
             initialType="ward_visit"
             onClose={() => setFormOpen(false)}
             onSaved={() => { setFormOpen(false); toast.success(t('schedule.savedSuccess')) }}
+          />
+        )}
+        {editTarget && (
+          <EditScheduleModal
+            schedule={editTarget}
+            onClose={() => setEditTarget(null)}
+            onSaved={() => { setEditTarget(null); toast.success(t('admin.scheduleEditSuccess')) }}
           />
         )}
         <div className={styles.sideCol}>
