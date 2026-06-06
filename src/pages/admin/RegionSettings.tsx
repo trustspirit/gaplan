@@ -3,7 +3,6 @@ import { useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
-import { Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { createTask } from '@/services/taskService'
@@ -12,12 +11,12 @@ import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Select, Button, Input, Badge } from '@/components/ui'
 import { MultiDatePicker } from '@/components/domain'
-import type { AvailableDateSlot, TimeRange } from '@/types'
+import { paintedCellsToDateSlots } from '@/components/domain/TimePainterPicker/paintedCellsToDateSlots'
+import { TimePainterPicker } from '@/components/domain/TimePainterPicker/TimePainterPicker'
+import type { AvailableDateSlot } from '@/types'
 import styles from './RegionSettings.module.scss'
 
 type TaskType = 'select_interview' | 'select_visit'
-
-const DEFAULT_TIME_RANGE: TimeRange = { startTime: '09:00', endTime: '10:00' }
 
 export function TaskCreation() {
   const user = useAtomValue(authUserAtom)!
@@ -34,7 +33,8 @@ export function TaskCreation() {
   const [taskNote,  setTaskNote]  = useState('')
   const [dueDate,       setDueDate]       = useState(dayjs().add(7, 'day').format('YYYY-MM-DD'))
   const [selectedDates, setSelectedDates] = useState<string[]>([])
-  const [dateRanges, setDateRanges] = useState<Record<string, TimeRange[]>>({})
+  const [paintedCells, setPaintedCells] = useState<Set<string>>(new Set())
+  const [dailyRange, setDailyRange] = useState<[string, string]>(['09:00', '21:00'])
   const [slotDuration, setSlotDuration]   = useState('60')
   const [loading,      setLoading]        = useState(false)
 
@@ -43,39 +43,11 @@ export function TaskCreation() {
   function handleTypeChange(type: TaskType) {
     setTaskType(type)
     setSelectedDates([])
-    setDateRanges({})
+    setPaintedCells(new Set())
   }
 
   function handleDatesChange(dates: string[]) {
     setSelectedDates(dates)
-    if (taskType === 'select_interview') {
-      setDateRanges(prev => {
-        const next: typeof prev = {}
-        dates.forEach(d => { next[d] = prev[d] ?? [{ ...DEFAULT_TIME_RANGE }] })
-        return next
-      })
-    }
-  }
-
-  function addRange(date: string) {
-    setDateRanges(prev => ({
-      ...prev,
-      [date]: [...(prev[date] ?? []), { ...DEFAULT_TIME_RANGE }],
-    }))
-  }
-
-  function removeRange(date: string, idx: number) {
-    setDateRanges(prev => ({
-      ...prev,
-      [date]: prev[date].filter((_, i) => i !== idx),
-    }))
-  }
-
-  function setRangeField(date: string, idx: number, field: keyof TimeRange, value: string) {
-    setDateRanges(prev => ({
-      ...prev,
-      [date]: prev[date].map((r, i) => i === idx ? { ...r, [field]: value } : r),
-    }))
   }
 
   const filteredPresidents = filterRegion
@@ -109,9 +81,8 @@ export function TaskCreation() {
     }
   }
 
-  const availableDateSlots: AvailableDateSlot[] = selectedDates
-    .map(date => ({ date, timeRanges: dateRanges[date] ?? [{ ...DEFAULT_TIME_RANGE }] }))
-    .sort((a, b) => a.date.localeCompare(b.date))
+  const slotDurationMinutes = parseInt(slotDuration)
+  const availableDateSlots: AvailableDateSlot[] = paintedCellsToDateSlots(paintedCells, slotDurationMinutes)
 
   const isValid = selectedPresidents.size > 0 && !!seventyUid && selectedDates.length > 0
 
@@ -158,7 +129,7 @@ export function TaskCreation() {
             createdBy: user.uid,
             availableDays: [],
             availableDateSlots,
-            slotDurationMinutes: parseInt(slotDuration),
+            slotDurationMinutes,
           })
         })
       )
@@ -166,7 +137,7 @@ export function TaskCreation() {
       setSelectedPresidents(new Set())
       setSeventyUid('')
       setSelectedDates([])
-      setDateRanges({})
+      setPaintedCells(new Set())
       setTaskTitle('')
       setTaskNote('')
     } catch {
@@ -289,52 +260,21 @@ export function TaskCreation() {
                   sundayOnly={taskType === 'select_visit'}
                 />
 
-                {taskType === 'select_interview' && availableDateSlots.length > 0 && (
-                  <div className={styles.dateSlotList}>
-                    {availableDateSlots.map(s => (
-                      <div key={s.date} className={styles.dateSlotCard}>
-                        <div className={styles.dateSlotHeader}>
-                          <span className={styles.dateSlotLabel}>
-                            {dayjs(s.date).format('M/D (ddd)')}
-                          </span>
-                          <button
-                            type="button"
-                            className={styles.addRangeBtn}
-                            onClick={() => addRange(s.date)}
-                          >
-                            <Plus size={12} />
-                            {t('task.addTimeRange')}
-                          </button>
-                        </div>
-                        {s.timeRanges.map((range, idx) => (
-                          <div key={idx} className={styles.timeRangeRow}>
-                            <input
-                              type="time"
-                              className={styles.timeInput}
-                              value={range.startTime}
-                              onChange={e => setRangeField(s.date, idx, 'startTime', e.target.value)}
-                            />
-                            <span className={styles.timeSep}>~</span>
-                            <input
-                              type="time"
-                              className={styles.timeInput}
-                              value={range.endTime}
-                              onChange={e => setRangeField(s.date, idx, 'endTime', e.target.value)}
-                            />
-                            {s.timeRanges.length > 1 && (
-                              <button
-                                type="button"
-                                className={styles.removeRangeBtn}
-                                onClick={() => removeRange(s.date, idx)}
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
+                {taskType === 'select_interview' && (
+                  <TimePainterPicker
+                    selectedDates={selectedDates}
+                    dailyRange={dailyRange}
+                    periodMinutes={slotDurationMinutes}
+                    paintedCells={paintedCells}
+                    onSetCell={(key, on) => {
+                      setPaintedCells(prev => {
+                        const next = new Set(prev)
+                        on ? next.add(key) : next.delete(key)
+                        return next
+                      })
+                    }}
+                    onChangeRange={setDailyRange}
+                  />
                 )}
 
                 {taskType === 'select_visit' && selectedDates.length > 0 && (
