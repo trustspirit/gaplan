@@ -104,8 +104,7 @@ export async function createTask(params: {
   availableDateSlots?: { date: string; timeRanges: { startTime: string; endTime: string }[] }[]
   slotDurationMinutes?: number
 }): Promise<string> {
-  // Generate a random 16-char hex token for public respond link
-  const tokenBytes = new Uint8Array(8)
+  const tokenBytes = new Uint8Array(16)
   crypto.getRandomValues(tokenBytes)
   const respondToken = Array.from(tokenBytes).map(b => b.toString(16).padStart(2, '0')).join('')
 
