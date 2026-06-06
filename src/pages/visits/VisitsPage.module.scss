@@ -267,5 +267,6 @@
 .pageHeader {
   display: flex;
   justify-content: flex-end;
+  gap: $space-2;
   margin-bottom: $space-3;
 }
