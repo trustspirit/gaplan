@@ -96,6 +96,7 @@ export async function createTask(params: {
   assignedTo: string
   seventyUid: string
   regionId: string
+  unitId?: string
   dueDate: string
   createdBy: string
   availableDays: number[]
@@ -103,8 +104,13 @@ export async function createTask(params: {
   availableDateSlots?: { date: string; timeRanges: { startTime: string; endTime: string }[] }[]
   slotDurationMinutes?: number
 }): Promise<string> {
+  // Generate a random 16-char hex token for public respond link
+  const tokenBytes = new Uint8Array(8)
+  crypto.getRandomValues(tokenBytes)
+  const respondToken = Array.from(tokenBytes).map(b => b.toString(16).padStart(2, '0')).join('')
+
   const ref = await addDoc(collection(db, 'tasks'), {
-    ...params, status: 'pending', notifiedAt: [], createdAt: serverTimestamp(),
+    ...params, respondToken, status: 'pending', notifiedAt: [], createdAt: serverTimestamp(),
   })
   return ref.id
 }
