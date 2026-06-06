@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { MapPin, Users, CalendarPlus } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
@@ -24,47 +25,88 @@ interface ScheduleItemProps {
   unitName: string
   past?: boolean
   showCalendarAdd?: boolean
+  canEdit?: boolean
+  onEdit?: () => void
+  onDelete?: () => void
 }
 
-export function ScheduleItem({ schedule, unitName, past, showCalendarAdd = false }: ScheduleItemProps) {
+export function ScheduleItem({
+  schedule,
+  unitName,
+  past,
+  showCalendarAdd = false,
+  canEdit,
+  onEdit,
+  onDelete,
+}: ScheduleItemProps) {
   const { t } = useTranslation()
+  const [menuOpen, setMenuOpen] = useState(false)
   const isVisit = schedule.type === 'ward_visit'
   const date = dayjs(schedule.date)
   const dow = DOW_LABELS[date.day()]
   const isPast = past ?? date.isBefore(dayjs(), 'day')
 
   return (
-    <div
-      className={clsx(
-        styles.item,
-        isVisit ? styles.visit : styles.interview,
-        isPast && styles.past,
-      )}
-    >
-      <div className={styles.dateBox}>
-        <span className={styles.day}>{date.format('D')}</span>
-        <span className={styles.month}>{date.format('M월')}</span>
-        <span className={styles.dow}>{dow}</span>
-      </div>
-      <div className={styles.info}>
-        <div className={styles.typeBadge}>
-          {isVisit ? <MapPin size={11} /> : <Users size={11} />}
-          <span>{isVisit ? t('schedule.type.ward_visit') : t('schedule.type.interview')}</span>
+    <div className={styles.wrapper}>
+      {/* Left color bar */}
+      <div className={clsx(styles.colorBar, isVisit ? styles.visitBar : styles.interviewBar)} />
+
+      {/* Existing content */}
+      <div
+        className={clsx(
+          styles.item,
+          isVisit ? styles.visit : styles.interview,
+          isPast && styles.past,
+        )}
+      >
+        <div className={styles.dateBox}>
+          <span className={styles.day}>{date.format('D')}</span>
+          <span className={styles.month}>{date.format('M월')}</span>
+          <span className={styles.dow}>{dow}</span>
         </div>
-        <p className={styles.unit}>{unitName}</p>
-        <p className={styles.time}>{schedule.startTime} – {schedule.endTime}</p>
+        <div className={styles.info}>
+          <div className={styles.typeBadge}>
+            {isVisit ? <MapPin size={11} /> : <Users size={11} />}
+            <span>{isVisit ? t('schedule.type.ward_visit') : t('schedule.type.interview')}</span>
+          </div>
+          <p className={styles.unit}>{unitName}</p>
+          <p className={styles.time}>{schedule.startTime} – {schedule.endTime}</p>
+        </div>
+        {isPast && <span className={styles.pastBadge}>{t('common.complete')}</span>}
+        {showCalendarAdd && !isPast && (
+          <a
+            href={buildGCalUrl(schedule, unitName)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.calendarAddBtn}
+            title="내 캘린더에 추가"
+          >
+            <CalendarPlus size={15} />
+          </a>
+        )}
       </div>
-      {isPast && <span className={styles.pastBadge}>{t('common.complete')}</span>}
-      {showCalendarAdd && !isPast && (
-        <a
-          href={buildGCalUrl(schedule, unitName)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.calendarAddBtn}
-          title="내 캘린더에 추가"
-        >
-          <CalendarPlus size={15} />
-        </a>
+
+      {/* Kebab menu — admin/seventy only */}
+      {canEdit && (
+        <div className={styles.kebabWrapper}>
+          <button
+            type="button"
+            className={styles.kebabBtn}
+            onClick={e => { e.stopPropagation(); setMenuOpen(prev => !prev) }}
+            aria-label="더보기"
+          >
+            ⋮
+          </button>
+          {menuOpen && (
+            <>
+              <div className={styles.menuOverlay} onClick={() => setMenuOpen(false)} />
+              <div className={styles.menu}>
+                <button type="button" onClick={() => { setMenuOpen(false); onEdit?.() }}>편집</button>
+                <button type="button" className={styles.deleteMenuItem} onClick={() => { setMenuOpen(false); onDelete?.() }}>삭제</button>
+              </div>
+            </>
+          )}
+        </div>
       )}
     </div>
   )

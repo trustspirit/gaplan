@@ -1,18 +1,98 @@
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
-.item {
+.wrapper {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: $space-3;
-  padding: $space-3 $space-4;
-  min-height: 64px;
+  align-items: stretch;
   border-bottom: 1px solid $color-border;
-  transition: background 0.12s;
 
   &:last-child {
     border-bottom: none;
   }
+}
+
+.colorBar {
+  width: 4px;
+  flex-shrink: 0;
+}
+
+.visitBar {
+  background: $color-sidebar;
+}
+
+.interviewBar {
+  background: $color-primary;
+}
+
+.kebabWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.kebabBtn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 0 12px;
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover { color: #374151; }
+}
+
+.menuOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+.menu {
+  position: absolute;
+  right: 8px;
+  top: 100%;
+  z-index: 100;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  min-width: 100px;
+  overflow: hidden;
+
+  button {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+    color: #374151;
+
+    &:hover { background: #f9fafb; }
+  }
+}
+
+.deleteMenuItem {
+  color: #dc2626 !important;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  min-height: 64px;
+  transition: background 0.12s;
 
   &:hover {
     background: $color-bg;
