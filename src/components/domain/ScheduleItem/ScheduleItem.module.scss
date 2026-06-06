@@ -115,13 +115,17 @@
 .dateCol {
   display: flex;
   flex-direction: row;
-  align-items: baseline;
-  gap: 4px;
+  align-items: center;
+  gap: 5px;
   padding: 0 14px 0 12px;
   border-right: 1px solid $color-border;
   flex-shrink: 0;
   white-space: nowrap;
   background: $color-bg;
+
+  &.past {
+    opacity: 0.55;
+  }
 }
 
 .day {

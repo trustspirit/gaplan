@@ -53,7 +53,16 @@ export function ScheduleItem({
       {/* Left color bar */}
       <div className={clsx(styles.colorBar, isVisit ? styles.visitBar : isMeeting ? styles.meetingBar : styles.interviewBar)} />
 
-      {/* Existing content */}
+      {/* Date column — wrapper level so bg/border span full height */}
+      <div className={clsx(styles.dateCol, isPast && styles.past)}>
+        <span className={styles.day}>{date.format('D')}</span>
+        <div className={styles.dateMeta}>
+          <span className={styles.month}>{date.format('M월')}</span>
+          <span className={styles.dow}>{dow}</span>
+        </div>
+      </div>
+
+      {/* Content */}
       <div
         className={clsx(
           styles.item,
@@ -61,13 +70,6 @@ export function ScheduleItem({
           isPast && styles.past,
         )}
       >
-        <div className={styles.dateCol}>
-          <span className={styles.day}>{date.format('D')}</span>
-          <div className={styles.dateMeta}>
-            <span className={styles.month}>{date.format('M월')}</span>
-            <span className={styles.dow}>{dow}</span>
-          </div>
-        </div>
         <div className={styles.info}>
           <div className={styles.typeBadge}>
             {isVisit ? <MapPin size={11} /> : isMeeting ? <Coffee size={11} /> : <Users size={11} />}
