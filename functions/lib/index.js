@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminCreateSchedule = exports.adminDeleteSchedule = exports.adminEditSchedule = exports.submitWardAssignmentsAnon = exports.submitAvailabilityAnon = exports.getPublicTaskInfo = exports.fastSundayBlock = exports.taskReminder = exports.weeklyReminder = exports.taskCreatedNotification = exports.calendarSync = exports.manualCalendarSync = exports.deleteUser = exports.adminConfirmWardVisit = exports.adminConfirmSchedule = exports.submitWardAssignments = exports.submitAvailability = exports.confirmSchedule = void 0;
+exports.adminDeletePreRegisteredUser = exports.adminAddPreRegisteredUser = exports.mergePreRegisteredUser = exports.adminCreateSchedule = exports.adminDeleteSchedule = exports.adminEditSchedule = exports.submitWardAssignmentsAnon = exports.submitAvailabilityAnon = exports.getPublicTaskInfo = exports.fastSundayBlock = exports.taskReminder = exports.weeklyReminder = exports.taskCreatedNotification = exports.calendarSync = exports.manualCalendarSync = exports.deleteUser = exports.adminConfirmWardVisit = exports.adminConfirmSchedule = exports.submitWardAssignments = exports.submitAvailability = exports.confirmSchedule = void 0;
 const admin = __importStar(require("firebase-admin"));
 admin.initializeApp();
 var confirmSchedule_1 = require("./confirmSchedule");
@@ -72,4 +72,9 @@ var adminDeleteSchedule_1 = require("./adminDeleteSchedule");
 Object.defineProperty(exports, "adminDeleteSchedule", { enumerable: true, get: function () { return adminDeleteSchedule_1.adminDeleteSchedule; } });
 var adminCreateSchedule_1 = require("./adminCreateSchedule");
 Object.defineProperty(exports, "adminCreateSchedule", { enumerable: true, get: function () { return adminCreateSchedule_1.adminCreateSchedule; } });
+var mergePreRegisteredUser_1 = require("./mergePreRegisteredUser");
+Object.defineProperty(exports, "mergePreRegisteredUser", { enumerable: true, get: function () { return mergePreRegisteredUser_1.mergePreRegisteredUser; } });
+var adminPreRegistration_1 = require("./adminPreRegistration");
+Object.defineProperty(exports, "adminAddPreRegisteredUser", { enumerable: true, get: function () { return adminPreRegistration_1.adminAddPreRegisteredUser; } });
+Object.defineProperty(exports, "adminDeletePreRegisteredUser", { enumerable: true, get: function () { return adminPreRegistration_1.adminDeletePreRegisteredUser; } });
 //# sourceMappingURL=index.js.map

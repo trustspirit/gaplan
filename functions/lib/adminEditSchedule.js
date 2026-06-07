@@ -41,7 +41,7 @@ const TIME_RE = /^\d{2}:\d{2}$/;
 exports.adminEditSchedule = functions
     .region('asia-northeast3')
     .https.onCall(async (data, context) => {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e, _f;
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
     }
@@ -76,10 +76,28 @@ exports.adminEditSchedule = functions
         allowed.endTime = updates.endTime;
     }
     if (updates.notes !== undefined) {
-        if (typeof updates.notes !== 'string' || updates.notes.length > 500) {
+        if (updates.notes !== null && (typeof updates.notes !== 'string' || updates.notes.length > 500)) {
             throw new functions.https.HttpsError('invalid-argument', 'Invalid notes');
         }
         allowed.notes = updates.notes;
+    }
+    if (updates.unitId !== undefined) {
+        if (typeof updates.unitId !== 'string' || updates.unitId.length === 0) {
+            throw new functions.https.HttpsError('invalid-argument', 'Invalid unitId');
+        }
+        allowed.unitId = updates.unitId;
+    }
+    if (updates.wardName !== undefined) {
+        if (updates.wardName !== null && typeof updates.wardName !== 'string') {
+            throw new functions.https.HttpsError('invalid-argument', 'Invalid wardName');
+        }
+        allowed.wardName = updates.wardName;
+    }
+    if (updates.presidentUid !== undefined) {
+        if (updates.presidentUid !== null && typeof updates.presidentUid !== 'string') {
+            throw new functions.https.HttpsError('invalid-argument', 'Invalid presidentUid');
+        }
+        allowed.presidentUid = updates.presidentUid;
     }
     if (Object.keys(allowed).length === 0) {
         throw new functions.https.HttpsError('invalid-argument', 'No valid updates provided');
@@ -101,8 +119,25 @@ exports.adminEditSchedule = functions
             throw new functions.https.HttpsError('invalid-argument', 'endTime must be after startTime');
         }
     }
+    // Double-booking guard — only when date or startTime changes
+    if (allowed.date !== undefined || allowed.startTime !== undefined) {
+        const current = snap.data();
+        const checkDate = (_e = allowed.date) !== null && _e !== void 0 ? _e : current.date;
+        const checkStart = (_f = allowed.startTime) !== null && _f !== void 0 ? _f : current.startTime;
+        const duplicate = await db.collection('schedules')
+            .where('seventyUid', '==', current.seventyUid)
+            .where('date', '==', checkDate)
+            .where('startTime', '==', checkStart)
+            .where('status', '==', 'confirmed')
+            .limit(1)
+            .get();
+        const conflict = duplicate.docs.find(d => d.id !== scheduleId);
+        if (conflict) {
+            throw new functions.https.HttpsError('already-exists', '해당 시간에 이미 확정된 일정이 있습니다.');
+        }
+    }
     // calendarSync trigger handles GCal update automatically
-    await scheduleRef.update(Object.assign(Object.assign({}, allowed), { updatedAt: new Date().toISOString(), updatedBy: context.auth.uid }));
+    await scheduleRef.update(Object.assign(Object.assign({}, allowed), { updatedAt: admin.firestore.FieldValue.serverTimestamp(), updatedBy: context.auth.uid }));
     return { success: true };
 });
 //# sourceMappingURL=adminEditSchedule.js.map

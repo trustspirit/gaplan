@@ -47,7 +47,7 @@ exports.adminDeleteSchedule = functions
     const callerSnap = await db.collection('users').doc(context.auth.uid).get();
     const callerRole = (_a = callerSnap.data()) === null || _a === void 0 ? void 0 : _a.role;
     if (!['admin', 'seventy'].includes(callerRole)) {
-        throw new functions.https.HttpsError('permission-denied', 'Admin only');
+        throw new functions.https.HttpsError('permission-denied', 'Admin or seventy only');
     }
     const { scheduleId } = data;
     if (!scheduleId) {
