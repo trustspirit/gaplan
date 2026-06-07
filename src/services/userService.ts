@@ -1,5 +1,5 @@
 import {
-  collection, doc, setDoc, updateDoc,
+  collection, doc, setDoc, updateDoc, deleteDoc,
   onSnapshot, serverTimestamp,
   type Unsubscribe,
 } from 'firebase/firestore'
@@ -49,4 +49,25 @@ export async function updateUserName(uid: string, name: string): Promise<void> {
 
 export async function deleteUserAccount(uid: string): Promise<void> {
   await httpsCallable(functions, 'deleteUser')({ uid })
+}
+
+export async function addPreRegisteredUser(data: {
+  name: string
+  email: string
+  role: 'president' | 'seventy'
+  unitId?: string
+  regionId?: string
+  regionIds?: string[]
+  createdBy: string
+}): Promise<void> {
+  const ref = doc(collection(db, 'users'))
+  await setDoc(ref, {
+    ...data,
+    preRegistered: true,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export async function deletePreRegisteredUser(uid: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', uid))
 }

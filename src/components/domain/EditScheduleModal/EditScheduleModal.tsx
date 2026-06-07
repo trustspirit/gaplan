@@ -52,7 +52,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
   const wardOptions = unitId ? getWardsByUnit(unitId).map(w => ({ value: w.name, label: w.name })) : []
   const presidentOptions = users
     .filter(u => u.role === 'president' && u.unitId === unitId && !!unitId)
-    .map(u => ({ value: u.uid, label: u.name }))
+    .map(u => ({ value: u.uid, label: u.preRegistered ? u.name : `${u.name} ✓` }))
 
   const handleSave = async () => {
     setSaving(true)

@@ -51,10 +51,10 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
   const seventyUsers = users.filter(u => u.role === 'seventy')
   const wardOptions = unitId ? getWardsByUnit(unitId).map(w => ({ value: w.name, label: w.name })) : []
   const unitOptions = ALL_UNITS.map(u => ({ value: u.id, label: u.name }))
-  const seventyOptions = seventyUsers.map(u => ({ value: u.uid, label: u.name }))
+  const seventyOptions = seventyUsers.map(u => ({ value: u.uid, label: u.preRegistered ? u.name : `${u.name} ✓` }))
   const presidentOptions = users
     .filter(u => u.role === 'president' && u.unitId === unitId && !!unitId)
-    .map(u => ({ value: u.uid, label: u.name }))
+    .map(u => ({ value: u.uid, label: u.preRegistered ? u.name : `${u.name} ✓` }))
 
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault()

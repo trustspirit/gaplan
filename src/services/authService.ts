@@ -6,8 +6,9 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth'
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { auth, db, googleProvider } from '@/firebase'
+import { doc, getDoc, setDoc, getDocs, collection, query, where, serverTimestamp } from 'firebase/firestore'
+import { httpsCallable } from 'firebase/functions'
+import { auth, db, functions, googleProvider } from '@/firebase'
 import type { AppUser, UserRole } from '@/types'
 
 // Call once on app startup so a completed redirect login is resolved.
@@ -44,6 +45,26 @@ export async function resolveUser(firebaseUser: User): Promise<AppUser | null> {
   }
 
   const email = firebaseUser.email ?? ''
+
+  // Check for pre-registered placeholder with matching email and merge
+  if (email) {
+    const preRegSnap = await getDocs(
+      query(collection(db, 'users'), where('email', '==', email))
+    )
+    const preRegDoc = preRegSnap.docs.find(d => d.data().preRegistered === true)
+    if (preRegDoc) {
+      try {
+        const result = await httpsCallable<{ preUid: string }, Record<string, unknown>>(
+          functions, 'mergePreRegisteredUser'
+        )({ preUid: preRegDoc.id })
+        return { uid: firebaseUser.uid, ...(result.data as Omit<AppUser, 'uid'>) }
+      } catch {
+        // If merge failed (e.g. concurrent login), check if doc was created
+        const merged = await getDoc(doc(db, 'users', firebaseUser.uid))
+        if (merged.exists()) return { uid: firebaseUser.uid, ...merged.data() } as AppUser
+      }
+    }
+  }
 
   const [configSnap, inviteSnap] = await Promise.all([
     getDoc(doc(db, 'settings', 'admin')),

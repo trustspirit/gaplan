@@ -9,6 +9,7 @@ export interface AppUser {
   regionIds?: string[]     // all assigned regions for seventy
   unitId?: string
   calendarConnected?: boolean
+  preRegistered?: boolean  // true = admin-created placeholder, not yet linked to Firebase Auth
   createdAt: string
 }
 
