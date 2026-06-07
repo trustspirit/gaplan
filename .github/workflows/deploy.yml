@@ -95,6 +95,10 @@ jobs:
         run: npm install --prefer-offline --no-audit
         working-directory: functions
 
+      - name: Build functions
+        run: npm run build
+        working-directory: functions
+
       - name: Setup Google credentials
         env:
           GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}

@@ -36,8 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.adminEditSchedule = void 0;
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^\d{2}:\d{2}$/;
+const validators_1 = require("./validators");
 exports.adminEditSchedule = functions
     .region('asia-northeast3')
     .https.onCall(async (data, context) => {
@@ -55,22 +54,21 @@ exports.adminEditSchedule = functions
     if (!scheduleId || !updates) {
         throw new functions.https.HttpsError('invalid-argument', 'scheduleId and updates required');
     }
-    // Whitelist and validate permitted fields
     const allowed = {};
     if (updates.date !== undefined) {
-        if (typeof updates.date !== 'string' || !DATE_RE.test(updates.date)) {
+        if (typeof updates.date !== 'string' || !validators_1.DATE_RE.test(updates.date)) {
             throw new functions.https.HttpsError('invalid-argument', 'Invalid date format');
         }
         allowed.date = updates.date;
     }
     if (updates.startTime !== undefined) {
-        if (typeof updates.startTime !== 'string' || !TIME_RE.test(updates.startTime)) {
+        if (typeof updates.startTime !== 'string' || !validators_1.TIME_RE.test(updates.startTime)) {
             throw new functions.https.HttpsError('invalid-argument', 'Invalid startTime format');
         }
         allowed.startTime = updates.startTime;
     }
     if (updates.endTime !== undefined) {
-        if (typeof updates.endTime !== 'string' || !TIME_RE.test(updates.endTime)) {
+        if (typeof updates.endTime !== 'string' || !validators_1.TIME_RE.test(updates.endTime)) {
             throw new functions.https.HttpsError('invalid-argument', 'Invalid endTime format');
         }
         allowed.endTime = updates.endTime;
@@ -99,6 +97,30 @@ exports.adminEditSchedule = functions
         }
         allowed.presidentUid = updates.presidentUid;
     }
+    if (updates.zoomLink !== undefined) {
+        if (updates.zoomLink !== null) {
+            const trimmed = updates.zoomLink.trim();
+            if (!trimmed || trimmed.length > 500 || !(0, validators_1.isValidUrl)(trimmed)) {
+                throw new functions.https.HttpsError('invalid-argument', 'Invalid zoomLink URL');
+            }
+            allowed.zoomLink = trimmed;
+        }
+        else {
+            allowed.zoomLink = null;
+        }
+    }
+    if (updates.customTitle !== undefined) {
+        if (updates.customTitle !== null) {
+            const trimmed = updates.customTitle.trim();
+            if (!trimmed || trimmed.length > 200) {
+                throw new functions.https.HttpsError('invalid-argument', 'customTitle must be 1-200 chars');
+            }
+            allowed.customTitle = trimmed;
+        }
+        else {
+            allowed.customTitle = null;
+        }
+    }
     if (Object.keys(allowed).length === 0) {
         throw new functions.https.HttpsError('invalid-argument', 'No valid updates provided');
     }
@@ -110,7 +132,6 @@ exports.adminEditSchedule = functions
     if (callerRole === 'seventy' && ((_b = snap.data()) === null || _b === void 0 ? void 0 : _b.seventyUid) !== context.auth.uid) {
         throw new functions.https.HttpsError('permission-denied', 'Seventy can only edit their own schedules');
     }
-    // Validate startTime < endTime cross-field
     if (allowed.startTime !== undefined || allowed.endTime !== undefined) {
         const current = snap.data();
         const effectiveStart = (_c = allowed.startTime) !== null && _c !== void 0 ? _c : current.startTime;
@@ -119,7 +140,6 @@ exports.adminEditSchedule = functions
             throw new functions.https.HttpsError('invalid-argument', 'endTime must be after startTime');
         }
     }
-    // Double-booking guard — only when date or startTime changes
     if (allowed.date !== undefined || allowed.startTime !== undefined) {
         const current = snap.data();
         const checkDate = (_e = allowed.date) !== null && _e !== void 0 ? _e : current.date;
@@ -136,7 +156,6 @@ exports.adminEditSchedule = functions
             throw new functions.https.HttpsError('already-exists', '해당 시간에 이미 확정된 일정이 있습니다.');
         }
     }
-    // calendarSync trigger handles GCal update automatically
     await scheduleRef.update(Object.assign(Object.assign({}, allowed), { updatedAt: admin.firestore.FieldValue.serverTimestamp(), updatedBy: context.auth.uid }));
     return { success: true };
 });

@@ -9,5 +9,6 @@ exports.UNIT_REGION_MAP = {
     'gwangju-stake': 'seoul-south',
     'busan-stake': 'busan', 'daegu-stake': 'busan',
     'changwon-stake': 'busan', 'ulsan-district': 'busan',
+    'military-district': 'seoul', 'gangneung-district': 'seoul',
 };
 //# sourceMappingURL=unitRegionMap.js.map

@@ -45,6 +45,7 @@ const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const googleapis_1 = require("googleapis");
 const unitRegionMap_1 = require("./unitRegionMap");
+const unitNameMap_1 = require("./unitNameMap");
 function getCalendarClient() {
     const auth = new googleapis_1.google.auth.GoogleAuth({
         scopes: ['https://www.googleapis.com/auth/calendar.events'],
@@ -54,7 +55,7 @@ function getCalendarClient() {
 exports.manualCalendarSync = functions
     .region('asia-northeast3')
     .https.onCall(async (_data, context) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Login required');
     }
@@ -85,14 +86,12 @@ exports.manualCalendarSync = functions
             failed++;
             continue;
         }
-        const unitSnap = s.unitId
-            ? await db.collection('units').doc(s.unitId).get()
-            : null;
-        const unitName = (_h = (_g = (_f = unitSnap === null || unitSnap === void 0 ? void 0 : unitSnap.data()) === null || _f === void 0 ? void 0 : _f.name) !== null && _g !== void 0 ? _g : s.unitId) !== null && _h !== void 0 ? _h : '';
-        const startDateTime = `${s.date}T${s.startTime}:00+09:00`;
-        const endDateTime = `${s.date}T${s.endTime}:00+09:00`;
+        const unitName = (_h = (_g = unitNameMap_1.UNIT_NAME_MAP[(_f = s.unitId) !== null && _f !== void 0 ? _f : '']) !== null && _g !== void 0 ? _g : s.unitId) !== null && _h !== void 0 ? _h : '';
         let title;
-        if (s.type === 'ward_visit') {
+        if (s.customTitle) {
+            title = s.customTitle;
+        }
+        else if (s.type === 'ward_visit') {
             title = s.wardName ? `${unitName} - ${s.wardName} 방문` : `${unitName} 방문`;
         }
         else if (s.type === 'interview') {
@@ -101,14 +100,13 @@ exports.manualCalendarSync = functions
         else {
             title = unitName ? `${unitName} 모임` : '모임';
         }
+        const startDateTime = `${s.date}T${s.startTime}:00+09:00`;
+        const endDateTime = `${s.date}T${s.endTime}:00+09:00`;
+        const zoomLinkValue = (_k = (_j = s.zoomLink) === null || _j === void 0 ? void 0 : _j.trim()) !== null && _k !== void 0 ? _k : '';
         try {
             const event = await calendar.events.insert({
                 calendarId,
-                requestBody: {
-                    summary: title,
-                    start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
-                    end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
-                },
+                requestBody: Object.assign({ summary: title, start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' }, end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' } }, (zoomLinkValue ? { location: zoomLinkValue } : {})),
             });
             await docSnap.ref.update({ googleCalendarEventId: event.data.id });
             synced++;

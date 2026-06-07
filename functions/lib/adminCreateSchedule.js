@@ -36,25 +36,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.adminCreateSchedule = void 0;
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^\d{2}:\d{2}$/;
+const validators_1 = require("./validators");
 exports.adminCreateSchedule = functions
     .region('asia-northeast3')
     .https.onCall(async (data, context) => {
-    var _a, _b, _c;
+    var _a, _b, _c, _d, _e;
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
     }
-    // Destructure first so cheap validations can run before any DB reads
-    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes } = data;
-    // Basic validations — no DB reads needed
+    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, customTitle } = data;
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
         throw new functions.https.HttpsError('invalid-argument', 'Invalid type');
     }
-    if (!DATE_RE.test(date)) {
+    if (!validators_1.DATE_RE.test(date)) {
         throw new functions.https.HttpsError('invalid-argument', 'Invalid date format (YYYY-MM-DD)');
     }
-    if (!TIME_RE.test(startTime) || !TIME_RE.test(endTime)) {
+    if (!validators_1.TIME_RE.test(startTime) || !validators_1.TIME_RE.test(endTime)) {
         throw new functions.https.HttpsError('invalid-argument', 'Invalid time format (HH:mm)');
     }
     if (startTime >= endTime) {
@@ -76,7 +73,24 @@ exports.adminCreateSchedule = functions
     if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {
         throw new functions.https.HttpsError('invalid-argument', 'notes max 500 chars');
     }
-    // DB reads — callerSnap and seventySnap are independent, fetch in parallel
+    if (zoomLink !== undefined) {
+        // Check type restriction first for clearer error message
+        if (type === 'ward_visit') {
+            throw new functions.https.HttpsError('invalid-argument', 'zoomLink is not applicable to ward_visit');
+        }
+        const trimmed = typeof zoomLink === 'string' ? zoomLink.trim() : '';
+        if (!trimmed || trimmed.length > 500 || !(0, validators_1.isValidUrl)(trimmed)) {
+            throw new functions.https.HttpsError('invalid-argument', 'Invalid zoomLink URL');
+        }
+    }
+    if (customTitle !== undefined) {
+        if (type === 'ward_visit') {
+            throw new functions.https.HttpsError('invalid-argument', 'customTitle is not applicable to ward_visit');
+        }
+        if (typeof customTitle !== 'string' || customTitle.trim().length === 0 || customTitle.length > 200) {
+            throw new functions.https.HttpsError('invalid-argument', 'customTitle must be 1-200 chars');
+        }
+    }
     const db = admin.firestore();
     const [callerSnap, seventySnap] = await Promise.all([
         db.collection('users').doc(context.auth.uid).get(),
@@ -98,7 +112,6 @@ exports.adminCreateSchedule = functions
             throw new functions.https.HttpsError('invalid-argument', 'Invalid presidentUid: user not found or not a president');
         }
     }
-    // Double-booking guard
     const existing = await db.collection('schedules')
         .where('seventyUid', '==', seventyUid)
         .where('date', '==', date)
@@ -119,6 +132,8 @@ exports.adminCreateSchedule = functions
         startTime,
         endTime,
         notes: notes !== null && notes !== void 0 ? notes : null,
+        zoomLink: (_d = zoomLink === null || zoomLink === void 0 ? void 0 : zoomLink.trim()) !== null && _d !== void 0 ? _d : null,
+        customTitle: (_e = customTitle === null || customTitle === void 0 ? void 0 : customTitle.trim()) !== null && _e !== void 0 ? _e : null,
         status: 'confirmed',
         createdBy: context.auth.uid,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
