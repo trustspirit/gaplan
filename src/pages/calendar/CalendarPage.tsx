@@ -22,6 +22,7 @@ export function CalendarPage() {
   const [syncing, setSyncing] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
 
   const handleManualSync = async () => {
     setSyncing(true)
@@ -134,7 +135,7 @@ export function CalendarPage() {
                         showCalendarAdd={user.role === 'president'}
                         canEdit={user.role === 'admin' || user.role === 'seventy'}
                         onEdit={() => setEditTarget(s)}
-                        onDelete={() => setEditTarget(s)}
+                        onDelete={() => setDeleteTarget(s)}
                       />
                     ))
                 }
@@ -155,6 +156,14 @@ export function CalendarPage() {
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
           onSaved={() => { setEditTarget(null); toast.success(t('admin.scheduleEditSuccess')) }}
+        />
+      )}
+      {deleteTarget && (
+        <EditScheduleModal
+          schedule={deleteTarget}
+          initialConfirmDelete
+          onClose={() => setDeleteTarget(null)}
+          onSaved={() => { setDeleteTarget(null); toast.success(t('admin.scheduleCancelSuccess')) }}
         />
       )}
     </AppShell>

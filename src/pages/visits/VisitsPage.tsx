@@ -24,6 +24,7 @@ export function VisitsPage() {
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
 
   const filters = user.role === 'president'
     ? { presidentUid: user.uid }
@@ -114,7 +115,7 @@ export function VisitsPage() {
                           showCalendarAdd={user.role === 'president'}
                           canEdit={user.role === 'admin' || user.role === 'seventy'}
                           onEdit={() => setEditTarget(s)}
-                          onDelete={() => setEditTarget(s)}
+                          onDelete={() => setDeleteTarget(s)}
                         />
                       ))}
                     </div>
@@ -137,6 +138,14 @@ export function VisitsPage() {
             schedule={editTarget}
             onClose={() => setEditTarget(null)}
             onSaved={() => { setEditTarget(null); toast.success(t('admin.scheduleEditSuccess')) }}
+          />
+        )}
+        {deleteTarget && (
+          <EditScheduleModal
+            schedule={deleteTarget}
+            initialConfirmDelete
+            onClose={() => setDeleteTarget(null)}
+            onSaved={() => { setDeleteTarget(null); toast.success(t('admin.scheduleCancelSuccess')) }}
           />
         )}
         <div className={styles.sideCol}>

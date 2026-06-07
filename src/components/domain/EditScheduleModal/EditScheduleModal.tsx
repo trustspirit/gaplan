@@ -14,9 +14,10 @@ interface Props {
   schedule: Schedule
   onClose: () => void
   onSaved: () => void
+  initialConfirmDelete?: boolean
 }
 
-export function EditScheduleModal({ schedule, onClose, onSaved }: Props) {
+export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDelete = false }: Props) {
   const { t } = useTranslation()
   const { users } = useUsers()
 
@@ -29,7 +30,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved }: Props) {
   const [note, setNote] = useState(schedule.notes ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(initialConfirmDelete)
 
   const isFirstUnitChange = useRef(true)
   useEffect(() => {
@@ -92,13 +93,13 @@ export function EditScheduleModal({ schedule, onClose, onSaved }: Props) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.sheet} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
-          <h3 className={styles.title}>{t('schedule.editTitle')}</h3>
+          <h3 className={styles.title}>{confirmDelete ? t('admin.scheduleDelete') : t('schedule.editTitle')}</h3>
           <button type="button" onClick={onClose} className={styles.closeBtn}>{t('common.close')}</button>
         </div>
 
         {error && <div className={styles.errorBanner}>{error}</div>}
 
-        <div className={styles.fields}>
+        {!confirmDelete && <div className={styles.fields}>
           {/* Stake/District */}
           <label className={styles.fieldLabel}>
             {t(schedule.type === 'meeting' ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel')}
@@ -155,14 +156,14 @@ export function EditScheduleModal({ schedule, onClose, onSaved }: Props) {
 
           <label className={styles.fieldLabel}>{t('schedule.notesLabelOptional')}</label>
           <textarea className={styles.fieldTextarea} value={note} onChange={e => setNote(e.target.value)} rows={3} />
-        </div>
+        </div>}
 
         <div className={styles.actions}>
           {confirmDelete ? (
             <div className={styles.deleteConfirm}>
               <p className={styles.deleteConfirmText}>{t('schedule.deleteConfirmText')}</p>
               <div className={styles.deleteConfirmBtns}>
-                <button type="button" className={styles.cancelBtn} onClick={() => setConfirmDelete(false)}>
+                <button type="button" className={styles.cancelBtn} onClick={initialConfirmDelete ? onClose : () => setConfirmDelete(false)}>
                   {t('common.cancel')}
                 </button>
                 <button type="button" className={styles.deleteBtn} onClick={handleDelete} disabled={saving}>

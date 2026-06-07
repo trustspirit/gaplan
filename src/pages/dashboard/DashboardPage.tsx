@@ -214,6 +214,7 @@ function AdminDashboardContent() {
   const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
 
   const thisMonth = schedules.filter(
     s => s.status === 'confirmed' && dayjs(s.date).format('YYYY-M') === dayjs().format('YYYY-M')
@@ -253,7 +254,7 @@ function AdminDashboardContent() {
                       unitName={getUnitName(s.unitId)}
                       canEdit
                       onEdit={() => setEditTarget(s)}
-                      onDelete={() => setEditTarget(s)}
+                      onDelete={() => setDeleteTarget(s)}
                     />
                   ))
               }
@@ -282,6 +283,14 @@ function AdminDashboardContent() {
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
           onSaved={() => { setEditTarget(null); toast.success(t('admin.scheduleEditSuccess')) }}
+        />
+      )}
+      {deleteTarget && (
+        <EditScheduleModal
+          schedule={deleteTarget}
+          initialConfirmDelete
+          onClose={() => setDeleteTarget(null)}
+          onSaved={() => { setDeleteTarget(null); toast.success(t('admin.scheduleCancelSuccess')) }}
         />
       )}
     </AppShell>

@@ -26,6 +26,7 @@ export function AdminDashboard() {
   const user = useAtomValue(authUserAtom)!
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
 
   const { schedules } = useSchedules({})
   const { getUnitName } = useUnits()
@@ -65,7 +66,7 @@ export function AdminDashboard() {
                     unitName={getUnitName(s.unitId)}
                     canEdit
                     onEdit={() => setEditTarget(s)}
-                    onDelete={() => setEditTarget(s)}
+                    onDelete={() => setDeleteTarget(s)}
                   />
                 ))}
               </div>
@@ -105,6 +106,14 @@ export function AdminDashboard() {
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
           onSaved={() => { setEditTarget(null); toast.success(t('admin.scheduleEditSuccess')) }}
+        />
+      )}
+      {deleteTarget && (
+        <EditScheduleModal
+          schedule={deleteTarget}
+          initialConfirmDelete
+          onClose={() => setDeleteTarget(null)}
+          onSaved={() => { setDeleteTarget(null); toast.success(t('admin.scheduleCancelSuccess')) }}
         />
       )}
     </AppShell>
