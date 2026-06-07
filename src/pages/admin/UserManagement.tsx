@@ -15,7 +15,6 @@ import styles from './UserManagement.module.scss'
 
 const ROLE_OPTIONS = (['admin', 'seventy', 'president'] as UserRole[]).map(r => ({ value: r, label: ROLE_LABELS[r] }))
 const PRE_ROLE_OPTIONS = (['president', 'seventy'] as UserRole[]).map(r => ({ value: r, label: ROLE_LABELS[r] }))
-const REGION_OPTIONS = REGIONS.map(r => ({ value: r.id, label: r.name }))
 const UNIT_OPTIONS = ALL_UNITS.map(u => ({ value: u.id, label: u.name }))
 
 function EditUserModal({
@@ -164,7 +163,7 @@ export function UserManagement() {
   // Invite (email-based)
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<UserRole>('president')
-  const [regionId, setRegionId] = useState('')
+  const [inviteRegionIds, setInviteRegionIds] = useState<Set<string>>(new Set())
   const [inviteLoading, setInviteLoading] = useState(false)
 
   // Manual pre-registration
@@ -172,8 +171,15 @@ export function UserManagement() {
   const [preEmail, setPreEmail] = useState('')
   const [preRole, setPreRole] = useState<'president' | 'seventy'>('president')
   const [preUnitId, setPreUnitId] = useState('')
-  const [preRegionId, setPreRegionId] = useState('')
+  const [preRegionIds, setPreRegionIds] = useState<Set<string>>(new Set())
   const [preLoading, setPreLoading] = useState(false)
+
+  function toggleInviteRegion(id: string) {
+    setInviteRegionIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+  function togglePreRegion(id: string) {
+    setPreRegionIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
 
   const [editingUser, setEditingUser] = useState<AppUser | null>(null)
   const [deletingUser, setDeletingUser] = useState<AppUser | null>(null)
@@ -184,10 +190,10 @@ export function UserManagement() {
     if (!email.trim()) return
     setInviteLoading(true)
     try {
-      await inviteUser(email.trim(), role, role === 'seventy' ? regionId : undefined, currentUser.uid)
+      await inviteUser(email.trim(), role, role === 'seventy' ? Array.from(inviteRegionIds) : undefined, currentUser.uid)
       toast.success(`${email}${t('user.inviteSuccess')}`)
       setEmail('')
-      setRegionId('')
+      setInviteRegionIds(new Set())
     } catch {
       toast.error(t('user.inviteFailed'))
     } finally {
@@ -205,10 +211,12 @@ export function UserManagement() {
         email: preEmail.trim(),
         role: preRole,
         ...(preRole === 'president' && preUnitId ? { unitId: preUnitId } : {}),
-        ...(preRole === 'seventy' && preRegionId ? { regionId: preRegionId, regionIds: [preRegionId] } : {}),
+        ...(preRole === 'seventy' && preRegionIds.size > 0
+          ? { regionIds: Array.from(preRegionIds), regionId: Array.from(preRegionIds)[0] }
+          : {}),
       })
       toast.success(t('user.preRegSuccess', { name: preName.trim() }))
-      setPreName(''); setPreEmail(''); setPreUnitId(''); setPreRegionId('')
+      setPreName(''); setPreEmail(''); setPreUnitId(''); setPreRegionIds(new Set())
     } catch {
       toast.error(t('user.preRegFailed'))
     } finally {
@@ -228,7 +236,23 @@ export function UserManagement() {
                 <Input label={t('user.inviteEmail')} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="example@gmail.com" required />
                 <Select label={t('user.inviteRole')} value={role} onChange={e => setRole(e.target.value as UserRole)} options={ROLE_OPTIONS} />
                 {role === 'seventy' && (
-                  <Select label={t('user.inviteRegion')} value={regionId} onChange={e => setRegionId(e.target.value)} options={REGION_OPTIONS} />
+                  <div className={styles.regionCheckGroup}>
+                    <p className={styles.regionCheckLabel}>{t('user.inviteRegion')} (복수 선택 가능)</p>
+                    <div className={styles.regionCheckList}>
+                      {REGIONS.map(r => (
+                        <label key={r.id} className={styles.regionCheckRow}>
+                          <input
+                            type="checkbox"
+                            checked={inviteRegionIds.has(r.id)}
+                            onChange={() => toggleInviteRegion(r.id)}
+                            className={styles.regionCheckbox}
+                            style={{ accentColor: 'var(--color-primary, #177C9C)' }}
+                          />
+                          <span className={styles.regionCheckName}>{r.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 <Button type="submit" loading={inviteLoading}>{t('user.inviteSend')}</Button>
               </form>
@@ -247,7 +271,23 @@ export function UserManagement() {
                   <Select label={t('user.preRegUnit')} value={preUnitId} onChange={e => setPreUnitId(e.target.value)} options={UNIT_OPTIONS} />
                 )}
                 {preRole === 'seventy' && (
-                  <Select label={t('user.preRegRegion')} value={preRegionId} onChange={e => setPreRegionId(e.target.value)} options={REGION_OPTIONS} />
+                  <div className={styles.regionCheckGroup}>
+                    <p className={styles.regionCheckLabel}>{t('user.preRegRegion')} (복수 선택 가능)</p>
+                    <div className={styles.regionCheckList}>
+                      {REGIONS.map(r => (
+                        <label key={r.id} className={styles.regionCheckRow}>
+                          <input
+                            type="checkbox"
+                            checked={preRegionIds.has(r.id)}
+                            onChange={() => togglePreRegion(r.id)}
+                            className={styles.regionCheckbox}
+                            style={{ accentColor: 'var(--color-primary, #177C9C)' }}
+                          />
+                          <span className={styles.regionCheckName}>{r.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 <Button type="submit" loading={preLoading}>{t('user.preRegSubmit')}</Button>
               </form>

@@ -10,12 +10,13 @@ import type { AppUser, UserRole } from '@/types'
 export async function inviteUser(
   email: string,
   role: UserRole,
-  assignedRegionId: string | undefined,
+  assignedRegionIds: string[] | undefined,
   invitedBy: string,
 ): Promise<void> {
   await setDoc(doc(db, 'invites', email), {
     role,
-    assignedRegionId: assignedRegionId ?? null,
+    assignedRegionIds: assignedRegionIds ?? [],
+    assignedRegionId: assignedRegionIds?.[0] ?? null,  // backward compat
     invitedBy,
     createdAt: serverTimestamp(),
   })

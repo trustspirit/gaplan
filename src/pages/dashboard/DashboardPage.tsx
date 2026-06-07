@@ -159,7 +159,10 @@ function SeventyDashboard() {
   const { getUnitName } = useUnits()
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
-  const regionName = REGIONS.find(r => r.id === user.regionId)?.name ?? user.regionId ?? ''
+  const regionIds = user.regionIds ?? (user.regionId ? [user.regionId] : [])
+  const regionName = regionIds
+    .map(id => REGIONS.find(r => r.id === id)?.name ?? id)
+    .join(', ')
 
   const upcoming = schedules
     .filter(s => s.status === 'confirmed' && dayjs(s.date).isAfter(dayjs().subtract(1, 'day')))
