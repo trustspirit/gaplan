@@ -58,7 +58,12 @@ function EditUserModal({
       if (user.preRegistered) {
         const preFields: Parameters<typeof updatePreRegisteredUserFields>[1] = {}
         if (email.trim().toLowerCase() !== (user.email ?? '').toLowerCase()) preFields.email = email.trim()
-        if (role === 'president' && unitId !== (user.unitId ?? '')) preFields.unitId = unitId
+        // Save unitId for president; clear it when switching away from president
+        if (role === 'president') {
+          if (unitId !== (user.unitId ?? '')) preFields.unitId = unitId || null
+        } else if (user.role === 'president') {
+          preFields.unitId = null
+        }
         if (Object.keys(preFields).length > 0) tasks.push(updatePreRegisteredUserFields(user.uid, preFields))
       }
       await Promise.all(tasks)
@@ -339,14 +344,16 @@ export function UserManagement() {
                         {ROLE_LABELS[u.role]}
                       </Badge>
                       <div className={styles.userActions}>
-                        <button
-                          className={styles.iconBtn}
-                          title={t('common.edit')}
-                          type="button"
-                          onClick={() => setEditingUser(u)}
-                        >
-                          <Pencil size={14} />
-                        </button>
+                        {u.uid !== currentUser.uid && (
+                          <button
+                            className={styles.iconBtn}
+                            title={t('common.edit')}
+                            type="button"
+                            onClick={() => setEditingUser(u)}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        )}
                         {u.uid !== currentUser.uid && (
                           <button
                             className={`${styles.iconBtn} ${styles.iconBtnDanger}`}

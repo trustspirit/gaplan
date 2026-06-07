@@ -9,6 +9,7 @@ import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
 import { UNIT_REGION_MAP } from './unitRegionMap'
+import { UNIT_NAME_MAP } from './unitNameMap'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -57,21 +58,21 @@ export const manualCalendarSync = functions
         continue
       }
 
-      const unitSnap = s.unitId
-        ? await db.collection('units').doc(s.unitId).get()
-        : null
-      const unitName = unitSnap?.data()?.name ?? s.unitId ?? ''
-
-      const startDateTime = `${s.date}T${s.startTime}:00+09:00`
-      const endDateTime = `${s.date}T${s.endTime}:00+09:00`
+      const unitName = UNIT_NAME_MAP[s.unitId ?? ''] ?? s.unitId ?? ''
       let title: string
-      if (s.type === 'ward_visit') {
+      if (s.customTitle) {
+        title = s.customTitle as string
+      } else if (s.type === 'ward_visit') {
         title = s.wardName ? `${unitName} - ${s.wardName} 방문` : `${unitName} 방문`
       } else if (s.type === 'interview') {
         title = `${unitName} 접견`
       } else {
         title = unitName ? `${unitName} 모임` : '모임'
       }
+
+      const startDateTime = `${s.date}T${s.startTime}:00+09:00`
+      const endDateTime = `${s.date}T${s.endTime}:00+09:00`
+      const zoomLinkValue = s.zoomLink?.trim() ?? ''
 
       try {
         const event = await calendar.events.insert({
@@ -80,6 +81,7 @@ export const manualCalendarSync = functions
             summary: title,
             start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
             end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
+            ...(zoomLinkValue ? { location: zoomLinkValue } : {}),
           },
         })
         await docSnap.ref.update({ googleCalendarEventId: event.data.id })

@@ -47,6 +47,76 @@ export const adminAddPreRegisteredUser = functions
     return { uid: ref.id }
   })
 
+interface UpdatePreRegRequest {
+  uid: string
+  name?: string
+  email?: string
+  role?: 'president' | 'seventy'
+  unitId?: string | null
+  regionId?: string | null
+  regionIds?: string[]
+}
+
+export const adminUpdatePreRegisteredUser = functions
+  .region('asia-northeast3')
+  .https.onCall(async (data: UpdatePreRegRequest, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Login required')
+    await assertAdmin(context.auth.uid)
+
+    if (!data.uid) throw new functions.https.HttpsError('invalid-argument', 'uid required')
+
+    const db = admin.firestore()
+    const snap = await db.collection('users').doc(data.uid).get()
+    if (!snap.exists || !snap.data()?.preRegistered) {
+      throw new functions.https.HttpsError('not-found', 'Pre-registered user not found')
+    }
+
+    const updates: Record<string, unknown> = {}
+
+    if (data.name !== undefined) {
+      if (!data.name.trim()) throw new functions.https.HttpsError('invalid-argument', 'name cannot be empty')
+      updates.name = data.name.trim()
+    }
+    if (data.email !== undefined) {
+      const normalized = data.email.trim().toLowerCase()
+      if (normalized) {
+        // Uniqueness check: reject if another preRegistered doc already has this email
+        const existing = await db.collection('users')
+          .where('email', '==', normalized)
+          .where('preRegistered', '==', true)
+          .get()
+        const conflict = existing.docs.find(d => d.id !== data.uid)
+        if (conflict) {
+          throw new functions.https.HttpsError('already-exists', '이미 등록된 이메일입니다.')
+        }
+      }
+      updates.email = normalized
+    }
+    if (data.role !== undefined) {
+      if (!['president', 'seventy'].includes(data.role)) {
+        throw new functions.https.HttpsError('invalid-argument', 'role must be president or seventy')
+      }
+      updates.role = data.role
+      // Clear unitId when switching away from president
+      if (data.role !== 'president' && data.unitId === undefined) updates.unitId = null
+      // Clear regionId/regionIds when switching away from seventy
+      if (data.role !== 'seventy' && data.regionIds === undefined) {
+        updates.regionIds = []
+        updates.regionId = null
+      }
+    }
+    if (data.unitId !== undefined) updates.unitId = data.unitId ?? null
+    if (data.regionId !== undefined) updates.regionId = data.regionId ?? null
+    if (data.regionIds !== undefined) updates.regionIds = data.regionIds
+
+    if (Object.keys(updates).length === 0) {
+      throw new functions.https.HttpsError('invalid-argument', 'No fields to update')
+    }
+
+    await db.collection('users').doc(data.uid).update(updates)
+    return { success: true }
+  })
+
 export const adminDeletePreRegisteredUser = functions
   .region('asia-northeast3')
   .https.onCall(async (data: { uid: string }, context) => {

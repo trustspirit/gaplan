@@ -29,6 +29,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
   const [presidentUid, setPresidentUid] = useState(schedule.presidentUid ?? '')
   const [note, setNote] = useState(schedule.notes ?? '')
   const [zoomLink, setZoomLink] = useState(schedule.zoomLink ?? '')
+  const [customTitle, setCustomTitle] = useState(schedule.customTitle ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(initialConfirmDelete)
@@ -75,6 +76,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
           ...(isVisit ? { wardName: wardName || null } : {}),
           ...(isInterview ? { presidentUid: presidentUid || null } : {}),
           ...(!isVisit ? { zoomLink: zoomLink.trim() || null } : {}),
+          ...(!isVisit ? { customTitle: customTitle.trim() || null } : {}),
         },
       })
       onSaved()
@@ -166,6 +168,11 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
 
           <label className={styles.fieldLabel}>{t('common.endTime')}</label>
           <input type="time" className={styles.fieldInput} value={endTime} onChange={e => setEndTime(e.target.value)} />
+
+          {!isVisit && <>
+            <label className={styles.fieldLabel}>{t('schedule.customTitleOptional')}</label>
+            <input className={styles.fieldInput} value={customTitle} onChange={e => setCustomTitle(e.target.value)} placeholder={t('schedule.customTitlePlaceholder')} />
+          </>}
 
           {!isVisit && <>
             <label className={styles.fieldLabel}>{t('schedule.zoomLinkOptional')}</label>

@@ -1,10 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
-const TIME_RE = /^\d{2}:\d{2}$/
-
-const ZOOM_RE = /^https?:\/\/.+/i
+import { DATE_RE, TIME_RE, isValidUrl } from './validators'
 
 interface AdminCreateScheduleRequest {
   type: 'ward_visit' | 'interview' | 'meeting'
@@ -17,6 +13,7 @@ interface AdminCreateScheduleRequest {
   endTime: string
   notes?: string
   zoomLink?: string
+  customTitle?: string
 }
 
 export const adminCreateSchedule = functions
@@ -26,10 +23,8 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    // Destructure first so cheap validations can run before any DB reads
-    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink } = data
+    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, customTitle } = data
 
-    // Basic validations — no DB reads needed
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
     }
@@ -58,15 +53,24 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('invalid-argument', 'notes max 500 chars')
     }
     if (zoomLink !== undefined) {
-      if (typeof zoomLink !== 'string' || zoomLink.length > 500 || !ZOOM_RE.test(zoomLink.trim())) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid zoomLink URL')
-      }
+      // Check type restriction first for clearer error message
       if (type === 'ward_visit') {
         throw new functions.https.HttpsError('invalid-argument', 'zoomLink is not applicable to ward_visit')
       }
+      const trimmed = typeof zoomLink === 'string' ? zoomLink.trim() : ''
+      if (!trimmed || trimmed.length > 500 || !isValidUrl(trimmed)) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid zoomLink URL')
+      }
+    }
+    if (customTitle !== undefined) {
+      if (type === 'ward_visit') {
+        throw new functions.https.HttpsError('invalid-argument', 'customTitle is not applicable to ward_visit')
+      }
+      if (typeof customTitle !== 'string' || customTitle.trim().length === 0 || customTitle.length > 200) {
+        throw new functions.https.HttpsError('invalid-argument', 'customTitle must be 1-200 chars')
+      }
     }
 
-    // DB reads — callerSnap and seventySnap are independent, fetch in parallel
     const db = admin.firestore()
     const [callerSnap, seventySnap] = await Promise.all([
       db.collection('users').doc(context.auth.uid).get(),
@@ -92,7 +96,6 @@ export const adminCreateSchedule = functions
       }
     }
 
-    // Double-booking guard
     const existing = await db.collection('schedules')
       .where('seventyUid', '==', seventyUid)
       .where('date', '==', date)
@@ -115,6 +118,7 @@ export const adminCreateSchedule = functions
       endTime,
       notes: notes ?? null,
       zoomLink: zoomLink?.trim() ?? null,
+      customTitle: customTitle?.trim() ?? null,
       status: 'confirmed',
       createdBy: context.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),

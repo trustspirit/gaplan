@@ -148,6 +148,8 @@
     "presidentLabelOptional": "President (Optional)",
     "notesLabelOptional": "Notes (Optional)",
     "zoomLinkOptional": "Zoom Link (Optional)",
+    "customTitleOptional": "Title (Optional)",
+    "customTitlePlaceholder": "Leave blank to auto-generate",
     "errorDateTimeRequired": "Date and time are required.",
     "errorSeventyRequired": "Please select an Area Seventy.",
     "errorStakeWardRequired": "Please select a Stake/District and Ward/Branch.",

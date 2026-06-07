@@ -18,6 +18,7 @@ export interface Schedule {
   taskId?: string     // ward visit: links schedule back to source task (for re-confirmation cleanup)
   notes?: string
   zoomLink?: string | null
+  customTitle?: string | null
 }
 
 export interface TimeSlot {

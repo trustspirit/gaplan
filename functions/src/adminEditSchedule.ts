@@ -1,7 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
-
-const ZOOM_RE = /^https?:\/\/.+/i
+import { DATE_RE, TIME_RE, isValidUrl } from './validators'
 
 interface AdminEditScheduleRequest {
   scheduleId: string
@@ -14,11 +13,9 @@ interface AdminEditScheduleRequest {
     wardName?: string | null
     presidentUid?: string | null
     zoomLink?: string | null
+    customTitle?: string | null
   }
 }
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
-const TIME_RE = /^\d{2}:\d{2}$/
 
 export const adminEditSchedule = functions
   .region('asia-northeast3')
@@ -40,7 +37,6 @@ export const adminEditSchedule = functions
       throw new functions.https.HttpsError('invalid-argument', 'scheduleId and updates required')
     }
 
-    // Whitelist and validate permitted fields
     const allowed: Record<string, unknown> = {}
     if (updates.date !== undefined) {
       if (typeof updates.date !== 'string' || !DATE_RE.test(updates.date)) {
@@ -85,10 +81,26 @@ export const adminEditSchedule = functions
       allowed.presidentUid = updates.presidentUid
     }
     if (updates.zoomLink !== undefined) {
-      if (updates.zoomLink !== null && (typeof updates.zoomLink !== 'string' || updates.zoomLink.length > 500 || !ZOOM_RE.test(updates.zoomLink.trim()))) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid zoomLink URL')
+      if (updates.zoomLink !== null) {
+        const trimmed = updates.zoomLink.trim()
+        if (!trimmed || trimmed.length > 500 || !isValidUrl(trimmed)) {
+          throw new functions.https.HttpsError('invalid-argument', 'Invalid zoomLink URL')
+        }
+        allowed.zoomLink = trimmed
+      } else {
+        allowed.zoomLink = null
       }
-      allowed.zoomLink = updates.zoomLink?.trim() ?? null
+    }
+    if (updates.customTitle !== undefined) {
+      if (updates.customTitle !== null) {
+        const trimmed = updates.customTitle.trim()
+        if (!trimmed || trimmed.length > 200) {
+          throw new functions.https.HttpsError('invalid-argument', 'customTitle must be 1-200 chars')
+        }
+        allowed.customTitle = trimmed
+      } else {
+        allowed.customTitle = null
+      }
     }
 
     if (Object.keys(allowed).length === 0) {
@@ -106,7 +118,6 @@ export const adminEditSchedule = functions
       throw new functions.https.HttpsError('permission-denied', 'Seventy can only edit their own schedules')
     }
 
-    // Validate startTime < endTime cross-field
     if (allowed.startTime !== undefined || allowed.endTime !== undefined) {
       const current = snap.data()!
       const effectiveStart = (allowed.startTime as string | undefined) ?? current.startTime
@@ -116,7 +127,6 @@ export const adminEditSchedule = functions
       }
     }
 
-    // Double-booking guard — only when date or startTime changes
     if (allowed.date !== undefined || allowed.startTime !== undefined) {
       const current = snap.data()!
       const checkDate = (allowed.date as string | undefined) ?? current.date
@@ -134,7 +144,6 @@ export const adminEditSchedule = functions
       }
     }
 
-    // calendarSync trigger handles GCal update automatically
     await scheduleRef.update({
       ...allowed,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),

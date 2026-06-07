@@ -30,8 +30,9 @@ service cloud.firestore {
           || (request.resource.data.role == 'seventy'
               && exists(/databases/$(database)/documents/invites/$(request.auth.token.email)))
         );
-      allow update: if isAdmin() || (isAuth() && request.auth.uid == uid
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']));
+      // Admin can update any user's doc, but cannot change their own role (self-demotion prevention).
+      allow update: if (isAdmin() && (request.auth.uid != uid || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])))
+        || (isAuth() && request.auth.uid == uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']));
     }
 
     match /invites/{email} {

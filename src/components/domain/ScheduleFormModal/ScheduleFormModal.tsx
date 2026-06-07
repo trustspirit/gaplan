@@ -36,6 +36,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
   const [endTime, setEndTime] = useState('')
   const [notes, setNotes] = useState('')
   const [zoomLink, setZoomLink] = useState('')
+  const [customTitle, setCustomTitle] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -91,6 +92,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
         endTime,
         ...(notes.trim() ? { notes: notes.trim() } : {}),
         ...(zoomLink.trim() && type !== 'ward_visit' ? { zoomLink: zoomLink.trim() } : {}),
+        ...(customTitle.trim() && type !== 'ward_visit' ? { customTitle: customTitle.trim() } : {}),
       })
       onSaved()
       onClose()
@@ -126,7 +128,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
                 key={tab.value}
                 type="button"
                 className={type === tab.value ? styles.segBtnActive : styles.segBtn}
-                onClick={() => { setType(tab.value); setUnitId(''); setWardName(''); setPresidentUid('') }}
+                onClick={() => { setType(tab.value); setUnitId(''); setWardName(''); setPresidentUid(''); setZoomLink(''); setCustomTitle('') }}
               >
                 {tab.label}
               </button>
@@ -199,6 +201,15 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
                 onChange={e => setEndTime(e.target.value)}
               />
             </div>
+
+            {type !== 'ward_visit' && (
+              <Input
+                label={t('schedule.customTitleOptional')}
+                value={customTitle}
+                onChange={e => setCustomTitle(e.target.value)}
+                placeholder={t('schedule.customTitlePlaceholder')}
+              />
+            )}
 
             {type !== 'ward_visit' && (
               <Input

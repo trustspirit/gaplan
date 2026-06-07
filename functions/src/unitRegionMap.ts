@@ -6,4 +6,5 @@ export const UNIT_REGION_MAP: Record<string, string> = {
   'gwangju-stake': 'seoul-south',
   'busan-stake': 'busan', 'daegu-stake': 'busan',
   'changwon-stake': 'busan', 'ulsan-district': 'busan',
+  'military-district': 'seoul', 'gangneung-district': 'seoul',
 }

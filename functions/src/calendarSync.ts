@@ -7,6 +7,7 @@ import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
 import { UNIT_REGION_MAP } from './unitRegionMap'
+import { UNIT_NAME_MAP } from './unitNameMap'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -15,22 +16,28 @@ function getCalendarClient() {
   return google.calendar({ version: 'v3', auth })
 }
 
+function buildTitle(data: FirebaseFirestore.DocumentData): string {
+  if (data.customTitle) return data.customTitle as string
+  const unitName = UNIT_NAME_MAP[data.unitId ?? ''] ?? data.unitId ?? ''
+  if (data.type === 'ward_visit') {
+    return data.wardName ? `${unitName} - ${data.wardName} 방문` : `${unitName} 방문`
+  }
+  if (data.type === 'interview') return `${unitName} 접견`
+  return unitName ? `${unitName} 모임` : '모임'
+}
+
 export const calendarSync = functions
   .region('asia-northeast3')
   .firestore.document('schedules/{scheduleId}')
   .onWrite(async (change) => {
     const db = admin.firestore()
 
-    // Resolve which regional calendar to use via the seventy's regionId
     const after = change.after.data()
     const before = change.before.data()
     const seventyUid = after?.seventyUid ?? before?.seventyUid
     const seventySnap = seventyUid
       ? await db.collection('users').doc(seventyUid).get()
       : null
-    // Determine regionId from the schedule's unitId (which stake/district this visit is for).
-    // This correctly routes to the right regional calendar even when one seventy
-    // serves multiple regions. Fall back to seventy's own regionId, then empty.
     const scheduleUnitId = after?.unitId ?? before?.unitId ?? ''
     const regionId: string =
       UNIT_REGION_MAP[scheduleUnitId] ??
@@ -39,11 +46,9 @@ export const calendarSync = functions
 
     const settingsSnap = await db.collection('settings').doc('calendar').get()
     const calendars: Record<string, string> = settingsSnap.data()?.calendars ?? {}
-    // Fall back to legacy single-calendar field if present
     const sharedCalendarId = calendars[regionId] ?? settingsSnap.data()?.sharedCalendarId
     if (!sharedCalendarId) return
 
-    // Document deleted or schedule cancelled — remove Google Calendar event
     const eventIdToDelete = before?.googleCalendarEventId
     const wasCancelled = !after || after.status === 'cancelled'
     if (wasCancelled && eventIdToDelete) {
@@ -57,38 +62,30 @@ export const calendarSync = functions
     }
 
     if (!after || after.status !== 'confirmed') return
-    // Skip if event exists and nothing that affects the GCal event changed
-    const needsUpdate = before?.date !== after.date
-      || before?.startTime !== after.startTime
-      || before?.endTime !== after.endTime
-      || (before?.zoomLink ?? null) !== (after.zoomLink ?? null)
-    if (after.googleCalendarEventId && !needsUpdate) return
 
-    const unitSnap = after.unitId
-      ? await db.collection('units').doc(after.unitId).get()
-      : null
-    const unitName = unitSnap?.data()?.name ?? after.unitId ?? ''
+    // Re-sync whenever any field that affects the GCal event changes
+    const needsUpdate =
+      before?.date !== after.date ||
+      before?.startTime !== after.startTime ||
+      before?.endTime !== after.endTime ||
+      (before?.zoomLink ?? null) !== (after.zoomLink ?? null) ||
+      (before?.customTitle ?? null) !== (after.customTitle ?? null) ||
+      (before?.unitId ?? '') !== (after.unitId ?? '') ||
+      (before?.wardName ?? null) !== (after.wardName ?? null)
+    if (after.googleCalendarEventId && !needsUpdate) return
 
     const startDateTime = `${after.date}T${after.startTime}:00+09:00`
     const endDateTime = `${after.date}T${after.endTime}:00+09:00`
-
-    let title: string
-    if (after.type === 'ward_visit') {
-      title = after.wardName ? `${unitName} - ${after.wardName} 방문` : `${unitName} 방문`
-    } else if (after.type === 'interview') {
-      title = `${unitName} 접견`
-    } else {
-      title = unitName ? `${unitName} 모임` : '모임'
-    }
+    const title = buildTitle(after)
 
     const calendar = getCalendarClient()
     const existingEventId: string | undefined = before?.googleCalendarEventId
 
-    try {
-      const location = after.zoomLink?.trim() || undefined
+    // Use empty string to explicitly clear location in Google Calendar (undefined = omit = no change)
+    const zoomLinkValue = after.zoomLink?.trim() ?? ''
 
+    try {
       if (existingEventId) {
-        // Update existing event (re-confirmation after schedule was overwritten)
         await calendar.events.update({
           calendarId: sharedCalendarId,
           eventId: existingEventId,
@@ -96,18 +93,17 @@ export const calendarSync = functions
             summary: title,
             start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
             end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
-            location,
+            location: zoomLinkValue,
           },
         })
       } else {
-        // Create new event
         const event = await calendar.events.insert({
           calendarId: sharedCalendarId,
           requestBody: {
             summary: title,
             start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
             end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
-            location,
+            ...(zoomLinkValue ? { location: zoomLinkValue } : {}),
           },
         })
         await change.after.ref.update({ googleCalendarEventId: event.data.id })

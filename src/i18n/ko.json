@@ -146,6 +146,8 @@
     "presidentLabelOptional": "회장 (선택)",
     "notesLabelOptional": "메모 (선택)",
     "zoomLinkOptional": "줌 링크 (선택)",
+    "customTitleOptional": "제목 (선택)",
+    "customTitlePlaceholder": "비워두면 자동 생성됩니다",
     "errorDateTimeRequired": "날짜와 시간을 입력해주세요.",
     "errorSeventyRequired": "담당 칠십인을 선택해주세요.",
     "errorStakeWardRequired": "스테이크/지방부와 와드/지부를 선택해주세요.",
