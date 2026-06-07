@@ -216,7 +216,7 @@ function SeventyDashboard() {
         <EditScheduleModal
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
-          onSaved={() => { setEditTarget(null); toast.success(t('admin.scheduleEditSuccess')) }}
+          onSaved={() => toast.success(t('admin.scheduleEditSuccess'))}
         />
       )}
       {deleteTarget && (
@@ -224,7 +224,7 @@ function SeventyDashboard() {
           schedule={deleteTarget}
           initialConfirmDelete
           onClose={() => setDeleteTarget(null)}
-          onSaved={() => { setDeleteTarget(null); toast.success(t('admin.scheduleCancelSuccess')) }}
+          onSaved={() => toast.success(t('admin.scheduleCancelSuccess'))}
         />
       )}
     </AppShell>
@@ -307,7 +307,7 @@ function AdminDashboardContent() {
         <EditScheduleModal
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
-          onSaved={() => { setEditTarget(null); toast.success(t('admin.scheduleEditSuccess')) }}
+          onSaved={() => toast.success(t('admin.scheduleEditSuccess'))}
         />
       )}
       {deleteTarget && (
@@ -315,7 +315,7 @@ function AdminDashboardContent() {
           schedule={deleteTarget}
           initialConfirmDelete
           onClose={() => setDeleteTarget(null)}
-          onSaved={() => { setDeleteTarget(null); toast.success(t('admin.scheduleCancelSuccess')) }}
+          onSaved={() => toast.success(t('admin.scheduleCancelSuccess'))}
         />
       )}
     </AppShell>

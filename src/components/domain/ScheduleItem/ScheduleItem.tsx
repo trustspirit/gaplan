@@ -49,7 +49,11 @@ export function ScheduleItem({
     if (!menuOpen) return
     const close = () => setMenuOpen(false)
     window.addEventListener('scroll', close, true)
-    return () => window.removeEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    return () => {
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+    }
   }, [menuOpen])
 
   const isVisit = schedule.type === 'ward_visit'

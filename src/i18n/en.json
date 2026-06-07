@@ -290,7 +290,19 @@
     "editFailed": "Failed to update.",
     "name": "Name",
     "email": "Email",
-    "role": "Role"
+    "role": "Role",
+    "preRegister": "Manual User Registration",
+    "preRegDesc": "Pre-register by name/role. Auto-merged when they sign in with matching email.",
+    "preRegEmail": "Email (optional)",
+    "preRegUnit": "Stake / District",
+    "preRegRegion": "Region",
+    "preRegSubmit": "Register",
+    "preRegSuccess": "{{name}} registered",
+    "preRegFailed": "Failed to register",
+    "preRegDeleteConfirm": "Delete this pre-registered user?",
+    "preRegDeleteWarning": "Any schedules linked to this user will lose their assignee.",
+    "preRegDeleteSuccess": "{{name}} deleted",
+    "preRegDeleteFailed": "Failed to delete"
   },
   "region": {
     "seoul": "Seoul CCM",

@@ -71,6 +71,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
         },
       })
       onSaved()
+      onClose()
     } catch (e: unknown) {
       const err = e as { message?: string; details?: string }
       setError(err?.details ?? err?.message ?? t('common.unknownError'))
@@ -85,6 +86,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
     try {
       await adminDeleteScheduleFn({ scheduleId: schedule.id })
       onSaved()
+      onClose()
     } catch (e: unknown) {
       const err = e as { message?: string; details?: string }
       setError(err?.details ?? err?.message ?? t('common.unknownError'))

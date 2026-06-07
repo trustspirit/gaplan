@@ -112,10 +112,18 @@ function DeleteConfirmModal({
   user,
   onClose,
   onDeleted,
+  deleteAction,
+  confirmText,
+  warningText,
+  title,
 }: {
   user: AppUser
   onClose: () => void
   onDeleted: () => void
+  deleteAction?: () => Promise<void>
+  confirmText?: string
+  warningText?: string
+  title?: string
 }) {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
@@ -123,22 +131,22 @@ function DeleteConfirmModal({
   const handleDelete = async () => {
     setLoading(true)
     try {
-      await deleteUserAccount(user.uid)
-      toast.success(t('user.deleteSuccess'))
+      await (deleteAction ?? (() => deleteUserAccount(user.uid)))()
+      toast.success(deleteAction ? t('user.preRegDeleteSuccess', { name: user.name }) : t('user.deleteSuccess'))
       onDeleted()
       onClose()
     } catch {
-      toast.error(t('user.deleteFailed'))
+      toast.error(deleteAction ? t('user.preRegDeleteFailed') : t('user.deleteFailed'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal open onClose={onClose} title={t('user.deleteUser')}>
+    <Modal open onClose={onClose} title={title ?? t('user.deleteUser')}>
       <p className={styles.deleteDesc}>
-        <strong>{user.name}</strong> ({user.email}) {t('user.deleteConfirm')}<br />
-        {t('user.deleteWarning')}
+        <strong>{user.name}</strong> ({user.email}) {confirmText ?? t('user.deleteConfirm')}<br />
+        {warningText ?? t('user.deleteWarning')}
       </p>
       <div className={styles.modalActions}>
         <Button variant="ghost" type="button" onClick={onClose}>{t('common.cancel')}</Button>
@@ -169,6 +177,7 @@ export function UserManagement() {
 
   const [editingUser, setEditingUser] = useState<AppUser | null>(null)
   const [deletingUser, setDeletingUser] = useState<AppUser | null>(null)
+  const [deletingPreReg, setDeletingPreReg] = useState<AppUser | null>(null)
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -198,23 +207,15 @@ export function UserManagement() {
         ...(preRole === 'president' && preUnitId ? { unitId: preUnitId } : {}),
         ...(preRole === 'seventy' && preRegionId ? { regionId: preRegionId, regionIds: [preRegionId] } : {}),
       })
-      toast.success(`${preName} 등록 완료`)
+      toast.success(t('user.preRegSuccess', { name: preName.trim() }))
       setPreName(''); setPreEmail(''); setPreUnitId(''); setPreRegionId('')
     } catch {
-      toast.error('등록에 실패했습니다')
+      toast.error(t('user.preRegFailed'))
     } finally {
       setPreLoading(false)
     }
   }
 
-  const handleDeletePreRegistered = async (u: AppUser) => {
-    try {
-      await deletePreRegisteredUser(u.uid)
-      toast.success(`${u.name} 삭제됨`)
-    } catch {
-      toast.error('삭제에 실패했습니다')
-    }
-  }
 
   return (
     <AppShell role={currentUser.role} name={currentUser.name} topBar={<TopBar name={currentUser.name} subtext={t('admin.users')} />}>
@@ -235,20 +236,20 @@ export function UserManagement() {
           </Card>
 
           <Card>
-            <CardHeader title="사용자 수동 등록" />
+            <CardHeader title={t('user.preRegister')} />
             <CardBody>
-              <p className={styles.preRegDesc}>이메일 계정 없이 이름/역할로 미리 등록합니다. 같은 이메일로 로그인 시 자동 병합됩니다.</p>
+              <p className={styles.preRegDesc}>{t('user.preRegDesc')}</p>
               <form className={styles.form} onSubmit={handlePreRegister}>
-                <Input label="이름" value={preName} onChange={e => setPreName(e.target.value)} required />
-                <Input label="이메일 (선택)" type="email" value={preEmail} onChange={e => setPreEmail(e.target.value)} placeholder="example@gmail.com" />
-                <Select label="역할" value={preRole} onChange={e => setPreRole(e.target.value as 'president' | 'seventy')} options={PRE_ROLE_OPTIONS} />
+                <Input label={t('user.name')} value={preName} onChange={e => setPreName(e.target.value)} required />
+                <Input label={t('user.preRegEmail')} type="email" value={preEmail} onChange={e => setPreEmail(e.target.value)} placeholder="example@gmail.com" />
+                <Select label={t('user.role')} value={preRole} onChange={e => setPreRole(e.target.value as 'president' | 'seventy')} options={PRE_ROLE_OPTIONS} />
                 {preRole === 'president' && (
-                  <Select label="스테이크/지방부" value={preUnitId} onChange={e => setPreUnitId(e.target.value)} options={UNIT_OPTIONS} />
+                  <Select label={t('user.preRegUnit')} value={preUnitId} onChange={e => setPreUnitId(e.target.value)} options={UNIT_OPTIONS} />
                 )}
                 {preRole === 'seventy' && (
-                  <Select label="지역" value={preRegionId} onChange={e => setPreRegionId(e.target.value)} options={REGION_OPTIONS} />
+                  <Select label={t('user.preRegRegion')} value={preRegionId} onChange={e => setPreRegionId(e.target.value)} options={REGION_OPTIONS} />
                 )}
-                <Button type="submit" loading={preLoading}>등록</Button>
+                <Button type="submit" loading={preLoading}>{t('user.preRegSubmit')}</Button>
               </form>
             </CardBody>
           </Card>
@@ -289,7 +290,7 @@ export function UserManagement() {
                             className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
                             title={t('common.delete')}
                             type="button"
-                            onClick={() => u.preRegistered ? handleDeletePreRegistered(u) : setDeletingUser(u)}
+                            onClick={() => u.preRegistered ? setDeletingPreReg(u) : setDeletingUser(u)}
                           >
                             <Trash2 size={14} />
                           </button>
@@ -314,6 +315,17 @@ export function UserManagement() {
           user={deletingUser}
           onClose={() => setDeletingUser(null)}
           onDeleted={() => setDeletingUser(null)}
+        />
+      )}
+      {deletingPreReg && (
+        <DeleteConfirmModal
+          user={deletingPreReg}
+          onClose={() => setDeletingPreReg(null)}
+          onDeleted={() => setDeletingPreReg(null)}
+          deleteAction={() => deletePreRegisteredUser(deletingPreReg.uid)}
+          title={t('user.preRegister')}
+          confirmText={t('user.preRegDeleteConfirm')}
+          warningText={t('user.preRegDeleteWarning')}
         />
       )}
     </AppShell>

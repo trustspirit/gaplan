@@ -288,7 +288,19 @@
     "editFailed": "변경에 실패했습니다.",
     "name": "이름",
     "email": "이메일",
-    "role": "역할"
+    "role": "역할",
+    "preRegister": "사용자 수동 등록",
+    "preRegDesc": "이름/역할로 미리 등록합니다. 같은 이메일로 로그인 시 자동 병합됩니다.",
+    "preRegEmail": "이메일 (선택)",
+    "preRegUnit": "스테이크/지방부",
+    "preRegRegion": "지역",
+    "preRegSubmit": "등록",
+    "preRegSuccess": "{{name}} 등록 완료",
+    "preRegFailed": "등록에 실패했습니다",
+    "preRegDeleteConfirm": "사전 등록된 사용자를 삭제하시겠습니까?",
+    "preRegDeleteWarning": "연결된 일정의 담당자 정보가 비어집니다.",
+    "preRegDeleteSuccess": "{{name}} 삭제됨",
+    "preRegDeleteFailed": "삭제에 실패했습니다"
   },
   "region": {
     "seoul": "서울 CCM",
