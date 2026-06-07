@@ -3,6 +3,7 @@ name: Deploy to Firebase
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   changes:
@@ -32,7 +33,7 @@ jobs:
 
   deploy-hosting:
     needs: changes
-    if: needs.changes.outputs.hosting == 'true'
+    if: needs.changes.outputs.hosting == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -80,7 +81,7 @@ jobs:
 
   deploy-backend:
     needs: changes
-    if: needs.changes.outputs.functions == 'true' || needs.changes.outputs.firestore == 'true'
+    if: needs.changes.outputs.functions == 'true' || needs.changes.outputs.firestore == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -102,9 +103,9 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json" >> $GITHUB_ENV
 
       - name: Deploy Functions
-        if: needs.changes.outputs.functions == 'true'
+        if: needs.changes.outputs.functions == 'true' || github.event_name == 'workflow_dispatch'
         run: npx firebase-tools deploy --only functions --project gaplan-fccfe --force
 
       - name: Deploy Firestore rules & indexes
-        if: needs.changes.outputs.firestore == 'true'
+        if: needs.changes.outputs.firestore == 'true' || github.event_name == 'workflow_dispatch'
         run: npx firebase-tools deploy --only firestore --project gaplan-fccfe --force

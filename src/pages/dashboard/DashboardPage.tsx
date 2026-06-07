@@ -157,6 +157,8 @@ function SeventyDashboard() {
   const user = useAtomValue(authUserAtom)!
   const { schedules } = useSchedules({ seventyUid: user.uid })
   const { getUnitName } = useUnits()
+  const [editTarget, setEditTarget] = useState<Schedule | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
   const regionName = REGIONS.find(r => r.id === user.regionId)?.name ?? user.regionId ?? ''
 
   const upcoming = schedules
@@ -186,7 +188,14 @@ function SeventyDashboard() {
               {upcoming.length === 0
                 ? <p className={styles.empty}>{t('schedule.noUpcoming')}</p>
                 : upcoming.map(s => (
-                    <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} />
+                    <ScheduleItem
+                      key={s.id}
+                      schedule={s}
+                      unitName={getUnitName(s.unitId)}
+                      canEdit
+                      onEdit={() => setEditTarget(s)}
+                      onDelete={() => setDeleteTarget(s)}
+                    />
                   ))
               }
             </CardBody>
@@ -202,6 +211,22 @@ function SeventyDashboard() {
           </Card>
         </div>
       </div>
+
+      {editTarget && (
+        <EditScheduleModal
+          schedule={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={() => { setEditTarget(null); toast.success(t('admin.scheduleEditSuccess')) }}
+        />
+      )}
+      {deleteTarget && (
+        <EditScheduleModal
+          schedule={deleteTarget}
+          initialConfirmDelete
+          onClose={() => setDeleteTarget(null)}
+          onSaved={() => { setDeleteTarget(null); toast.success(t('admin.scheduleCancelSuccess')) }}
+        />
+      )}
     </AppShell>
   )
 }

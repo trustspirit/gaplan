@@ -39,6 +39,12 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
     setPresidentUid('')
   }, [unitId])
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
+
   const isVisit = schedule.type === 'ward_visit'
   const isInterview = schedule.type === 'interview'
 
@@ -65,7 +71,6 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
         },
       })
       onSaved()
-      onClose()
     } catch (e: unknown) {
       const err = e as { message?: string; details?: string }
       setError(err?.details ?? err?.message ?? t('common.unknownError'))
@@ -80,7 +85,6 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
     try {
       await adminDeleteScheduleFn({ scheduleId: schedule.id })
       onSaved()
-      onClose()
     } catch (e: unknown) {
       const err = e as { message?: string; details?: string }
       setError(err?.details ?? err?.message ?? t('common.unknownError'))

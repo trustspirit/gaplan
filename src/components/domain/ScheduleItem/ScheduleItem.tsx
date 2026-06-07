@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { MapPin, Users, CalendarPlus, Coffee, MoreVertical } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
@@ -44,6 +44,14 @@ export function ScheduleItem({
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const close = () => setMenuOpen(false)
+    window.addEventListener('scroll', close, true)
+    return () => window.removeEventListener('scroll', close, true)
+  }, [menuOpen])
+
   const isVisit = schedule.type === 'ward_visit'
   const isMeeting = schedule.type === 'meeting'
   const date = dayjs(schedule.date)
