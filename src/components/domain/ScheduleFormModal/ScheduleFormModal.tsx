@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { httpsCallable } from 'firebase/functions'
 import { useAtomValue } from 'jotai'
@@ -38,6 +38,13 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Reset unit/ward/president when seventy changes (skip on initial mount)
+  const isFirstSeventyChange = useRef(true)
+  useEffect(() => {
+    if (isFirstSeventyChange.current) { isFirstSeventyChange.current = false; return }
+    setUnitId(''); setWardName(''); setPresidentUid('')
+  }, [seventyUid])
+
   // Reset ward and president when stake changes
   useEffect(() => { setWardName(''); setPresidentUid('') }, [unitId])
 
@@ -49,8 +56,13 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
   }, [onClose])
 
   const seventyUsers = users.filter(u => u.role === 'seventy')
+  const selectedSeventy = users.find(u => u.uid === seventyUid)
+  const seventyRegionIds = selectedSeventy?.regionIds ?? (selectedSeventy?.regionId ? [selectedSeventy.regionId] : [])
+  const unitPool = seventyRegionIds.length > 0
+    ? ALL_UNITS.filter(u => seventyRegionIds.includes(u.regionId ?? ''))
+    : ALL_UNITS
+  const unitOptions = unitPool.map(u => ({ value: u.id, label: u.name }))
   const wardOptions = unitId ? getWardsByUnit(unitId).map(w => ({ value: w.name, label: w.name })) : []
-  const unitOptions = ALL_UNITS.map(u => ({ value: u.id, label: u.name }))
   const seventyOptions = seventyUsers.map(u => ({ value: u.uid, label: u.preRegistered ? u.name : `${u.name} ✓` }))
   const presidentOptions = users
     .filter(u => u.role === 'president' && u.unitId === unitId && !!unitId)

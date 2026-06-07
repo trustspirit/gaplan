@@ -48,7 +48,12 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
   const isVisit = schedule.type === 'ward_visit'
   const isInterview = schedule.type === 'interview'
 
-  const unitOptions = ALL_UNITS.map(u => ({ value: u.id, label: u.name }))
+  const seventy = users.find(u => u.uid === schedule.seventyUid)
+  const seventyRegionIds = seventy?.regionIds ?? (seventy?.regionId ? [seventy.regionId] : [])
+  const unitPool = seventyRegionIds.length > 0
+    ? ALL_UNITS.filter(u => seventyRegionIds.includes(u.regionId ?? ''))
+    : ALL_UNITS
+  const unitOptions = unitPool.map(u => ({ value: u.id, label: u.name }))
   const wardOptions = unitId ? getWardsByUnit(unitId).map(w => ({ value: w.name, label: w.name })) : []
   const presidentOptions = users
     .filter(u => u.role === 'president' && u.unitId === unitId && !!unitId)
