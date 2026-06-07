@@ -27,6 +27,8 @@ export const UNIT_COLORS: Record<string, { bg: string; text: string }> = {
   'ulsan-district':    { bg: '#cffafe', text: '#155e75' },
   // 미군 지방부
   'military-district': { bg: '#f0fdf4', text: '#166534' },
+  // 강릉 지방부
+  'gangneung-district': { bg: '#fff7ed', text: '#9a3412' },
 }
 
 export function getUnitColor(unitId: string): { bg: string; text: string } {
@@ -76,7 +78,11 @@ export const UNITS_MILITARY: Omit<Unit, 'presidentUid'>[] = [
   { id: 'military-district', name: '미군 지방부', type: 'district', regionId: 'seoul' },
 ]
 
-export const ALL_UNITS = [...UNITS_SEOUL, ...UNITS_SEOUL_SOUTH, ...UNITS_BUSAN, ...UNITS_MILITARY]
+export const UNITS_GANGNEUNG: Omit<Unit, 'presidentUid'>[] = [
+  { id: 'gangneung-district', name: '강릉 지방부', type: 'district', regionId: 'seoul' },
+]
+
+export const ALL_UNITS = [...UNITS_SEOUL, ...UNITS_SEOUL_SOUTH, ...UNITS_BUSAN, ...UNITS_MILITARY, ...UNITS_GANGNEUNG]
 
 export const getUnitsByRegion = (regionId: string) =>
   ALL_UNITS.filter(u => u.regionId === regionId)
@@ -182,6 +188,12 @@ export const WARDS: WardUnit[] = [
   { id: 'ulsan-sinjeong',   name: '신정 지부',   type: 'branch', unitId: 'ulsan-district' },
   { id: 'ulsan-pohang',     name: '포항 지부',   type: 'branch', unitId: 'ulsan-district' },
   { id: 'ulsan-hogye',      name: '호계 지부',   type: 'branch', unitId: 'ulsan-district' },
+  // 강릉 지방부
+  { id: 'gangneung-gangneung', name: '강릉 지부',  type: 'branch', unitId: 'gangneung-district' },
+  { id: 'gangneung-donghae',   name: '동해 지부',  type: 'branch', unitId: 'gangneung-district' },
+  { id: 'gangneung-sokcho',    name: '속초 지부',  type: 'branch', unitId: 'gangneung-district' },
+  { id: 'gangneung-wonju',     name: '원주 지부',  type: 'branch', unitId: 'gangneung-district' },
+  { id: 'gangneung-taebaek',   name: '태백 지부',  type: 'branch', unitId: 'gangneung-district' },
   // 미군 지방부
   { id: 'military-gunsan',    name: '군산 군인 지부',   type: 'branch', unitId: 'military-district' },
   { id: 'military-northern',  name: '노던 군인 지부',   type: 'branch', unitId: 'military-district' },
