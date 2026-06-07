@@ -28,6 +28,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
   const [wardName, setWardName] = useState(schedule.wardName ?? '')
   const [presidentUid, setPresidentUid] = useState(schedule.presidentUid ?? '')
   const [note, setNote] = useState(schedule.notes ?? '')
+  const [zoomLink, setZoomLink] = useState(schedule.zoomLink ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(initialConfirmDelete)
@@ -73,6 +74,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
           unitId: unitId || undefined,
           ...(isVisit ? { wardName: wardName || null } : {}),
           ...(isInterview ? { presidentUid: presidentUid || null } : {}),
+          ...(!isVisit ? { zoomLink: zoomLink.trim() || null } : {}),
         },
       })
       onSaved()
@@ -164,6 +166,11 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
 
           <label className={styles.fieldLabel}>{t('common.endTime')}</label>
           <input type="time" className={styles.fieldInput} value={endTime} onChange={e => setEndTime(e.target.value)} />
+
+          {!isVisit && <>
+            <label className={styles.fieldLabel}>{t('schedule.zoomLinkOptional')}</label>
+            <input type="url" className={styles.fieldInput} value={zoomLink} onChange={e => setZoomLink(e.target.value)} placeholder="https://zoom.us/j/..." />
+          </>}
 
           <label className={styles.fieldLabel}>{t('schedule.notesLabelOptional')}</label>
           <textarea className={styles.fieldTextarea} value={note} onChange={e => setNote(e.target.value)} rows={3} />

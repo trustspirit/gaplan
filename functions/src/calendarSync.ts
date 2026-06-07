@@ -57,9 +57,12 @@ export const calendarSync = functions
     }
 
     if (!after || after.status !== 'confirmed') return
-    // Only skip creation if there's already an event AND the date/time haven't changed
-    const dateChanged = before?.date !== after.date || before?.startTime !== after.startTime || before?.endTime !== after.endTime
-    if (after.googleCalendarEventId && !dateChanged) return
+    // Skip if event exists and nothing that affects the GCal event changed
+    const needsUpdate = before?.date !== after.date
+      || before?.startTime !== after.startTime
+      || before?.endTime !== after.endTime
+      || (before?.zoomLink ?? null) !== (after.zoomLink ?? null)
+    if (after.googleCalendarEventId && !needsUpdate) return
 
     const unitSnap = after.unitId
       ? await db.collection('units').doc(after.unitId).get()
@@ -82,6 +85,8 @@ export const calendarSync = functions
     const existingEventId: string | undefined = before?.googleCalendarEventId
 
     try {
+      const location = after.zoomLink?.trim() || undefined
+
       if (existingEventId) {
         // Update existing event (re-confirmation after schedule was overwritten)
         await calendar.events.update({
@@ -91,6 +96,7 @@ export const calendarSync = functions
             summary: title,
             start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
             end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
+            location,
           },
         })
       } else {
@@ -101,6 +107,7 @@ export const calendarSync = functions
             summary: title,
             start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
             end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
+            location,
           },
         })
         await change.after.ref.update({ googleCalendarEventId: event.data.id })

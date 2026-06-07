@@ -35,6 +35,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [notes, setNotes] = useState('')
+  const [zoomLink, setZoomLink] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -89,6 +90,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
         startTime,
         endTime,
         ...(notes.trim() ? { notes: notes.trim() } : {}),
+        ...(zoomLink.trim() && type !== 'ward_visit' ? { zoomLink: zoomLink.trim() } : {}),
       })
       onSaved()
       onClose()
@@ -197,6 +199,16 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
                 onChange={e => setEndTime(e.target.value)}
               />
             </div>
+
+            {type !== 'ward_visit' && (
+              <Input
+                label={t('schedule.zoomLinkOptional')}
+                type="url"
+                value={zoomLink}
+                onChange={e => setZoomLink(e.target.value)}
+                placeholder="https://zoom.us/j/..."
+              />
+            )}
 
             <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>{t('schedule.notesLabelOptional')}</label>

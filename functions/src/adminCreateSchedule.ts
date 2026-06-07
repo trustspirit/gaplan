@@ -4,6 +4,8 @@ import * as admin from 'firebase-admin'
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const TIME_RE = /^\d{2}:\d{2}$/
 
+const ZOOM_RE = /^https?:\/\/.+/i
+
 interface AdminCreateScheduleRequest {
   type: 'ward_visit' | 'interview' | 'meeting'
   seventyUid: string
@@ -14,6 +16,7 @@ interface AdminCreateScheduleRequest {
   startTime: string
   endTime: string
   notes?: string
+  zoomLink?: string
 }
 
 export const adminCreateSchedule = functions
@@ -24,7 +27,7 @@ export const adminCreateSchedule = functions
     }
 
     // Destructure first so cheap validations can run before any DB reads
-    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes } = data
+    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink } = data
 
     // Basic validations — no DB reads needed
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
@@ -53,6 +56,14 @@ export const adminCreateSchedule = functions
     }
     if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {
       throw new functions.https.HttpsError('invalid-argument', 'notes max 500 chars')
+    }
+    if (zoomLink !== undefined) {
+      if (typeof zoomLink !== 'string' || zoomLink.length > 500 || !ZOOM_RE.test(zoomLink.trim())) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid zoomLink URL')
+      }
+      if (type === 'ward_visit') {
+        throw new functions.https.HttpsError('invalid-argument', 'zoomLink is not applicable to ward_visit')
+      }
     }
 
     // DB reads — callerSnap and seventySnap are independent, fetch in parallel
@@ -103,6 +114,7 @@ export const adminCreateSchedule = functions
       startTime,
       endTime,
       notes: notes ?? null,
+      zoomLink: zoomLink?.trim() ?? null,
       status: 'confirmed',
       createdBy: context.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),

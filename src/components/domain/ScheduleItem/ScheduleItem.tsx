@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { MapPin, Users, CalendarPlus, Coffee, MoreVertical } from 'lucide-react'
+import { MapPin, Users, CalendarPlus, Coffee, MoreVertical, Video } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
@@ -95,6 +95,18 @@ export function ScheduleItem({
             {schedule.wardName && <span className={styles.wardName}> · {schedule.wardName}</span>}
           </p>
           <p className={styles.time}>{schedule.startTime} – {schedule.endTime}</p>
+          {schedule.zoomLink && (
+            <a
+              href={schedule.zoomLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.zoomLink}
+              onClick={e => e.stopPropagation()}
+            >
+              <Video size={11} />
+              <span>Zoom</span>
+            </a>
+          )}
         </div>
         {isPast && <span className={styles.pastBadge}>{t('common.complete')}</span>}
         {showCalendarAdd && !isPast && (

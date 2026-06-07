@@ -1,6 +1,8 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 
+const ZOOM_RE = /^https?:\/\/.+/i
+
 interface AdminEditScheduleRequest {
   scheduleId: string
   updates: {
@@ -11,6 +13,7 @@ interface AdminEditScheduleRequest {
     unitId?: string
     wardName?: string | null
     presidentUid?: string | null
+    zoomLink?: string | null
   }
 }
 
@@ -80,6 +83,12 @@ export const adminEditSchedule = functions
         throw new functions.https.HttpsError('invalid-argument', 'Invalid presidentUid')
       }
       allowed.presidentUid = updates.presidentUid
+    }
+    if (updates.zoomLink !== undefined) {
+      if (updates.zoomLink !== null && (typeof updates.zoomLink !== 'string' || updates.zoomLink.length > 500 || !ZOOM_RE.test(updates.zoomLink.trim()))) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid zoomLink URL')
+      }
+      allowed.zoomLink = updates.zoomLink?.trim() ?? null
     }
 
     if (Object.keys(allowed).length === 0) {
