@@ -4,7 +4,7 @@ import { Pencil, Trash2, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
-import { inviteUser, updateUserRole, updateUserName, deleteUserAccount, addPreRegisteredUser, deletePreRegisteredUser } from '@/services/userService'
+import { inviteUser, updateUserRole, updateUserName, deleteUserAccount, addPreRegisteredUser, deletePreRegisteredUser, updatePreRegisteredUserFields } from '@/services/userService'
 import { useUsers } from '@/hooks/useUsers'
 import { REGIONS, ALL_UNITS } from '@/constants/regions'
 import { ROLE_LABELS } from '@/constants/roles'
@@ -27,7 +27,8 @@ function EditUserModal({
   const { t } = useTranslation()
   const [name, setName] = useState(user.name)
   const [role, setRole] = useState<UserRole>(user.role)
-  // Multi-region support for seventy
+  const [email, setEmail] = useState(user.email ?? '')
+  const [unitId, setUnitId] = useState(user.unitId ?? '')
   const [selectedRegions, setSelectedRegions] = useState<Set<string>>(
     new Set(user.regionIds ?? (user.regionId ? [user.regionId] : []))
   )
@@ -54,6 +55,12 @@ function EditUserModal({
       if (role !== user.role || regionChanged) {
         tasks.push(updateUserRole(user.uid, role, role === 'seventy' ? newRegionIds : undefined))
       }
+      if (user.preRegistered) {
+        const preFields: Parameters<typeof updatePreRegisteredUserFields>[1] = {}
+        if (email.trim().toLowerCase() !== (user.email ?? '').toLowerCase()) preFields.email = email.trim()
+        if (role === 'president' && unitId !== (user.unitId ?? '')) preFields.unitId = unitId
+        if (Object.keys(preFields).length > 0) tasks.push(updatePreRegisteredUserFields(user.uid, preFields))
+      }
       await Promise.all(tasks)
       toast.success(`${name}${t('user.editSuccess')}`)
       onClose()
@@ -73,12 +80,29 @@ function EditUserModal({
           onChange={e => setName(e.target.value)}
           required
         />
+        {user.preRegistered && (
+          <Input
+            label={t('user.preRegEmail')}
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="example@gmail.com"
+          />
+        )}
         <Select
           label={t('user.role')}
           value={role}
           onChange={e => setRole(e.target.value as UserRole)}
-          options={ROLE_OPTIONS}
+          options={user.preRegistered ? PRE_ROLE_OPTIONS : ROLE_OPTIONS}
         />
+        {user.preRegistered && role === 'president' && (
+          <Select
+            label={t('user.preRegUnit')}
+            value={unitId}
+            onChange={e => setUnitId(e.target.value)}
+            options={UNIT_OPTIONS}
+          />
+        )}
         {role === 'seventy' && (
           <div className={styles.regionCheckGroup}>
             <p className={styles.regionCheckLabel}>{t('user.inviteRegion')} (복수 선택 가능)</p>
@@ -315,16 +339,14 @@ export function UserManagement() {
                         {ROLE_LABELS[u.role]}
                       </Badge>
                       <div className={styles.userActions}>
-                        {!u.preRegistered && (
-                          <button
-                            className={styles.iconBtn}
-                            title={t('common.edit')}
-                            type="button"
-                            onClick={() => setEditingUser(u)}
-                          >
-                            <Pencil size={14} />
-                          </button>
-                        )}
+                        <button
+                          className={styles.iconBtn}
+                          title={t('common.edit')}
+                          type="button"
+                          onClick={() => setEditingUser(u)}
+                        >
+                          <Pencil size={14} />
+                        </button>
                         {u.uid !== currentUser.uid && (
                           <button
                             className={`${styles.iconBtn} ${styles.iconBtnDanger}`}

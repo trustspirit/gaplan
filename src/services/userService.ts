@@ -52,6 +52,19 @@ export async function deleteUserAccount(uid: string): Promise<void> {
   await httpsCallable(functions, 'deleteUser')({ uid })
 }
 
+export async function updatePreRegisteredUserFields(
+  uid: string,
+  fields: { name?: string; email?: string; unitId?: string; regionId?: string; regionIds?: string[] },
+): Promise<void> {
+  const updates: Record<string, unknown> = {}
+  if (fields.name !== undefined) updates.name = fields.name
+  if (fields.email !== undefined) updates.email = fields.email.trim().toLowerCase()
+  if (fields.unitId !== undefined) updates.unitId = fields.unitId || null
+  if (fields.regionId !== undefined) updates.regionId = fields.regionId || null
+  if (fields.regionIds !== undefined) updates.regionIds = fields.regionIds
+  await updateDoc(doc(db, 'users', uid), updates)
+}
+
 export async function addPreRegisteredUser(data: {
   name: string
   email: string
