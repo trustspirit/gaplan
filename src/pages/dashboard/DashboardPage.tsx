@@ -133,7 +133,7 @@ function PresidentDashboard() {
           <Card>
             <CardHeader title={t('nav.calendar')} />
             <CardBody>
-              <CalendarView schedules={schedules} />
+              <CalendarView schedules={schedules} getUnitName={getUnitName} />
             </CardBody>
           </Card>
         </div>
@@ -209,7 +209,7 @@ function SeventyDashboard() {
           <Card>
             <CardHeader title={t('nav.calendar')} />
             <CardBody>
-              <CalendarView schedules={schedules} />
+              <CalendarView schedules={schedules} getUnitName={getUnitName} />
             </CardBody>
           </Card>
         </div>
@@ -294,7 +294,7 @@ function AdminDashboardContent() {
           <Card>
             <CardHeader title={t('nav.calendar')} />
             <CardBody>
-              <CalendarView schedules={schedules} />
+              <CalendarView schedules={schedules} getUnitName={getUnitName} />
             </CardBody>
           </Card>
         </div>
