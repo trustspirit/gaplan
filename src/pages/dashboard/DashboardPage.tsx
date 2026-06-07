@@ -15,7 +15,8 @@ import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
 import { subscribeToSharedCalendar } from '@/services/calendarService'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Skeleton, Button, Modal, BottomSheet } from '@/components/ui'
-import { TaskCard, ScheduleItem, CalendarView, TaskPickerContent, taskPickerTitle, ScheduleDateRangeFilter } from '@/components/domain'
+import { TaskCard, ScheduleItem, CalendarView, TaskPickerContent, taskPickerTitle, ScheduleDateRangeFilter, ScheduleFormModal, EditScheduleModal } from '@/components/domain'
+import type { Schedule } from '@/types'
 import { useWardSubmit } from '@/hooks/useWardSubmit'
 import { REGIONS } from '@/constants/regions'
 import styles from './DashboardPage.module.scss'
@@ -211,6 +212,8 @@ function AdminDashboardContent() {
   const { schedules } = useSchedules({})
   const { getUnitName } = useUnits()
   const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
+  const [formOpen, setFormOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<Schedule | null>(null)
 
   const thisMonth = schedules.filter(
     s => s.status === 'confirmed' && dayjs(s.date).format('YYYY-M') === dayjs().format('YYYY-M')
@@ -231,13 +234,27 @@ function AdminDashboardContent() {
           <Card>
             <CardHeader
               title={t('schedule.upcoming')}
-              action={<span style={{ fontSize: '0.8125rem', color: '#808081' }}>{t('schedule.thisMonth', { count: thisMonth.length })}</span>}
+              action={
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8125rem', color: '#808081' }}>{t('schedule.thisMonth', { count: thisMonth.length })}</span>
+                  <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
+                    + {t('schedule.newTitle')}
+                  </Button>
+                </div>
+              }
             />
             <CardBody>
               {upcoming.length === 0
                 ? <p className={styles.empty}>{t('schedule.noUpcoming')}</p>
                 : upcoming.map(s => (
-                    <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} />
+                    <ScheduleItem
+                      key={s.id}
+                      schedule={s}
+                      unitName={getUnitName(s.unitId)}
+                      canEdit
+                      onEdit={() => setEditTarget(s)}
+                      onDelete={() => setEditTarget(s)}
+                    />
                   ))
               }
             </CardBody>
@@ -253,6 +270,20 @@ function AdminDashboardContent() {
           </Card>
         </div>
       </div>
+
+      {formOpen && (
+        <ScheduleFormModal
+          onClose={() => setFormOpen(false)}
+          onSaved={() => { setFormOpen(false); toast.success(t('schedule.savedSuccess')) }}
+        />
+      )}
+      {editTarget && (
+        <EditScheduleModal
+          schedule={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={() => { setEditTarget(null); toast.success(t('admin.scheduleEditSuccess')) }}
+        />
+      )}
     </AppShell>
   )
 }
