@@ -1,6 +1,6 @@
 import {
-  collection, doc, setDoc, updateDoc, deleteDoc,
-  onSnapshot, serverTimestamp,
+  doc, setDoc, updateDoc,
+  onSnapshot, collection, serverTimestamp,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
@@ -58,16 +58,10 @@ export async function addPreRegisteredUser(data: {
   unitId?: string
   regionId?: string
   regionIds?: string[]
-  createdBy: string
 }): Promise<void> {
-  const ref = doc(collection(db, 'users'))
-  await setDoc(ref, {
-    ...data,
-    preRegistered: true,
-    createdAt: serverTimestamp(),
-  })
+  await httpsCallable(functions, 'adminAddPreRegisteredUser')(data)
 }
 
 export async function deletePreRegisteredUser(uid: string): Promise<void> {
-  await deleteDoc(doc(db, 'users', uid))
+  await httpsCallable(functions, 'adminDeletePreRegisteredUser')({ uid })
 }

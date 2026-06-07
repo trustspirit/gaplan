@@ -197,7 +197,6 @@ export function UserManagement() {
         role: preRole,
         ...(preRole === 'president' && preUnitId ? { unitId: preUnitId } : {}),
         ...(preRole === 'seventy' && preRegionId ? { regionId: preRegionId, regionIds: [preRegionId] } : {}),
-        createdBy: currentUser.uid,
       })
       toast.success(`${preName} 등록 완료`)
       setPreName(''); setPreEmail(''); setPreUnitId(''); setPreRegionId('')

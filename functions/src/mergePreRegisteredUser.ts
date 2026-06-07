@@ -1,78 +1,67 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 
-interface MergeRequest {
-  preUid: string
-}
-
 export const mergePreRegisteredUser = functions
   .region('asia-northeast3')
-  .https.onCall(async (data: MergeRequest, context) => {
+  .https.onCall(async (_data, context) => {
     if (!context.auth) {
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const { preUid } = data
-    if (!preUid) {
-      throw new functions.https.HttpsError('invalid-argument', 'preUid required')
+    const callerEmail = (context.auth.token.email ?? '').trim().toLowerCase()
+    const callerEmailVerified = context.auth.token.email_verified === true
+    if (!callerEmail || !callerEmailVerified) {
+      return null // No verified email → no pre-registration possible
     }
 
     const db = admin.firestore()
     const realUid = context.auth.uid
 
-    // Idempotency: if real user doc already exists, just return it
+    // Idempotency: if real user doc already exists, return it
     const realUserSnap = await db.collection('users').doc(realUid).get()
     if (realUserSnap.exists) {
-      return realUserSnap.data()
+      return { ...realUserSnap.data(), uid: realUid }
     }
 
-    const preUserSnap = await db.collection('users').doc(preUid).get()
-    if (!preUserSnap.exists) {
-      throw new functions.https.HttpsError('not-found', 'Pre-registered user not found')
+    // Server-side lookup by email (bypasses Firestore client Rules)
+    const emailSnap = await db.collection('users').where('email', '==', callerEmail).get()
+    const preRegDoc = emailSnap.docs.find(d => d.data().preRegistered === true)
+    if (!preRegDoc) return null // No pre-registration found → normal login flow
+
+    const preUserData = preRegDoc.data()
+
+    // Verify the placeholder was admin-created (prevents self-issued placeholders)
+    if (preUserData.createdBy) {
+      const createdBySnap = await db.collection('users').doc(preUserData.createdBy).get()
+      if (!createdBySnap.exists || createdBySnap.data()?.role !== 'admin') {
+        throw new functions.https.HttpsError('permission-denied', 'Pre-registered user was not created by an admin')
+      }
     }
 
-    const preUserData = preUserSnap.data()!
-    if (!preUserData.preRegistered) {
-      throw new functions.https.HttpsError('failed-precondition', 'Not a pre-registered user')
-    }
+    const preUid = preRegDoc.id
 
-    // Bind merge to the caller's verified email to prevent IDOR
-    const callerEmail = (context.auth.token.email ?? '').toLowerCase()
-    const callerEmailVerified = context.auth.token.email_verified === true
-    if (!callerEmail || !callerEmailVerified) {
-      throw new functions.https.HttpsError('failed-precondition', 'Verified email required')
-    }
-    if ((preUserData.email ?? '').toLowerCase() !== callerEmail) {
-      throw new functions.https.HttpsError('permission-denied', 'Email does not match pre-registered user')
-    }
-
-    // Fetch schedules referencing the placeholder uid
     const [seventySchedules, presidentSchedules] = await Promise.all([
       db.collection('schedules').where('seventyUid', '==', preUid).get(),
       db.collection('schedules').where('presidentUid', '==', preUid).get(),
     ])
 
+    const totalOps = 2 + seventySchedules.size + presidentSchedules.size
+    if (totalOps > 498) {
+      throw new functions.https.HttpsError('resource-exhausted', 'Too many schedule references to merge in one batch')
+    }
+
     const batch = db.batch()
 
-    // Create real user document (drop preRegistered flag)
-    const { preRegistered: _drop, ...userData } = preUserData
-    batch.set(db.collection('users').doc(realUid), {
-      ...userData,
-      mergedAt: admin.firestore.FieldValue.serverTimestamp(),
-    })
+    const { preRegistered: _drop, createdBy: _by, ...userData } = preUserData
+    const mergedUserData = { ...userData, mergedAt: admin.firestore.FieldValue.serverTimestamp() }
 
-    // Delete placeholder
+    batch.set(db.collection('users').doc(realUid), mergedUserData)
     batch.delete(db.collection('users').doc(preUid))
 
-    // Re-point schedules
-    for (const snap of seventySchedules.docs) {
-      batch.update(snap.ref, { seventyUid: realUid })
-    }
-    for (const snap of presidentSchedules.docs) {
-      batch.update(snap.ref, { presidentUid: realUid })
-    }
+    for (const snap of seventySchedules.docs) batch.update(snap.ref, { seventyUid: realUid })
+    for (const snap of presidentSchedules.docs) batch.update(snap.ref, { presidentUid: realUid })
 
     await batch.commit()
 
-    return userData
+    return userData // Return without serverTimestamp fields (not serializable)
   })
