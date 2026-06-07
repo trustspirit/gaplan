@@ -25,6 +25,8 @@ export const UNIT_COLORS: Record<string, { bg: string; text: string }> = {
   'daegu-stake':       { bg: '#d1fae5', text: '#064e3b' },
   'changwon-stake':    { bg: '#ccfbf1', text: '#0f766e' },
   'ulsan-district':    { bg: '#cffafe', text: '#155e75' },
+  // 미군 지방부
+  'military-district': { bg: '#f0fdf4', text: '#166534' },
 }
 
 export function getUnitColor(unitId: string): { bg: string; text: string } {
@@ -70,7 +72,11 @@ export const UNITS_BUSAN: Omit<Unit, 'presidentUid'>[] = [
   { id: 'ulsan-district', name: '울산 지방부', type: 'district', regionId: 'busan' },
 ]
 
-export const ALL_UNITS = [...UNITS_SEOUL, ...UNITS_SEOUL_SOUTH, ...UNITS_BUSAN]
+export const UNITS_MILITARY: Omit<Unit, 'presidentUid'>[] = [
+  { id: 'military-district', name: '미군 지방부', type: 'district', regionId: 'seoul' },
+]
+
+export const ALL_UNITS = [...UNITS_SEOUL, ...UNITS_SEOUL_SOUTH, ...UNITS_BUSAN, ...UNITS_MILITARY]
 
 export const getUnitsByRegion = (regionId: string) =>
   ALL_UNITS.filter(u => u.regionId === regionId)
@@ -176,6 +182,14 @@ export const WARDS: WardUnit[] = [
   { id: 'ulsan-sinjeong',   name: '신정 지부',   type: 'branch', unitId: 'ulsan-district' },
   { id: 'ulsan-pohang',     name: '포항 지부',   type: 'branch', unitId: 'ulsan-district' },
   { id: 'ulsan-hogye',      name: '호계 지부',   type: 'branch', unitId: 'ulsan-district' },
+  // 미군 지방부
+  { id: 'military-gunsan',    name: '군산 군인 지부',   type: 'branch', unitId: 'military-district' },
+  { id: 'military-northern',  name: '노던 군인 지부',   type: 'branch', unitId: 'military-district' },
+  { id: 'military-daegu',     name: '대구 군인 지부',   type: 'branch', unitId: 'military-district' },
+  { id: 'military-seoul-en',  name: '서울 영어 지부',   type: 'branch', unitId: 'military-district' },
+  { id: 'military-songdo',    name: '송도 영어 지부',   type: 'branch', unitId: 'military-district' },
+  { id: 'military-osan',      name: '오산 군인 지부',   type: 'branch', unitId: 'military-district' },
+  { id: 'military-humphreys', name: '험프리 군인 지부', type: 'branch', unitId: 'military-district' },
 ]
 
 export const getWardsByUnit = (unitId: string): WardUnit[] =>

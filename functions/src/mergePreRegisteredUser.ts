@@ -36,6 +36,16 @@ export const mergePreRegisteredUser = functions
       throw new functions.https.HttpsError('failed-precondition', 'Not a pre-registered user')
     }
 
+    // Bind merge to the caller's verified email to prevent IDOR
+    const callerEmail = (context.auth.token.email ?? '').toLowerCase()
+    const callerEmailVerified = context.auth.token.email_verified === true
+    if (!callerEmail || !callerEmailVerified) {
+      throw new functions.https.HttpsError('failed-precondition', 'Verified email required')
+    }
+    if ((preUserData.email ?? '').toLowerCase() !== callerEmail) {
+      throw new functions.https.HttpsError('permission-denied', 'Email does not match pre-registered user')
+    }
+
     // Fetch schedules referencing the placeholder uid
     const [seventySchedules, presidentSchedules] = await Promise.all([
       db.collection('schedules').where('seventyUid', '==', preUid).get(),
