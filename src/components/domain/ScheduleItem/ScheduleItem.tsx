@@ -91,8 +91,8 @@ export function ScheduleItem({
             <span>{t(`schedule.type.${schedule.type}`)}</span>
           </div>
           <p className={styles.unit}>
-            {unitName}
-            {schedule.wardName && <span className={styles.wardName}> · {schedule.wardName}</span>}
+            {schedule.customTitle ?? unitName}
+            {!schedule.customTitle && schedule.wardName && <span className={styles.wardName}> · {schedule.wardName}</span>}
           </p>
           <p className={styles.time}>{schedule.startTime} – {schedule.endTime}</p>
           {schedule.zoomLink && (

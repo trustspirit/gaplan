@@ -25,6 +25,7 @@ interface CalendarViewProps {
 }
 
 function chipLabel(s: Schedule, getUnitName?: (id: string) => string): string {
+  if (s.customTitle) return s.customTitle
   if (s.wardName) return s.wardName
   return getUnitName ? getUnitName(s.unitId) : s.unitId
 }

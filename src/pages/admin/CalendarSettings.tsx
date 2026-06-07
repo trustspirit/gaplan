@@ -6,13 +6,13 @@ import { useTranslation } from 'react-i18next'
 import { RefreshCw, Trash2, Calendar, Pencil } from 'lucide-react'
 import dayjs from 'dayjs'
 import { authUserAtom } from '@/store/authAtom'
-import { manualCalendarSync, editScheduleViaCF, deleteScheduleViaCF } from '@/services/scheduleService'
+import { manualCalendarSync } from '@/services/scheduleService'
 import { useSchedules } from '@/hooks/useSchedules'
 import { db } from '@/firebase'
 import { REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Input, Button, Modal } from '@/components/ui'
-import { ScheduleFormModal } from '@/components/domain'
+import { Card, CardHeader, CardBody, Input, Button } from '@/components/ui'
+import { ScheduleFormModal, EditScheduleModal } from '@/components/domain'
 import type { Schedule } from '@/types'
 import styles from './CalendarSettings.module.scss'
 
@@ -24,134 +24,6 @@ function scheduleTypeLabel(schedule: Schedule, t: (key: string) => string) {
       : t('schedule.type.meeting')
 }
 
-function EditScheduleModal({
-  schedule,
-  onClose,
-}: {
-  schedule: Schedule
-  onClose: () => void
-}) {
-  const { t } = useTranslation()
-  const [date, setDate] = useState(schedule.date)
-  const [startTime, setStartTime] = useState(schedule.startTime)
-  const [endTime, setEndTime] = useState(schedule.endTime)
-  const [notes, setNotes] = useState(schedule.notes ?? '')
-  const [loading, setLoading] = useState(false)
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (endTime <= startTime) {
-      toast.error(t('admin.scheduleTimeError'))
-      return
-    }
-    setLoading(true)
-    try {
-      await editScheduleViaCF(schedule.id, { date, startTime, endTime, notes: notes.trim() || undefined })
-      toast.success(t('admin.scheduleEditSuccess'))
-      onClose()
-    } catch {
-      toast.error(t('admin.scheduleEditFailed'))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <Modal open onClose={onClose} title={t('admin.scheduleEdit')}>
-      <form className={styles.editForm} onSubmit={handleSave}>
-        <div className={styles.editMeta}>
-          <span className={styles.scheduleType}>{scheduleTypeLabel(schedule, t)}</span>
-          {schedule.wardName && <span className={styles.scheduleWard}>{schedule.wardName}</span>}
-        </div>
-        <Input
-          label={t('task.dueDate')}
-          type="date"
-          value={date}
-          onChange={e => setDate(e.target.value)}
-          required
-        />
-        <div className={styles.timeRow}>
-          <Input
-            label={t('common.startTime')}
-            type="time"
-            value={startTime}
-            onChange={e => setStartTime(e.target.value)}
-            required
-          />
-          <Input
-            label={t('common.endTime')}
-            type="time"
-            value={endTime}
-            onChange={e => setEndTime(e.target.value)}
-            required
-          />
-        </div>
-        <div className={styles.textareaField}>
-          <label className={styles.textareaLabel}>{t('task.noteLabel')}</label>
-          <textarea
-            className={styles.textarea}
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            rows={3}
-            placeholder={t('admin.scheduleNotesPlaceholder')}
-          />
-        </div>
-        {schedule.googleCalendarEventId && (
-          <p className={styles.calendarHint}>{t('admin.scheduleEditCalendarHint')}</p>
-        )}
-        <div className={styles.modalActions}>
-          <Button variant="ghost" type="button" onClick={onClose}>{t('common.cancel')}</Button>
-          <Button type="submit" loading={loading}>{t('common.save')}</Button>
-        </div>
-      </form>
-    </Modal>
-  )
-}
-
-function DeleteScheduleModal({
-  schedule,
-  onClose,
-  onDeleted,
-}: {
-  schedule: Schedule
-  onClose: () => void
-  onDeleted: () => void
-}) {
-  const { t } = useTranslation()
-  const [loading, setLoading] = useState(false)
-
-  const handleDelete = async () => {
-    setLoading(true)
-    try {
-      await deleteScheduleViaCF(schedule.id)
-      toast.success(t('admin.scheduleCancelSuccess'))
-      onDeleted()
-      onClose()
-    } catch {
-      toast.error(t('admin.scheduleCancelFailed'))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <Modal open onClose={onClose} title={t('admin.scheduleCancelTitle')}>
-      <p className={styles.deleteDesc}>
-        <strong>{dayjs(schedule.date).format('YYYY.MM.DD (ddd)')}</strong>
-        {schedule.startTime && ` ${schedule.startTime}–${schedule.endTime}`}
-        <br />
-        {scheduleTypeLabel(schedule, t)}
-        {schedule.wardName && ` · ${schedule.wardName}`}
-        <br />
-        {t('admin.scheduleCancelWarning')}
-      </p>
-      <div className={styles.modalActions}>
-        <Button variant="ghost" type="button" onClick={onClose}>{t('common.cancel')}</Button>
-        <Button variant="danger" loading={loading} onClick={handleDelete}>{t('admin.scheduleDelete')}</Button>
-      </div>
-    </Modal>
-  )
-}
 
 function ScheduleRow({
   schedule,
@@ -326,13 +198,15 @@ export function CalendarSettings() {
         <EditScheduleModal
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
+          onSaved={() => setEditTarget(null)}
         />
       )}
       {cancelTarget && (
-        <DeleteScheduleModal
+        <EditScheduleModal
           schedule={cancelTarget}
+          initialConfirmDelete
           onClose={() => setCancelTarget(null)}
-          onDeleted={() => setCancelTarget(null)}
+          onSaved={() => setCancelTarget(null)}
         />
       )}
     </AppShell>
