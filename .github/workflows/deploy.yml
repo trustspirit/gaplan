@@ -104,7 +104,7 @@ jobs:
 
       - name: Deploy Functions
         if: needs.changes.outputs.functions == 'true' || github.event_name == 'workflow_dispatch'
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08  # v3
         with:
           timeout_minutes: 10
           max_attempts: 3
