@@ -1,91 +1,145 @@
 import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import { Video, CalendarDays } from 'lucide-react'
 import { ALL_UNITS } from '@/constants/regions'
 import { fetchPublicSchedules, type PublicScheduleItem } from '@/services/scheduleService'
 import styles from './PublicSchedulePage.module.scss'
 
-const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토']
-
-const TYPE_LABELS: Record<string, string> = {
-  ward_visit: '와드 방문',
-  interview: '접견',
-  meeting: '모임',
-}
+const DOW_KO = ['일', '월', '화', '수', '목', '금', '토']
+const DOW_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 function getUnitName(unitId: string) {
   return ALL_UNITS.find((u) => u.id === unitId)?.name ?? unitId
 }
 
-function groupByMonth(schedules: PublicScheduleItem[]): Map<string, PublicScheduleItem[]> {
+function groupByMonth(schedules: PublicScheduleItem[], lang: string): Map<string, PublicScheduleItem[]> {
   const map = new Map<string, PublicScheduleItem[]>()
   for (const s of schedules) {
-    const key = dayjs(s.date).format('YYYY년 M월')
+    const date = dayjs(s.date)
+    const key = lang === 'ko'
+      ? date.format('YYYY년 M월')
+      : date.format('MMMM YYYY')
     if (!map.has(key)) map.set(key, [])
     map.get(key)!.push(s)
   }
   return map
 }
 
-function buildSubscribeUrls() {
+function buildSubscribeUrls(token: string) {
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string
-  const icsHttps = `https://asia-northeast3-${projectId}.cloudfunctions.net/publicScheduleIcs`
+  const icsHttps = `https://asia-northeast3-${projectId}.cloudfunctions.net/publicScheduleIcs?token=${token}`
   const icsWebcal = icsHttps.replace('https://', 'webcal://')
   const googleUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(icsWebcal)}`
   return { icsWebcal, googleUrl }
 }
 
 export default function PublicSchedulePage() {
+  const { token } = useParams<{ token: string }>()
+  const { t, i18n } = useTranslation()
   const [schedules, setSchedules] = useState<PublicScheduleItem[]>([])
+  const [scopeDisplayName, setScopeDisplayName] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [isPrivate, setIsPrivate] = useState(false)
+  const [fetchError, setFetchError] = useState(false)
+
+  // Initialize language from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('publicLang')
+    if (saved && saved !== i18n.language) {
+      i18n.changeLanguage(saved)
+    }
+  }, [])
 
   useEffect(() => {
-    fetchPublicSchedules()
-      .then(setSchedules)
-      .catch((e) => setError(e?.message ?? '일정을 불러올 수 없습니다.'))
+    if (!token) return
+    fetchPublicSchedules(token)
+      .then(({ schedules: s, scopeDisplayName: name }) => {
+        setSchedules(s)
+        setScopeDisplayName(name)
+      })
+      .catch((e) => {
+        if (e?.code === 'functions/permission-denied' || e?.message?.includes('permission-denied')) {
+          setIsPrivate(true)
+        } else {
+          setFetchError(true)
+        }
+      })
       .finally(() => setLoading(false))
-  }, [])
+  }, [token])
+
+  const toggleLang = () => {
+    const next = i18n.language === 'ko' ? 'en' : 'ko'
+    i18n.changeLanguage(next)
+    localStorage.setItem('publicLang', next)
+  }
+
+  const lang = i18n.language
 
   if (loading) {
     return (
       <div className={styles.page}>
-        <div className={styles.loading}>불러오는 중...</div>
+        <div className={styles.loading}>{t('public.loading')}</div>
       </div>
     )
   }
 
-  if (error) {
+  if (isPrivate) {
     return (
       <div className={styles.page}>
-        <div className={styles.errorBox}>{error}</div>
+        <div className={styles.errorBox}>{t('public.privateError')}</div>
       </div>
     )
   }
 
-  const grouped = groupByMonth(schedules)
+  if (fetchError) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.errorBox}>{t('public.fetchError')}</div>
+      </div>
+    )
+  }
+
+  const title = scopeDisplayName
+    ? t('public.scopedTitle', { name: scopeDisplayName })
+    : t('public.title')
+
+  const grouped = groupByMonth(schedules, lang)
   const monthKeys = [...grouped.keys()]
-  const { icsWebcal, googleUrl } = buildSubscribeUrls()
+  const { icsWebcal, googleUrl } = buildSubscribeUrls(token!)
+
+  const typeLabel = (type: string) => {
+    if (type === 'ward_visit') return t('public.typeVisit')
+    if (type === 'interview') return t('public.typeInterview')
+    if (type === 'meeting') return t('public.typeMeeting')
+    return type
+  }
+
+  const dowLabels = lang === 'ko' ? DOW_KO : DOW_EN
 
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h1 className={styles.headerTitle}>일정표</h1>
+        <h1 className={styles.headerTitle}>{title}</h1>
         <div className={styles.subscribeRow}>
           <CalendarDays size={14} className={styles.subscribeIcon} />
-          <span className={styles.subscribeLabel}>캘린더 구독</span>
+          <span className={styles.subscribeLabel}>{t('public.subscribeLabel')}</span>
           <a href={icsWebcal} className={styles.subscribeBtn}>
-            Apple 캘린더
+            {t('public.appleCalendar')}
           </a>
           <a href={googleUrl} target="_blank" rel="noopener noreferrer" className={styles.subscribeBtn}>
-            Google 캘린더
+            {t('public.googleCalendar')}
           </a>
+          <button className={styles.langToggle} onClick={toggleLang}>
+            {lang === 'ko' ? 'EN' : '한'}
+          </button>
         </div>
       </header>
 
       <main className={styles.main}>
         {monthKeys.length === 0 ? (
-          <div className={styles.empty}>확정된 일정이 없습니다.</div>
+          <div className={styles.empty}>{t('public.empty')}</div>
         ) : (
           monthKeys.map((monthKey) => {
             const items = grouped.get(monthKey)!
@@ -95,7 +149,7 @@ export default function PublicSchedulePage() {
                 <div className={styles.itemList}>
                   {items.map((s) => {
                     const date = dayjs(s.date)
-                    const dow = DOW_LABELS[date.day()]
+                    const dow = dowLabels[date.day()]
                     const isPast = date.isBefore(dayjs(), 'day')
                     const isVisit = s.type === 'ward_visit'
                     const isMeeting = s.type === 'meeting'
@@ -118,7 +172,7 @@ export default function PublicSchedulePage() {
                           <span className={styles.dow}>{dow}</span>
                         </div>
                         <div className={styles.itemBody}>
-                          <span className={styles.typeBadge}>{TYPE_LABELS[s.type] ?? s.type}</span>
+                          <span className={styles.typeBadge}>{typeLabel(s.type)}</span>
                           <p className={styles.title}>{displayTitle}</p>
                           <p className={styles.time}>{s.startTime} – {s.endTime}</p>
                           {safeZoom && (
@@ -133,7 +187,7 @@ export default function PublicSchedulePage() {
                             </a>
                           )}
                         </div>
-                        {isPast && <span className={styles.pastBadge}>완료</span>}
+                        {isPast && <span className={styles.pastBadge}>{t('public.pastBadge')}</span>}
                       </div>
                     )
                   })}

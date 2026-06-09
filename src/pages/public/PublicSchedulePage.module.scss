@@ -239,3 +239,23 @@
   padding: 2px $space-2;
   margin-right: $space-3;
 }
+
+// ─── Language Toggle ───────────────────────────────────────────────────────
+.langToggle {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: $border-radius-full;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  padding: 3px $space-3;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.7);
+  }
+}
