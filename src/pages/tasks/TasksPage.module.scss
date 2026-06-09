@@ -15,7 +15,7 @@
     flex-direction: column;
     padding: $space-3;
     gap: $space-3;
-    padding-bottom: calc(#{$bottom-tab-height} + #{$space-3});
+    padding-bottom: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px) + #{$space-3});
   }
 }
 

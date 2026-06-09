@@ -20,7 +20,7 @@
   @include mobile {
     grid-template-columns: 1fr;
     padding: $space-4;
-    padding-bottom: calc(#{$bottom-tab-height} + #{$space-4});
+    padding-bottom: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px) + #{$space-4});
     overflow-x: hidden;
   }
 }
