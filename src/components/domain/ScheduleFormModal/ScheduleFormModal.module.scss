@@ -109,6 +109,13 @@ form {
   min-width: 0;
 }
 
+form :global(input),
+form :global(select),
+form :global(textarea) {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .segmented {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -181,9 +188,26 @@ form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: $space-3;
+  min-width: 0;
 
   @include mobile {
     gap: $space-2;
+    grid-template-columns: 1fr;
+  }
+}
+
+.timeRow :global(input[type='date']),
+.timeRow :global(input[type='time']),
+.fields :global(input[type='date']),
+.fields :global(input[type='time']) {
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+
+  @include mobile {
+    font-size: 16px;
+    min-height: 44px;
+    padding-right: $space-3;
   }
 }
 

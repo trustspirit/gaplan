@@ -1,19 +1,25 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 import type { Schedule } from '@/types'
 import { isFastSunday } from '@/utils/fastSunday'
-import { ALL_UNITS, getUnitColor, getRegionColor, REGIONS } from '@/constants/regions'
 import { Button } from '@/components/ui'
 import styles from './CalendarView.module.scss'
 
 // Day-of-week abbreviations derived from dayjs locale (auto-updates with language switch)
 const getDOW = () => Array.from({ length: 7 }, (_, i) => dayjs().day(i).format('ddd')) as string[]
-const MAX_CHIPS = 2   // max chips shown per cell before "+N"
+const MAX_CHIPS = 2 // max chips shown per cell before "+N"
 
 type ViewMode = 'month' | 'week'
+
+const SCHEDULE_TYPE_COLORS: Record<Schedule['type'], { bg: string; text: string; border: string }> =
+  {
+    ward_visit: { bg: '#e7f2f6', text: '#0f5f78', border: '#99c9d8' },
+    interview: { bg: '#f1ecfb', text: '#5f3ea8', border: '#c4b5fd' },
+    meeting: { bg: '#fff3df', text: '#8a4b0f', border: '#f8c471' },
+  }
 
 interface CalendarViewProps {
   schedules: Schedule[]
@@ -30,20 +36,26 @@ function chipLabel(s: Schedule, getUnitName?: (id: string) => string): string {
   return getUnitName ? getUnitName(s.unitId) : s.unitId
 }
 
-function regionLabel(unitId: string): string {
-  const unit = ALL_UNITS.find(u => u.id === unitId)
-  return unit?.name ?? unitId
+function scheduleTypeColor(type: Schedule['type']) {
+  return SCHEDULE_TYPE_COLORS[type]
 }
 
-function ScheduleChip({ schedule, getUnitName }: { schedule: Schedule; getUnitName?: (id: string) => string }) {
+function ScheduleChip({
+  schedule,
+  getUnitName,
+}: {
+  schedule: Schedule
+  getUnitName?: (id: string) => string
+}) {
+  const { t } = useTranslation()
   const label = chipLabel(schedule, getUnitName)
-  const color = getUnitColor(schedule.unitId)
+  const color = scheduleTypeColor(schedule.type)
 
   return (
     <span
       className={styles.chip}
-      style={{ background: color.bg, color: color.text }}
-      title={regionLabel(schedule.unitId)}
+      style={{ background: color.bg, color: color.text, borderColor: color.border }}
+      title={`${t(`schedule.type.${schedule.type}`)} · ${label}`}
     >
       {label}
     </span>
@@ -64,11 +76,13 @@ export function CalendarView({
   // Re-derive DOW whenever language changes
   const DOW = getDOW()
 
-  // Reset mobile 3-day offset when week changes
-  useEffect(() => { setWeekOffset(0) }, [current])
-
   const getSchedulesForDate = (date: string) =>
-    schedules.filter(s => s.date === date && s.status === 'confirmed')
+    schedules.filter((s) => s.date === date && s.status === 'confirmed')
+
+  const movePeriod = (amount: number) => {
+    setCurrent((c) => c.add(amount, view === 'month' ? 'month' : 'week'))
+    setWeekOffset(0)
+  }
 
   // ── Month view ─────────────────────────────────────────────────────────────
   const renderMonthView = () => {
@@ -83,10 +97,12 @@ export function CalendarView({
 
     return (
       <div className={styles.monthGrid}>
-        {DOW.map(d => (
-          <div key={d} className={styles.dow}>{d}</div>
+        {DOW.map((d) => (
+          <div key={d} className={styles.dow}>
+            {d}
+          </div>
         ))}
-        {days.map(d => {
+        {days.map((d) => {
           const dateStr = d.format('YYYY-MM-DD')
           const daySchedules = getSchedulesForDate(dateStr)
           const isToday = d.isSame(dayjs(), 'day')
@@ -111,12 +127,10 @@ export function CalendarView({
               <span className={styles.cellDay}>{d.date()}</span>
               {daySchedules.length > 0 && (
                 <div className={styles.chips}>
-                  {visible.map(s => (
+                  {visible.map((s) => (
                     <ScheduleChip key={s.id} schedule={s} getUnitName={getUnitName} />
                   ))}
-                  {extra > 0 && (
-                    <span className={styles.chipMore}>+{extra}</span>
-                  )}
+                  {extra > 0 && <span className={styles.chipMore}>+{extra}</span>}
                 </div>
               )}
             </div>
@@ -144,7 +158,7 @@ export function CalendarView({
     function timeToDuration(start: string, end: string): number {
       const [sh, sm] = start.split(':').map(Number)
       const [eh, em] = end.split(':').map(Number)
-      const mins = (eh * 60 + em) - (sh * 60 + sm)
+      const mins = eh * 60 + em - (sh * 60 + sm)
       return (mins / 60) * HOUR_HEIGHT
     }
 
@@ -155,18 +169,19 @@ export function CalendarView({
           <button
             type="button"
             className={styles.mobileDayNavBtn}
-            onClick={() => setWeekOffset(o => Math.max(0, o - 3))}
+            onClick={() => setWeekOffset((o) => Math.max(0, o - 3))}
             disabled={weekOffset === 0}
           >
             <ChevronLeft size={16} />
           </button>
           <span className={styles.mobileDayNavLabel}>
-            {allDays[weekOffset]?.format('M/D')} – {allDays[Math.min(weekOffset + 2, 6)]?.format('M/D')}
+            {allDays[weekOffset]?.format('M/D')} –{' '}
+            {allDays[Math.min(weekOffset + 2, 6)]?.format('M/D')}
           </span>
           <button
             type="button"
             className={styles.mobileDayNavBtn}
-            onClick={() => setWeekOffset(o => Math.min(4, o + 3))}
+            onClick={() => setWeekOffset((o) => Math.min(4, o + 3))}
             disabled={weekOffset >= 4}
           >
             <ChevronRight size={16} />
@@ -177,7 +192,7 @@ export function CalendarView({
           {/* Time gutter */}
           <div className={styles.timeGutter}>
             <div className={styles.timeGutterHeader} />
-            {HOURS.map(h => (
+            {HOURS.map((h) => (
               <div key={h} className={styles.timeLabel} style={{ height: HOUR_HEIGHT }}>
                 {String(h).padStart(2, '0')}:00
               </div>
@@ -209,7 +224,9 @@ export function CalendarView({
                   {/* Day header */}
                   <div className={clsx(styles.dayHeader, isToday && styles.dayHeaderToday)}>
                     <span className={styles.dayHeaderDow}>{DOW[d.day()]}</span>
-                    <span className={clsx(styles.dayHeaderNum, isToday && styles.dayHeaderNumToday)}>
+                    <span
+                      className={clsx(styles.dayHeaderNum, isToday && styles.dayHeaderNumToday)}
+                    >
                       {d.format('D')}
                     </span>
                   </div>
@@ -217,7 +234,7 @@ export function CalendarView({
                   {/* Time grid background + schedule blocks */}
                   <div className={styles.dayBody} style={{ height: HOURS.length * HOUR_HEIGHT }}>
                     {/* Hour grid lines */}
-                    {HOURS.map(h => (
+                    {HOURS.map((h) => (
                       <div
                         key={h}
                         className={styles.hourLine}
@@ -226,10 +243,10 @@ export function CalendarView({
                     ))}
 
                     {/* Schedule blocks */}
-                    {daySchedules.map(s => {
+                    {daySchedules.map((s) => {
                       const top = timeToOffset(s.startTime)
                       const height = Math.max(timeToDuration(s.startTime, s.endTime), 20)
-                      const color = getUnitColor(s.unitId)
+                      const color = scheduleTypeColor(s.type)
                       return (
                         <div
                           key={s.id}
@@ -239,8 +256,9 @@ export function CalendarView({
                             height,
                             background: color.bg,
                             color: color.text,
+                            borderColor: color.border,
                           }}
-                          onClick={e => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <span className={styles.scheduleBlockLabel}>
                             {chipLabel(s, getUnitName)}
@@ -264,7 +282,7 @@ export function CalendarView({
   return (
     <div className={styles.calendar}>
       <div className={styles.controls}>
-        <Button variant="ghost" size="sm" onClick={() => setCurrent(c => c.subtract(1, view === 'month' ? 'month' : 'week'))}>
+        <Button variant="ghost" size="sm" onClick={() => movePeriod(-1)}>
           <ChevronLeft size={16} />
         </Button>
         <span className={styles.period}>
@@ -272,37 +290,48 @@ export function CalendarView({
             ? current.format('YYYY년 M월')
             : `${current.startOf('week').format('M/D')} – ${current.endOf('week').format('M/D')}`}
         </span>
-        <Button variant="ghost" size="sm" onClick={() => setCurrent(c => c.add(1, view === 'month' ? 'month' : 'week'))}>
+        <Button variant="ghost" size="sm" onClick={() => movePeriod(1)}>
           <ChevronRight size={16} />
         </Button>
         <div className={styles.viewToggle}>
-          <Button variant={view === 'month' ? 'primary' : 'ghost'} size="sm" onClick={() => setView('month')}>{t('common.monthView')}</Button>
-          <Button variant={view === 'week' ? 'primary' : 'ghost'} size="sm" onClick={() => setView('week')}>{t('common.weekView')}</Button>
+          <Button
+            variant={view === 'month' ? 'primary' : 'ghost'}
+            size="sm"
+            onClick={() => setView('month')}
+          >
+            {t('common.monthView')}
+          </Button>
+          <Button
+            variant={view === 'week' ? 'primary' : 'ghost'}
+            size="sm"
+            onClick={() => setView('week')}
+          >
+            {t('common.weekView')}
+          </Button>
         </div>
       </div>
 
       {view === 'month' ? renderMonthView() : renderWeekView()}
 
       <div className={styles.legend}>
-        {(() => {
-          const visibleRegionIds = new Set(
-            schedules
-              .map(s => ALL_UNITS.find(u => u.id === s.unitId)?.regionId)
-              .filter((id): id is string => Boolean(id))
-          )
-          const legendRegions = visibleRegionIds.size > 0
-            ? REGIONS.filter(r => visibleRegionIds.has(r.id))
-            : REGIONS
-          return legendRegions.map(r => {
-            const c = getRegionColor(r.id)
+        {(['ward_visit', 'interview', 'meeting'] as const)
+          .filter((type) => schedules.some((s) => s.type === type && s.status === 'confirmed'))
+          .map((type) => {
+            const c = scheduleTypeColor(type)
             return (
-              <span key={r.id} style={{ color: c.text }}>
-                <span className={styles.legendSwatch} style={{ background: c.bg }} /> {r.name}
+              <span key={type} style={{ color: c.text }}>
+                <span
+                  className={styles.legendSwatch}
+                  style={{ background: c.bg, borderColor: c.border }}
+                />{' '}
+                {t(`schedule.type.${type}`)}
               </span>
             )
-          })
-        })()}
-        <span className={styles.legendBlocked}><span className={clsx(styles.legendSwatch, styles.swatchBlocked)} /> {t('common.fastSundayLegend')}</span>
+          })}
+        <span className={styles.legendBlocked}>
+          <span className={clsx(styles.legendSwatch, styles.swatchBlocked)} />{' '}
+          {t('common.fastSundayLegend')}
+        </span>
       </div>
     </div>
   )
