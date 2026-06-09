@@ -52,7 +52,8 @@ export function AppRouter() {
         </Route>
 
         <Route path="/respond/:taskId" element={<RespondPage />} />
-        <Route path="/public/schedule" element={<PublicSchedulePage />} />
+        <Route path="/public/schedule/:token" element={<PublicSchedulePage />} />
+        <Route path="/public/schedule" element={<Navigate to="/dashboard" replace />} />
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
