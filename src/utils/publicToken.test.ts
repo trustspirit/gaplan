@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest'
 import { generatePublicToken } from './publicToken'
 
 describe('generatePublicToken', () => {
-  it('returns a string of exactly 8 characters', () => {
+  it('returns a string of exactly 16 characters', () => {
     const token = generatePublicToken()
-    expect(token).toHaveLength(8)
+    expect(token).toHaveLength(16)
   })
 
-  it('contains only alphanumeric characters [0-9a-z]', () => {
+  it('contains only hex characters [0-9a-f]', () => {
     const token = generatePublicToken()
-    expect(token).toMatch(/^[0-9a-z]{8}$/)
+    expect(token).toMatch(/^[0-9a-f]{16}$/)
   })
 
   it('returns different values on consecutive calls', () => {
