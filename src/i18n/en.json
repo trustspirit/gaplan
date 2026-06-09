@@ -55,7 +55,8 @@
     "fastSundayLegend": "Fast Sunday",
     "deselectAll": "Deselect All",
     "selectAll": "Select All",
-    "copyLink": "Copy link"
+    "copyLink": "Copy link",
+    "publicLink": "Public link"
   },
   "auth": {
     "greeting": "Hello, {{name}}",

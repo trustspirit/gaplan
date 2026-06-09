@@ -55,7 +55,8 @@
     "fastSundayLegend": "금식일",
     "deselectAll": "해제",
     "selectAll": "전체 선택",
-    "copyLink": "링크 복사"
+    "copyLink": "링크 복사",
+    "publicLink": "공개 링크"
   },
   "auth": {
     "greeting": "{{name}}님, 안녕하세요",

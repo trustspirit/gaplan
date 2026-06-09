@@ -1,9 +1,12 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { useAtomValue } from 'jotai'
+import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
-import { Calendar, CheckCircle2 } from 'lucide-react'
+import { Calendar, CheckCircle2, Globe, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/firebase'
 import { authUserAtom } from '@/store/authAtom'
 import { useTasks } from '@/hooks/useTasks'
 import { useSchedules } from '@/hooks/useSchedules'
@@ -301,12 +304,35 @@ function SeventyDashboard() {
 function AdminDashboardContent() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
+  const navigate = useNavigate()
   const { schedules } = useSchedules({})
   const { getUnitName } = useUnits()
   const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
+  const [schedulePublic, setSchedulePublic] = useState(false)
+  const [publicCopied, setPublicCopied] = useState(false)
+
+  const publicUrl = `${window.location.origin}/public/schedule`
+
+  useEffect(() => {
+    getDoc(doc(db, 'settings', 'public')).then((snap) => {
+      setSchedulePublic(snap.data()?.schedulePublic === true)
+    })
+  }, [])
+
+  const handlePublicAction = () => {
+    if (schedulePublic) {
+      navigator.clipboard.writeText(publicUrl).then(() => {
+        setPublicCopied(true)
+        toast.success(t('common.copyLink'))
+        setTimeout(() => setPublicCopied(false), 2000)
+      })
+    } else {
+      navigate('/admin/calendar')
+    }
+  }
 
   const thisMonthCount = getThisMonthScheduleCount(schedules)
   const upcoming = schedules
@@ -337,6 +363,10 @@ function AdminDashboardContent() {
                 <span className={styles.headerCount}>
                   {t('schedule.thisMonth', { count: thisMonthCount })}
                 </span>
+                <Button variant="secondary" size="sm" onClick={handlePublicAction} title={schedulePublic ? t('common.copyLink') : t('admin.publicScheduleTitle')}>
+                  {publicCopied ? <Check size={14} /> : <Globe size={14} />}
+                  &nbsp;{t('common.publicLink')}
+                </Button>
                 <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
                   + {t('schedule.newTitle')}
                 </Button>
