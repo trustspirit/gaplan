@@ -88,3 +88,22 @@ export async function deleteScheduleViaCF(scheduleId: string): Promise<void> {
   await adminDeleteScheduleFn({ scheduleId })
 }
 
+export interface PublicScheduleItem {
+  id: string
+  type: string
+  unitId: string
+  date: string
+  startTime: string
+  endTime: string
+  status: string
+  wardName?: string
+  zoomLink?: string | null
+  customTitle?: string | null
+}
+
+export async function fetchPublicSchedules(): Promise<PublicScheduleItem[]> {
+  const fn = httpsCallable<void, { schedules: PublicScheduleItem[] }>(functions, 'getPublicSchedules')
+  const result = await fn()
+  return result.data.schedules
+}
+

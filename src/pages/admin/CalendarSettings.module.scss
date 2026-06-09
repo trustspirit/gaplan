@@ -234,3 +234,107 @@
   justify-content: flex-end;
   gap: $space-2;
 }
+
+// ─── Public Schedule Toggle ────────────────────────────────────────────────
+.toggleRow {
+  margin-bottom: $space-3;
+}
+
+.toggleLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggleInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+
+  &:checked + .toggleTrack {
+    background: $color-primary;
+  }
+
+  &:checked + .toggleTrack .toggleThumb {
+    transform: translateX(16px);
+  }
+
+  &:disabled + .toggleTrack {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.toggleTrack {
+  display: inline-flex;
+  align-items: center;
+  width: 36px;
+  height: 20px;
+  border-radius: $border-radius-full;
+  background: $color-border;
+  padding: 2px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggleThumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.toggleText {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.publicLinkRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+}
+
+.publicLinkIcon {
+  color: $color-primary;
+  flex-shrink: 0;
+}
+
+.publicLinkUrl {
+  flex: 1;
+  font-size: $font-size-xs;
+  color: $color-text;
+  word-break: break-all;
+  font-family: monospace;
+}
+
+.copyBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-1;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: $color-text-muted;
+  border-radius: $border-radius-sm;
+  min-width: 28px;
+  min-height: 28px;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    color: $color-primary;
+    background: rgba($color-primary, 0.08);
+  }
+}

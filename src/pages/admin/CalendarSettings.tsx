@@ -3,7 +3,7 @@ import { useAtomValue } from 'jotai'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Copy, Check, Globe } from 'lucide-react'
 import { authUserAtom } from '@/store/authAtom'
 import { manualCalendarSync } from '@/services/scheduleService'
 import { db } from '@/firebase'
@@ -19,14 +19,21 @@ export function CalendarSettings() {
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const [schedulePublic, setSchedulePublic] = useState(false)
+  const [savingPublic, setSavingPublic] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const publicUrl = `${window.location.origin}/public/schedule`
 
   useEffect(() => {
-    getDoc(doc(db, 'settings', 'calendar'))
-      .then((snap) => {
-        const data = snap.data()
-        if (data?.calendars) setCalendarIds(data.calendars as Record<string, string>)
-      })
-      .finally(() => setFetching(false))
+    Promise.all([
+      getDoc(doc(db, 'settings', 'calendar')),
+      getDoc(doc(db, 'settings', 'public')),
+    ]).then(([calSnap, pubSnap]) => {
+      const calData = calSnap.data()
+      if (calData?.calendars) setCalendarIds(calData.calendars as Record<string, string>)
+      setSchedulePublic(pubSnap.data()?.schedulePublic === true)
+    }).finally(() => setFetching(false))
   }, [])
 
   const handleSave = async (e: React.FormEvent) => {
@@ -52,6 +59,29 @@ export function CalendarSettings() {
     } finally {
       setSyncing(false)
     }
+  }
+
+  const handleTogglePublic = async () => {
+    const next = !schedulePublic
+    setSavingPublic(true)
+    try {
+      await setDoc(doc(db, 'settings', 'public'), { schedulePublic: next }, { merge: true })
+      setSchedulePublic(next)
+      toast.success(next ? t('admin.schedulePublicEnabled') : t('admin.schedulePublicDisabled'))
+    } catch {
+      toast.error(t('common.saveFailed'))
+    } finally {
+      setSavingPublic(false)
+    }
+  }
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(publicUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }).catch(() => {
+      toast.error(t('common.saveFailed'))
+    })
   }
 
   return (
@@ -96,6 +126,44 @@ export function CalendarSettings() {
               <RefreshCw size={14} />
               &nbsp;{t('calendar.syncManual')}
             </Button>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader title={t('admin.publicScheduleTitle')} />
+          <CardBody>
+            <p className={styles.desc}>{t('admin.publicScheduleDesc')}</p>
+            <div className={styles.toggleRow}>
+              <label className={styles.toggleLabel}>
+                <input
+                  type="checkbox"
+                  className={styles.toggleInput}
+                  checked={schedulePublic}
+                  onChange={handleTogglePublic}
+                  disabled={savingPublic || fetching}
+                />
+                <span className={styles.toggleTrack}>
+                  <span className={styles.toggleThumb} />
+                </span>
+                <span className={styles.toggleText}>
+                  {schedulePublic ? t('admin.schedulePublicOn') : t('admin.schedulePublicOff')}
+                </span>
+              </label>
+            </div>
+            {schedulePublic && (
+              <div className={styles.publicLinkRow}>
+                <Globe size={14} className={styles.publicLinkIcon} />
+                <span className={styles.publicLinkUrl}>{publicUrl}</span>
+                <button
+                  type="button"
+                  className={styles.copyBtn}
+                  onClick={handleCopyLink}
+                  title={t('common.copyLink')}
+                >
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                </button>
+              </div>
+            )}
           </CardBody>
         </Card>
       </div>

@@ -54,7 +54,8 @@
     "fastSundayLabel": "(Fast Sunday)",
     "fastSundayLegend": "Fast Sunday",
     "deselectAll": "Deselect All",
-    "selectAll": "Select All"
+    "selectAll": "Select All",
+    "copyLink": "Copy link"
   },
   "auth": {
     "greeting": "Hello, {{name}}",
@@ -68,7 +69,6 @@
     "pendingTitle": "Awaiting Approval",
     "pendingDesc": "Your account is pending administrator approval. You can use the service after approval.",
     "pendingHint": "Please sign in again after approval.",
-    "logout": "Sign Out",
     "logoutFailed": "Sign out failed.",
     "nameSaved": "Name updated successfully.",
     "nameSaveFailed": "Failed to update name."
@@ -76,7 +76,6 @@
   "task": {
     "type": {
       "select_visit": "Ward Visit",
-      "select_interview": "Interview",
       "select_interview": "Interview / Meeting"
     },
     "status": {
@@ -206,7 +205,7 @@
     "calendar": "Google Calendar",
     "calendarDesc": "Shared calendar integration",
     "scheduleEdit": "Edit Schedule",
-    "scheduleDelete": "Delete Schedule",
+    "scheduleDelete": "Cancel Schedule",
     "calendarSaved": "Google Calendar saved.",
     "availabilityTitle": "Availability Settings",
     "availabilitySaved": "Availability saved.",
@@ -231,16 +230,20 @@
     "scheduleCancelWarning": "This will delete the schedule and remove it from Google Calendar. This cannot be undone.",
     "scheduleCancelSuccess": "Schedule cancelled.",
     "scheduleCancelFailed": "Failed to cancel schedule.",
-    "scheduleDelete": "Cancel Schedule",
     "calSynced": "Synced to Calendar",
     "calendarRegionLabel": "Region Calendar ID",
     "calendarDesc2": "Create a shared calendar per region and paste the Calendar ID from Google Calendar settings. Confirmed schedules are automatically added to the corresponding calendar.",
-    "scheduleEdit": "Edit Schedule",
     "scheduleEditSuccess": "Schedule updated.",
     "scheduleEditFailed": "Failed to update schedule.",
     "scheduleEditCalendarHint": "This schedule is synced to Google Calendar. Saving will automatically update the calendar event.",
     "scheduleNotesPlaceholder": "Notes (optional)",
-    "scheduleTimeError": "End time must be later than start time."
+    "scheduleTimeError": "End time must be later than start time.",
+    "publicScheduleTitle": "Public Schedule",
+    "publicScheduleDesc": "When enabled, a public link is generated so anyone can view confirmed schedules without logging in.",
+    "schedulePublicEnabled": "Public schedule enabled.",
+    "schedulePublicDisabled": "Public schedule disabled.",
+    "schedulePublicOn": "Public access on",
+    "schedulePublicOff": "Private (default)"
   },
   "visits": {
     "title": "Ward Visit Schedule",

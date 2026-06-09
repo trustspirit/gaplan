@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute'
 import RespondPage from '@/pages/respond/RespondPage'
+import PublicSchedulePage from '@/pages/public/PublicSchedulePage'
 import { RoleRoute } from './RoleRoute'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { OnboardingPage } from '@/pages/auth/OnboardingPage'
@@ -51,6 +52,7 @@ export function AppRouter() {
         </Route>
 
         <Route path="/respond/:taskId" element={<RespondPage />} />
+        <Route path="/public/schedule" element={<PublicSchedulePage />} />
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
