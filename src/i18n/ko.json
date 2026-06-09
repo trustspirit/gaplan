@@ -244,7 +244,9 @@
     "schedulePublicEnabled": "공개 일정표가 활성화되었습니다.",
     "schedulePublicDisabled": "공개 일정표가 비활성화되었습니다.",
     "schedulePublicOn": "공개 활성화됨",
-    "schedulePublicOff": "비공개 (기본값)"
+    "schedulePublicOff": "비공개 (기본값)",
+    "perUnitPublicTitle": "지방부별 공개 일정표",
+    "perUnitPublicDesc": "지방부/CCM별로 공개 여부와 공유 링크를 관리합니다."
   },
   "visits": {
     "title": "와드 방문 일정",
@@ -357,5 +359,20 @@
     "submitting": "저장 중...",
     "loginRequired": "로그인이 필요합니다.",
     "saveFailed": "저장에 실패했습니다. 다시 시도해주세요."
+  },
+  "public": {
+    "title": "일정표",
+    "scopedTitle": "{{name}} 일정표",
+    "subscribeLabel": "캘린더 구독",
+    "appleCalendar": "Apple 캘린더",
+    "googleCalendar": "Google 캘린더",
+    "loading": "불러오는 중...",
+    "empty": "확정된 일정이 없습니다.",
+    "privateError": "비공개 일정표입니다.",
+    "fetchError": "일정을 불러올 수 없습니다.",
+    "typeVisit": "와드 방문",
+    "typeInterview": "접견",
+    "typeMeeting": "모임",
+    "pastBadge": "완료"
   }
 }

@@ -244,7 +244,9 @@
     "schedulePublicEnabled": "Public schedule enabled.",
     "schedulePublicDisabled": "Public schedule disabled.",
     "schedulePublicOn": "Public access on",
-    "schedulePublicOff": "Private (default)"
+    "schedulePublicOff": "Private (default)",
+    "perUnitPublicTitle": "Per-Unit Public Schedule",
+    "perUnitPublicDesc": "Manage public access and share links per unit or CCM."
   },
   "visits": {
     "title": "Ward Visit Schedule",
@@ -357,5 +359,20 @@
     "submitting": "Saving...",
     "loginRequired": "Sign in required.",
     "saveFailed": "Failed to save. Please try again."
+  },
+  "public": {
+    "title": "Schedule",
+    "scopedTitle": "{{name}} Schedule",
+    "subscribeLabel": "Subscribe",
+    "appleCalendar": "Apple Calendar",
+    "googleCalendar": "Google Calendar",
+    "loading": "Loading...",
+    "empty": "No confirmed schedules.",
+    "privateError": "This schedule is private.",
+    "fetchError": "Could not load schedule.",
+    "typeVisit": "Ward Visit",
+    "typeInterview": "Interview",
+    "typeMeeting": "Meeting",
+    "pastBadge": "Done"
   }
 }
