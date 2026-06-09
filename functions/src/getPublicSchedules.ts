@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
+import { getScopeUnitIds, getScopeDisplayName } from './regions'
 
 interface PublicSchedule {
   id: string
@@ -17,36 +18,73 @@ interface PublicSchedule {
 
 export const getPublicSchedules = functions
   .region('asia-northeast3')
-  .https.onCall(async () => {
-    const settingsSnap = await admin.firestore().doc('settings/public').get()
-    const enabled = settingsSnap.exists && settingsSnap.data()?.schedulePublic === true
+  .https.onCall(async (data: { token?: string }) => {
+    const { token } = data ?? {}
 
-    if (!enabled) {
+    if (!token || typeof token !== 'string') {
+      throw new functions.https.HttpsError('invalid-argument', 'token is required')
+    }
+
+    // Resolve token → scopeValue
+    const tokensSnap = await admin.firestore().doc('settings/publicTokens').get()
+    const scopeValue: string | undefined = tokensSnap.exists ? tokensSnap.data()?.[token] : undefined
+
+    if (!scopeValue) {
+      throw new functions.https.HttpsError('permission-denied', 'Invalid token')
+    }
+
+    // Always check global flag
+    const settingsSnap = await admin.firestore().doc('settings/public').get()
+    const globalEnabled = settingsSnap.exists && settingsSnap.data()?.schedulePublic === true
+
+    if (!globalEnabled) {
       throw new functions.https.HttpsError('permission-denied', 'Public schedule is not enabled')
     }
 
-    const snap = await admin.firestore()
+    let unitIds: string[] | null = null
+    let scopeDisplayName: string | null = null
+
+    if (scopeValue !== '__all__') {
+      // Check per-unit flag
+      const unitsSnap = await admin.firestore().doc('settings/publicUnits').get()
+      const unitEnabled = unitsSnap.exists && unitsSnap.data()?.[scopeValue]?.enabled === true
+
+      if (!unitEnabled) {
+        throw new functions.https.HttpsError('permission-denied', 'This scope is not enabled')
+      }
+
+      unitIds = getScopeUnitIds(scopeValue)
+      scopeDisplayName = getScopeDisplayName(scopeValue) || null
+    }
+
+    // Build query
+    let query: admin.firestore.Query = admin.firestore()
       .collection('schedules')
       .where('status', '==', 'confirmed')
       .orderBy('date', 'asc')
-      .get()
+
+    if (unitIds && unitIds.length > 0) {
+      query = query.where('unitId', 'in', unitIds)
+    }
+
+    const snap = await query.get()
 
     const schedules: PublicSchedule[] = snap.docs.map((d) => {
-      const data = d.data()
+      const sd = d.data()
       return {
         id: d.id,
-        type: data.type,
-        unitId: data.unitId,
-        date: data.date,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        status: data.status,
-        ...(data.wardName ? { wardName: data.wardName } : {}),
-        ...(data.zoomLink != null ? { zoomLink: data.zoomLink } : {}),
-        ...(data.customTitle != null ? { customTitle: data.customTitle } : {}),
-        ...(data.confirmedAt ? { confirmedAt: data.confirmedAt } : {}),
+        type: sd.type,
+        unitId: sd.unitId,
+        date: sd.date,
+        startTime: sd.startTime,
+        endTime: sd.endTime,
+        status: sd.status,
+        ...(sd.wardName ? { wardName: sd.wardName } : {}),
+        ...(sd.zoomLink != null ? { zoomLink: sd.zoomLink } : {}),
+        ...(sd.customTitle != null ? { customTitle: sd.customTitle } : {}),
+        ...(sd.confirmedAt ? { confirmedAt: sd.confirmedAt } : {}),
       }
     })
 
-    return { schedules }
+    return { schedules, scopeDisplayName }
   })
