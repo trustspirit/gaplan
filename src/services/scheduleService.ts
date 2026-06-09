@@ -101,9 +101,9 @@ export interface PublicScheduleItem {
   customTitle?: string | null
 }
 
-export async function fetchPublicSchedules(): Promise<PublicScheduleItem[]> {
-  const fn = httpsCallable<void, { schedules: PublicScheduleItem[] }>(functions, 'getPublicSchedules')
-  const result = await fn()
-  return result.data.schedules
+export async function fetchPublicSchedules(token: string): Promise<{ schedules: PublicScheduleItem[]; scopeDisplayName: string | null }> {
+  const fn = httpsCallable<{ token: string }, { schedules: PublicScheduleItem[]; scopeDisplayName: string | null }>(functions, 'getPublicSchedules')
+  const result = await fn({ token })
+  return result.data
 }
 
