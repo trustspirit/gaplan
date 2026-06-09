@@ -104,8 +104,8 @@
   flex: 1;
   gap: $space-2;
   min-width: 0;
-  padding: 6px $space-2;
-  min-height: 42px;
+  padding: 7px $space-2;
+  min-height: 48px;
   transition: background 0.12s;
 
   &:hover {
@@ -117,9 +117,9 @@
   }
 
   @include mobile {
-    padding: 5px $space-2;
+    padding: 6px $space-2;
     gap: $space-1;
-    min-height: 38px;
+    min-height: 46px;
   }
 }
 
@@ -179,8 +179,12 @@
   min-width: 0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    'badge unit unit unit'
+    'badge time zoom zoom';
   align-items: center;
   column-gap: $space-2;
+  row-gap: 2px;
 
   @include mobile {
     column-gap: $space-1;
@@ -198,6 +202,9 @@
   margin-bottom: 0;
   white-space: nowrap;
   min-width: 0;
+  grid-area: badge;
+  align-self: start;
+  margin-top: 1px;
 
   .visit & {
     background: $color-sidebar;
@@ -225,13 +232,17 @@
 }
 
 .unit {
+  grid-area: unit;
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   color: $color-text;
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
   min-width: 0;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 
 .wardName {
@@ -240,13 +251,16 @@
 }
 
 .time {
+  grid-area: time;
   font-size: $font-size-xs;
   color: $color-text-muted;
   margin-top: 0;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .zoomLink {
+  grid-area: zoom;
   display: inline-flex;
   align-items: center;
   gap: 3px;
