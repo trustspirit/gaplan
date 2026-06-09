@@ -1,11 +1,10 @@
 @use '@/styles/variables' as *;
 
 .page {
-  height: 100dvh;
+  min-height: 100dvh;
   background: $color-bg;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .loading,
@@ -27,6 +26,9 @@
 // ─── Header ────────────────────────────────────────────────────────────────
 .header {
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
   background: $color-sidebar;
   color: #fff;
   padding: $space-4 $space-6;
@@ -108,9 +110,6 @@
 // ─── Main ─────────────────────────────────────────────────────────────────
 .main {
   flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   padding: $space-6;
   max-width: 720px;
   width: 100%;
