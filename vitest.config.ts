@@ -3,6 +3,8 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
+const extensions = ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.json']
+
 export default defineConfig({
   plugins: [react()],
   test: {
@@ -10,5 +12,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
   },
-  resolve: { alias: { '@': resolve(__dirname, 'src') } },
+  resolve: {
+    alias: { '@': resolve(__dirname, 'src') },
+    extensions,
+  },
 })

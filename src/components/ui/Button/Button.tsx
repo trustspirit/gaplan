@@ -20,6 +20,7 @@ export function Button({
   children,
   disabled,
   className,
+  type = 'button',
   ...props
 }: ButtonProps) {
   return (
@@ -33,6 +34,7 @@ export function Button({
       )}
       disabled={disabled || loading}
       aria-busy={loading ? 'true' : undefined}
+      type={type}
       {...props}
     >
       {loading && <Loader2 className={styles.spinner} size={14} aria-hidden="true" />}

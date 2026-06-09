@@ -25,6 +25,13 @@
   text-overflow: ellipsis;
 }
 
+.action {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .body {
   padding: $space-2 $space-4 $space-4;
 }

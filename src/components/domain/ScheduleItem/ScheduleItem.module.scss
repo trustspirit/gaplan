@@ -56,8 +56,8 @@
   }
 
   @include mobile {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
   }
 }
 
@@ -102,10 +102,10 @@
   display: flex;
   align-items: center;
   flex: 1;
-  gap: $space-3;
+  gap: $space-2;
   min-width: 0;
-  padding: $space-2 $space-3;
-  min-height: 56px;
+  padding: 6px $space-2;
+  min-height: 42px;
   transition: background 0.12s;
 
   &:hover {
@@ -117,9 +117,9 @@
   }
 
   @include mobile {
-    padding: $space-2;
-    gap: $space-2;
-    min-height: 48px;
+    padding: 5px $space-2;
+    gap: $space-1;
+    min-height: 38px;
   }
 }
 
@@ -129,9 +129,9 @@
   align-items: flex-start;
   justify-content: center;
   gap: 2px;
-  width: 72px;
-  min-width: 72px;
-  padding: 0 10px;
+  width: 58px;
+  min-width: 58px;
+  padding: 0 8px;
   border-right: 1px solid $color-border;
   flex-shrink: 0;
   background: $color-bg;
@@ -141,9 +141,9 @@
   }
 
   @include mobile {
-    width: 52px;
-    min-width: 52px;
-    padding: 0 7px;
+    width: 44px;
+    min-width: 44px;
+    padding: 0 6px;
   }
 }
 
@@ -177,6 +177,14 @@
 .info {
   flex: 1;
   min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: $space-2;
+
+  @include mobile {
+    column-gap: $space-1;
+  }
 }
 
 .typeBadge {
@@ -187,7 +195,9 @@
   color: #fff;
   border-radius: $border-radius-sm;
   padding: 1px 6px;
-  margin-bottom: 2px;
+  margin-bottom: 0;
+  white-space: nowrap;
+  min-width: 0;
 
   .visit & {
     background: $color-sidebar;
@@ -221,6 +231,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .wardName {
@@ -232,13 +243,14 @@
   font-size: $font-size-xs;
   color: $color-text-muted;
   margin-top: 0;
+  white-space: nowrap;
 }
 
 .zoomLink {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  margin-top: 3px;
+  margin-top: 0;
   font-size: $font-size-xs;
   color: #0e72ed;
   text-decoration: none;
@@ -277,7 +289,7 @@
   }
 
   @include mobile {
-    min-width: 36px;
-    min-height: 36px;
+    min-width: 32px;
+    min-height: 32px;
   }
 }

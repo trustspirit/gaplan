@@ -244,6 +244,8 @@
   },
   "visits": {
     "title": "Ward Visit Schedule",
+    "createTask": "Create Task",
+    "addSchedule": "Add Visit",
     "thisMonth": "This Month",
     "upcoming": "Upcoming",
     "completed": "Completed",
@@ -260,6 +262,8 @@
   },
   "interviews": {
     "title": "Interview Schedule",
+    "createTask": "Create Task",
+    "addSchedule": "Add Interview",
     "thisMonth": "This Month",
     "upcoming": "Upcoming",
     "completed": "Completed",

@@ -1,8 +1,7 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
 import { Calendar, CheckCircle2 } from 'lucide-react'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
@@ -15,11 +14,40 @@ import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
 import { subscribeToSharedCalendar } from '@/services/calendarService'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Skeleton, Button, Modal, BottomSheet } from '@/components/ui'
-import { TaskCard, ScheduleItem, CalendarView, TaskPickerContent, taskPickerTitle, ScheduleDateRangeFilter, ScheduleFormModal, EditScheduleModal } from '@/components/domain'
+import {
+  TaskCard,
+  ScheduleItem,
+  CalendarView,
+  TaskPickerContent,
+  taskPickerTitle,
+  ScheduleDateRangeFilter,
+  ScheduleFormModal,
+  EditScheduleModal,
+} from '@/components/domain'
 import type { Schedule } from '@/types'
 import { useWardSubmit } from '@/hooks/useWardSubmit'
 import { REGIONS } from '@/constants/regions'
 import styles from './DashboardPage.module.scss'
+
+const isConfirmedSchedule = (schedule: Schedule) => schedule.status === 'confirmed'
+
+const sortSchedulesByDate = (a: Schedule, b: Schedule) =>
+  a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime)
+
+const getUpcomingSchedules = (schedules: Schedule[]) =>
+  schedules
+    .filter(
+      (schedule) =>
+        isConfirmedSchedule(schedule) && dayjs(schedule.date).isAfter(dayjs().subtract(1, 'day')),
+    )
+    .sort(sortSchedulesByDate)
+
+const getThisMonthScheduleCount = (schedules: Schedule[]) =>
+  schedules.filter(
+    (schedule) =>
+      isConfirmedSchedule(schedule) &&
+      dayjs(schedule.date).format('YYYY-M') === dayjs().format('YYYY-M'),
+  ).length
 
 function CalendarBanner({ connected }: { connected?: boolean }) {
   const { t } = useTranslation()
@@ -40,9 +68,7 @@ function CalendarBanner({ connected }: { connected?: boolean }) {
   return (
     <div className={styles.calendarBanner}>
       <Calendar size={16} color="var(--color-primary, #177C9C)" />
-      <span className={styles.calendarBannerText}>
-        {t('schedule.calendarBannerText')}
-      </span>
+      <span className={styles.calendarBannerText}>{t('schedule.calendarBannerText')}</span>
       {connected ? (
         <div className={styles.calendarConnected}>
           <CheckCircle2 size={14} />
@@ -57,6 +83,55 @@ function CalendarBanner({ connected }: { connected?: boolean }) {
   )
 }
 
+interface ScheduleListCardProps {
+  schedules: Schedule[]
+  loading?: boolean
+  action?: ReactNode
+  showCalendarAdd?: boolean
+  canEdit?: boolean
+  getUnitName: (unitId: string) => string
+  onEdit?: (schedule: Schedule) => void
+  onDelete?: (schedule: Schedule) => void
+}
+
+function ScheduleListCard({
+  schedules,
+  loading,
+  action,
+  showCalendarAdd,
+  canEdit,
+  getUnitName,
+  onEdit,
+  onDelete,
+}: ScheduleListCardProps) {
+  const { t } = useTranslation()
+
+  return (
+    <Card>
+      <CardHeader title={t('schedule.upcoming')} action={action} />
+      <CardBody>
+        {loading ? (
+          [1, 2].map((i) => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
+        ) : schedules.length === 0 ? (
+          <p className={styles.empty}>{t('schedule.noUpcoming')}</p>
+        ) : (
+          schedules.map((schedule) => (
+            <ScheduleItem
+              key={schedule.id}
+              schedule={schedule}
+              unitName={getUnitName(schedule.unitId)}
+              showCalendarAdd={showCalendarAdd}
+              canEdit={canEdit}
+              onEdit={onEdit ? () => onEdit(schedule) : undefined}
+              onDelete={onDelete ? () => onDelete(schedule) : undefined}
+            />
+          ))
+        )}
+      </CardBody>
+    </Card>
+  )
+}
+
 function PresidentDashboard() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
@@ -65,18 +140,20 @@ function PresidentDashboard() {
   const { getUnitName } = useUnits()
   const isMobile = useIsMobile()
   const {
-    activeTask, selectedSlot: _selectedSlot,
-    selectedSlots, toggleSlot, isSlotSelected,
-    submitting, availableSlots,
-    openTask, closeTask, handleSubmitAvailability,
+    activeTask,
+    selectedSlots,
+    toggleSlot,
+    isSlotSelected,
+    submitting,
+    availableSlots,
+    openTask,
+    closeTask,
+    handleSubmitAvailability,
   } = useTaskConfirm(user.uid, user.unitId)
 
   const { handleSubmitWards, wardSubmitting } = useWardSubmit(activeTask, closeTask)
 
-  const upcoming = schedules
-    .filter(s => s.status === 'confirmed' && dayjs(s.date).isAfter(dayjs().subtract(1, 'day')))
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 5)
+  const upcoming = getUpcomingSchedules(schedules).slice(0, 5)
 
   const pickerTitle = taskPickerTitle(activeTask)
 
@@ -97,36 +174,39 @@ function PresidentDashboard() {
 
   return (
     <AppShell
-      role={user.role} name={user.name}
-      topBar={<TopBar name={user.name} subtext={dayjs().format('YYYY년 M월')} pendingCount={tasks.length} />}
+      role={user.role}
+      name={user.name}
+      topBar={
+        <TopBar
+          name={user.name}
+          subtext={dayjs().format('YYYY년 M월')}
+          pendingCount={tasks.length}
+        />
+      }
     >
       <div className={styles.layout}>
         <div className={styles.mainCol}>
           <Card>
             <CardHeader title={t('task.needsAction')} />
             <CardBody>
-              {tasksLoading
-                ? [1, 2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
-                : tasks.length === 0
-                  ? <p className={styles.empty}>{t('task.noTasks')}</p>
-                  : tasks.map(t => <TaskCard key={t.id} task={t} onAction={openTask} />)
-              }
+              {tasksLoading ? (
+                [1, 2].map((i) => (
+                  <Skeleton key={i} height="44px" className={styles.skeletonItem} />
+                ))
+              ) : tasks.length === 0 ? (
+                <p className={styles.empty}>{t('task.noTasks')}</p>
+              ) : (
+                tasks.map((t) => <TaskCard key={t.id} task={t} onAction={openTask} />)
+              )}
             </CardBody>
           </Card>
 
-          <Card>
-            <CardHeader title={t('schedule.upcoming')} />
-            <CardBody>
-              {schedulesLoading
-                ? [1, 2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
-                : upcoming.length === 0
-                  ? <p className={styles.empty}>{t('schedule.noUpcoming')}</p>
-                  : upcoming.map(s => (
-                      <ScheduleItem key={s.id} schedule={s} unitName={getUnitName(s.unitId)} showCalendarAdd />
-                    ))
-              }
-            </CardBody>
-          </Card>
+          <ScheduleListCard
+            schedules={upcoming}
+            loading={schedulesLoading}
+            getUnitName={getUnitName}
+            showCalendarAdd
+          />
         </div>
 
         <div className={styles.sideCol}>
@@ -160,49 +240,33 @@ function SeventyDashboard() {
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
   const regionIds = user.regionIds ?? (user.regionId ? [user.regionId] : [])
-  const regionName = regionIds
-    .map(id => REGIONS.find(r => r.id === id)?.name ?? id)
-    .join(', ')
+  const regionName = regionIds.map((id) => REGIONS.find((r) => r.id === id)?.name ?? id).join(', ')
 
-  const upcoming = schedules
-    .filter(s => s.status === 'confirmed' && dayjs(s.date).isAfter(dayjs().subtract(1, 'day')))
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 10)
-
-  const thisMonthCount = schedules.filter(
-    s => s.status === 'confirmed' && dayjs(s.date).format('YYYY-M') === dayjs().format('YYYY-M')
-  ).length
+  const upcoming = getUpcomingSchedules(schedules).slice(0, 10)
+  const thisMonthCount = getThisMonthScheduleCount(schedules)
 
   return (
     <AppShell
-      role={user.role} name={user.name}
+      role={user.role}
+      name={user.name}
       topBar={<TopBar name={user.name} subtext={regionName} />}
     >
       <div className={styles.layout}>
         <div className={styles.mainCol}>
           <CalendarBanner connected={user.calendarConnected} />
 
-          <Card>
-            <CardHeader
-              title={t('schedule.upcoming')}
-              action={<span style={{ fontSize: '0.8125rem', color: '#808081' }}>{t('schedule.thisMonth', { count: thisMonthCount })}</span>}
-            />
-            <CardBody>
-              {upcoming.length === 0
-                ? <p className={styles.empty}>{t('schedule.noUpcoming')}</p>
-                : upcoming.map(s => (
-                    <ScheduleItem
-                      key={s.id}
-                      schedule={s}
-                      unitName={getUnitName(s.unitId)}
-                      canEdit
-                      onEdit={() => setEditTarget(s)}
-                      onDelete={() => setDeleteTarget(s)}
-                    />
-                  ))
-              }
-            </CardBody>
-          </Card>
+          <ScheduleListCard
+            schedules={upcoming}
+            action={
+              <span className={styles.headerCount}>
+                {t('schedule.thisMonth', { count: thisMonthCount })}
+              </span>
+            }
+            getUnitName={getUnitName}
+            canEdit
+            onEdit={setEditTarget}
+            onDelete={setDeleteTarget}
+          />
         </div>
 
         <div className={styles.sideCol}>
@@ -244,50 +308,45 @@ function AdminDashboardContent() {
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
 
-  const thisMonth = schedules.filter(
-    s => s.status === 'confirmed' && dayjs(s.date).format('YYYY-M') === dayjs().format('YYYY-M')
-  )
+  const thisMonthCount = getThisMonthScheduleCount(schedules)
   const upcoming = schedules
-    .filter(s => s.status === 'confirmed' && s.date >= range.start && s.date <= range.end)
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .filter(
+      (schedule) =>
+        isConfirmedSchedule(schedule) && schedule.date >= range.start && schedule.date <= range.end,
+    )
+    .sort(sortSchedulesByDate)
     .slice(0, 8)
 
   return (
     <AppShell
-      role={user.role} name={user.name}
+      role={user.role}
+      name={user.name}
       topBar={<TopBar name={user.name} subtext={t('admin.dashboard')} />}
     >
       <div className={styles.layout}>
         <div className={styles.mainCol}>
-          <ScheduleDateRangeFilter setting={rangeSetting} currentRange={range} onChange={saveRange} />
-          <Card>
-            <CardHeader
-              title={t('schedule.upcoming')}
-              action={
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8125rem', color: '#808081' }}>{t('schedule.thisMonth', { count: thisMonth.length })}</span>
-                  <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
-                    + {t('schedule.newTitle')}
-                  </Button>
-                </div>
-              }
-            />
-            <CardBody>
-              {upcoming.length === 0
-                ? <p className={styles.empty}>{t('schedule.noUpcoming')}</p>
-                : upcoming.map(s => (
-                    <ScheduleItem
-                      key={s.id}
-                      schedule={s}
-                      unitName={getUnitName(s.unitId)}
-                      canEdit
-                      onEdit={() => setEditTarget(s)}
-                      onDelete={() => setDeleteTarget(s)}
-                    />
-                  ))
-              }
-            </CardBody>
-          </Card>
+          <ScheduleDateRangeFilter
+            setting={rangeSetting}
+            currentRange={range}
+            onChange={saveRange}
+          />
+          <ScheduleListCard
+            schedules={upcoming}
+            action={
+              <div className={styles.headerActions}>
+                <span className={styles.headerCount}>
+                  {t('schedule.thisMonth', { count: thisMonthCount })}
+                </span>
+                <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
+                  + {t('schedule.newTitle')}
+                </Button>
+              </div>
+            }
+            getUnitName={getUnitName}
+            canEdit
+            onEdit={setEditTarget}
+            onDelete={setDeleteTarget}
+          />
         </div>
 
         <div className={styles.sideCol}>
@@ -303,7 +362,10 @@ function AdminDashboardContent() {
       {formOpen && (
         <ScheduleFormModal
           onClose={() => setFormOpen(false)}
-          onSaved={() => { setFormOpen(false); toast.success(t('schedule.savedSuccess')) }}
+          onSaved={() => {
+            setFormOpen(false)
+            toast.success(t('schedule.savedSuccess'))
+          }}
         />
       )}
       {editTarget && (

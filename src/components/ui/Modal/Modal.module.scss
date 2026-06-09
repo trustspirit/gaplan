@@ -2,10 +2,15 @@
 @use '@/styles/mixins' as *;
 
 .overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.45);
-  display: flex; align-items: center; justify-content: center;
-  z-index: $z-modal; padding: $space-4;
+  position: fixed;
+  inset: 0;
+  overflow-x: hidden;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: $z-modal;
+  padding: $space-4;
 
   @include mobile {
     align-items: flex-end;
@@ -13,10 +18,16 @@
   }
 }
 .modal {
-  background: $color-surface; border-radius: $border-radius-xl;
+  background: $color-surface;
+  border-radius: $border-radius-xl;
   box-shadow: $shadow-popped;
-  width: 100%; max-width: 480px; max-height: 90vh;
-  display: flex; flex-direction: column; overflow: hidden;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 
   @include mobile {
     border-radius: 16px 16px 0 0;
@@ -25,15 +36,32 @@
   }
 }
 .header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: $space-4 $space-4 $space-3; border-bottom: 1px solid $color-border;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $space-4 $space-4 $space-3;
+  border-bottom: 1px solid $color-border;
   flex-shrink: 0;
+  min-width: 0;
 }
-.title { font-size: $font-size-md; font-weight: $font-weight-semibold; color: $color-text; }
+.title {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .close {
   @include flex-center;
-  width: 32px; height: 32px; border-radius: $border-radius-md; color: $color-text-muted;
-  &:hover { background: $color-border; }
+  width: 32px;
+  height: 32px;
+  border-radius: $border-radius-md;
+  color: $color-text-muted;
+  &:hover {
+    background: $color-border;
+  }
 }
 .body {
   padding: $space-4;
@@ -41,5 +69,6 @@
   overflow-y: auto;
   overflow-x: hidden;
   flex: 1;
+  min-width: 0;
   -webkit-overflow-scrolling: touch;
 }

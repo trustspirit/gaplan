@@ -25,5 +25,6 @@ dist-ssr
 .env
 
 # Compiled test artifacts
+*.tsbuildinfo
 src/**/*.test.js
 src/**/*.test.js.map

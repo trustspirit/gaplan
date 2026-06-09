@@ -91,6 +91,7 @@
   top: 50%;
   left: 50%;
   flex-shrink: 0;
+  transform: translate(-50%, -50%);
   animation: spin 0.8s linear infinite;
 }
 

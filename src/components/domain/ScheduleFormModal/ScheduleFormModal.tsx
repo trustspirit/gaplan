@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { httpsCallable } from 'firebase/functions'
 import { useAtomValue } from 'jotai'
@@ -21,7 +21,12 @@ interface ScheduleFormModalProps {
   onSaved: () => void
 }
 
-export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }: ScheduleFormModalProps) {
+export function ScheduleFormModal({
+  initialDate,
+  initialType,
+  onClose,
+  onSaved,
+}: ScheduleFormModalProps) {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { users } = useUsers()
@@ -40,44 +45,80 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Reset unit/ward/president when seventy changes (skip on initial mount)
-  const isFirstSeventyChange = useRef(true)
-  useEffect(() => {
-    if (isFirstSeventyChange.current) { isFirstSeventyChange.current = false; return }
-    setUnitId(''); setWardName(''); setPresidentUid('')
-  }, [seventyUid])
-
-  // Reset ward and president when stake changes
-  useEffect(() => { setWardName(''); setPresidentUid('') }, [unitId])
-
   // Close on Escape key
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [onClose])
 
-  const seventyUsers = users.filter(u => u.role === 'seventy')
-  const selectedSeventy = users.find(u => u.uid === seventyUid)
-  const seventyRegionIds = selectedSeventy?.regionIds ?? (selectedSeventy?.regionId ? [selectedSeventy.regionId] : [])
-  const unitPool = seventyRegionIds.length > 0
-    ? ALL_UNITS.filter(u => seventyRegionIds.includes(u.regionId ?? ''))
-    : ALL_UNITS
-  const unitOptions = unitPool.map(u => ({ value: u.id, label: u.name }))
-  const wardOptions = unitId ? getWardsByUnit(unitId).map(w => ({ value: w.name, label: w.name })) : []
-  const seventyOptions = seventyUsers.map(u => ({ value: u.uid, label: u.preRegistered ? u.name : `${u.name} ✓` }))
+  const handleTypeChange = (nextType: ScheduleType) => {
+    setType(nextType)
+    setUnitId('')
+    setWardName('')
+    setPresidentUid('')
+    setZoomLink('')
+    setCustomTitle('')
+  }
+
+  const handleSeventyChange = (nextSeventyUid: string) => {
+    setSeventyUid(nextSeventyUid)
+    setUnitId('')
+    setWardName('')
+    setPresidentUid('')
+  }
+
+  const handleUnitChange = (nextUnitId: string) => {
+    setUnitId(nextUnitId)
+    setWardName('')
+    setPresidentUid('')
+  }
+
+  const seventyUsers = users.filter((u) => u.role === 'seventy')
+  const selectedSeventy = users.find((u) => u.uid === seventyUid)
+  const seventyRegionIds =
+    selectedSeventy?.regionIds ?? (selectedSeventy?.regionId ? [selectedSeventy.regionId] : [])
+  const unitPool =
+    seventyRegionIds.length > 0
+      ? ALL_UNITS.filter((u) => seventyRegionIds.includes(u.regionId ?? ''))
+      : ALL_UNITS
+  const unitOptions = unitPool.map((u) => ({ value: u.id, label: u.name }))
+  const wardOptions = unitId
+    ? getWardsByUnit(unitId).map((w) => ({ value: w.name, label: w.name }))
+    : []
+  const seventyOptions = seventyUsers.map((u) => ({
+    value: u.uid,
+    label: u.preRegistered ? u.name : `${u.name} ✓`,
+  }))
   const presidentOptions = users
-    .filter(u => u.role === 'president' && u.unitId === unitId && !!unitId)
-    .map(u => ({ value: u.uid, label: u.preRegistered ? u.name : `${u.name} ✓` }))
+    .filter((u) => u.role === 'president' && u.unitId === unitId && !!unitId)
+    .map((u) => ({ value: u.uid, label: u.preRegistered ? u.name : `${u.name} ✓` }))
 
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault()
     setError(null)
-    if (!date || !startTime || !endTime) { setError(t('schedule.errorDateTimeRequired')); return }
-    if (startTime >= endTime) { setError(t('admin.scheduleTimeError')); return }
-    if (user.role === 'admin' && !seventyUid) { setError(t('schedule.errorSeventyRequired')); return }
-    if (type === 'ward_visit' && (!unitId || !wardName)) { setError(t('schedule.errorStakeWardRequired')); return }
-    if (type === 'interview' && !unitId) { setError(t('schedule.errorStakeRequired')); return }
+    if (!date || !startTime || !endTime) {
+      setError(t('schedule.errorDateTimeRequired'))
+      return
+    }
+    if (startTime >= endTime) {
+      setError(t('admin.scheduleTimeError'))
+      return
+    }
+    if (user.role === 'admin' && !seventyUid) {
+      setError(t('schedule.errorSeventyRequired'))
+      return
+    }
+    if (type === 'ward_visit' && (!unitId || !wardName)) {
+      setError(t('schedule.errorStakeWardRequired'))
+      return
+    }
+    if (type === 'interview' && !unitId) {
+      setError(t('schedule.errorStakeRequired'))
+      return
+    }
 
     setSaving(true)
     try {
@@ -112,10 +153,20 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
 
   return createPortal(
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.sheet} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
+      <div
+        className={styles.sheet}
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className={styles.header}>
           <h3 className={styles.title}>{t('schedule.newTitle')}</h3>
-          <button type="button" onClick={onClose} className={styles.closeBtn} aria-label={t('common.close')}>
+          <button
+            type="button"
+            onClick={onClose}
+            className={styles.closeBtn}
+            aria-label={t('common.close')}
+          >
             <X size={18} />
           </button>
         </div>
@@ -123,12 +174,12 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
         {/* Type segmented control — hidden when initialType is locked */}
         {!initialType && (
           <div className={styles.segmented}>
-            {TYPE_TABS.map(tab => (
+            {TYPE_TABS.map((tab) => (
               <button
                 key={tab.value}
                 type="button"
                 className={type === tab.value ? styles.segBtnActive : styles.segBtn}
-                onClick={() => { setType(tab.value); setUnitId(''); setWardName(''); setPresidentUid(''); setZoomLink(''); setCustomTitle('') }}
+                onClick={() => handleTypeChange(tab.value)}
               >
                 {tab.label}
               </button>
@@ -145,16 +196,18 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
               <Select
                 label={t('schedule.seventyLabel')}
                 value={seventyUid}
-                onChange={e => setSeventyUid(e.target.value)}
+                onChange={(e) => handleSeventyChange(e.target.value)}
                 options={seventyOptions}
               />
             )}
 
             {/* Stake/District — required for ward_visit/interview, optional for meeting */}
             <Select
-              label={type === 'meeting' ? t('schedule.stakeLabelOptional') : t('schedule.stakeLabel')}
+              label={
+                type === 'meeting' ? t('schedule.stakeLabelOptional') : t('schedule.stakeLabel')
+              }
               value={unitId}
-              onChange={e => setUnitId(e.target.value)}
+              onChange={(e) => handleUnitChange(e.target.value)}
               options={unitOptions}
             />
 
@@ -163,7 +216,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
               <Select
                 label={t('schedule.wardLabel')}
                 value={wardName}
-                onChange={e => setWardName(e.target.value)}
+                onChange={(e) => setWardName(e.target.value)}
                 options={wardOptions}
                 disabled={!unitId}
               />
@@ -174,7 +227,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
               <Select
                 label={t('schedule.presidentLabelOptional')}
                 value={presidentUid}
-                onChange={e => setPresidentUid(e.target.value)}
+                onChange={(e) => setPresidentUid(e.target.value)}
                 options={presidentOptions}
                 disabled={!unitId}
               />
@@ -184,7 +237,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
               type="date"
               label={t('schedule.dateLabel')}
               value={date}
-              onChange={e => setDate(e.target.value)}
+              onChange={(e) => setDate(e.target.value)}
             />
 
             <div className={styles.timeRow}>
@@ -192,13 +245,13 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
                 type="time"
                 label={t('common.startTime')}
                 value={startTime}
-                onChange={e => setStartTime(e.target.value)}
+                onChange={(e) => setStartTime(e.target.value)}
               />
               <Input
                 type="time"
                 label={t('common.endTime')}
                 value={endTime}
-                onChange={e => setEndTime(e.target.value)}
+                onChange={(e) => setEndTime(e.target.value)}
               />
             </div>
 
@@ -206,7 +259,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
               <Input
                 label={t('schedule.customTitleOptional')}
                 value={customTitle}
-                onChange={e => setCustomTitle(e.target.value)}
+                onChange={(e) => setCustomTitle(e.target.value)}
                 placeholder={t('schedule.customTitlePlaceholder')}
               />
             )}
@@ -216,7 +269,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
                 label={t('schedule.zoomLinkOptional')}
                 type="url"
                 value={zoomLink}
-                onChange={e => setZoomLink(e.target.value)}
+                onChange={(e) => setZoomLink(e.target.value)}
                 placeholder="https://zoom.us/j/..."
               />
             )}
@@ -226,7 +279,7 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
               <textarea
                 className={styles.textarea}
                 value={notes}
-                onChange={e => setNotes(e.target.value)}
+                onChange={(e) => setNotes(e.target.value)}
                 placeholder={t('schedule.notesLabelOptional')}
                 rows={3}
               />
@@ -234,12 +287,16 @@ export function ScheduleFormModal({ initialDate, initialType, onClose, onSaved }
           </div>
 
           <div className={styles.footer}>
-            <Button variant="ghost" onClick={onClose} disabled={saving}>{t('common.cancel')}</Button>
-            <Button type="submit" loading={saving}>{t('schedule.saveBtn')}</Button>
+            <Button variant="ghost" onClick={onClose} disabled={saving}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" loading={saving}>
+              {t('schedule.saveBtn')}
+            </Button>
           </div>
         </form>
       </div>
     </div>,
-    document.body
+    document.body,
   )
 }

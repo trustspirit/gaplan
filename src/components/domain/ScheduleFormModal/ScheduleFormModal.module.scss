@@ -4,6 +4,7 @@
 .overlay {
   position: fixed;
   inset: 0;
+  overflow-x: hidden;
   background: rgba(0, 0, 0, 0.45);
   z-index: 200;
   display: flex;
@@ -12,8 +13,12 @@
   animation: fadeIn 0.18s ease;
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @include mobile {
@@ -27,24 +32,36 @@
   width: 100%;
   max-width: 460px;
   max-height: 90vh;
+  min-width: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   box-shadow: $shadow-popped;
   animation: slideUp 0.22s cubic-bezier(0.32, 0.72, 0, 1);
 
   @keyframes slideUp {
-    from { transform: translateY(16px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+      transform: translateY(16px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 
   @keyframes slideUpMobile {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
   }
 
   @include mobile {
     border-radius: $border-radius-lg $border-radius-lg 0 0;
     max-height: 92vh;
-    max-width: 100%;
+    max-width: 100dvw;
     animation: slideUpMobile 0.28s cubic-bezier(0.32, 0.72, 0, 1);
   }
 }
@@ -53,6 +70,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: $space-2;
+  min-width: 0;
   padding: $space-5 $space-5 $space-4;
   border-bottom: 1px solid $color-border;
 }
@@ -62,6 +81,10 @@
   font-weight: $font-weight-semibold;
   color: $color-text;
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .closeBtn {
@@ -70,26 +93,39 @@
   justify-content: center;
   width: 44px;
   height: 44px;
+  flex-shrink: 0;
   border: none;
   background: none;
   border-radius: $border-radius-md;
   cursor: pointer;
   color: $color-text-muted;
-  &:hover { background: $color-bg; color: $color-text; }
+  &:hover {
+    background: $color-bg;
+    color: $color-text;
+  }
+}
+
+form {
+  min-width: 0;
 }
 
 .segmented {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: $space-1;
   padding: $space-4 $space-5 $space-3;
   background: $color-bg;
   border-bottom: 1px solid $color-border;
+
+  @include mobile {
+    padding: $space-3;
+  }
 }
 
 .segBtn {
-  flex: 1;
   padding: $space-2 $space-3;
   min-height: 44px;
+  min-width: 0;
   border: none;
   border-radius: $border-radius-sm;
   font-size: $font-size-sm;
@@ -97,8 +133,20 @@
   color: $color-text-muted;
   background: none;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  &:hover { background: $color-surface; color: $color-text; }
+  transition:
+    background 0.15s,
+    color 0.15s;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  &:hover {
+    background: $color-surface;
+    color: $color-text;
+  }
+
+  @include mobile {
+    padding: $space-2 $space-1;
+    font-size: $font-size-xs;
+  }
 }
 
 .segBtnActive {
@@ -122,12 +170,21 @@
   flex-direction: column;
   gap: $space-4;
   padding: $space-4 $space-5;
+  min-width: 0;
+
+  @include mobile {
+    padding: $space-3;
+  }
 }
 
 .timeRow {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: $space-3;
+
+  @include mobile {
+    gap: $space-2;
+  }
 }
 
 .fieldGroup {
@@ -144,6 +201,7 @@
 
 .textarea {
   width: 100%;
+  min-width: 0;
   padding: $space-2 $space-3;
   border: 1px solid $color-border;
   border-radius: $border-radius-md;
@@ -155,8 +213,12 @@
   outline: none;
   line-height: $line-height-loose;
   min-height: 44px;
-  &:focus { border-color: $color-primary; }
-  &::placeholder { color: $color-text-muted; }
+  &:focus {
+    border-color: $color-primary;
+  }
+  &::placeholder {
+    color: $color-text-muted;
+  }
 }
 
 .footer {
@@ -165,4 +227,15 @@
   gap: $space-3;
   padding: $space-4 $space-5;
   border-top: 1px solid $color-border;
+
+  @include mobile {
+    gap: $space-2;
+    padding: $space-3;
+
+    :global(button) {
+      flex: 1;
+      align-self: stretch;
+      min-width: 0;
+    }
+  }
 }

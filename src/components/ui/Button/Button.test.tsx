@@ -13,6 +13,20 @@ describe('Button', () => {
     await userEvent.click(screen.getByRole('button'))
     expect(onClick).toHaveBeenCalledTimes(1)
   })
+
+  it('does not submit a parent form by default', async () => {
+    const onSubmit = vi.fn((event: React.FormEvent) => event.preventDefault())
+    render(
+      <form onSubmit={onSubmit}>
+        <Button>취소</Button>
+      </form>,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: '취소' }))
+
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
   it('is disabled when loading', () => {
     render(<Button loading>확인</Button>)
     expect(screen.getByRole('button')).toBeDisabled()

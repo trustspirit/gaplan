@@ -3,9 +3,12 @@
 
 .layout {
   display: flex;
-  gap: $space-6;
-  padding: $space-6;
   align-items: flex-start;
+  gap: $space-6;
+  width: 100%;
+  min-width: 0;
+  padding: $space-6;
+  overflow-x: hidden;
 
   @media (min-width: 1200px) {
     padding: $space-8;
@@ -13,35 +16,37 @@
 
   @include mobile {
     flex-direction: column;
-    padding: $space-3;
     gap: $space-3;
+    padding: $space-3;
     padding-bottom: calc(#{$bottom-tab-height} + #{$space-3});
   }
 }
 
 .mainCol {
   flex: 1;
-  min-width: 0;
   width: 100%;
+  min-width: 0;
 }
 
 .sideCol {
   flex: 0 0 300px;
   width: 300px;
+  min-width: 0;
 
   @include mobile {
+    order: -1;
     flex: none;
     width: 100%;
-    order: -1;
   }
 }
 
 .sideCard {
+  overflow: hidden;
+  min-width: 0;
   background: $color-surface;
   border: 1px solid $color-border;
   border-radius: $border-radius-lg;
   box-shadow: $shadow-raised;
-  overflow: hidden;
 }
 
 .sideCardHeader {
@@ -54,22 +59,13 @@
 
 .sideCardBody {
   padding: $space-2 0;
-
-  @include mobile {
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding: 0;
-    &::-webkit-scrollbar { display: none; }
-  }
 }
 
 .upcomingItem {
   display: flex;
   align-items: center;
   gap: $space-3;
+  min-width: 0;
   padding: $space-3 $space-4;
   border-bottom: 1px solid $color-border;
 
@@ -78,35 +74,31 @@
   }
 
   @include mobile {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: $space-1;
-    padding: $space-3;
-    border-bottom: none;
-    border-right: 1px solid $color-border;
-    flex-shrink: 0;
-    min-width: 120px;
-
-    &:last-child {
-      border-right: none;
-    }
+    gap: $space-2;
+    padding: $space-2 $space-3;
   }
 }
 
 .upcomingDate {
+  min-width: 72px;
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
   color: $color-primary;
   white-space: nowrap;
-  min-width: 72px;
+
+  @include mobile {
+    min-width: 64px;
+  }
 }
 
 .upcomingUnit {
+  min-width: 0;
+  overflow: hidden;
   font-size: $font-size-sm;
   color: $color-text;
-  overflow: hidden;
-  white-space: nowrap;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .upcomingWard {
@@ -121,14 +113,32 @@
   text-align: center;
 }
 
+.pageHeader {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-2;
+  min-width: 0;
+  margin-bottom: $space-3;
+
+  @include mobile {
+    flex-wrap: wrap;
+
+    :global(button) {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+}
+
 .stats {
   display: flex;
   align-items: center;
+  min-width: 0;
+  padding: $space-4 0;
+  margin-bottom: $space-4;
   background: $color-surface;
   border: 1px solid $color-border;
   border-radius: $border-radius-lg;
-  padding: $space-4 0;
-  margin-bottom: $space-4;
   box-shadow: $shadow-raised;
 
   @include mobile {
@@ -138,24 +148,29 @@
 }
 
 .statCard {
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
+  min-width: 0;
   gap: $space-1;
 }
 
 .statValue {
   font-size: $font-size-lg;
   font-weight: $font-weight-bold;
-  color: $color-text;
   line-height: 1;
+  color: $color-text;
 }
 
 .statLabel {
+  max-width: 100%;
+  overflow: hidden;
   font-size: $font-size-xs;
-  color: $color-text-muted;
   font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .statDivider {
@@ -167,45 +182,55 @@
 .tabBar {
   display: flex;
   gap: $space-1;
+  min-width: 0;
   margin-bottom: $space-4;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
 
   @include mobile {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     margin-bottom: $space-3;
   }
 }
 
 .tabBtn {
-  padding: $space-2 $space-4;
+  min-width: 0;
   min-height: 44px;
-  border-radius: $border-radius-full;
-  border: 1px solid $color-border;
-  background: $color-surface;
+  padding: $space-2 $space-4;
+  overflow: hidden;
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   color: $color-text-muted;
-  cursor: pointer;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  cursor: pointer;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-full;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
 
   &:hover {
-    background: $color-bg;
     color: $color-text;
+    background: $color-bg;
   }
 
   &[data-active='true'] {
+    color: #fff;
     background: $color-primary;
     border-color: $color-primary;
-    color: #fff;
+  }
+
+  @include mobile {
+    padding: $space-2;
   }
 }
 
 .content {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   gap: $space-5;
 
   @include mobile {
@@ -216,24 +241,26 @@
 .monthGroup {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   gap: $space-2;
 }
 
 .monthLabel {
+  padding-bottom: $space-2;
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
   color: $color-text-muted;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding-bottom: $space-2;
+  letter-spacing: 0;
   border-bottom: 1px solid $color-border;
 }
 
 .itemList {
+  overflow: hidden;
+  min-width: 0;
   background: $color-surface;
   border: 1px solid $color-border;
   border-radius: $border-radius-lg;
-  overflow: hidden;
   box-shadow: $shadow-raised;
 }
 
@@ -242,14 +269,15 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-width: 0;
   padding: $space-12 $space-4;
   color: $color-text-muted;
   gap: $space-2;
 }
 
 .emptyIcon {
-  color: $color-text-light;
   margin-bottom: $space-2;
+  color: $color-text-light;
 }
 
 .emptyTitle {
@@ -262,11 +290,4 @@
   font-size: $font-size-sm;
   color: $color-text-muted;
   text-align: center;
-}
-
-.pageHeader {
-  display: flex;
-  justify-content: flex-end;
-  gap: $space-2;
-  margin-bottom: $space-3;
 }

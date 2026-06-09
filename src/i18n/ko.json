@@ -242,6 +242,8 @@
   },
   "visits": {
     "title": "와드 방문 일정",
+    "createTask": "태스크 생성",
+    "addSchedule": "방문 일정 추가",
     "thisMonth": "이번 달 방문",
     "upcoming": "예정 방문",
     "completed": "완료 방문",
@@ -258,6 +260,8 @@
   },
   "interviews": {
     "title": "접견 일정",
+    "createTask": "태스크 생성",
+    "addSchedule": "접견 일정 추가",
     "thisMonth": "이번 달 접견",
     "upcoming": "예정 접견",
     "completed": "완료 접견",
