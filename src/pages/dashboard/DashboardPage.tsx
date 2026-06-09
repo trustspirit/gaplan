@@ -313,17 +313,20 @@ function AdminDashboardContent() {
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
   const [schedulePublic, setSchedulePublic] = useState(false)
   const [publicCopied, setPublicCopied] = useState(false)
+  const [globalToken, setGlobalToken] = useState<string | null>(null)
 
-  const publicUrl = `${window.location.origin}/public/schedule`
+  const publicUrl = globalToken ? `${window.location.origin}/public/schedule/${globalToken}` : null
 
   useEffect(() => {
     getDoc(doc(db, 'settings', 'public')).then((snap) => {
-      setSchedulePublic(snap.data()?.schedulePublic === true)
+      const data = snap.data()
+      setSchedulePublic(data?.schedulePublic === true)
+      if (data?.globalToken) setGlobalToken(data.globalToken as string)
     })
   }, [])
 
   const handlePublicAction = () => {
-    if (schedulePublic) {
+    if (schedulePublic && publicUrl) {
       navigator.clipboard.writeText(publicUrl).then(() => {
         setPublicCopied(true)
         toast.success(t('common.copyLink'))
