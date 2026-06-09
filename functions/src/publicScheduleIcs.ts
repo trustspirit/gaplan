@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
+import { getScopeUnitIds, getScopeDisplayName } from './regions'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -46,25 +47,56 @@ export const publicScheduleIcs = functions
     res.setHeader('Cache-Control', 'public, max-age=3600')
 
     try {
-      const settingsSnap = await admin.firestore().doc('settings/public').get()
-      const enabled = settingsSnap.exists && settingsSnap.data()?.schedulePublic === true
+      const token = req.query.token
+      if (!token || typeof token !== 'string') {
+        res.status(403).send('token required')
+        return
+      }
 
-      if (!enabled) {
+      const tokensSnap = await admin.firestore().doc('settings/publicTokens').get()
+      const scopeValue: string | undefined = tokensSnap.exists ? tokensSnap.data()?.[token] : undefined
+      if (!scopeValue) {
+        res.status(403).send('Invalid token')
+        return
+      }
+
+      const settingsSnap = await admin.firestore().doc('settings/public').get()
+      const globalEnabled = settingsSnap.exists && settingsSnap.data()?.schedulePublic === true
+      if (!globalEnabled) {
         res.status(403).send('Public schedule is not enabled')
         return
       }
 
-      const [schedulesSnap, unitsSnap] = await Promise.all([
-        admin.firestore()
-          .collection('schedules')
-          .where('status', '==', 'confirmed')
-          .orderBy('date', 'asc')
-          .get(),
+      let unitIds: string[] | null = null
+      let calName = '일정표'
+
+      if (scopeValue !== '__all__') {
+        const unitsSnap = await admin.firestore().doc('settings/publicUnits').get()
+        const unitEnabled = unitsSnap.exists && unitsSnap.data()?.[scopeValue]?.enabled === true
+        if (!unitEnabled) {
+          res.status(403).send('This scope is not enabled')
+          return
+        }
+        unitIds = getScopeUnitIds(scopeValue)
+        calName = getScopeDisplayName(scopeValue) || '일정표'
+      }
+
+      let schedulesQuery: admin.firestore.Query = admin.firestore()
+        .collection('schedules')
+        .where('status', '==', 'confirmed')
+        .orderBy('date', 'asc')
+
+      if (unitIds && unitIds.length > 0) {
+        schedulesQuery = schedulesQuery.where('unitId', 'in', unitIds)
+      }
+
+      const [schedulesSnap, unitsSnap2] = await Promise.all([
+        schedulesQuery.get(),
         admin.firestore().collection('units').get(),
       ])
 
       const unitMap: Record<string, string> = {}
-      unitsSnap.docs.forEach((d) => { unitMap[d.id] = d.data().name ?? d.id })
+      unitsSnap2.docs.forEach((d) => { unitMap[d.id] = d.data().name ?? d.id })
 
       const dtstamp = nowDtStamp()
       const events: string[] = []
@@ -97,7 +129,7 @@ export const publicScheduleIcs = functions
         'PRODID:-//Gaplan//Schedule//EN',
         'CALSCALE:GREGORIAN',
         'METHOD:PUBLISH',
-        'X-WR-CALNAME:일정표',
+        `X-WR-CALNAME:${calName}`,
         'X-WR-TIMEZONE:Asia/Seoul',
         'BEGIN:VTIMEZONE',
         'TZID:Asia/Seoul',
