@@ -337,4 +337,48 @@
     color: $color-primary;
     background: rgba($color-primary, 0.08);
   }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+
+    &:hover {
+      color: $color-text-muted;
+      background: none;
+    }
+  }
+}
+
+// ─── Per-Unit Public Schedule ──────────────────────────────────────────────
+.unitList {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.unitGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.unitRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border-radius: $border-radius-md;
+
+  &:hover {
+    background: $color-bg;
+  }
+}
+
+.unitRowIndented {
+  padding-left: calc(#{$space-6} + #{$space-3});
+}
+
+.unitName {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-text;
 }
