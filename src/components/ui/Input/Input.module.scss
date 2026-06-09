@@ -3,6 +3,8 @@
   display: flex;
   flex-direction: column;
   gap: $space-1;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
 }
 .label {
@@ -12,8 +14,11 @@
 }
 .input {
   width: 100%;
+  max-width: 100%;
+  min-inline-size: 0;
   padding: $space-2 $space-3;
   min-width: 0;
+  box-sizing: border-box;
   border: 1px solid $color-border;
   border-radius: $border-radius-md;
   font-size: $font-size-base;
@@ -30,6 +35,31 @@
   &.error {
     border-color: $color-danger;
   }
+}
+
+.input[type='date'],
+.input[type='time'] {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  text-align: left;
+
+  @supports (-webkit-touch-callout: none) {
+    appearance: none;
+    -webkit-appearance: none;
+  }
+}
+
+.input[type='date']::-webkit-date-and-time-value,
+.input[type='time']::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
+}
+
+.input[type='date']::-webkit-calendar-picker-indicator,
+.input[type='time']::-webkit-calendar-picker-indicator {
+  flex-shrink: 0;
+  margin-left: 0;
 }
 .errorMsg {
   font-size: $font-size-xs;
