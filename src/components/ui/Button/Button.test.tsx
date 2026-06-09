@@ -17,4 +17,15 @@ describe('Button', () => {
     render(<Button loading>확인</Button>)
     expect(screen.getByRole('button')).toBeDisabled()
   })
+
+  it('keeps loading content in stable slots', () => {
+    render(<Button loading>확인</Button>)
+    const button = screen.getByRole('button', { name: '확인' })
+    const label = screen.getByText('확인')
+    const spinner = button.querySelector('svg')
+
+    expect(button).toHaveAttribute('aria-busy', 'true')
+    expect(label).toHaveAttribute('data-button-label', 'true')
+    expect(spinner).toHaveAttribute('aria-hidden', 'true')
+  })
 })

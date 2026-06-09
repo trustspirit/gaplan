@@ -17,9 +17,30 @@
   }
 }
 
-.desc { font-size: $font-size-sm; color: $color-text-muted; margin-bottom: $space-4; line-height: $line-height-loose; }
-.form { display: flex; flex-direction: column; gap: $space-4; }
-.empty { font-size: $font-size-sm; color: $color-text-muted; text-align: center; padding: $space-4 0; }
+.desc {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  margin-bottom: $space-4;
+  line-height: $line-height-loose;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+.empty {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  text-align: center;
+  padding: $space-4 0;
+}
+
+@include mobile {
+  .form :global(button) {
+    width: 100%;
+    align-self: stretch;
+  }
+}
 
 .scheduleList {
   display: flex;
@@ -110,7 +131,9 @@
   align-items: center;
   min-width: 36px;
   min-height: 36px;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
 
   &:hover {
     color: $color-primary;
@@ -129,7 +152,9 @@
   align-items: center;
   min-width: 36px;
   min-height: 36px;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
   flex-shrink: 0;
 
   &:hover {
@@ -184,7 +209,7 @@
   line-height: $line-height-loose;
 
   &:focus {
-    outline: 2px solid var(--color-primary, #177C9C);
+    outline: 2px solid var(--color-primary, #177c9c);
     outline-offset: 1px;
   }
 }

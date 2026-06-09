@@ -1,10 +1,46 @@
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
-.calendar { display: flex; flex-direction: column; gap: $space-3; }
-.controls { display: flex; align-items: center; gap: $space-2; }
-.period { font-size: $font-size-base; font-weight: $font-weight-semibold; flex: 1; text-align: center; }
-.viewToggle { display: flex; gap: 2px; margin-left: auto; }
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  min-width: 0;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.period {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  flex: 1;
+  min-width: 112px;
+  text-align: center;
+}
+
+.viewToggle {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+
+  @include mobile {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    margin-left: 0;
+
+    :global(button) {
+      width: 100%;
+      align-self: stretch;
+    }
+  }
+}
 
 // ── Month grid ────────────────────────────────────────────────────────────────
 
@@ -16,6 +52,7 @@
   border: 1px solid $color-border;
   border-radius: $border-radius-md;
   overflow: hidden;
+  min-width: 0;
 }
 
 .dow {
@@ -36,14 +73,21 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  &:hover { background: $color-bg; }
+  &:hover {
+    background: $color-bg;
+  }
 
-  @include mobile { min-height: 52px; padding: 4px 2px; }
+  @include mobile {
+    min-height: 52px;
+    padding: 4px 2px;
+  }
 }
 
 .otherMonth {
   background: $color-bg;
-  .cellDay { color: $color-text-light; }
+  .cellDay {
+    color: $color-text-light;
+  }
 }
 
 .today .cellDay {
@@ -114,7 +158,9 @@
   padding-left: 4px;
   line-height: 1.4;
 
-  @include mobile { display: none; }
+  @include mobile {
+    display: none;
+  }
 }
 
 // ── Week grid ─────────────────────────────────────────────────────────────────
@@ -139,9 +185,14 @@
   cursor: pointer;
   transition: background 0.1s;
   min-height: 44px;
-  &:hover { background: $color-bg; }
+  &:hover {
+    background: $color-bg;
+  }
 
-  @include mobile { grid-template-columns: 60px 1fr; padding: $space-2; }
+  @include mobile {
+    grid-template-columns: 60px 1fr;
+    padding: $space-2;
+  }
 }
 
 .weekRowSelected {
@@ -157,8 +208,15 @@
   white-space: nowrap;
 }
 
-.weekDayLabelToday { color: $color-primary; font-weight: $font-weight-semibold; }
-.weekDayBlocked { color: $color-text-light; font-style: italic; cursor: default; }
+.weekDayLabelToday {
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+.weekDayBlocked {
+  color: $color-text-light;
+  font-style: italic;
+  cursor: default;
+}
 
 .weekSchedules {
   display: flex;
@@ -181,7 +239,9 @@
   gap: $space-2;
   margin-bottom: $space-1;
 
-  @include mobile { display: flex; }
+  @include mobile {
+    display: flex;
+  }
 }
 
 .mobileDayNavBtn {
@@ -199,7 +259,10 @@
   align-items: center;
   justify-content: center;
 
-  &:disabled { opacity: 0.3; cursor: default; }
+  &:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
 }
 
 .mobileDayNavLabel {
@@ -211,6 +274,7 @@
 .timeAxisWrap {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .timeAxis {
@@ -218,6 +282,7 @@
   border: 1px solid $color-border;
   border-radius: $border-radius-md;
   overflow: hidden;
+  min-width: 0;
 }
 
 .timeGutter {
@@ -226,7 +291,9 @@
   border-right: 1px solid $color-border;
   background: $color-bg;
 
-  @include mobile { width: 36px; }
+  @include mobile {
+    width: 36px;
+  }
 }
 
 .timeGutterHeader {
@@ -259,16 +326,29 @@
   cursor: pointer;
   transition: background 0.1s;
 
-  &:last-child { border-right: none; }
-  &:hover { background: $color-bg; }
+  &:last-child {
+    border-right: none;
+  }
+  &:hover {
+    background: $color-bg;
+  }
 }
 
-.dayColToday { background: color-mix(in srgb, $color-primary 3%, white); }
-.dayColBlocked { background: rgba($color-border, 0.4); cursor: default; }
-.dayColSelected { background: color-mix(in srgb, $color-primary 6%, white) !important; }
+.dayColToday {
+  background: color-mix(in srgb, $color-primary 3%, white);
+}
+.dayColBlocked {
+  background: rgba($color-border, 0.4);
+  cursor: default;
+}
+.dayColSelected {
+  background: color-mix(in srgb, $color-primary 6%, white) !important;
+}
 
 .dayColHiddenMobile {
-  @include mobile { display: none; }
+  @include mobile {
+    display: none;
+  }
 }
 
 .dayHeader {
@@ -285,7 +365,9 @@
   z-index: 1;
 }
 
-.dayHeaderToday { background: color-mix(in srgb, $color-primary 5%, white); }
+.dayHeaderToday {
+  background: color-mix(in srgb, $color-primary 5%, white);
+}
 
 .dayHeaderDow {
   font-size: 9px;
@@ -353,7 +435,9 @@
   opacity: 0.8;
   white-space: nowrap;
 
-  @include mobile { display: none; }
+  @include mobile {
+    display: none;
+  }
 }
 
 // ── Legend ────────────────────────────────────────────────────────────────────
@@ -376,5 +460,9 @@
   vertical-align: middle;
 }
 
-.swatchBlocked { background: $color-border; }
-.legendBlocked { color: $color-text-muted; }
+.swatchBlocked {
+  background: $color-border;
+}
+.legendBlocked {
+  color: $color-text-muted;
+}

@@ -13,8 +13,14 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export function Button({
-  variant = 'primary', size = 'md', loading, fullWidth,
-  children, disabled, className, ...props
+  variant = 'primary',
+  size = 'md',
+  loading,
+  fullWidth,
+  children,
+  disabled,
+  className,
+  ...props
 }: ButtonProps) {
   return (
     <button
@@ -26,10 +32,13 @@ export function Button({
         className,
       )}
       disabled={disabled || loading}
+      aria-busy={loading ? 'true' : undefined}
       {...props}
     >
-      {loading && <Loader2 className={styles.spinner} size={14} />}
-      {children}
+      {loading && <Loader2 className={styles.spinner} size={14} aria-hidden="true" />}
+      <span className={styles.label} data-button-label="true">
+        {children}
+      </span>
     </button>
   )
 }

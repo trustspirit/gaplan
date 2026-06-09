@@ -3,25 +3,106 @@
 @use '@/styles/mixins' as *;
 
 .button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   align-self: flex-start;
   gap: $space-2;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   border-radius: $border-radius-md;
   font-weight: $font-weight-medium;
-  transition: background 0.15s, opacity 0.15s;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
   white-space: nowrap;
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
-  &:focus-visible { @include focus-ring; }
-  &.fullWidth { width: 100%; align-self: auto; }
+  overflow: hidden;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  &:focus-visible {
+    @include focus-ring;
+  }
+  &.fullWidth {
+    width: 100%;
+    align-self: auto;
+  }
 }
-.primary { background: $color-primary; color: #fff; &:hover:not(:disabled) { background: $color-primary-hover; } }
-.secondary { background: transparent; color: $color-primary; border: 1px solid $color-primary; &:hover:not(:disabled) { background: rgba($color-primary, 0.06); } }
-.ghost { background: transparent; color: $color-text; &:hover:not(:disabled) { background: $color-border; } }
-.danger { background: $color-danger; color: #fff; &:hover:not(:disabled) { background: color.adjust($color-danger, $lightness: -8%); } }
-.sm { padding: $space-1 $space-3; font-size: $font-size-sm; min-height: 36px; }
-.md { padding: $space-2 $space-4; font-size: $font-size-base; min-height: 44px; }
-.lg { padding: $space-3 $space-6; font-size: $font-size-md; min-height: 52px; }
-.spinner { animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.primary {
+  background: $color-primary;
+  color: #fff;
+  &:hover:not(:disabled) {
+    background: $color-primary-hover;
+  }
+}
+.secondary {
+  background: transparent;
+  color: $color-primary;
+  border: 1px solid $color-primary;
+  &:hover:not(:disabled) {
+    background: rgba($color-primary, 0.06);
+  }
+}
+.ghost {
+  background: transparent;
+  color: $color-text;
+  &:hover:not(:disabled) {
+    background: $color-border;
+  }
+}
+.danger {
+  background: $color-danger;
+  color: #fff;
+  &:hover:not(:disabled) {
+    background: color.adjust($color-danger, $lightness: -8%);
+  }
+}
+.sm {
+  padding: $space-1 $space-3;
+  font-size: $font-size-sm;
+  min-height: 36px;
+}
+.md {
+  padding: $space-2 $space-4;
+  font-size: $font-size-base;
+  min-height: 44px;
+}
+.lg {
+  padding: $space-3 $space-6;
+  font-size: $font-size-md;
+  min-height: 52px;
+}
+.label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: inherit;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  flex-shrink: 0;
+  animation: spin 0.8s linear infinite;
+}
+
+.button[aria-busy='true'] .label {
+  visibility: hidden;
+}
+
+@keyframes spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
