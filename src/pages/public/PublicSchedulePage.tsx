@@ -44,13 +44,13 @@ export default function PublicSchedulePage() {
   const [isPrivate, setIsPrivate] = useState(false)
   const [fetchError, setFetchError] = useState(false)
 
-  // Initialize language from localStorage
+  // Initialize language from localStorage — run once on mount only
   useEffect(() => {
     const saved = localStorage.getItem('publicLang')
     if (saved && saved !== i18n.language) {
       i18n.changeLanguage(saved)
     }
-  }, [])
+  }, [i18n])
 
   useEffect(() => {
     if (!token) return

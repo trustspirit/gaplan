@@ -12,4 +12,11 @@ export default defineConfig({
     extensions,
   },
   css: { preprocessorOptions: { scss: { api: 'modern' } } },
+  test: {
+    exclude: [
+      '**/node_modules/**', '**/dist/**', '**/cypress/**',
+      '**/.{idea,git,cache,output,temp}/**',
+      '**/functions/lib/**',
+    ],
+  },
 })

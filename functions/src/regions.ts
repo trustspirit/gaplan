@@ -1,4 +1,5 @@
-// Region → unit IDs mapping
+// IMPORTANT: This data is duplicated from src/constants/regions.ts (no shared package).
+// Keep in sync when adding/removing stakes or districts.
 const REGION_UNITS: Record<string, string[]> = {
   'seoul': ['seoul-stake', 'seoul-east-stake', 'seoul-west-stake', 'gyeonggi-stake', 'military-district', 'gangneung-district'],
   'seoul-south': ['seoul-south-stake', 'daejeon-stake', 'cheongju-stake', 'jeonju-stake', 'gwangju-stake'],
