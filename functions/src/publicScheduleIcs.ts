@@ -44,25 +44,31 @@ export const publicScheduleIcs = functions
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   .https.onRequest(async (req: functions.https.Request, res: any) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Cache-Control', 'public, max-age=3600')
 
     try {
       const token = req.query.token
       if (!token || typeof token !== 'string') {
+        res.setHeader('Cache-Control', 'no-store')
         res.status(403).send('token required')
         return
       }
 
-      const tokensSnap = await admin.firestore().doc('settings/publicTokens').get()
+      // Resolve token and global flag in parallel
+      const [tokensSnap, settingsSnap] = await Promise.all([
+        admin.firestore().doc('settings/publicTokens').get(),
+        admin.firestore().doc('settings/public').get(),
+      ])
+
       const scopeValue: string | undefined = tokensSnap.exists ? tokensSnap.data()?.[token] : undefined
       if (!scopeValue) {
+        res.setHeader('Cache-Control', 'no-store')
         res.status(403).send('Invalid token')
         return
       }
 
-      const settingsSnap = await admin.firestore().doc('settings/public').get()
       const globalEnabled = settingsSnap.exists && settingsSnap.data()?.schedulePublic === true
       if (!globalEnabled) {
+        res.setHeader('Cache-Control', 'no-store')
         res.status(403).send('Public schedule is not enabled')
         return
       }
@@ -74,10 +80,16 @@ export const publicScheduleIcs = functions
         const unitsSnap = await admin.firestore().doc('settings/publicUnits').get()
         const unitEnabled = unitsSnap.exists && unitsSnap.data()?.[scopeValue]?.enabled === true
         if (!unitEnabled) {
+          res.setHeader('Cache-Control', 'no-store')
           res.status(403).send('This scope is not enabled')
           return
         }
         unitIds = getScopeUnitIds(scopeValue)
+        if (unitIds.length === 0) {
+          res.setHeader('Cache-Control', 'no-store')
+          res.status(403).send('Invalid scope')
+          return
+        }
         calName = getScopeDisplayName(scopeValue) || '일정표'
       }
 
@@ -86,7 +98,7 @@ export const publicScheduleIcs = functions
         .where('status', '==', 'confirmed')
         .orderBy('date', 'asc')
 
-      if (unitIds && unitIds.length > 0) {
+      if (unitIds !== null) {
         schedulesQuery = schedulesQuery.where('unitId', 'in', unitIds)
       }
 
@@ -146,6 +158,7 @@ export const publicScheduleIcs = functions
 
       res.setHeader('Content-Type', 'text/calendar; charset=utf-8')
       res.setHeader('Content-Disposition', 'attachment; filename="schedule.ics"')
+      res.setHeader('Cache-Control', 'public, max-age=3600')
       res.status(200).send(ics)
     } catch (err) {
       console.error('publicScheduleIcs error:', err)

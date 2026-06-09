@@ -111,11 +111,17 @@ export function CalendarSettings() {
       const batch = writeBatch(db)
 
       if (next && !token) {
+        // First enable: generate a new token
         token = generatePublicToken()
         batch.set(doc(db, 'settings', 'publicUnits'), { [scopeId]: { enabled: true, token } }, { merge: true })
         batch.set(doc(db, 'settings', 'publicTokens'), { [token]: scopeId }, { merge: true })
+      } else if (next && token) {
+        // Re-enable: always upsert publicTokens to handle missing entry
+        batch.set(doc(db, 'settings', 'publicUnits'), { [scopeId]: { enabled: true, token } }, { merge: true })
+        batch.set(doc(db, 'settings', 'publicTokens'), { [token]: scopeId }, { merge: true })
       } else {
-        batch.set(doc(db, 'settings', 'publicUnits'), { [scopeId]: { enabled: next, token: token ?? '' } }, { merge: true })
+        // Disable: keep token for future re-enable, just flip enabled
+        batch.set(doc(db, 'settings', 'publicUnits'), { [scopeId]: { enabled: false, token: token ?? '' } }, { merge: true })
       }
 
       await batch.commit()

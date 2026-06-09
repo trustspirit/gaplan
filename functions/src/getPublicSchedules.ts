@@ -25,16 +25,18 @@ export const getPublicSchedules = functions
       throw new functions.https.HttpsError('invalid-argument', 'token is required')
     }
 
-    // Resolve token → scopeValue
-    const tokensSnap = await admin.firestore().doc('settings/publicTokens').get()
+    // Resolve token and global flag in parallel
+    const [tokensSnap, settingsSnap] = await Promise.all([
+      admin.firestore().doc('settings/publicTokens').get(),
+      admin.firestore().doc('settings/public').get(),
+    ])
+
     const scopeValue: string | undefined = tokensSnap.exists ? tokensSnap.data()?.[token] : undefined
 
     if (!scopeValue) {
       throw new functions.https.HttpsError('permission-denied', 'Invalid token')
     }
 
-    // Always check global flag
-    const settingsSnap = await admin.firestore().doc('settings/public').get()
     const globalEnabled = settingsSnap.exists && settingsSnap.data()?.schedulePublic === true
 
     if (!globalEnabled) {
@@ -54,6 +56,9 @@ export const getPublicSchedules = functions
       }
 
       unitIds = getScopeUnitIds(scopeValue)
+      if (unitIds.length === 0) {
+        throw new functions.https.HttpsError('permission-denied', 'Invalid scope')
+      }
       scopeDisplayName = getScopeDisplayName(scopeValue) || null
     }
 
@@ -63,7 +68,7 @@ export const getPublicSchedules = functions
       .where('status', '==', 'confirmed')
       .orderBy('date', 'asc')
 
-    if (unitIds && unitIds.length > 0) {
+    if (unitIds !== null) {
       query = query.where('unitId', 'in', unitIds)
     }
 

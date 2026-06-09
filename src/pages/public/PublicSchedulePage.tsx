@@ -53,7 +53,10 @@ export default function PublicSchedulePage() {
   }, [i18n])
 
   useEffect(() => {
-    if (!token) return
+    if (!token) {
+      setLoading(false)
+      return
+    }
     fetchPublicSchedules(token)
       .then(({ schedules: s, scopeDisplayName: name }) => {
         setSchedules(s)

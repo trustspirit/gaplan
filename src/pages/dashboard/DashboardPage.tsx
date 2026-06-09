@@ -332,6 +332,9 @@ function AdminDashboardContent() {
         toast.success(t('common.copyLink'))
         setTimeout(() => setPublicCopied(false), 2000)
       })
+    } else if (schedulePublic && !publicUrl) {
+      toast.info(t('common.publicLinkMissing'))
+      navigate('/admin/calendar')
     } else {
       navigate('/admin/calendar')
     }
