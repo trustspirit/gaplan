@@ -14,6 +14,7 @@ import { useUnits } from '@/hooks/useUnits'
 import { useTaskConfirm } from '@/hooks/useTaskConfirm'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
+import { useReminders } from '@/hooks/useReminders'
 import { subscribeToSharedCalendar } from '@/services/calendarService'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Skeleton, Button, Modal, BottomSheet } from '@/components/ui'
@@ -26,6 +27,7 @@ import {
   ScheduleDateRangeFilter,
   ScheduleFormModal,
   EditScheduleModal,
+  RemindersCard,
 } from '@/components/domain'
 import type { Schedule } from '@/types'
 import { useWardSubmit } from '@/hooks/useWardSubmit'
@@ -239,6 +241,7 @@ function SeventyDashboard() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { schedules } = useSchedules({ seventyUid: user.uid })
+  const { interviewReminders, meetingReminders, dismiss } = useReminders()
   const { getUnitName } = useUnits()
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
@@ -257,6 +260,12 @@ function SeventyDashboard() {
       <div className={styles.layout}>
         <div className={styles.mainCol}>
           <CalendarBanner connected={user.calendarConnected} />
+
+          <RemindersCard
+            interviewReminders={interviewReminders}
+            meetingReminders={meetingReminders}
+            onDismiss={dismiss}
+          />
 
           <ScheduleListCard
             schedules={upcoming}
@@ -306,6 +315,7 @@ function AdminDashboardContent() {
   const user = useAtomValue(authUserAtom)!
   const navigate = useNavigate()
   const { schedules } = useSchedules({})
+  const { interviewReminders, meetingReminders, dismiss } = useReminders()
   const { getUnitName } = useUnits()
   const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
   const [formOpen, setFormOpen] = useState(false)
@@ -357,6 +367,11 @@ function AdminDashboardContent() {
     >
       <div className={styles.layout}>
         <div className={styles.mainCol}>
+          <RemindersCard
+            interviewReminders={interviewReminders}
+            meetingReminders={meetingReminders}
+            onDismiss={dismiss}
+          />
           <ScheduleDateRangeFilter
             setting={rangeSetting}
             currentRange={range}
