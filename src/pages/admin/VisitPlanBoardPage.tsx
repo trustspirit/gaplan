@@ -38,25 +38,24 @@ export function VisitPlanBoardPage() {
   const { loading: ctxLoading, staleWards, lastVisitByWard, balance, generalSchedules } =
     useVisitPlanContext(plan?.seventyUid, items)
 
-  const persist = async (nextItems: VisitPlanItem[]) => {
-    if (!plan) return
-    setPlan({ ...plan, items: nextItems })
-    await updateVisitPlanItems(plan.id, nextItems)
+  const persist = async (planId: string, nextItems: VisitPlanItem[]) => {
+    setPlan(prev => (prev ? { ...prev, items: nextItems } : prev))
+    await updateVisitPlanItems(planId, nextItems)
   }
 
   const handleAdd = (partial: Omit<VisitPlanItem, 'itemId' | 'scheduleId'>) => {
     if (!plan) return
-    persist([...items, { ...partial, itemId: uid() }])
+    persist(plan.id, [...(plan.items ?? []), { ...partial, itemId: uid() }])
   }
 
   const handleRemove = async (itemId: string) => {
     if (!plan) return
-    const target = items.find(i => i.itemId === itemId)
+    const target = (plan.items ?? []).find(i => i.itemId === itemId)
     if (target?.scheduleId) {
       if (!confirm(t('visitPlan.removeItemConfirm'))) return
       try { await deleteScheduleViaCF(target.scheduleId) } catch { /* 이미 삭제됨 등 무시 */ }
     }
-    persist(items.filter(i => i.itemId !== itemId))
+    persist(plan.id, (plan.items ?? []).filter(i => i.itemId !== itemId))
   }
 
   const handlePublish = async () => {
@@ -78,6 +77,12 @@ export function VisitPlanBoardPage() {
   const handleDeletePlan = async () => {
     if (!plan) return
     if (!confirm(t('visitPlan.deletePlanConfirm'))) return
+    // 발행된 항목의 연결 일정도 함께 삭제 (고아 일정 방지)
+    for (const it of plan.items) {
+      if (it.scheduleId) {
+        try { await deleteScheduleViaCF(it.scheduleId) } catch { /* 이미 삭제됨 등 무시 */ }
+      }
+    }
     await deleteVisitPlan(plan.id)
     navigate('/admin/visit-plans')
   }

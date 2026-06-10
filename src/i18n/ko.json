@@ -59,7 +59,7 @@
     "nearConference": "대회와 인접",
     "balance": "담당 단위 균형",
     "removeItemConfirm": "이 방문을 삭제할까요? 발행된 일정도 함께 삭제됩니다.",
-    "deletePlanConfirm": "이 계획을 삭제할까요?",
+    "deletePlanConfirm": "이 계획을 삭제할까요? 발행된 일정도 함께 삭제됩니다.",
     "empty": "계획이 없습니다"
   },
   "role": {

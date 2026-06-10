@@ -59,7 +59,7 @@
     "nearConference": "Near a conference",
     "balance": "Unit balance",
     "removeItemConfirm": "Remove this visit? The published schedule will also be deleted.",
-    "deletePlanConfirm": "Delete this plan?",
+    "deletePlanConfirm": "Delete this plan? Published schedules will also be deleted.",
     "empty": "No plans"
   },
   "role": {

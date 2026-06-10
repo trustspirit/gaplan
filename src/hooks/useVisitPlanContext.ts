@@ -20,7 +20,7 @@ export function useVisitPlanContext(seventyUid: string | undefined, planItems: V
   const today = useMemo(() => dayjs().format('YYYY-MM-DD'), [])
 
   useEffect(() => {
-    if (!seventyUid) return
+    if (!seventyUid) { setLoading(false); return }
     let active = true
     setLoading(true)
     const start = dayjs().subtract(FETCH_MONTHS, 'month').format('YYYY-MM-DD')
