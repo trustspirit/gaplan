@@ -28,3 +28,4 @@ dist-ssr
 *.tsbuildinfo
 src/**/*.test.js
 src/**/*.test.js.map
+.superpowers/
