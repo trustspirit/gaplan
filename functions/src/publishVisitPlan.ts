@@ -85,7 +85,8 @@ export const publishVisitPlan = functions
             cur.startTime !== item.startTime ||
             cur.endTime !== item.endTime ||
             cur.wardName !== item.wardName ||
-            cur.unitId !== item.unitId
+            cur.unitId !== item.unitId ||
+            (cur.projectId ?? null) !== (plan.projectId ?? null)
           if (changed) await ref.update({ ...payload })
           updatedItems.push(item)
         } else {

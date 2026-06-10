@@ -123,7 +123,7 @@ export const adminCreateSchedule = functions
       notes: notes ?? null,
       zoomLink: zoomLink?.trim() ?? null,
       customTitle: customTitle?.trim() ?? null,
-      projectId: projectId ?? null,
+      projectId: (projectId && projectId.trim()) ? projectId.trim() : null,
       status: 'confirmed',
       createdBy: context.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),

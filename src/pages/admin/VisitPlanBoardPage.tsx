@@ -28,6 +28,7 @@ export function VisitPlanBoardPage() {
   const [plan, setPlan] = useState<VisitPlan | null>(null)
   const [loadingPlan, setLoadingPlan] = useState(true)
   const [publishing, setPublishing] = useState(false)
+  const [savingProject, setSavingProject] = useState(false)
 
   useEffect(() => {
     if (!planId) return
@@ -101,13 +102,17 @@ export function VisitPlanBoardPage() {
           <h2 className={styles.title}>{plan.title}</h2>
           <div className={styles.actions}>
             <Button variant="secondary" size="sm" onClick={handleDeletePlan}>{t('common.delete')}</Button>
-            <Button size="sm" onClick={handlePublish} loading={publishing}>{t('visitPlan.publish')}</Button>
+            <Button size="sm" onClick={handlePublish} loading={publishing} disabled={savingProject}>{t('visitPlan.publish')}</Button>
           </div>
         </div>
 
         <ProjectPicker
           value={plan.projectId ?? ''}
-          onChange={pid => { setPlan({ ...plan, projectId: pid }); updateVisitPlanProject(plan.id, pid) }}
+          onChange={async pid => {
+            setPlan(prev => (prev ? { ...prev, projectId: pid } : prev))
+            setSavingProject(true)
+            try { await updateVisitPlanProject(plan.id, pid) } finally { setSavingProject(false) }
+          }}
         />
 
         <div className={styles.grid}>

@@ -41,15 +41,23 @@ export function ProjectDetailPage() {
 
   const handleSave = async () => {
     if (!project) return
-    await updateProject(project.id, { title: title.trim(), notes: notes.trim(), status })
-    toast.success(t('project.save'))
+    try {
+      await updateProject(project.id, { title: title.trim(), notes: notes.trim(), status })
+      toast.success(t('project.save'))
+    } catch {
+      toast.error('저장에 실패했습니다.')
+    }
   }
 
   const handleDelete = async () => {
     if (!project) return
     if (!confirm(t('project.deleteConfirm'))) return
-    await deleteProject(project.id)
-    navigate('/admin/projects')
+    try {
+      await deleteProject(project.id)
+      navigate('/admin/projects')
+    } catch {
+      toast.error('삭제에 실패했습니다.')
+    }
   }
 
   if (loading) {
