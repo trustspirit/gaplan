@@ -14,6 +14,7 @@ interface AdminCreateScheduleRequest {
   notes?: string
   zoomLink?: string
   customTitle?: string
+  projectId?: string
 }
 
 export const adminCreateSchedule = functions
@@ -23,7 +24,7 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, customTitle } = data
+    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, customTitle, projectId } = data
 
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
@@ -69,6 +70,9 @@ export const adminCreateSchedule = functions
       if (typeof customTitle !== 'string' || customTitle.trim().length === 0 || customTitle.length > 200) {
         throw new functions.https.HttpsError('invalid-argument', 'customTitle must be 1-200 chars')
       }
+    }
+    if (projectId !== undefined && typeof projectId !== 'string') {
+      throw new functions.https.HttpsError('invalid-argument', 'projectId must be a string')
     }
 
     const db = admin.firestore()
@@ -119,6 +123,7 @@ export const adminCreateSchedule = functions
       notes: notes ?? null,
       zoomLink: zoomLink?.trim() ?? null,
       customTitle: customTitle?.trim() ?? null,
+      projectId: projectId ?? null,
       status: 'confirmed',
       createdBy: context.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),

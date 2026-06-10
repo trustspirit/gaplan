@@ -14,6 +14,7 @@ interface AdminEditScheduleRequest {
     presidentUid?: string | null
     zoomLink?: string | null
     customTitle?: string | null
+    projectId?: string | null
   }
 }
 
@@ -101,6 +102,9 @@ export const adminEditSchedule = functions
       } else {
         allowed.customTitle = null
       }
+    }
+    if (updates.projectId !== undefined) {
+      allowed.projectId = updates.projectId || null
     }
 
     if (Object.keys(allowed).length === 0) {
