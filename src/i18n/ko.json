@@ -9,7 +9,8 @@
     "admin": "관리",
     "generalSchedules": "행사 일정",
     "stats": "통계",
-    "visitPlans": "방문 계획"
+    "visitPlans": "방문 계획",
+    "projects": "프로젝트"
   },
   "stats": {
     "pageTitle": "방문 통계",
@@ -35,6 +36,26 @@
     "daysAgo_one": "{{count}}일 전",
     "daysAgo_other": "{{count}}일 전",
     "selectHint": "방문 계획 기능은 추후 제공됩니다"
+  },
+  "project": {
+    "listTitle": "프로젝트",
+    "listSubtext": "진행중인 프로젝트 관리",
+    "newProject": "새 프로젝트",
+    "titleLabel": "제목",
+    "notesLabel": "노트",
+    "create": "만들기",
+    "save": "저장",
+    "delete": "삭제",
+    "deleteConfirm": "이 프로젝트를 삭제할까요?",
+    "empty": "프로젝트가 없습니다",
+    "pickerLabel": "프로젝트 (선택)",
+    "linkedSchedules": "연계 일정",
+    "noLinkedSchedules": "연계된 일정이 없습니다",
+    "status": {
+      "active": "진행중",
+      "done": "완료",
+      "dropped": "중단"
+    }
   },
   "reminder": {
     "title": "리마인더",

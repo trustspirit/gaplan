@@ -9,7 +9,8 @@
     "admin": "Admin",
     "generalSchedules": "Events",
     "stats": "Statistics",
-    "visitPlans": "Visit Plans"
+    "visitPlans": "Visit Plans",
+    "projects": "Projects"
   },
   "stats": {
     "pageTitle": "Visit Statistics",
@@ -35,6 +36,26 @@
     "daysAgo_one": "{{count}} day ago",
     "daysAgo_other": "{{count}} days ago",
     "selectHint": "Visit planning coming soon"
+  },
+  "project": {
+    "listTitle": "Projects",
+    "listSubtext": "Manage ongoing projects",
+    "newProject": "New project",
+    "titleLabel": "Title",
+    "notesLabel": "Notes",
+    "create": "Create",
+    "save": "Save",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this project?",
+    "empty": "No projects",
+    "pickerLabel": "Project (optional)",
+    "linkedSchedules": "Linked schedules",
+    "noLinkedSchedules": "No linked schedules",
+    "status": {
+      "active": "Active",
+      "done": "Done",
+      "dropped": "Dropped"
+    }
   },
   "reminder": {
     "title": "Reminders",
