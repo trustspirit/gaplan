@@ -118,3 +118,43 @@
   gap: $space-3;
   padding-top: $space-2;
 }
+
+.targetSection {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.targetLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  margin: 0;
+}
+
+.targetHint {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  font-weight: $font-weight-normal;
+}
+
+.checkGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.checkItem {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-size-sm;
+  color: $color-text;
+  cursor: pointer;
+  padding: 3px $space-2;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-sm;
+
+  input[type='checkbox'] { margin: 0; }
+  &:has(input:checked) { border-color: $color-primary; background: rgba($color-primary, 0.05); }
+}

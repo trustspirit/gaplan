@@ -11,6 +11,7 @@ import {
 } from '@/services/generalScheduleService'
 import { Button, Input, Select } from '@/components/ui'
 import type { GeneralSchedule, GeneralScheduleCategory } from '@/types'
+import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import styles from './GeneralScheduleFormModal.module.scss'
 
 const CATEGORY_OPTIONS = [
@@ -39,6 +40,12 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
   const [isPublic, setIsPublic]       = useState(initialData?.isPublic ?? false)
   const [saving, setSaving]           = useState(false)
   const [error, setError]             = useState<string | null>(null)
+  const [targetRegionIds, setTargetRegionIds] = useState<string[]>(
+    initialData?.targetRegionIds ?? []
+  )
+  const [targetUnitIds, setTargetUnitIds] = useState<string[]>(
+    initialData?.targetUnitIds ?? []
+  )
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -64,6 +71,8 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
         endTime:     endTime || undefined,
         description: description.trim() || undefined,
         isPublic:    user.role === 'admin' ? isPublic : false,
+        targetRegionIds: user.role === 'admin' ? targetRegionIds : [],
+        targetUnitIds,
         createdBy:   user.uid,
       }
       if (initialData) {
@@ -145,6 +154,56 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
               <span>{t('generalSchedule.isPublicLabel')}</span>
             </label>
           )}
+          {/* 지역 타겟 (admin만) */}
+          {user.role === 'admin' && (
+            <div className={styles.targetSection}>
+              <p className={styles.targetLabel}>
+                대상 지역 <span className={styles.targetHint}>(미선택 = 전체)</span>
+              </p>
+              <div className={styles.checkGroup}>
+                {REGIONS.map(r => (
+                  <label key={r.id} className={styles.checkItem}>
+                    <input
+                      type="checkbox"
+                      checked={targetRegionIds.includes(r.id)}
+                      onChange={e => setTargetRegionIds(prev =>
+                        e.target.checked ? [...prev, r.id] : prev.filter(x => x !== r.id)
+                      )}
+                    />
+                    {r.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 스테이크/지방부 타겟 */}
+          <div className={styles.targetSection}>
+            <p className={styles.targetLabel}>
+              대상 스테이크/지방부 <span className={styles.targetHint}>(미선택 = 전체)</span>
+            </p>
+            <div className={styles.checkGroup}>
+              {ALL_UNITS
+                .filter(u =>
+                  user.role === 'admin'
+                    ? true
+                    : (user.regionIds ?? [user.regionId ?? '']).includes(u.regionId ?? '')
+                )
+                .map(u => (
+                  <label key={u.id} className={styles.checkItem}>
+                    <input
+                      type="checkbox"
+                      checked={targetUnitIds.includes(u.id)}
+                      onChange={e => setTargetUnitIds(prev =>
+                        e.target.checked ? [...prev, u.id] : prev.filter(x => x !== u.id)
+                      )}
+                    />
+                    {u.name}
+                  </label>
+                ))}
+            </div>
+          </div>
+
           {error && <p className={styles.error}>{error}</p>}
           <div className={styles.footer}>
             <Button type="button" variant="secondary" onClick={onClose}>{t('common.cancel')}</Button>
