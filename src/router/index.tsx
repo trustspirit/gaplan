@@ -20,6 +20,8 @@ import { StatsPage } from '@/pages/admin/StatsPage'
 import { AvailabilitySettings } from '@/pages/admin/AvailabilitySettings'
 import { CalendarSettings } from '@/pages/admin/CalendarSettings'
 import { VisitPlanner } from '@/pages/admin/VisitPlanner'
+import { VisitPlanListPage } from '@/pages/admin/VisitPlanListPage'
+import { VisitPlanBoardPage } from '@/pages/admin/VisitPlanBoardPage'
 
 export function AppRouter() {
   return (
@@ -47,6 +49,8 @@ export function AppRouter() {
             <Route path="/admin/availability"      element={<AvailabilitySettings />} />
             <Route path="/admin/calendar"          element={<CalendarSettings />} />
             <Route path="/admin/visit-planner"     element={<VisitPlanner />} />
+            <Route path="/admin/visit-plans"          element={<VisitPlanListPage />} />
+            <Route path="/admin/visit-plans/:planId"  element={<VisitPlanBoardPage />} />
           </Route>
 
           <Route element={<RoleRoute allow={['admin', 'seventy']} />}>
