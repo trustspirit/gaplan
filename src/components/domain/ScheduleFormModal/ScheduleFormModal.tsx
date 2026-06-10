@@ -8,7 +8,7 @@ import { authUserAtom } from '@/store/authAtom'
 import { functions } from '@/firebase'
 import { useUsers } from '@/hooks/useUsers'
 import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
-import type { ScheduleType } from '@/types'
+import type { ScheduleType, GeneralSchedule } from '@/types'
 import { Button, Select, Input } from '@/components/ui'
 import styles from './ScheduleFormModal.module.scss'
 
@@ -17,6 +17,7 @@ const adminCreateScheduleFn = httpsCallable(functions, 'adminCreateSchedule')
 interface ScheduleFormModalProps {
   initialDate?: string
   initialType?: ScheduleType
+  generalSchedules?: GeneralSchedule[]
   onClose: () => void
   onSaved: () => void
 }
@@ -24,6 +25,7 @@ interface ScheduleFormModalProps {
 export function ScheduleFormModal({
   initialDate,
   initialType,
+  generalSchedules,
   onClose,
   onSaved,
 }: ScheduleFormModalProps) {
@@ -145,6 +147,10 @@ export function ScheduleFormModal({
     }
   }
 
+  const conflictingEvent = date
+    ? (generalSchedules ?? []).find(gs => gs.date === date)
+    : undefined
+
   const TYPE_TABS: Array<{ value: ScheduleType; label: string }> = [
     { value: 'ward_visit', label: t('schedule.type.ward_visit') },
     { value: 'interview', label: t('schedule.type.interview') },
@@ -239,6 +245,11 @@ export function ScheduleFormModal({
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
+            {conflictingEvent && (
+              <div className={styles.conflictWarning}>
+                {t('generalSchedule.conflictWarning', { title: conflictingEvent.title })}
+              </div>
+            )}
 
             <div className={styles.timeRow}>
               <Input

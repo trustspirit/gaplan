@@ -303,3 +303,13 @@ form :global(textarea) {
     }
   }
 }
+
+.conflictWarning {
+  padding: $space-2 $space-3;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: $border-radius-sm;
+  color: #92400e;
+  font-size: $font-size-sm;
+  line-height: 1.4;
+}
