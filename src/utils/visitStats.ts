@@ -64,6 +64,10 @@ function inRegionScope(
   return true
 }
 
+// Ward recency is keyed by `wardName` (free-text on the Schedule), which must
+// exactly match `WardUnit.name` in the master WARDS list. Records whose
+// `wardName` is missing or doesn't match a known ward are treated as
+// "never visited" for that ward — a known limitation. Counts `ward_visit` only.
 function computeWardLastVisit(
   scoped: Schedule[],
   allowedRegionIds: string[] | null,
@@ -92,6 +96,8 @@ function computeWardLastVisit(
     })
 }
 
+// Intentionally counts BOTH `ward_visit` and `interview` (interviews are
+// unit/president-level, so they update unit recency but not ward recency).
 function computeUnitLastVisit(
   scoped: Schedule[],
   allowedRegionIds: string[] | null,
@@ -179,7 +185,7 @@ export function computeVisitStats(
       if (a.daysSince === null && b.daysSince === null) return a.name.localeCompare(b.name)
       if (a.daysSince === null) return -1
       if (b.daysSince === null) return 1
-      return b.daysSince - a.daysSince
+      return (b.daysSince - a.daysSince) || a.name.localeCompare(b.name)
     })
     .slice(0, STALE_TOP_N)
 

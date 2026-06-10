@@ -111,3 +111,31 @@ describe('computeVisitStats - region scope', () => {
     expect(stats.byRegion.find(r => r.id === regionId)?.count).toBe(1)
   })
 })
+
+describe('computeVisitStats - unit granularity', () => {
+  it('unit mode: interview updates unit recency', () => {
+    const schedules = [mk({ type: 'interview', date: '2026-06-05' })]
+    const stats = compute(schedules, { regionId: regionId, period: '3m', granularity: 'unit' }, null, TODAY)
+    const u = stats.lastVisit.find(x => x.id === unitId)
+    expect(u?.lastVisitDate).toBe('2026-06-05')
+  })
+
+  it('unit mode: never-visited unit has null daysSince', () => {
+    const otherUnit = ALL_UNITS.find(u => u.id !== unitId && getRegionIdByUnit(u.id) === regionId)
+    const schedules = [mk({ type: 'ward_visit', date: '2026-06-05', wardName: ward.name })]
+    const stats = compute(schedules, { regionId: regionId, period: '3m', granularity: 'unit' }, null, TODAY)
+    if (otherUnit) {
+      const u = stats.lastVisit.find(x => x.id === otherUnit.id)
+      expect(u?.daysSince).toBeNull()
+    }
+    // the visited unit has a recorded date
+    const visited = stats.lastVisit.find(x => x.id === unitId)
+    expect(visited?.lastVisitDate).toBe('2026-06-05')
+  })
+
+  it('staleTopN in unit mode contains units', () => {
+    const stats = compute([], { regionId: 'all', period: '3m', granularity: 'unit' }, null, TODAY)
+    const unitIds = new Set(ALL_UNITS.map(u => u.id))
+    expect(stats.staleTopN.every(e => unitIds.has(e.id))).toBe(true)
+  })
+})
