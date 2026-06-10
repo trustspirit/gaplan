@@ -78,6 +78,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    match /projects/{projectId} {
+      // 프로젝트 메모는 admin 전용
+      allow read, write: if isAdmin();
+    }
+
     match /tasks/{taskId} {
       // Admin: all. Seventy: only tasks in their region (seventyUid matches).
       // President: only tasks assigned to them.
