@@ -240,6 +240,22 @@
   margin-right: $space-3;
 }
 
+// ─── General Schedule Category Colors ─────────────────────────────────────
+.general_conference {
+  &.colorBar { background: #f59e0b; }
+  &.dateCol { background: #fef3c7; }
+}
+
+.general_fasting {
+  &.colorBar { background: #7c3aed; }
+  &.dateCol { background: #ede9fe; }
+}
+
+.general_other {
+  &.colorBar { background: #6b7280; }
+  &.dateCol { background: #f3f4f6; }
+}
+
 // ─── Language Toggle ───────────────────────────────────────────────────────
 .langToggle {
   background: none;

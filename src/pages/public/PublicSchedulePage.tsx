@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
-import { Video, CalendarDays } from 'lucide-react'
+import clsx from 'clsx'
+import { Video, CalendarDays, Building2, MoonStar } from 'lucide-react'
 import { ALL_UNITS } from '@/constants/regions'
 import { fetchPublicSchedules, type PublicScheduleItem } from '@/services/scheduleService'
+import { fetchPublicGeneralSchedules } from '@/services/generalScheduleService'
+import type { GeneralSchedule } from '@/types'
 import styles from './PublicSchedulePage.module.scss'
 
 const DOW_KO = ['일', '월', '화', '수', '목', '금', '토']
@@ -12,19 +15,6 @@ const DOW_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 function getUnitName(unitId: string) {
   return ALL_UNITS.find((u) => u.id === unitId)?.name ?? unitId
-}
-
-function groupByMonth(schedules: PublicScheduleItem[], lang: string): Map<string, PublicScheduleItem[]> {
-  const map = new Map<string, PublicScheduleItem[]>()
-  for (const s of schedules) {
-    const date = dayjs(s.date)
-    const key = lang === 'ko'
-      ? date.format('YYYY년 M월')
-      : date.format('MMMM YYYY')
-    if (!map.has(key)) map.set(key, [])
-    map.get(key)!.push(s)
-  }
-  return map
 }
 
 function buildSubscribeUrls(token: string) {
@@ -43,6 +33,7 @@ export default function PublicSchedulePage() {
   const [loading, setLoading] = useState(true)
   const [isPrivate, setIsPrivate] = useState(false)
   const [fetchError, setFetchError] = useState(false)
+  const [generalSchedules, setGeneralSchedules] = useState<GeneralSchedule[]>([])
 
   // Initialize language from localStorage — run once on mount only
   useEffect(() => {
@@ -57,10 +48,11 @@ export default function PublicSchedulePage() {
       setLoading(false)
       return
     }
-    fetchPublicSchedules(token)
-      .then(({ schedules: s, scopeDisplayName: name }) => {
+    Promise.all([fetchPublicSchedules(token), fetchPublicGeneralSchedules()])
+      .then(([{ schedules: s, scopeDisplayName: name }, generals]) => {
         setSchedules(s)
         setScopeDisplayName(name)
+        setGeneralSchedules(generals)
       })
       .catch((e) => {
         if (e?.code === 'functions/permission-denied' || e?.message?.includes('permission-denied')) {
@@ -108,8 +100,31 @@ export default function PublicSchedulePage() {
     ? t('public.scopedTitle', { name: scopeDisplayName })
     : t('public.title')
 
-  const grouped = groupByMonth(schedules, lang)
-  const monthKeys = [...grouped.keys()]
+  type ListEntry =
+    | { kind: 'schedule'; data: PublicScheduleItem }
+    | { kind: 'general'; data: GeneralSchedule }
+
+  const mergedMap = new Map<string, ListEntry[]>()
+  for (const s of schedules) {
+    const key = lang === 'ko' ? dayjs(s.date).format('YYYY년 M월') : dayjs(s.date).format('MMMM YYYY')
+    if (!mergedMap.has(key)) mergedMap.set(key, [])
+    mergedMap.get(key)!.push({ kind: 'schedule', data: s })
+  }
+  for (const gs of generalSchedules) {
+    const key = lang === 'ko' ? dayjs(gs.date).format('YYYY년 M월') : dayjs(gs.date).format('MMMM YYYY')
+    if (!mergedMap.has(key)) mergedMap.set(key, [])
+    mergedMap.get(key)!.push({ kind: 'general', data: gs })
+  }
+  for (const [, items] of mergedMap) {
+    items.sort((a, b) => {
+      const aDate = a.data.date
+      const bDate = b.data.date
+      const aTime = a.kind === 'schedule' ? a.data.startTime : (a.data.startTime ?? '00:00')
+      const bTime = b.kind === 'schedule' ? b.data.startTime : (b.data.startTime ?? '00:00')
+      return aDate.localeCompare(bDate) || aTime.localeCompare(bTime)
+    })
+  }
+  const monthKeys = [...mergedMap.keys()].sort()
   const { icsWebcal, googleUrl } = buildSubscribeUrls(token!)
 
   const typeLabel = (type: string) => {
@@ -145,12 +160,43 @@ export default function PublicSchedulePage() {
           <div className={styles.empty}>{t('public.empty')}</div>
         ) : (
           monthKeys.map((monthKey) => {
-            const items = grouped.get(monthKey)!
             return (
               <section key={monthKey} className={styles.monthGroup}>
                 <h2 className={styles.monthLabel}>{monthKey}</h2>
                 <div className={styles.itemList}>
-                  {items.map((s) => {
+                  {mergedMap.get(monthKey)!.map(entry => {
+                    if (entry.kind === 'general') {
+                      const gs = entry.data
+                      const ICONS = { conference: Building2, fasting: MoonStar, other: CalendarDays } as const
+                      const GIcon = ICONS[gs.category]
+                      const gDate = dayjs(gs.date)
+                      const catLabel = gs.category === 'conference'
+                        ? (lang === 'ko' ? '대회/행사' : 'Conference')
+                        : gs.category === 'fasting'
+                          ? (lang === 'ko' ? '금식' : 'Fasting')
+                          : (lang === 'ko' ? '기타' : 'Other')
+                      return (
+                        <div key={`gs-${gs.id}`} className={styles.scheduleRow}>
+                          <div className={clsx(styles.colorBar, styles[`general_${gs.category}`])} />
+                          <div className={clsx(styles.dateCol, styles[`general_${gs.category}`])}>
+                            <span className={styles.date}>{gDate.format('M.D')}</span>
+                            <span className={styles.dow}>{dowLabels[gDate.day()]}</span>
+                          </div>
+                          <div className={styles.itemBody}>
+                            <span className={styles.typeBadge}>
+                              <GIcon size={11} style={{ display: 'inline', marginRight: 3, verticalAlign: 'middle' }} />
+                              {catLabel}
+                            </span>
+                            <p className={styles.title}>{gs.title}</p>
+                            {gs.startTime && gs.endTime && (
+                              <p className={styles.time}>{gs.startTime} – {gs.endTime}</p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    const s = entry.data as PublicScheduleItem
                     const date = dayjs(s.date)
                     const dow = dowLabels[date.day()]
                     const isPast = date.isBefore(dayjs(), 'day')
