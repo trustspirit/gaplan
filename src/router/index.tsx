@@ -8,6 +8,7 @@ import { OnboardingPage } from '@/pages/auth/OnboardingPage'
 import { PendingPage } from '@/pages/auth/PendingPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { CalendarPage } from '@/pages/calendar/CalendarPage'
+import { GeneralSchedulePage } from '@/pages/general-schedules/GeneralSchedulePage'
 import { VisitsPage } from '@/pages/visits/VisitsPage'
 import { InterviewsPage } from '@/pages/interviews/InterviewsPage'
 import { TasksPage } from '@/pages/tasks/TasksPage'
@@ -30,6 +31,7 @@ export function AppRouter() {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard"    element={<DashboardPage />} />
           <Route path="/calendar"     element={<CalendarPage />} />
+          <Route path="/general-schedules" element={<GeneralSchedulePage />} />
           <Route path="/visits"       element={<VisitsPage />} />
           <Route path="/interviews"   element={<InterviewsPage />} />
 

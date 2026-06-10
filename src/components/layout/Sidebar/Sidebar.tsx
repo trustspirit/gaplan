@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { LayoutDashboard, Calendar, MapPin, Users, CheckSquare, Settings, LogOut, ClipboardList, Languages } from 'lucide-react'
+import { LayoutDashboard, Calendar, MapPin, Users, CheckSquare, Settings, LogOut, ClipboardList, Languages, Flag } from 'lucide-react'
 import clsx from 'clsx'
 import type { UserRole } from '@/types'
 import { Avatar } from '@/components/ui'
@@ -14,6 +14,7 @@ interface NavItem { to: string; icon: React.ReactNode; labelKey: string; roles: 
 const NAV_ITEMS: NavItem[] = [
   { to: '/dashboard',           icon: <LayoutDashboard size={20} />, labelKey: 'nav.dashboard',    roles: ['admin','seventy','president'] },
   { to: '/calendar',            icon: <Calendar size={20} />,        labelKey: 'nav.calendar',     roles: ['admin','seventy','president'] },
+  { to: '/general-schedules',   icon: <Flag size={20} />,            labelKey: 'nav.generalSchedules', roles: ['admin','seventy','president'] },
   { to: '/visits',              icon: <MapPin size={20} />,          labelKey: 'nav.visits',       roles: ['admin','seventy','president'] },
   { to: '/interviews',          icon: <Users size={20} />,           labelKey: 'nav.interviews',   roles: ['admin','seventy','president'] },
   { to: '/tasks',               icon: <CheckSquare size={20} />,     labelKey: 'nav.tasks',        roles: ['president'] },
