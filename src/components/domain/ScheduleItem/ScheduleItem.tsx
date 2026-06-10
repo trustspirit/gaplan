@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { MapPin, Users, CalendarPlus, Coffee, MoreVertical, Video } from 'lucide-react'
+import { MapPin, Users, CalendarPlus, Coffee, MoreVertical, Video, Building2, Check } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
@@ -58,6 +58,7 @@ export function ScheduleItem({
 
   const isVisit = schedule.type === 'ward_visit'
   const isMeeting = schedule.type === 'meeting'
+  const isAttendance = schedule.type === 'general_attendance'
   const date = dayjs(schedule.date)
   const dow = DOW_LABELS[date.day()]
   const isPast = past ?? date.isBefore(dayjs(), 'day')
@@ -65,12 +66,21 @@ export function ScheduleItem({
   return (
     <div className={styles.wrapper}>
       {/* Left color bar */}
-      <div className={clsx(styles.colorBar, isVisit ? styles.visitBar : isMeeting ? styles.meetingBar : styles.interviewBar)} />
+      <div className={clsx(
+        styles.colorBar,
+        isVisit ? styles.visitBar
+        : isMeeting ? styles.meetingBar
+        : isAttendance ? styles.attendanceBar
+        : styles.interviewBar
+      )} />
 
       {/* Date column — wrapper level so bg/border span full height */}
       <div className={clsx(
         styles.dateCol,
-        isVisit ? styles.visit : isMeeting ? styles.meeting : styles.interview,
+        isVisit ? styles.visit
+        : isMeeting ? styles.meeting
+        : isAttendance ? styles.attendance
+        : styles.interview,
         isPast && styles.past,
       )}>
         <span className={styles.date}>{date.format('M.D')}</span>
@@ -81,18 +91,29 @@ export function ScheduleItem({
       <div
         className={clsx(
           styles.item,
-          isVisit ? styles.visit : isMeeting ? styles.meeting : styles.interview,
+          isVisit ? styles.visit
+          : isMeeting ? styles.meeting
+          : isAttendance ? styles.attendance
+          : styles.interview,
           isPast && styles.past,
         )}
       >
         <div className={styles.info}>
           <div className={styles.typeBadge}>
-            {isVisit ? <MapPin size={11} /> : isMeeting ? <Coffee size={11} /> : <Users size={11} />}
+            {isVisit ? <MapPin size={11} />
+            : isMeeting ? <Coffee size={11} />
+            : isAttendance ? <Building2 size={11} />
+            : <Users size={11} />}
             <span>{t(`schedule.type.${schedule.type}`)}</span>
           </div>
           <p className={styles.unit}>
             {schedule.customTitle ?? unitName}
             {!schedule.customTitle && schedule.wardName && <span className={styles.wardName}> · {schedule.wardName}</span>}
+            {isAttendance && (
+              <span className={styles.verifiedBadge} aria-label="참석 확인됨">
+                <Check size={9} strokeWidth={3.5} />
+              </span>
+            )}
           </p>
           <p className={styles.time}>{schedule.startTime} – {schedule.endTime}</p>
           {schedule.zoomLink && (

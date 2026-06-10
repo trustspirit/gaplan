@@ -19,6 +19,7 @@ const SCHEDULE_TYPE_COLORS: Record<Schedule['type'], { bg: string; text: string;
     ward_visit: { bg: '#e7f2f6', text: '#0f5f78', border: '#99c9d8' },
     interview: { bg: '#f1ecfb', text: '#5f3ea8', border: '#c4b5fd' },
     meeting: { bg: '#fff3df', text: '#8a4b0f', border: '#f8c471' },
+    general_attendance: { bg: '#fef3c7', text: '#92400e', border: '#fde68a' },
   }
 
 const GENERAL_CATEGORY_COLORS = {
