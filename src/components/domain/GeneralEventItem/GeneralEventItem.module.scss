@@ -1,0 +1,128 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+$conference-bg:     #fef3c7;
+$conference-bar:    #f59e0b;
+$fasting-bg:        #ede9fe;
+$fasting-bar:       #7c3aed;
+$other-bg:          #f3f4f6;
+$other-bar:         #6b7280;
+
+.wrapper {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  border-bottom: 1px solid $color-border;
+  cursor: pointer;
+  min-height: 44px;
+
+  &:last-child { border-bottom: none; }
+  &:hover .body { opacity: 0.85; }
+  &:focus-visible { outline: 2px solid $color-primary; outline-offset: -2px; }
+}
+
+.past { opacity: 0.6; }
+
+.colorBar {
+  width: 4px;
+  flex-shrink: 0;
+
+  &.conference { background: $conference-bar; }
+  &.fasting    { background: $fasting-bar; }
+  &.other      { background: $other-bar; }
+}
+
+.dateCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $space-3 $space-4;
+  min-width: 52px;
+  flex-shrink: 0;
+
+  &.conference { background: $conference-bg; }
+  &.fasting    { background: $fasting-bg; }
+  &.other      { background: $other-bg; }
+}
+
+.date {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  line-height: 1;
+}
+
+.dow {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  margin-top: 2px;
+}
+
+.body {
+  flex: 1;
+  padding: $space-3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.typeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  margin-bottom: 1px;
+}
+
+.title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.time {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  margin: 0;
+}
+
+.attendBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: center;
+  flex-shrink: 0;
+  margin: 0 $space-3;
+  padding: 5px $space-3;
+  border: 1px solid $conference-bar;
+  border-radius: $border-radius-full;
+  background: transparent;
+  color: $conference-bar;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 32px;
+
+  &:hover { background: $conference-bg; }
+
+  &.attending {
+    background: $conference-bar;
+    color: #fff;
+    border-color: $conference-bar;
+    &:hover { opacity: 0.85; }
+  }
+
+  @include mobile {
+    padding: 6px $space-3;
+    min-height: 36px;
+  }
+}

@@ -12,3 +12,4 @@ export { TaskPickerContent, taskPickerTitle } from './TaskPickerContent/TaskPick
 export { EditScheduleModal } from './EditScheduleModal/EditScheduleModal'
 export { ScheduleFormModal } from './ScheduleFormModal/ScheduleFormModal'
 export { ScheduleDateRangeFilter } from './ScheduleDateRangeFilter/ScheduleDateRangeFilter'
+export { GeneralEventItem } from './GeneralEventItem'
