@@ -1,4 +1,4 @@
-export type ScheduleType = 'ward_visit' | 'interview' | 'meeting'
+export type ScheduleType = 'ward_visit' | 'interview' | 'meeting' | 'general_attendance'
 export type ScheduleStatus = 'pending' | 'confirmed' | 'cancelled'
 
 export interface Schedule {
@@ -19,6 +19,7 @@ export interface Schedule {
   notes?: string
   zoomLink?: string | null
   customTitle?: string | null
+  generalScheduleId?: string   // general_attendance일 때만 사용
 }
 
 export interface TimeSlot {

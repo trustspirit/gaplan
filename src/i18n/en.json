@@ -6,7 +6,8 @@
     "interviews": "Interviews",
     "tasks": "Tasks",
     "taskProgress": "Task Progress",
-    "admin": "Admin"
+    "admin": "Admin",
+    "generalSchedules": "Events"
   },
   "role": {
     "admin": "Executive Secretary",
@@ -177,7 +178,8 @@
     "type": {
       "ward_visit": "Ward Visit",
       "interview": "Interview",
-      "meeting": "Sacrament Meeting"
+      "meeting": "Sacrament Meeting",
+      "general_attendance": "Event Attendance"
     }
   },
   "ward": {
@@ -375,5 +377,38 @@
     "typeInterview": "Interview",
     "typeMeeting": "Meeting",
     "pastBadge": "Done"
+  },
+  "generalSchedule": {
+    "pageTitle": "Events",
+    "subtext": "Manage org-wide events",
+    "addBtn": "Add Event",
+    "editTitle": "Edit Event",
+    "newTitle": "New Event",
+    "saveBtn": "Save",
+    "deleteBtn": "Delete",
+    "deleteConfirm": "Delete this event?",
+    "attend": "Attend",
+    "cancelAttend": "Cancel Attendance",
+    "attending": "Attending",
+    "attendees": "{{count}} attendees",
+    "noAttendees": "No attendees",
+    "titleLabel": "Title",
+    "dateLabel": "Date",
+    "categoryLabel": "Category",
+    "startTimeLabel": "Start time (optional)",
+    "endTimeLabel": "End time (optional)",
+    "descriptionLabel": "Description (optional)",
+    "isPublicLabel": "Show on public page",
+    "category": {
+      "conference": "Conference/Event",
+      "fasting": "Fasting",
+      "other": "Other"
+    },
+    "conflictWarning": "There is '{{title}}' on this date. You can still add a schedule.",
+    "empty": "No events scheduled.",
+    "attendSuccess": "Attendance registered.",
+    "cancelSuccess": "Attendance cancelled.",
+    "savedSuccess": "Event saved.",
+    "deletedSuccess": "Event deleted."
   }
 }
