@@ -8,7 +8,8 @@ import { authUserAtom } from '@/store/authAtom'
 import { functions } from '@/firebase'
 import { useUsers } from '@/hooks/useUsers'
 import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
-import type { ScheduleType, GeneralSchedule } from '@/types'
+import { isGeneralScheduleRelevant } from '@/types'
+import type { ScheduleType, GeneralSchedule, AppUser } from '@/types'
 import { Button, Select, Input } from '@/components/ui'
 import styles from './ScheduleFormModal.module.scss'
 
@@ -18,6 +19,7 @@ interface ScheduleFormModalProps {
   initialDate?: string
   initialType?: ScheduleType
   generalSchedules?: GeneralSchedule[]
+  currentUser?: AppUser
   onClose: () => void
   onSaved: () => void
 }
@@ -26,6 +28,7 @@ export function ScheduleFormModal({
   initialDate,
   initialType,
   generalSchedules,
+  currentUser,
   onClose,
   onSaved,
 }: ScheduleFormModalProps) {
@@ -148,7 +151,11 @@ export function ScheduleFormModal({
   }
 
   const conflictingEvent = date
-    ? (generalSchedules ?? []).find(gs => gs.date === date)
+    ? (generalSchedules ?? []).find(gs => {
+        if (gs.date !== date) return false
+        if (!currentUser) return true
+        return isGeneralScheduleRelevant(gs, currentUser)
+      })
     : undefined
 
   const TYPE_TABS: Array<{ value: ScheduleType; label: string }> = [

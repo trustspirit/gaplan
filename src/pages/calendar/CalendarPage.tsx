@@ -253,6 +253,7 @@ export function CalendarPage() {
         <ScheduleFormModal
           initialDate={selectedDate ?? undefined}
           generalSchedules={generalSchedules}
+          currentUser={user}
           onClose={() => setFormOpen(false)}
           onSaved={() => { setFormOpen(false); toast.success(t('schedule.savedSuccess')) }}
         />
