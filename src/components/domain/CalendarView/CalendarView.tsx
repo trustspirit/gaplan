@@ -138,7 +138,7 @@ export function CalendarView({
             >
               <span className={styles.cellDay}>{d.date()}</span>
               {getGeneralEventsForDate(dateStr).map(gs => {
-                const c = GENERAL_CATEGORY_COLORS[gs.category]
+                const c = GENERAL_CATEGORY_COLORS[gs.category] ?? GENERAL_CATEGORY_COLORS.other
                 return (
                   <span
                     key={gs.id}
@@ -256,7 +256,7 @@ export function CalendarView({
                     </span>
                   </div>
                   {getGeneralEventsForDate(dateStr).map(gs => {
-                    const c = GENERAL_CATEGORY_COLORS[gs.category]
+                    const c = GENERAL_CATEGORY_COLORS[gs.category] ?? GENERAL_CATEGORY_COLORS.other
                     return (
                       <div
                         key={gs.id}

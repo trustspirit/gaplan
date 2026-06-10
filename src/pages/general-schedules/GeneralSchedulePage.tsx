@@ -23,7 +23,8 @@ import styles from './GeneralSchedulePage.module.scss'
 export function GeneralSchedulePage() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
-  const { allGeneralSchedules, loading } = useGeneralSchedules()
+  const { generalSchedules, allGeneralSchedules, loading } = useGeneralSchedules()
+  const visibleSchedules = user.role === 'admin' ? allGeneralSchedules : generalSchedules
   const { schedules } = useSchedules({})
 
   const [formOpen, setFormOpen]         = useState(false)
@@ -78,17 +79,19 @@ export function GeneralSchedulePage() {
           <CardHeader
             title={t('generalSchedule.pageTitle')}
             action={
-              <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
-                + {t('generalSchedule.addBtn')}
-              </Button>
+              (user.role === 'admin' || user.role === 'seventy') && (
+                <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
+                  + {t('generalSchedule.addBtn')}
+                </Button>
+              )
             }
           />
           <CardBody>
             {loading && <p className={styles.empty}>불러오는 중…</p>}
-            {!loading && allGeneralSchedules.length === 0 && (
+            {!loading && visibleSchedules.length === 0 && (
               <p className={styles.empty}>{t('generalSchedule.empty')}</p>
             )}
-            {allGeneralSchedules.map(gs => {
+            {visibleSchedules.map(gs => {
               const attendance = myAttendances.find(a => a.generalScheduleId === gs.id)
               return (
                 <GeneralEventItem

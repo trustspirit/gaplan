@@ -187,7 +187,7 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
                 .filter(u =>
                   user.role === 'admin'
                     ? true
-                    : (user.regionIds ?? [user.regionId ?? '']).includes(u.regionId ?? '')
+                    : (user.regionIds?.length ? user.regionIds : user.regionId ? [user.regionId] : []).includes(u.regionId ?? '')
                 )
                 .map(u => (
                   <label key={u.id} className={styles.checkItem}>

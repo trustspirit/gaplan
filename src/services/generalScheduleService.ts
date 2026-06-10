@@ -1,7 +1,7 @@
 import {
   collection, query, where, orderBy,
   onSnapshot, addDoc, updateDoc, deleteDoc,
-  doc, getDocs, serverTimestamp,
+  doc, getDocs, serverTimestamp, writeBatch,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
@@ -12,7 +12,7 @@ import type { GeneralSchedule } from '@/types'
 export function subscribeToGeneralSchedules(
   callback: (schedules: GeneralSchedule[]) => void,
 ): Unsubscribe {
-  const sixMonthsAgo = dayjs().subtract(6, 'month').format('YYYY-MM-DD')
+  const sixMonthsAgo = dayjs().subtract(12, 'month').format('YYYY-MM-DD')
   const q = query(
     collection(db, 'generalSchedules'),
     where('date', '>=', sixMonthsAgo),
@@ -41,7 +41,17 @@ export async function updateGeneralSchedule(
 }
 
 export async function deleteGeneralSchedule(id: string): Promise<void> {
-  await deleteDoc(doc(db, 'generalSchedules', id))
+  const attendanceSnap = await getDocs(
+    query(
+      collection(db, 'schedules'),
+      where('generalScheduleId', '==', id),
+      where('type', '==', 'general_attendance'),
+    ),
+  )
+  const batch = writeBatch(db)
+  attendanceSnap.docs.forEach(d => batch.delete(d.ref))
+  batch.delete(doc(db, 'generalSchedules', id))
+  await batch.commit()
 }
 
 export async function fetchPublicGeneralSchedules(): Promise<GeneralSchedule[]> {

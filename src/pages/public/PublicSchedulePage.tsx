@@ -106,12 +106,12 @@ export default function PublicSchedulePage() {
 
   const mergedMap = new Map<string, ListEntry[]>()
   for (const s of schedules) {
-    const key = lang === 'ko' ? dayjs(s.date).format('YYYY년 M월') : dayjs(s.date).format('MMMM YYYY')
+    const key = dayjs(s.date).format('YYYY-MM')
     if (!mergedMap.has(key)) mergedMap.set(key, [])
     mergedMap.get(key)!.push({ kind: 'schedule', data: s })
   }
   for (const gs of generalSchedules) {
-    const key = lang === 'ko' ? dayjs(gs.date).format('YYYY년 M월') : dayjs(gs.date).format('MMMM YYYY')
+    const key = dayjs(gs.date).format('YYYY-MM')
     if (!mergedMap.has(key)) mergedMap.set(key, [])
     mergedMap.get(key)!.push({ kind: 'general', data: gs })
   }
@@ -160,9 +160,12 @@ export default function PublicSchedulePage() {
           <div className={styles.empty}>{t('public.empty')}</div>
         ) : (
           monthKeys.map((monthKey) => {
+            const monthLabel = lang === 'ko'
+              ? dayjs(monthKey).format('YYYY년 M월')
+              : dayjs(monthKey).format('MMMM YYYY')
             return (
               <section key={monthKey} className={styles.monthGroup}>
-                <h2 className={styles.monthLabel}>{monthKey}</h2>
+                <h2 className={styles.monthLabel}>{monthLabel}</h2>
                 <div className={styles.itemList}>
                   {mergedMap.get(monthKey)!.map(entry => {
                     if (entry.kind === 'general') {

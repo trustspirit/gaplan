@@ -19,7 +19,9 @@ export const registerGeneralAttendance = functions
 
     const db = admin.firestore()
     const callerSnap = await db.collection('users').doc(context.auth.uid).get()
-    const callerRole = callerSnap.data()?.role
+    const callerData = callerSnap.data()
+    const callerRole = callerData?.role
+    const callerName: string = callerData?.name ?? context.auth.uid
 
     if (!['admin', 'seventy'].includes(callerRole)) {
       throw new functions.https.HttpsError('permission-denied', 'Admin or seventy only')
@@ -58,7 +60,7 @@ export const registerGeneralAttendance = functions
       taskId: null,
       notes: null,
       zoomLink: null,
-      customTitle: gs.title,
+      customTitle: callerName,
       createdBy: context.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     })
