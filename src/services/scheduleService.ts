@@ -1,5 +1,5 @@
 import {
-  collection, query, where, onSnapshot, orderBy,
+  collection, query, where, onSnapshot, orderBy, getDocs,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
@@ -28,6 +28,21 @@ export function subscribeToSchedules(
     snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule)),
     err => { console.error('[schedules] onSnapshot error:', err.code, err.message); onError?.(err) },
   )
+}
+
+// 통계용 1회 조회 — 날짜 범위 단일 쿼리 (date 단일 필드 인덱스, 새 인덱스 불필요)
+export async function fetchSchedulesInRange(
+  startDate: string,   // YYYY-MM-DD
+  endDate: string,     // YYYY-MM-DD
+): Promise<Schedule[]> {
+  const q = query(
+    collection(db, 'schedules'),
+    where('date', '>=', startDate),
+    where('date', '<=', endDate),
+    orderBy('date', 'asc'),
+  )
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule)
 }
 
 interface ConfirmScheduleParams {
