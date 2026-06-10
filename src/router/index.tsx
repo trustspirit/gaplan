@@ -16,6 +16,7 @@ import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { UserManagement } from '@/pages/admin/UserManagement'
 import { TaskCreation } from '@/pages/admin/RegionSettings'
 import { TaskProgress } from '@/pages/admin/TaskProgress'
+import { StatsPage } from '@/pages/admin/StatsPage'
 import { AvailabilitySettings } from '@/pages/admin/AvailabilitySettings'
 import { CalendarSettings } from '@/pages/admin/CalendarSettings'
 import { VisitPlanner } from '@/pages/admin/VisitPlanner'
@@ -50,6 +51,7 @@ export function AppRouter() {
 
           <Route element={<RoleRoute allow={['admin', 'seventy']} />}>
             <Route path="/admin/task-progress" element={<TaskProgress />} />
+            <Route path="/admin/stats" element={<StatsPage />} />
           </Route>
         </Route>
 
