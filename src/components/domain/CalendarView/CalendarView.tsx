@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
-import type { Schedule } from '@/types'
+import type { Schedule, GeneralSchedule } from '@/types'
 import { isFastSunday } from '@/utils/fastSunday'
 import { Button } from '@/components/ui'
 import styles from './CalendarView.module.scss'
@@ -21,8 +21,15 @@ const SCHEDULE_TYPE_COLORS: Record<Schedule['type'], { bg: string; text: string;
     meeting: { bg: '#fff3df', text: '#8a4b0f', border: '#f8c471' },
   }
 
+const GENERAL_CATEGORY_COLORS = {
+  conference: { bg: '#fef3c7', text: '#92400e', border: '#fde68a' },
+  fasting:    { bg: '#ede9fe', text: '#5b21b6', border: '#ddd6fe' },
+  other:      { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' },
+} as const
+
 interface CalendarViewProps {
   schedules: Schedule[]
+  generalSchedules?: GeneralSchedule[]
   onDateClick?: (date: string) => void
   selectedDate?: string | null
   /** Resolve a unitId to its display name for schedule chips */
@@ -64,6 +71,7 @@ function ScheduleChip({
 
 export function CalendarView({
   schedules,
+  generalSchedules,
   onDateClick,
   selectedDate,
   getUnitName,
@@ -78,6 +86,9 @@ export function CalendarView({
 
   const getSchedulesForDate = (date: string) =>
     schedules.filter((s) => s.date === date && s.status === 'confirmed')
+
+  const getGeneralEventsForDate = (date: string) =>
+    (generalSchedules ?? []).filter(gs => gs.date === date)
 
   const movePeriod = (amount: number) => {
     setCurrent((c) => c.add(amount, view === 'month' ? 'month' : 'week'))
@@ -125,6 +136,19 @@ export function CalendarView({
               onClick={() => onDateClick?.(dateStr)}
             >
               <span className={styles.cellDay}>{d.date()}</span>
+              {getGeneralEventsForDate(dateStr).map(gs => {
+                const c = GENERAL_CATEGORY_COLORS[gs.category]
+                return (
+                  <span
+                    key={gs.id}
+                    className={clsx(styles.chip, styles.generalChip)}
+                    style={{ background: c.bg, color: c.text, borderColor: c.border }}
+                    title={gs.title}
+                  >
+                    {gs.title}
+                  </span>
+                )
+              })}
               {daySchedules.length > 0 && (
                 <div className={styles.chips}>
                   {visible.map((s) => (
@@ -230,6 +254,18 @@ export function CalendarView({
                       {d.format('D')}
                     </span>
                   </div>
+                  {getGeneralEventsForDate(dateStr).map(gs => {
+                    const c = GENERAL_CATEGORY_COLORS[gs.category]
+                    return (
+                      <div
+                        key={gs.id}
+                        className={styles.generalDayBanner}
+                        style={{ background: c.bg, color: c.text, borderColor: c.border }}
+                      >
+                        {gs.title}
+                      </div>
+                    )
+                  })}
 
                   {/* Time grid background + schedule blocks */}
                   <div className={styles.dayBody} style={{ height: HOURS.length * HOUR_HEIGHT }}>
