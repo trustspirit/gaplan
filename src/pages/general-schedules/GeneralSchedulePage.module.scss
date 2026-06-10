@@ -1,0 +1,16 @@
+@use '@/styles/variables' as *;
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: $space-6;
+
+  @media (max-width: 600px) { padding: $space-4; }
+}
+
+.empty {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  padding: $space-6 0;
+  text-align: center;
+}
