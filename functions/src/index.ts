@@ -25,3 +25,4 @@ export { adminAddPreRegisteredUser, adminDeletePreRegisteredUser, adminUpdatePre
 export { getPublicSchedules } from './getPublicSchedules'
 export { publicScheduleIcs } from './publicScheduleIcs'
 export { registerGeneralAttendance } from './registerGeneralAttendance'
+export { publishVisitPlan } from './publishVisitPlan'
