@@ -71,6 +71,7 @@ export const publishVisitPlan = functions
         customTitle: null,
         visitPlanId: planId,
         visitPlanItemId: item.itemId,
+        projectId: plan.projectId ?? null,
         createdBy: context.auth.uid,
       }
 
