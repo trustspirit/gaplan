@@ -87,6 +87,9 @@ export const ALL_UNITS = [...UNITS_SEOUL, ...UNITS_SEOUL_SOUTH, ...UNITS_BUSAN, 
 export const getUnitsByRegion = (regionId: string) =>
   ALL_UNITS.filter(u => u.regionId === regionId)
 
+export const getRegionIdByUnit = (unitId: string): string | undefined =>
+  ALL_UNITS.find(u => u.id === unitId)?.regionId
+
 // Wards (와드) and branches (지부) per stake/district
 // Source: kr.churchofjesuschrist.org/about-us/contact-us/location
 export const WARDS: WardUnit[] = [
