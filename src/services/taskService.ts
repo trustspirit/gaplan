@@ -103,13 +103,17 @@ export async function createTask(params: {
   availableDates?: string[]
   availableDateSlots?: { date: string; timeRanges: { startTime: string; endTime: string }[] }[]
   slotDurationMinutes?: number
+  projectId?: string
 }): Promise<string> {
   const tokenBytes = new Uint8Array(16)
   crypto.getRandomValues(tokenBytes)
   const respondToken = Array.from(tokenBytes).map(b => b.toString(16).padStart(2, '0')).join('')
 
+  const { projectId, ...rest } = params
   const ref = await addDoc(collection(db, 'tasks'), {
-    ...params, respondToken, status: 'pending', notifiedAt: [], createdAt: serverTimestamp(),
+    ...rest,
+    ...(projectId ? { projectId } : {}),
+    respondToken, status: 'pending', notifiedAt: [], createdAt: serverTimestamp(),
   })
   return ref.id
 }
