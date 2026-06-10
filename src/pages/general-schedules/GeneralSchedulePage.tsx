@@ -23,7 +23,7 @@ import styles from './GeneralSchedulePage.module.scss'
 export function GeneralSchedulePage() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
-  const { generalSchedules, loading } = useGeneralSchedules()
+  const { allGeneralSchedules, loading } = useGeneralSchedules()
   const { schedules } = useSchedules({})
 
   const [formOpen, setFormOpen]         = useState(false)
@@ -85,10 +85,10 @@ export function GeneralSchedulePage() {
           />
           <CardBody>
             {loading && <p className={styles.empty}>불러오는 중…</p>}
-            {!loading && generalSchedules.length === 0 && (
+            {!loading && allGeneralSchedules.length === 0 && (
               <p className={styles.empty}>{t('generalSchedule.empty')}</p>
             )}
-            {generalSchedules.map(gs => {
+            {allGeneralSchedules.map(gs => {
               const attendance = myAttendances.find(a => a.generalScheduleId === gs.id)
               return (
                 <GeneralEventItem
