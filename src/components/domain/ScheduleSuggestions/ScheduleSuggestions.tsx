@@ -12,21 +12,26 @@ import 'dayjs/locale/ko'
 dayjs.locale('ko')
 import clsx from 'clsx'
 import { toast } from 'sonner'
-import { CheckCircle2, AlertCircle } from 'lucide-react'
+import { CheckCircle2, AlertCircle, AlertTriangle } from 'lucide-react'
 import { adminConfirmSchedule } from '@/services/scheduleService'
 import { computeInterviewSlots } from '@/services/availabilityService'
 import { generateSuggestions, type Respondent, type SuggestionOption } from './schedulingAlgorithm'
 import type { Task, RespondedSlot } from '@/types'
+import type { GeneralSchedule, AppUser } from '@/types'
+import { isGeneralScheduleRelevant } from '@/types'
+import type { GeneralEventRef } from './schedulingAlgorithm'
 import { Button } from '@/components/ui'
 import styles from './ScheduleSuggestions.module.scss'
 
 interface ScheduleSuggestionsProps {
   tasks: Task[]
   getPresidentName: (uid: string) => string
+  generalSchedules?: GeneralSchedule[]
+  currentUser?: AppUser
   onConfirmed?: () => void
 }
 
-export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }: ScheduleSuggestionsProps) {
+export function ScheduleSuggestions({ tasks, getPresidentName, generalSchedules, currentUser, onConfirmed }: ScheduleSuggestionsProps) {
   const { t } = useTranslation()
   const [confirmingIdx, setConfirmingIdx] = useState<number | null>(null)
 
@@ -43,7 +48,11 @@ export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }: Sc
       })),
     }))
 
-  const suggestions = generateSuggestions(respondents)
+  const relevantGeneralEvents: GeneralEventRef[] = (generalSchedules ?? [])
+    .filter(gs => !currentUser || isGeneralScheduleRelevant(gs, currentUser))
+    .map(gs => ({ id: gs.id, title: gs.title, date: gs.date }))
+
+  const suggestions = generateSuggestions(respondents, relevantGeneralEvents)
 
   if (respondents.length === 0) {
     return (
@@ -100,11 +109,17 @@ export function ScheduleSuggestions({ tasks, getPresidentName, onConfirmed }: Sc
 
             <div className={styles.optionTable}>
               {option.assignments.map((a, i) => (
-                <div key={i} className={styles.assignRow}>
+                <div key={i} className={clsx(styles.assignRow, a.conflictingEvent && styles.assignRowConflict)}>
                   <span className={styles.assignName}>{a.respondent.name}</span>
                   <span className={styles.assignSlot}>
                     {dayjs(a.slot.date).format('M/D (ddd)')} {a.slot.startTime}~{a.slot.endTime}
                   </span>
+                  {a.conflictingEvent && (
+                    <span className={styles.conflictBadge}>
+                      <AlertTriangle size={11} />
+                      {a.conflictingEvent.title}
+                    </span>
+                  )}
                 </div>
               ))}
               {option.unassigned.map(r => (

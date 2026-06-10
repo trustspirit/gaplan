@@ -154,3 +154,21 @@
   text-align: center;
   padding: $space-4 0;
 }
+
+.assignRowConflict {
+  background: #fff3df;
+}
+
+.conflictBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: $font-size-xs;
+  color: #8a4b0f;
+  background: #fff3df;
+  border: 1px solid #f8c471;
+  border-radius: $border-radius-sm;
+  padding: 1px $space-2;
+  margin-left: $space-2;
+  white-space: nowrap;
+}

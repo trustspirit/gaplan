@@ -8,13 +8,14 @@ import { CheckCircle2, Clock, AlertCircle, AlertTriangle, ChevronDown, ChevronUp
 import { authUserAtom } from '@/store/authAtom'
 import { useAllTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
+import { useGeneralSchedules } from '@/hooks/useGeneralSchedules'
 import { adminConfirmSchedule, adminConfirmWardVisit } from '@/services/scheduleService'
 import { expireTask, updateTaskDetails } from '@/services/taskService'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Select, Modal } from '@/components/ui'
 import { MultiDatePicker, ResponseMatrix, ScheduleSuggestions } from '@/components/domain'
-import type { Task, RespondedSlot } from '@/types'
+import type { Task, RespondedSlot, GeneralSchedule, AppUser } from '@/types'
 import styles from './TaskProgress.module.scss'
 
 function StatusBadge({ status }: { status: Task['status'] }) {
@@ -432,9 +433,11 @@ interface RegionGroupProps {
   tasks: Task[]
   getUserName: (uid: string) => string
   getUnitName: (uid: string) => string
+  generalSchedules?: GeneralSchedule[]
+  currentUser?: AppUser
 }
 
-function RegionGroup({ regionId, tasks, getUserName, getUnitName }: RegionGroupProps) {
+function RegionGroup({ regionId, tasks, getUserName, getUnitName, generalSchedules, currentUser }: RegionGroupProps) {
   const { t } = useTranslation()
   const regionName = REGIONS.find(r => r.id === regionId)?.name ?? regionId
   const responded = tasks.filter(t => t.status === 'responded')
@@ -499,6 +502,8 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName }: RegionGroupP
                         <ScheduleSuggestions
                           tasks={batch}
                           getPresidentName={getUserName}
+                          generalSchedules={generalSchedules}
+                          currentUser={currentUser}
                         />
                       </div>
                     )}
@@ -545,6 +550,7 @@ export function TaskProgress() {
   // Seventy: only their assigned tasks. Admin: all tasks.
   const { tasks, loading } = useAllTasks(user.role === 'seventy' ? user.uid : undefined)
   const { users } = useUsers()
+  const { generalSchedules } = useGeneralSchedules()
 
   const getUserName = (uid: string) => users.find(u => u.uid === uid)?.name ?? uid
   const getUnitName = (uid: string) => {
@@ -610,6 +616,8 @@ export function TaskProgress() {
               tasks={tasksByRegion[regionId]}
               getUserName={getUserName}
               getUnitName={getUnitName}
+              generalSchedules={generalSchedules}
+              currentUser={user}
             />
           ))
         )}

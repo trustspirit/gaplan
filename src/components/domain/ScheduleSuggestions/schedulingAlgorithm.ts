@@ -23,12 +23,19 @@ export interface Respondent {
 export interface Assignment {
   respondent: Respondent
   slot: { date: string; startTime: string; endTime: string }
+  conflictingEvent?: { id: string; title: string }
 }
 
 export interface SuggestionOption {
   label: string
   assignments: Assignment[]
   unassigned: Respondent[]
+}
+
+export interface GeneralEventRef {
+  id: string
+  title: string
+  date: string
 }
 
 type Strategy = 'earliest' | 'afternoon' | 'spread'
@@ -85,7 +92,10 @@ function greedyAssign(respondents: Respondent[], strategy: Strategy): Suggestion
   return assignments
 }
 
-export function generateSuggestions(respondents: Respondent[]): SuggestionOption[] {
+export function generateSuggestions(
+  respondents: Respondent[],
+  generalEvents: GeneralEventRef[] = [],
+): SuggestionOption[] {
   if (respondents.length === 0) return []
 
   const strategies: { strategy: Strategy; label: string }[] = [
@@ -96,8 +106,12 @@ export function generateSuggestions(respondents: Respondent[]): SuggestionOption
 
   return strategies.map(({ strategy, label }) => {
     const assignments = greedyAssign(respondents, strategy)
-    const assignedUids = new Set(assignments.map(a => a.respondent.uid))
+    const assignmentsWithConflict = assignments.map(a => ({
+      ...a,
+      conflictingEvent: generalEvents.find(ge => ge.date === a.slot.date),
+    }))
+    const assignedUids = new Set(assignmentsWithConflict.map(a => a.respondent.uid))
     const unassigned = respondents.filter(r => !assignedUids.has(r.uid))
-    return { label, assignments, unassigned }
+    return { label, assignments: assignmentsWithConflict, unassigned }
   })
 }
