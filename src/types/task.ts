@@ -52,6 +52,7 @@ export interface Task {
   respondedAt?: string
   respondToken?: string  // 16-char hex; public respond link token
   unitId?: string        // president's unit; used in public WardAssigner
+  projectId?: string     // 연계 프로젝트
 }
 
 export interface Notification {

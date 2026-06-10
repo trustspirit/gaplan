@@ -19,4 +19,5 @@ export interface VisitPlan {
   createdBy: string
   createdAt: string
   publishedAt?: string
+  projectId?: string     // 연계 프로젝트
 }
