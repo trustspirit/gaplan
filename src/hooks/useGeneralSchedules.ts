@@ -11,10 +11,13 @@ export function useGeneralSchedules() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsub = subscribeToGeneralSchedules(data => {
-      setAll(data)
-      setLoading(false)
-    })
+    const unsub = subscribeToGeneralSchedules(
+      data => {
+        setAll(data)
+        setLoading(false)
+      },
+      () => setLoading(false),   // 권한/쿼리 오류 시에도 로딩 해제 (무한 로딩 방지)
+    )
     return unsub
   }, [])
 

@@ -11,6 +11,7 @@ import type { GeneralSchedule } from '@/types'
 
 export function subscribeToGeneralSchedules(
   callback: (schedules: GeneralSchedule[]) => void,
+  onError?: (error: Error) => void,
 ): Unsubscribe {
   const sixMonthsAgo = dayjs().subtract(12, 'month').format('YYYY-MM-DD')
   const q = query(
@@ -18,8 +19,10 @@ export function subscribeToGeneralSchedules(
     where('date', '>=', sixMonthsAgo),
     orderBy('date', 'asc'),
   )
-  return onSnapshot(q, snap =>
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as GeneralSchedule)),
+  return onSnapshot(
+    q,
+    snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as GeneralSchedule)),
+    err => { console.error('[generalSchedules] onSnapshot error:', err.code, err.message); onError?.(err) },
   )
 }
 

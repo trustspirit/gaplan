@@ -66,6 +66,13 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /generalSchedules/{scheduleId} {
+      // Authenticated users read all (calendar/list). Public page reads isPublic==true only.
+      allow read: if isAuth() || resource.data.isPublic == true;
+      // Admin and seventy create/manage org-wide events.
+      allow create, update, delete: if isAdmin() || isSeventy();
+    }
+
     match /tasks/{taskId} {
       // Admin: all. Seventy: only tasks in their region (seventyUid matches).
       // President: only tasks assigned to them.
