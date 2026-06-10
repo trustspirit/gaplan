@@ -36,6 +36,14 @@
     "daysAgo_other": "{{count}} days ago",
     "selectHint": "Visit planning coming soon"
   },
+  "reminder": {
+    "title": "Reminders",
+    "quarterlyInterview": "Quarterly president interview",
+    "preVisitMeeting": "Pre-visit bishopric meeting",
+    "noPresident": "No president assigned",
+    "meetingBy": "meeting by {{date}}",
+    "acknowledge": "Acknowledge"
+  },
   "visitPlan": {
     "listTitle": "Visit Plans",
     "listSubtext": "Draft and publish visit plans",

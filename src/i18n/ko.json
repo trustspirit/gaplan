@@ -36,6 +36,14 @@
     "daysAgo_other": "{{count}}일 전",
     "selectHint": "방문 계획 기능은 추후 제공됩니다"
   },
+  "reminder": {
+    "title": "리마인더",
+    "quarterlyInterview": "분기 회장 접견",
+    "preVisitMeeting": "방문 전 감독단 모임",
+    "noPresident": "회장 미배정",
+    "meetingBy": "모임 {{date}}까지",
+    "acknowledge": "확인함"
+  },
   "visitPlan": {
     "listTitle": "방문 계획",
     "listSubtext": "초안을 작성하고 발행합니다",
