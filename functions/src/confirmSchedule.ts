@@ -84,6 +84,7 @@ export const confirmSchedule = functions
         zoomLink: null,
         customTitle: null,
         status: 'confirmed',
+        projectId: taskData.projectId ?? null,
         createdBy: context.auth!.uid,
         confirmedAt: admin.firestore.FieldValue.serverTimestamp(),
       })

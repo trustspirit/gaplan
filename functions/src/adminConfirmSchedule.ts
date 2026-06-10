@@ -78,6 +78,7 @@ export const adminConfirmSchedule = functions
         customTitle: null,
         status: 'confirmed',
         taskId: data.taskId,
+        projectId: taskData.projectId ?? null,
         createdBy: callerUid,
         confirmedAt: admin.firestore.FieldValue.serverTimestamp(),
       })

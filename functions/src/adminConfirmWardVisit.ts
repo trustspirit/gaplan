@@ -64,6 +64,7 @@ export const adminConfirmWardVisit = functions
       batch.set(scheduleRef, {
         type: 'ward_visit',
         taskId: data.taskId,       // for future re-confirmation cleanup
+        projectId: taskData.projectId ?? null,
         wardName: assignment.wardName,
         unitId,
         presidentUid: taskData.assignedTo,
