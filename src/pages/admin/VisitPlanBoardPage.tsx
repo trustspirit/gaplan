@@ -5,13 +5,13 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { authUserAtom } from '@/store/authAtom'
 import {
-  getVisitPlan, updateVisitPlanItems, deleteVisitPlan, publishVisitPlan,
+  getVisitPlan, updateVisitPlanItems, deleteVisitPlan, publishVisitPlan, updateVisitPlanProject,
 } from '@/services/visitPlanService'
 import { deleteScheduleViaCF } from '@/services/scheduleService'
 import { useVisitPlanContext } from '@/hooks/useVisitPlanContext'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Button, Spinner } from '@/components/ui'
-import { AddVisitPanel, PlanItemList, BalancePanel } from '@/components/domain'
+import { AddVisitPanel, PlanItemList, BalancePanel, ProjectPicker } from '@/components/domain'
 import type { VisitPlan, VisitPlanItem } from '@/types'
 import styles from './VisitPlanBoardPage.module.scss'
 
@@ -104,6 +104,11 @@ export function VisitPlanBoardPage() {
             <Button size="sm" onClick={handlePublish} loading={publishing}>{t('visitPlan.publish')}</Button>
           </div>
         </div>
+
+        <ProjectPicker
+          value={plan.projectId ?? ''}
+          onChange={pid => { setPlan({ ...plan, projectId: pid }); updateVisitPlanProject(plan.id, pid) }}
+        />
 
         <div className={styles.grid}>
           <Card>

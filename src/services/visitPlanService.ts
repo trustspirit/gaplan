@@ -48,6 +48,10 @@ export async function updateVisitPlanTitle(id: string, title: string): Promise<v
   await updateDoc(doc(db, 'visitPlans', id), { title })
 }
 
+export async function updateVisitPlanProject(id: string, projectId: string): Promise<void> {
+  await updateDoc(doc(db, 'visitPlans', id), { projectId: projectId || null })
+}
+
 export async function deleteVisitPlan(id: string): Promise<void> {
   await deleteDoc(doc(db, 'visitPlans', id))
 }
