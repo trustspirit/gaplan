@@ -20,6 +20,8 @@ export interface Schedule {
   zoomLink?: string | null
   customTitle?: string | null
   generalScheduleId?: string   // general_attendance일 때만 사용
+  visitPlanId?: string        // 방문 계획에서 발행된 경우
+  visitPlanItemId?: string    // 해당 계획 항목 id
 }
 
 export interface TimeSlot {
