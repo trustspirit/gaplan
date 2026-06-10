@@ -5,6 +5,7 @@ import { functions } from '@/firebase'
 import { useUsers } from '@/hooks/useUsers'
 import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
 import type { Schedule } from '@/types'
+import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
 import styles from './EditScheduleModal.module.scss'
 
 const adminEditScheduleFn = httpsCallable(functions, 'adminEditSchedule')
@@ -30,6 +31,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
   const [note, setNote] = useState(schedule.notes ?? '')
   const [zoomLink, setZoomLink] = useState(schedule.zoomLink ?? '')
   const [customTitle, setCustomTitle] = useState(schedule.customTitle ?? '')
+  const [projectId, setProjectId] = useState(schedule.projectId ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(initialConfirmDelete)
@@ -77,6 +79,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
           ...(isInterview ? { presidentUid: presidentUid || null } : {}),
           ...(!isVisit ? { zoomLink: zoomLink.trim() || null } : {}),
           ...(!isVisit ? { customTitle: customTitle.trim() || null } : {}),
+          projectId: projectId || null,
         },
       })
       onSaved()
@@ -181,6 +184,8 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
 
           <label className={styles.fieldLabel}>{t('schedule.notesLabelOptional')}</label>
           <textarea className={styles.fieldTextarea} value={note} onChange={e => setNote(e.target.value)} rows={3} />
+
+          <ProjectPicker value={projectId} onChange={setProjectId} />
         </div>}
 
         <div className={styles.actions}>
