@@ -1,0 +1,125 @@
+@use '@/styles/variables' as *;
+
+.content { padding: $space-2 0 $space-4; }
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-3;
+  margin-bottom: $space-3;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex: 1;
+  min-width: 0;
+}
+
+.categoryIcon { flex-shrink: 0; color: $color-text-muted; }
+
+.title {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  margin: 0;
+  word-break: break-word;
+}
+
+.actions { display: flex; gap: $space-1; flex-shrink: 0; }
+
+.actionBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: $color-text-muted;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $border-radius-md;
+  &:hover { background: $color-bg; color: $color-text; }
+}
+
+.deleteBtn { &:hover { color: $color-danger; background: $color-highlight-danger; } }
+
+.meta {
+  display: flex;
+  gap: $space-2;
+  flex-wrap: wrap;
+  margin-bottom: $space-4;
+}
+
+.categoryBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px $space-2;
+  border-radius: $border-radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.conference { background: #fef3c7; color: #92400e; }
+  &.fasting    { background: #ede9fe; color: #5b21b6; }
+  &.other      { background: #f3f4f6; color: #374151; }
+}
+
+.publicBadge, .privateBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px $space-2;
+  border-radius: $border-radius-sm;
+  font-size: $font-size-xs;
+}
+
+.publicBadge  { background: $color-highlight-success; color: $color-success; }
+.privateBadge { background: $color-bg; color: $color-text-muted; }
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-size-sm;
+  color: $color-text;
+  margin-bottom: $space-2;
+}
+.infoIcon { color: $color-text-muted; flex-shrink: 0; }
+
+.description {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  margin: $space-3 0;
+  line-height: $line-height-loose;
+}
+
+.attendeesSection { margin: $space-4 0; }
+
+.attendeesLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 $space-2;
+}
+
+.attendeesList { display: flex; flex-wrap: wrap; gap: $space-2; }
+
+.attendeeChip {
+  padding: 3px $space-3;
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-full;
+  font-size: $font-size-xs;
+  color: $color-text;
+}
+
+.attendRow {
+  padding-top: $space-4;
+  border-top: 1px solid $color-border;
+  display: flex;
+  justify-content: center;
+}
