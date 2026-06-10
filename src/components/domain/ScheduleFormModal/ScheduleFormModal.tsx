@@ -11,6 +11,7 @@ import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
 import { isGeneralScheduleRelevant } from '@/types'
 import type { ScheduleType, GeneralSchedule, AppUser } from '@/types'
 import { Button, Select, Input } from '@/components/ui'
+import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
 import styles from './ScheduleFormModal.module.scss'
 
 const adminCreateScheduleFn = httpsCallable(functions, 'adminCreateSchedule')
@@ -47,6 +48,7 @@ export function ScheduleFormModal({
   const [notes, setNotes] = useState('')
   const [zoomLink, setZoomLink] = useState('')
   const [customTitle, setCustomTitle] = useState('')
+  const [projectId, setProjectId] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -139,6 +141,7 @@ export function ScheduleFormModal({
         ...(notes.trim() ? { notes: notes.trim() } : {}),
         ...(zoomLink.trim() && type !== 'ward_visit' ? { zoomLink: zoomLink.trim() } : {}),
         ...(customTitle.trim() && type !== 'ward_visit' ? { customTitle: customTitle.trim() } : {}),
+        ...(projectId ? { projectId } : {}),
       })
       onSaved()
       onClose()
@@ -302,6 +305,10 @@ export function ScheduleFormModal({
                 rows={3}
               />
             </div>
+
+            {user.role === 'admin' && (
+              <ProjectPicker value={projectId} onChange={setProjectId} />
+            )}
           </div>
 
           <div className={styles.footer}>
