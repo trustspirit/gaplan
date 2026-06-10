@@ -7,7 +7,32 @@
     "tasks": "Tasks",
     "taskProgress": "Task Progress",
     "admin": "Admin",
-    "generalSchedules": "Events"
+    "generalSchedules": "Events",
+    "stats": "Statistics"
+  },
+  "stats": {
+    "pageTitle": "Visit Statistics",
+    "subtext": "Visits by period and region",
+    "regionFilter": "Select region",
+    "periodFilter": "Select period",
+    "allRegions": "All regions",
+    "period3m": "Last 3 months",
+    "period6m": "Last 6 months",
+    "period12m": "Last 12 months",
+    "periodThisYear": "This year",
+    "granularity": "Granularity",
+    "granularityWard": "Ward/Branch",
+    "granularityUnit": "Stake/District",
+    "byRegion": "Visits by region",
+    "byUnit": "Visits by unit",
+    "monthlyTrend": "Monthly trend",
+    "lastVisit": "Last visit",
+    "staleTitle": "Wards/branches overdue for a visit",
+    "noData": "No data",
+    "neverVisited": "Never visited",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago",
+    "selectHint": "Visit planning coming soon"
   },
   "role": {
     "admin": "Executive Secretary",

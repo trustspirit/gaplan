@@ -7,7 +7,32 @@
     "tasks": "Task",
     "taskProgress": "Task 현황",
     "admin": "관리",
-    "generalSchedules": "행사 일정"
+    "generalSchedules": "행사 일정",
+    "stats": "통계"
+  },
+  "stats": {
+    "pageTitle": "방문 통계",
+    "subtext": "기간·지역별 방문 현황",
+    "regionFilter": "지역 선택",
+    "periodFilter": "기간 선택",
+    "allRegions": "전체 지역",
+    "period3m": "최근 3개월",
+    "period6m": "최근 6개월",
+    "period12m": "최근 12개월",
+    "periodThisYear": "올해",
+    "granularity": "집계 단위",
+    "granularityWard": "와드/지부",
+    "granularityUnit": "스테이크/지방부",
+    "byRegion": "지역별 방문 횟수",
+    "byUnit": "단위별 방문 횟수",
+    "monthlyTrend": "월별 방문 추이",
+    "lastVisit": "마지막 방문일",
+    "staleTitle": "오래 방문 안 된 와드/지부",
+    "noData": "데이터 없음",
+    "neverVisited": "방문 이력 없음",
+    "daysAgo_one": "{{count}}일 전",
+    "daysAgo_other": "{{count}}일 전",
+    "selectHint": "방문 계획 기능은 추후 제공됩니다"
   },
   "role": {
     "admin": "관리자 (집행서기)",

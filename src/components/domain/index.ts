@@ -15,3 +15,8 @@ export { ScheduleDateRangeFilter } from './ScheduleDateRangeFilter/ScheduleDateR
 export { GeneralEventItem } from './GeneralEventItem'
 export { GeneralScheduleDetailSheet } from './GeneralScheduleDetailSheet/GeneralScheduleDetailSheet'
 export { GeneralScheduleFormModal } from './GeneralScheduleFormModal/GeneralScheduleFormModal'
+export { StatsFilterBar } from './stats/StatsFilterBar'
+export { VisitCountBarChart } from './stats/VisitCountBarChart'
+export { MonthlyTrendChart } from './stats/MonthlyTrendChart'
+export { LastVisitList } from './stats/LastVisitList'
+export { StaleWardsCard } from './stats/StaleWardsCard'
