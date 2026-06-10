@@ -3,7 +3,7 @@ import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
 import { authUserAtom } from '@/store/authAtom'
 import { useUsers } from '@/hooks/useUsers'
-import { fetchSchedulesInRange } from '@/services/scheduleService'
+import { fetchScopedSchedulesInRange } from '@/services/scheduleService'
 import { getDismissedReminders, dismissReminder } from '@/services/userSettingsService'
 import {
   currentQuarter, computeInterviewReminders, computeMeetingReminders,
@@ -29,7 +29,7 @@ export function useReminders() {
     // 향후 120일까지의 일정만 조회 — 그 이후 방문의 모임 리마인더는 제외(허용 한계)
     const end = dayjs(today).add(120, 'day').format('YYYY-MM-DD')
     Promise.all([
-      fetchSchedulesInRange(start, end),
+      fetchScopedSchedulesInRange(start, end),
       getDismissedReminders(user.uid),
     ]).then(([sched, dis]) => {
       if (!active) return

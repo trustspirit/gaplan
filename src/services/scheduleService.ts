@@ -45,6 +45,19 @@ export async function fetchSchedulesInRange(
   return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule)
 }
 
+// 역할 스코프 1회 조회 — seventy는 본인 지역 unit ∪ 본인 일정만 (CF가 서버에서 필터)
+export async function fetchScopedSchedulesInRange(
+  startDate: string,
+  endDate: string,
+): Promise<Schedule[]> {
+  const fn = httpsCallable<{ startDate: string; endDate: string }, { schedules: Schedule[] }>(
+    functions,
+    'getSchedulesInRange',
+  )
+  const res = await fn({ startDate, endDate })
+  return res.data.schedules
+}
+
 interface ConfirmScheduleParams {
   taskId: string
   seventyUid: string

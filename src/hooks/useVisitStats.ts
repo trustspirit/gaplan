@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
 import { authUserAtom } from '@/store/authAtom'
-import { fetchSchedulesInRange } from '@/services/scheduleService'
+import { fetchScopedSchedulesInRange } from '@/services/scheduleService'
 import { computeVisitStats, type StatsFilters, type VisitStats } from '@/utils/visitStats'
 import type { Schedule } from '@/types'
 
@@ -18,7 +18,7 @@ export function useVisitStats(filters: StatsFilters) {
     setLoading(true)
     const start = dayjs().subtract(FETCH_MONTHS, 'month').format('YYYY-MM-DD')
     const end = dayjs().format('YYYY-MM-DD')
-    fetchSchedulesInRange(start, end)
+    fetchScopedSchedulesInRange(start, end)
       .then(data => { if (active) { setSchedules(data); setLoading(false) } })
       .catch(() => { if (active) { setSchedules([]); setLoading(false) } })
     return () => { active = false }
