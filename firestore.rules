@@ -73,6 +73,11 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin() || isSeventy();
     }
 
+    match /visitPlans/{planId} {
+      // 방문 계획 도구는 admin 전용
+      allow read, write: if isAdmin();
+    }
+
     match /tasks/{taskId} {
       // Admin: all. Seventy: only tasks in their region (seventyUid matches).
       // President: only tasks assigned to them.
