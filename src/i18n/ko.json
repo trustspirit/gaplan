@@ -8,7 +8,8 @@
     "taskProgress": "Task 현황",
     "admin": "관리",
     "generalSchedules": "행사 일정",
-    "stats": "통계"
+    "stats": "통계",
+    "visitPlans": "방문 계획"
   },
   "stats": {
     "pageTitle": "방문 통계",
@@ -34,6 +35,32 @@
     "daysAgo_one": "{{count}}일 전",
     "daysAgo_other": "{{count}}일 전",
     "selectHint": "방문 계획 기능은 추후 제공됩니다"
+  },
+  "visitPlan": {
+    "listTitle": "방문 계획",
+    "listSubtext": "초안을 작성하고 발행합니다",
+    "newPlan": "새 계획",
+    "planTitle": "계획 제목",
+    "seventy": "지역 칠십인",
+    "create": "만들기",
+    "draft": "초안",
+    "published": "발행됨",
+    "publish": "Publish",
+    "publishConfirm": "이 계획의 모든 방문을 캘린더에 등록할까요?",
+    "publishSuccess": "발행되었습니다",
+    "addVisit": "방문 추가",
+    "wardStaleFirst": "와드 (밀린 순)",
+    "date": "날짜",
+    "startTime": "시작",
+    "endTime": "종료",
+    "addToPlan": "계획에 추가",
+    "plannedVisits": "계획된 방문",
+    "noItems": "아직 추가된 방문이 없습니다",
+    "nearConference": "대회와 인접",
+    "balance": "담당 단위 균형",
+    "removeItemConfirm": "이 방문을 삭제할까요? 발행된 일정도 함께 삭제됩니다.",
+    "deletePlanConfirm": "이 계획을 삭제할까요?",
+    "empty": "계획이 없습니다"
   },
   "role": {
     "admin": "관리자 (집행서기)",

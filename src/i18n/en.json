@@ -8,7 +8,8 @@
     "taskProgress": "Task Progress",
     "admin": "Admin",
     "generalSchedules": "Events",
-    "stats": "Statistics"
+    "stats": "Statistics",
+    "visitPlans": "Visit Plans"
   },
   "stats": {
     "pageTitle": "Visit Statistics",
@@ -34,6 +35,32 @@
     "daysAgo_one": "{{count}} day ago",
     "daysAgo_other": "{{count}} days ago",
     "selectHint": "Visit planning coming soon"
+  },
+  "visitPlan": {
+    "listTitle": "Visit Plans",
+    "listSubtext": "Draft and publish visit plans",
+    "newPlan": "New plan",
+    "planTitle": "Plan title",
+    "seventy": "Area Seventy",
+    "create": "Create",
+    "draft": "Draft",
+    "published": "Published",
+    "publish": "Publish",
+    "publishConfirm": "Register all visits in this plan to the calendar?",
+    "publishSuccess": "Published",
+    "addVisit": "Add visit",
+    "wardStaleFirst": "Ward (most overdue first)",
+    "date": "Date",
+    "startTime": "Start",
+    "endTime": "End",
+    "addToPlan": "Add to plan",
+    "plannedVisits": "Planned visits",
+    "noItems": "No visits added yet",
+    "nearConference": "Near a conference",
+    "balance": "Unit balance",
+    "removeItemConfirm": "Remove this visit? The published schedule will also be deleted.",
+    "deletePlanConfirm": "Delete this plan?",
+    "empty": "No plans"
   },
   "role": {
     "admin": "Executive Secretary",
