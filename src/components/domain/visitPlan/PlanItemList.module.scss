@@ -1,0 +1,28 @@
+@use '@/styles/variables' as *;
+
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: $space-2; }
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-left-width: 3px;
+  border-radius: $border-radius-sm;
+  padding: $space-2 $space-3;
+}
+
+.bar_green { border-left-color: #22c55e; }
+.bar_amber { border-left-color: #f59e0b; }
+.bar_red   { border-left-color: #ef4444; }
+
+.main { flex: 1; min-width: 0; }
+.titleRow { font-size: $font-size-sm; font-weight: $font-weight-medium; color: $color-text; }
+.meta { font-size: $font-size-xs; color: $color-text-muted; display: flex; gap: $space-2; align-items: center; margin-top: 2px; }
+.warn { color: #d97706; display: inline-flex; align-items: center; gap: 3px; }
+
+.del { background: none; border: none; cursor: pointer; color: $color-text-muted; flex-shrink: 0; }
+
+.empty { color: $color-text-muted; font-size: $font-size-sm; text-align: center; padding: $space-6 0; }
