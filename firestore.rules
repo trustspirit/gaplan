@@ -56,11 +56,11 @@ service cloud.firestore {
     }
 
     match /schedules/{scheduleId} {
-      // Admin: all. Seventy: only schedules they are assigned to (seventyUid).
+      // Admin: all. Seventy: all (needed for range-queries in stats/reminders).
       // President: only their own confirmed schedules.
       allow read: if isAuth() && (
         isAdmin()
-        || (isSeventy() && resource.data.seventyUid == request.auth.uid)
+        || isSeventy()
         || resource.data.presidentUid == request.auth.uid
       );
       allow create, update, delete: if isAdmin();

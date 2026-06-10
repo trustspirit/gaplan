@@ -26,6 +26,7 @@ export function useReminders() {
     setLoading(true)
     const q = currentQuarter(today)
     const start = q.start < today ? q.start : today
+    // 향후 120일까지의 일정만 조회 — 그 이후 방문의 모임 리마인더는 제외(허용 한계)
     const end = dayjs(today).add(120, 'day').format('YYYY-MM-DD')
     Promise.all([
       fetchSchedulesInRange(start, end),
@@ -60,7 +61,7 @@ export function useReminders() {
   const scopeUnitIds = useMemo(() => new Set(scopeUnits.map(u => u.id)), [scopeUnits])
   const meetingReminders: MeetingReminder[] = useMemo(() => {
     const wardVisits = schedules.filter(s => s.type === 'ward_visit' && scopeUnitIds.has(s.unitId))
-    const meetings = schedules.filter(s => s.type === 'meeting')
+    const meetings = schedules.filter(s => s.type === 'meeting' && scopeUnitIds.has(s.unitId))
     return computeMeetingReminders(wardVisits, meetings, new Set(dismissed), today)
   }, [schedules, scopeUnitIds, dismissed, today])
 
