@@ -10,7 +10,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Select, Button, Input, Badge } from '@/components/ui'
-import { MultiDatePicker } from '@/components/domain'
+import { MultiDatePicker, ProjectPicker } from '@/components/domain'
 import { paintedCellsToDateSlots } from '@/components/domain/TimePainterPicker/paintedCellsToDateSlots'
 import { TimePainterPicker } from '@/components/domain/TimePainterPicker/TimePainterPicker'
 import type { AvailableDateSlot } from '@/types'
@@ -31,6 +31,7 @@ export function TaskCreation() {
   const [filterRegion,  setFilterRegion]  = useState('')
   const [taskTitle, setTaskTitle] = useState('')
   const [taskNote,  setTaskNote]  = useState('')
+  const [projectId, setProjectId] = useState('')
   const [dueDate,       setDueDate]       = useState(dayjs().add(7, 'day').format('YYYY-MM-DD'))
   const [selectedDates, setSelectedDates] = useState<string[]>([])
   const [paintedCells, setPaintedCells] = useState<Set<string>>(new Set())
@@ -114,6 +115,7 @@ export function TaskCreation() {
               availableDays: [0],
               availableDates: selectedDates,
               note: taskNote.trim() || undefined,
+              projectId: projectId || undefined,
             })
           }
 
@@ -130,6 +132,7 @@ export function TaskCreation() {
             availableDays: [],
             availableDateSlots,
             slotDurationMinutes,
+            projectId: projectId || undefined,
           })
         })
       )
@@ -140,6 +143,7 @@ export function TaskCreation() {
       setPaintedCells(new Set())
       setTaskTitle('')
       setTaskNote('')
+      setProjectId('')
     } catch {
       toast.error(t('task.createFailed'))
     } finally {
@@ -196,6 +200,8 @@ export function TaskCreation() {
                   rows={3}
                 />
               </div>
+
+              <ProjectPicker value={projectId} onChange={setProjectId} />
 
               <Select
                 label={t('role.seventy')}

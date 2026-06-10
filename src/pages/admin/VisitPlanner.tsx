@@ -10,7 +10,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Select, Button, Input, Badge } from '@/components/ui'
-import { MultiDatePicker } from '@/components/domain'
+import { MultiDatePicker, ProjectPicker } from '@/components/domain'
 import styles from './VisitPlanner.module.scss'
 
 export function VisitPlanner() {
@@ -26,6 +26,7 @@ export function VisitPlanner() {
   const [selectedPresidents, setSelectedPresidents] = useState<Set<string>>(new Set())
   const [taskNote, setTaskNote] = useState('')
   const [dueDate, setDueDate] = useState(dayjs().add(14, 'day').format('YYYY-MM-DD'))
+  const [projectId, setProjectId] = useState('')
   const [loading, setLoading] = useState(false)
 
   const seventyOptions = seventies.map(s => ({ value: s.uid, label: s.name }))
@@ -88,6 +89,7 @@ export function VisitPlanner() {
             availableDays: [0],
             availableDates,
             note: taskNote.trim() || undefined,
+            projectId: projectId || undefined,
           })
         })
       )
@@ -96,6 +98,7 @@ export function VisitPlanner() {
       setSeventyUid('')
       setAvailableDates([])
       setTaskNote('')
+      setProjectId('')
     } catch {
       toast.error(t('task.createFailed'))
     } finally {
@@ -195,6 +198,8 @@ export function VisitPlanner() {
                   rows={3}
                 />
               </div>
+
+              <ProjectPicker value={projectId} onChange={setProjectId} />
 
               <Button type="submit" loading={loading} disabled={!isValid}>
                 {selectedPresidents.size > 0
