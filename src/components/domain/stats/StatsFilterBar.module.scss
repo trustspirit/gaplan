@@ -1,0 +1,38 @@
+@use '@/styles/variables' as *;
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  align-items: center;
+}
+
+.select {
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-sm;
+  font-size: $font-size-sm;
+  background: $color-surface;
+  color: $color-text;
+}
+
+.toggle {
+  display: inline-flex;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-sm;
+  overflow: hidden;
+}
+
+.toggleBtn {
+  padding: $space-2 $space-3;
+  font-size: $font-size-sm;
+  background: $color-surface;
+  color: $color-text-muted;
+  border: none;
+  cursor: pointer;
+}
+
+.toggleActive {
+  background: $color-primary;
+  color: #fff;
+}
