@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { LayoutDashboard, Calendar, MapPin, Users, CheckSquare, Settings, LogOut, ClipboardList, Languages, Flag, BarChart3, ClipboardPen } from 'lucide-react'
+import { LayoutDashboard, Calendar, MapPin, Users, CheckSquare, Settings, LogOut, ClipboardList, Languages, Flag, BarChart3, ClipboardPen, FolderKanban } from 'lucide-react'
 import clsx from 'clsx'
 import type { UserRole } from '@/types'
 import { Avatar } from '@/components/ui'
@@ -21,6 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin/task-progress', icon: <ClipboardList size={20} />,   labelKey: 'nav.taskProgress', roles: ['admin','seventy'] },
   { to: '/admin/stats',         icon: <BarChart3 size={20} />,       labelKey: 'nav.stats',        roles: ['admin','seventy'] },
   { to: '/admin/visit-plans',   icon: <ClipboardPen size={20} />,    labelKey: 'nav.visitPlans',   roles: ['admin'] },
+  { to: '/admin/projects',      icon: <FolderKanban size={20} />,    labelKey: 'nav.projects',     roles: ['admin'] },
   { to: '/admin',               icon: <Settings size={20} />,        labelKey: 'nav.admin',        roles: ['admin'] },
 ]
 

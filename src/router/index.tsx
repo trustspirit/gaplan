@@ -22,6 +22,8 @@ import { CalendarSettings } from '@/pages/admin/CalendarSettings'
 import { VisitPlanner } from '@/pages/admin/VisitPlanner'
 import { VisitPlanListPage } from '@/pages/admin/VisitPlanListPage'
 import { VisitPlanBoardPage } from '@/pages/admin/VisitPlanBoardPage'
+import { ProjectListPage } from '@/pages/admin/ProjectListPage'
+import { ProjectDetailPage } from '@/pages/admin/ProjectDetailPage'
 
 export function AppRouter() {
   return (
@@ -51,6 +53,8 @@ export function AppRouter() {
             <Route path="/admin/visit-planner"     element={<VisitPlanner />} />
             <Route path="/admin/visit-plans"          element={<VisitPlanListPage />} />
             <Route path="/admin/visit-plans/:planId"  element={<VisitPlanBoardPage />} />
+            <Route path="/admin/projects"        element={<ProjectListPage />} />
+            <Route path="/admin/projects/:id"    element={<ProjectDetailPage />} />
           </Route>
 
           <Route element={<RoleRoute allow={['admin', 'seventy']} />}>
