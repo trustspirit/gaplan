@@ -29,6 +29,7 @@
     "lastVisit": "Last visit",
     "staleTitle": "Wards/branches overdue for a visit",
     "noData": "No data",
+    "loading": "Loading...",
     "neverVisited": "Never visited",
     "daysAgo_one": "{{count}} day ago",
     "daysAgo_other": "{{count}} days ago",

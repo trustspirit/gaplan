@@ -12,7 +12,6 @@ export function useVisitStats(filters: StatsFilters) {
   const user = useAtomValue(authUserAtom)
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [loading, setLoading] = useState(true)
-  const today = dayjs().format('YYYY-MM-DD')
 
   useEffect(() => {
     let active = true
@@ -31,6 +30,8 @@ export function useVisitStats(filters: StatsFilters) {
     if (!user || user.role === 'admin') return null
     return user.regionIds ?? (user.regionId ? [user.regionId] : [])
   }, [user])
+
+  const today = useMemo(() => dayjs().format('YYYY-MM-DD'), [])
 
   const stats: VisitStats = useMemo(
     () => computeVisitStats(schedules, filters, allowedRegionIds, today),

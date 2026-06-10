@@ -56,7 +56,7 @@ export function StatsPage() {
         />
 
         {loading ? (
-          <p className={styles.loading}>{t('stats.noData')}</p>
+          <p className={styles.loading}>{t('stats.loading')}</p>
         ) : (
           <>
             <div className={styles.grid}>

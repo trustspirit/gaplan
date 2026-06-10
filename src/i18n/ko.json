@@ -29,6 +29,7 @@
     "lastVisit": "마지막 방문일",
     "staleTitle": "오래 방문 안 된 와드/지부",
     "noData": "데이터 없음",
+    "loading": "불러오는 중...",
     "neverVisited": "방문 이력 없음",
     "daysAgo_one": "{{count}}일 전",
     "daysAgo_other": "{{count}}일 전",
