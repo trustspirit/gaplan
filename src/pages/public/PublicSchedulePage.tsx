@@ -48,7 +48,10 @@ export default function PublicSchedulePage() {
       setLoading(false)
       return
     }
-    Promise.all([fetchPublicSchedules(token), fetchPublicGeneralSchedules()])
+    Promise.all([
+      fetchPublicSchedules(token),
+      fetchPublicGeneralSchedules().catch(() => [] as GeneralSchedule[]),
+    ])
       .then(([{ schedules: s, scopeDisplayName: name }, generals]) => {
         setSchedules(s)
         setScopeDisplayName(name)
