@@ -7,6 +7,9 @@ export interface EffectiveScope {
   actingSeventyUid: string | null
 }
 
+/** admin이 전체 스코프를 명시적으로 선택할 때 사용하는 sentinel 값 */
+export const SCOPE_ALL = '__all__' as const
+
 const EMPTY: EffectiveScope = { regionIds: [], actingSeventyUid: null }
 const ALL: EffectiveScope = { regionIds: null, actingSeventyUid: null }
 
@@ -20,6 +23,9 @@ function regionIdsOf(uid: string, users: AppUser[]): string[] | null {
  * 사용자/선택/유저목록으로 유효 스코프를 계산.
  * @param user 현재 사용자
  * @param viewSeventyUid admin 전역 선택기 값 (admin에서만 의미, 그 외 무시)
+ *   - null → 기본값(assignedSeventyUid 있으면 그 칠십인, 없으면 전체)
+ *   - '__all__' → 명시적으로 전체 선택
+ *   - <uid> → 해당 칠십인 스코프
  * @param users 전체 사용자 목록 (칠십인 regionIds 조회용)
  */
 export function resolveEffectiveScope(
@@ -30,10 +36,14 @@ export function resolveEffectiveScope(
   if (!user) return EMPTY
 
   if (user.role === 'admin') {
-    if (!viewSeventyUid) return ALL
-    const regionIds = regionIdsOf(viewSeventyUid, users)
+    // '__all__' = 전체 보기 명시 선택
+    if (viewSeventyUid === SCOPE_ALL) return ALL
+    // null = 기본값: assignedSeventyUid가 있으면 그 칠십인 스코프, 없으면 전체
+    const activeUid = viewSeventyUid ?? user.assignedSeventyUid ?? null
+    if (!activeUid) return ALL
+    const regionIds = regionIdsOf(activeUid, users)
     if (regionIds === null) return ALL  // 선택한 칠십인 삭제됨 → 전체 폴백
-    return { regionIds, actingSeventyUid: viewSeventyUid }
+    return { regionIds, actingSeventyUid: activeUid }
   }
 
   if (user.role === 'exec_secretary') {

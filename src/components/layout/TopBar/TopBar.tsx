@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { LogOut, Pencil, Languages, HelpCircle } from 'lucide-react'
-import { useAtom } from 'jotai'
+import { LogOut, Pencil, Languages, HelpCircle, Globe, User } from 'lucide-react'
+import { useAtom, useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
@@ -8,6 +8,8 @@ import { Badge, Avatar, Modal, BottomSheet } from '@/components/ui'
 import { signOut } from '@/services/authService'
 import { updateUserName } from '@/services/userService'
 import { authUserAtom } from '@/store/authAtom'
+import { seventyViewAtom } from '@/store/seventyViewAtom'
+import { SCOPE_ALL } from '@/utils/scope'
 import { LANGUAGES, type SupportedLang } from '@/i18n'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import styles from './TopBar.module.scss'
@@ -59,6 +61,11 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
   const [helpOpen, setHelpOpen] = useState(false)
   const isMobile = useIsMobile()
   const ref = useRef<HTMLDivElement>(null)
+  const user = useAtomValue(authUserAtom)
+  const [viewSeventyUid, setViewSeventyUid] = useAtom(seventyViewAtom)
+
+  const isAdminExecSec = user?.role === 'admin' && !!user.assignedSeventyUid
+  const isShowingAll = viewSeventyUid === SCOPE_ALL || (!viewSeventyUid && !user?.assignedSeventyUid)
 
   useEffect(() => {
     if (!open) return
@@ -76,6 +83,17 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
         {subtext && <p className={styles.sub}>{subtext}</p>}
       </div>
       <div className={styles.right}>
+        {isAdminExecSec && (
+          <button
+            type="button"
+            className={clsx(styles.scopeToggle, isShowingAll && styles.scopeToggleAll)}
+            onClick={() => setViewSeventyUid(isShowingAll ? null : SCOPE_ALL)}
+            title={isShowingAll ? t('scope.myAssigned') : t('scope.showAll')}
+          >
+            {isShowingAll ? <Globe size={14} /> : <User size={14} />}
+            <span>{isShowingAll ? t('scope.showAll') : t('scope.myAssigned')}</span>
+          </button>
+        )}
         {pendingCount > 0 && (
           <Badge variant="warning">{t('task.pendingCount', { count: pendingCount })}</Badge>
         )}

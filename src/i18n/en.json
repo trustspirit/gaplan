@@ -146,6 +146,10 @@
     "publicLinkMissing": "Public link needs to be regenerated. Go to Calendar Settings and toggle the public schedule off then on.",
     "helpButton": "Help"
   },
+  "scope": {
+    "myAssigned": "My Assigned",
+    "showAll": "View All"
+  },
   "auth": {
     "greeting": "Hello, {{name}}",
     "logout": "Sign Out",

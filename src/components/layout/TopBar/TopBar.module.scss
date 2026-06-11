@@ -173,6 +173,31 @@
   &:hover { background: $color-primary; color: #fff; }
 }
 
+.scopeToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px $space-3;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: $border-radius-full;
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.9);
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s;
+
+  &:hover { background: rgba(255,255,255,0.25); }
+
+  @include mobile { span { display: none; } }
+}
+
+.scopeToggleAll {
+  background: rgba(255,255,255,0.25);
+  border-color: rgba(255,255,255,0.5);
+}
+
 .helpBtn {
   display: flex;
   align-items: center;
