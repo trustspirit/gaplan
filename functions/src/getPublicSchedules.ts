@@ -81,7 +81,7 @@ export const getPublicSchedules = functions
     const schedules: PublicSchedule[] = snap.docs
       .filter((d) => {
         const sd = d.data()
-        return (unitSet === null || unitSet.has(sd.unitId)) && sd.type === 'ward_visit'
+        return unitSet === null || unitSet.has(sd.unitId)
       })
       .map((d) => {
         const sd = d.data()

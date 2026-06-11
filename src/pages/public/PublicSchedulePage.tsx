@@ -113,7 +113,7 @@ export default function PublicSchedulePage() {
     | { kind: 'general'; data: GeneralSchedule }
 
   const mergedMap = new Map<string, ListEntry[]>()
-  for (const s of schedules.filter(s => s.type === 'ward_visit')) {
+  for (const s of schedules) {
     const key = dayjs(s.date).format('YYYY-MM')
     if (!mergedMap.has(key)) mergedMap.set(key, [])
     mergedMap.get(key)!.push({ kind: 'schedule', data: s })
