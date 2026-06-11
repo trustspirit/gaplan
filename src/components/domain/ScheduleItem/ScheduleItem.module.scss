@@ -4,13 +4,19 @@
 .wrapper {
   position: relative;
   display: flex;
-  align-items: stretch;
+  flex-direction: column;
   min-width: 0;
   border-bottom: 1px solid $color-border;
 
   &:last-child {
     border-bottom: none;
   }
+}
+
+.row {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
 }
 
 .colorBar {
@@ -338,4 +344,60 @@
   top: -1px;
 
   svg { color: #fff; }
+}
+
+.notesBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  border: none;
+  background: none;
+  border-radius: $border-radius-md;
+  color: $color-text-muted;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 0.12s,
+    color 0.12s;
+
+  &:hover {
+    background: $color-bg;
+    color: $color-text;
+  }
+
+  &.notesBtnOpen {
+    color: $color-primary;
+    background: rgba(0, 48, 87, 0.08);
+  }
+}
+
+.notesPanel {
+  padding: 8px 12px 10px 72px;
+  border-top: 1px solid $color-border;
+  background: $color-bg;
+
+  @include mobile {
+    padding-left: 56px;
+  }
+}
+
+.notesText {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.notesLink {
+  color: $color-primary;
+  text-decoration: none;
+  word-break: break-all;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }

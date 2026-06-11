@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { MapPin, Users, CalendarPlus, Coffee, MoreVertical, Video, Building2, Check } from 'lucide-react'
+import { MapPin, Users, CalendarPlus, Coffee, MoreVertical, Video, Building2, Check, FileText, ChevronUp } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
@@ -19,6 +19,26 @@ function buildGCalUrl(schedule: Schedule, unitName: string): string {
   const end = `${schedule.date.replace(/-/g, '')}T${schedule.endTime.replace(':', '')}00`
   const params = new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${start}/${end}` })
   return `https://calendar.google.com/calendar/render?${params}`
+}
+
+function NotesContent({ text }: { text: string }) {
+  const urlRegex = /https?:\/\/[^\s)>\]"']+/g
+  const parts: React.ReactNode[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  // eslint-disable-next-line no-cond-assign
+  while ((match = urlRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
+    const url = match[0]
+    parts.push(
+      <a key={match.index} href={url} target="_blank" rel="noopener noreferrer" className={styles.notesLink}>
+        {url}
+      </a>
+    )
+    lastIndex = match.index + url.length
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex))
+  return <p className={styles.notesText}>{parts}</p>
 }
 
 interface ScheduleItemProps {
@@ -43,6 +63,7 @@ export function ScheduleItem({
   const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null)
+  const [notesOpen, setNotesOpen] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -62,115 +83,115 @@ export function ScheduleItem({
   const date = dayjs(schedule.date)
   const dow = DOW_LABELS[date.day()]
   const isPast = past ?? date.isBefore(dayjs(), 'day')
+  const hasNotes = !!schedule.notes?.trim()
+
+  const typeClass = isVisit ? styles.visit : isMeeting ? styles.meeting : isAttendance ? styles.attendance : styles.interview
 
   return (
     <div className={styles.wrapper}>
-      {/* Left color bar */}
-      <div className={clsx(
-        styles.colorBar,
-        isVisit ? styles.visitBar
-        : isMeeting ? styles.meetingBar
-        : isAttendance ? styles.attendanceBar
-        : styles.interviewBar
-      )} />
+      {/* ── Main row ── */}
+      <div className={styles.row}>
+        <div className={clsx(styles.colorBar, isVisit ? styles.visitBar : isMeeting ? styles.meetingBar : isAttendance ? styles.attendanceBar : styles.interviewBar)} />
 
-      {/* Date column — wrapper level so bg/border span full height */}
-      <div className={clsx(
-        styles.dateCol,
-        isVisit ? styles.visit
-        : isMeeting ? styles.meeting
-        : isAttendance ? styles.attendance
-        : styles.interview,
-        isPast && styles.past,
-      )}>
-        <span className={styles.date}>{date.format('M.D')}</span>
-        <span className={styles.dow}>{dow}</span>
-      </div>
+        <div className={clsx(styles.dateCol, typeClass, isPast && styles.past)}>
+          <span className={styles.date}>{date.format('M.D')}</span>
+          <span className={styles.dow}>{dow}</span>
+        </div>
 
-      {/* Content */}
-      <div
-        className={clsx(
-          styles.item,
-          isVisit ? styles.visit
-          : isMeeting ? styles.meeting
-          : isAttendance ? styles.attendance
-          : styles.interview,
-          isPast && styles.past,
-        )}
-      >
-        <div className={styles.info}>
-          <div className={styles.typeBadge}>
-            {isVisit ? <MapPin size={11} />
-            : isMeeting ? <Coffee size={11} />
-            : isAttendance ? <Building2 size={11} />
-            : <Users size={11} />}
-            <span>{t(`schedule.type.${schedule.type}`)}</span>
-          </div>
-          <p className={styles.unit}>
-            {schedule.customTitle ?? unitName}
-            {!schedule.customTitle && schedule.wardName && <span className={styles.wardName}> · {schedule.wardName}</span>}
-            {isAttendance && (
-              <span className={styles.verifiedBadge} aria-label="참석 확인됨">
-                <Check size={9} strokeWidth={3.5} />
-              </span>
+        <div className={clsx(styles.item, typeClass, isPast && styles.past)}>
+          <div className={styles.info}>
+            <div className={styles.typeBadge}>
+              {isVisit ? <MapPin size={11} />
+              : isMeeting ? <Coffee size={11} />
+              : isAttendance ? <Building2 size={11} />
+              : <Users size={11} />}
+              <span>{t(`schedule.type.${schedule.type}`)}</span>
+            </div>
+            <p className={styles.unit}>
+              {schedule.customTitle ?? unitName}
+              {!schedule.customTitle && schedule.wardName && <span className={styles.wardName}> · {schedule.wardName}</span>}
+              {isAttendance && (
+                <span className={styles.verifiedBadge} aria-label="참석 확인됨">
+                  <Check size={9} strokeWidth={3.5} />
+                </span>
+              )}
+            </p>
+            <p className={styles.time}>{schedule.startTime} – {schedule.endTime}</p>
+            {schedule.zoomLink && (
+              <a
+                href={schedule.zoomLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.zoomLink}
+                onClick={e => e.stopPropagation()}
+              >
+                <Video size={11} />
+                <span>Zoom</span>
+              </a>
             )}
-          </p>
-          <p className={styles.time}>{schedule.startTime} – {schedule.endTime}</p>
-          {schedule.zoomLink && (
+          </div>
+
+          {hasNotes && (
+            <button
+              type="button"
+              className={clsx(styles.notesBtn, notesOpen && styles.notesBtnOpen)}
+              onClick={e => { e.stopPropagation(); setNotesOpen(v => !v) }}
+              title="메모 보기"
+              aria-expanded={notesOpen}
+            >
+              {notesOpen ? <ChevronUp size={14} /> : <FileText size={14} />}
+            </button>
+          )}
+
+          {isPast && <span className={styles.pastBadge}>{t('common.complete')}</span>}
+          {showCalendarAdd && !isPast && (
             <a
-              href={schedule.zoomLink}
+              href={buildGCalUrl(schedule, unitName)}
               target="_blank"
               rel="noopener noreferrer"
-              className={styles.zoomLink}
-              onClick={e => e.stopPropagation()}
+              className={styles.calendarAddBtn}
+              title="내 캘린더에 추가"
             >
-              <Video size={11} />
-              <span>Zoom</span>
+              <CalendarPlus size={15} />
             </a>
           )}
         </div>
-        {isPast && <span className={styles.pastBadge}>{t('common.complete')}</span>}
-        {showCalendarAdd && !isPast && (
-          <a
-            href={buildGCalUrl(schedule, unitName)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.calendarAddBtn}
-            title="내 캘린더에 추가"
-          >
-            <CalendarPlus size={15} />
-          </a>
+
+        {canEdit && (
+          <div className={styles.kebabWrapper}>
+            <button
+              ref={btnRef}
+              type="button"
+              className={styles.kebabBtn}
+              onClick={e => {
+                e.stopPropagation()
+                if (!menuOpen && btnRef.current) {
+                  const rect = btnRef.current.getBoundingClientRect()
+                  setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+                }
+                setMenuOpen(prev => !prev)
+              }}
+              aria-label="더보기"
+            >
+              <MoreVertical size={16} />
+            </button>
+            {menuOpen && menuPos && (
+              <>
+                <div className={styles.menuOverlay} onClick={() => setMenuOpen(false)} />
+                <div className={styles.menu} style={{ top: menuPos.top, right: menuPos.right }}>
+                  <button type="button" onClick={() => { setMenuOpen(false); onEdit?.() }}>편집</button>
+                  <button type="button" className={styles.deleteMenuItem} onClick={() => { setMenuOpen(false); onDelete?.() }}>삭제</button>
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Kebab menu — admin/seventy only */}
-      {canEdit && (
-        <div className={styles.kebabWrapper}>
-          <button
-            ref={btnRef}
-            type="button"
-            className={styles.kebabBtn}
-            onClick={e => {
-              e.stopPropagation()
-              if (!menuOpen && btnRef.current) {
-                const rect = btnRef.current.getBoundingClientRect()
-                setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
-              }
-              setMenuOpen(prev => !prev)
-            }}
-            aria-label="더보기"
-          >
-            <MoreVertical size={16} />
-          </button>
-          {menuOpen && menuPos && (
-            <>
-              <div className={styles.menuOverlay} onClick={() => setMenuOpen(false)} />
-              <div className={styles.menu} style={{ top: menuPos.top, right: menuPos.right }}>
-                <button type="button" onClick={() => { setMenuOpen(false); onEdit?.() }}>편집</button>
-                <button type="button" className={styles.deleteMenuItem} onClick={() => { setMenuOpen(false); onDelete?.() }}>삭제</button>
-              </div>
-            </>
-          )}
+      {/* ── Notes panel ── */}
+      {notesOpen && hasNotes && (
+        <div className={styles.notesPanel}>
+          <NotesContent text={schedule.notes!} />
         </div>
       )}
     </div>
