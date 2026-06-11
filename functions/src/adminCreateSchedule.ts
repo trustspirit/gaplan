@@ -82,8 +82,8 @@ export const adminCreateSchedule = functions
     ])
 
     const callerRole = callerSnap.data()?.role
-    if (!['admin', 'seventy'].includes(callerRole)) {
-      throw new functions.https.HttpsError('permission-denied', 'Admin or seventy only')
+    if (!['admin', 'seventy', 'exec_secretary'].includes(callerRole)) {
+      throw new functions.https.HttpsError('permission-denied', 'Admin, seventy, or exec_secretary only')
     }
     if (callerRole === 'seventy' && context.auth.uid !== seventyUid) {
       throw new functions.https.HttpsError('permission-denied', 'Seventy can only create schedules for themselves')

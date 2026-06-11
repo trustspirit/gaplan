@@ -15,8 +15,8 @@ export const adminDeleteSchedule = functions
     const db = admin.firestore()
     const callerSnap = await db.collection('users').doc(context.auth.uid).get()
     const callerRole = callerSnap.data()?.role
-    if (!['admin', 'seventy'].includes(callerRole)) {
-      throw new functions.https.HttpsError('permission-denied', 'Admin or seventy only')
+    if (!['admin', 'seventy', 'exec_secretary'].includes(callerRole)) {
+      throw new functions.https.HttpsError('permission-denied', 'Admin, seventy, or exec_secretary only')
     }
 
     const { scheduleId } = data

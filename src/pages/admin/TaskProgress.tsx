@@ -547,8 +547,12 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName, generalSchedul
 
 export function TaskProgress() {
   const user = useAtomValue(authUserAtom)!
-  // Seventy: only their assigned tasks. Admin: all tasks.
-  const { tasks, loading } = useAllTasks(user.role === 'seventy' ? user.uid : undefined)
+  // Seventy: only their assigned tasks. exec_secretary: their assigned seventy's tasks. Admin: all tasks.
+  const { tasks, loading } = useAllTasks(
+    user.role === 'seventy' ? user.uid :
+    user.role === 'exec_secretary' ? (user.assignedSeventyUid ?? undefined) :
+    undefined
+  )
   const { users } = useUsers()
   const { generalSchedules } = useGeneralSchedules()
 

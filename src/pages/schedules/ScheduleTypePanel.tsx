@@ -11,6 +11,7 @@ import { useSchedulePageData } from '@/hooks/useSchedulePageData'
 import { Button } from '@/components/ui'
 import { EditScheduleModal, ScheduleFormModal, ScheduleItem } from '@/components/domain'
 import type { Schedule, ScheduleType } from '@/types'
+import { canUseAdminTools } from '@/utils/permissions'
 import styles from './ScheduleTypePage.module.scss'
 
 type FilterTab = 'all' | 'upcoming' | 'completed'
@@ -54,7 +55,9 @@ export function ScheduleTypePanel({
       ? { presidentUid: user.uid }
       : user.role === 'seventy'
         ? { seventyUid: user.uid }
-        : {}
+        : user.role === 'exec_secretary'
+          ? { seventyUid: user.assignedSeventyUid ?? '' }
+          : {}
 
   const { schedules } = useSchedules(filters)
   const { getUnitName } = useUnits()
@@ -65,7 +68,7 @@ export function ScheduleTypePanel({
   return (
     <div className={styles.layout}>
       <div className={styles.mainCol}>
-        {user.role === 'admin' && (
+        {canUseAdminTools(user) && (
           <div className={styles.pageHeader}>
             <Button variant="secondary" size="sm" onClick={() => navigate(taskPath)}>
               {t(`${translationPrefix}.createTask`)}
@@ -129,7 +132,7 @@ export function ScheduleTypePanel({
                         schedule={schedule}
                         unitName={getUnitName(schedule.unitId)}
                         showCalendarAdd={user.role === 'president'}
-                        canEdit={user.role === 'admin' || user.role === 'seventy'}
+                        canEdit={canUseAdminTools(user) || user.role === 'seventy'}
                         onEdit={() => setEditTarget(schedule)}
                         onDelete={() => setDeleteTarget(schedule)}
                       />

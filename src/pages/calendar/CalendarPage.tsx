@@ -44,7 +44,9 @@ export function CalendarPage() {
     ? { presidentUid: user.uid }
     : user.role === 'seventy'
       ? { seventyUid: user.uid }
-      : {}
+      : user.role === 'exec_secretary'
+        ? { seventyUid: user.assignedSeventyUid ?? '' }
+        : {}
   const { schedules } = useSchedules(filters)
   const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
 

@@ -28,8 +28,8 @@ export const adminConfirmSchedule = functions
     const callerSnap = await db.collection('users').doc(callerUid).get()
     const callerRole = callerSnap.data()?.role
 
-    if (!['admin', 'seventy'].includes(callerRole)) {
-      throw new functions.https.HttpsError('permission-denied', 'Only admin or seventy can confirm')
+    if (!['admin', 'seventy', 'exec_secretary'].includes(callerRole)) {
+      throw new functions.https.HttpsError('permission-denied', 'Only admin, seventy, or exec_secretary can confirm')
     }
 
     const taskRef = db.collection('tasks').doc(data.taskId)

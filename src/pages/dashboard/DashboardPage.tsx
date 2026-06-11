@@ -441,6 +441,6 @@ function AdminDashboardContent() {
 export function DashboardPage() {
   const user = useAtomValue(authUserAtom)!
   if (user.role === 'seventy') return <SeventyDashboard />
-  if (user.role === 'admin') return <AdminDashboardContent />
+  if (user.role === 'admin' || user.role === 'exec_secretary') return <AdminDashboardContent />
   return <PresidentDashboard />
 }
