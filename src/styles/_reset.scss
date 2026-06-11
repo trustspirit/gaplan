@@ -11,8 +11,7 @@
 html {
   font-size: 100%;
   -webkit-text-size-adjust: 100%;
-  overflow: hidden;
-  height: 100%;
+  overflow-x: hidden;
   background: $color-sidebar;
 }
 body {
@@ -20,14 +19,12 @@ body {
   background: $color-sidebar;
   color: $color-text;
   line-height: $line-height-normal;
-  overflow: hidden;
-  height: 100%;
+  overflow-x: hidden;
 }
 #root {
   width: 100%;
   min-width: 0;
-  height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 img,
 svg {

@@ -6,6 +6,11 @@
   width: 100%;
   min-width: 0;
   height: 100dvh;
+  // iOS Safari/PWA: -webkit-fill-available = window.innerHeight, more accurate than 100dvh
+  // stylelint-disable-next-line value-no-vendor-prefix
+  @supports (-webkit-touch-callout: none) {
+    height: -webkit-fill-available;
+  }
   overflow: hidden;
   padding-top: env(safe-area-inset-top, 0px);
   background: $color-sidebar;

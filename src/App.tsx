@@ -24,8 +24,8 @@ export default function App() {
         position="top-right"
         richColors
         style={{
-          '--offset-top': 'max(calc(env(safe-area-inset-top, 0px) + 8px), 32px)',
-          '--mobile-offset-top': 'max(calc(env(safe-area-inset-top, 0px) + 8px), 32px)',
+          '--offset-top': 'max(env(safe-area-inset-top, 0px), 60px)',
+          '--mobile-offset-top': 'max(env(safe-area-inset-top, 0px), 60px)',
         } as React.CSSProperties}
       />
     </>
