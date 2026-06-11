@@ -9,26 +9,24 @@ export const REGION_COLORS: Record<string, { bg: string; text: string; border: s
 
 // Per-unit (stake/district) colors — each stake gets its own shade within the region palette
 export const UNIT_COLORS: Record<string, { bg: string; text: string }> = {
-  // 서울 지역 — blues
-  'seoul-stake':       { bg: '#dbeafe', text: '#1e40af' },
-  'seoul-east-stake':  { bg: '#eff6ff', text: '#2563eb' },
-  'seoul-west-stake':  { bg: '#e0e7ff', text: '#3730a3' },
-  'gyeonggi-stake':    { bg: '#eef2ff', text: '#4338ca' },
-  // 서울남 지역 — pinks/purples
-  'seoul-south-stake': { bg: '#fdf2f8', text: '#9d174d' },
+  // 서울 CC — blues
+  'seoul-stake':        { bg: '#dbeafe', text: '#1e40af' },
+  'seoul-east-stake':   { bg: '#eff6ff', text: '#2563eb' },
+  'seoul-south-stake':  { bg: '#e0e7ff', text: '#3730a3' },
+  'seoul-west-stake':   { bg: '#eef2ff', text: '#4338ca' },
+  'gangneung-district': { bg: '#fff7ed', text: '#9a3412' },
+  'military-district':  { bg: '#f0fdf4', text: '#166534' },
+  // 서울남 CC — pinks/purples
+  'gyeonggi-stake':    { bg: '#fdf2f8', text: '#9d174d' },
   'daejeon-stake':     { bg: '#fce7f3', text: '#be185d' },
   'cheongju-stake':    { bg: '#f5f3ff', text: '#7c3aed' },
   'jeonju-stake':      { bg: '#ede9fe', text: '#6d28d9' },
+  // 부산 CC — greens/teals
   'gwangju-stake':     { bg: '#f3e8ff', text: '#7e22ce' },
-  // 부산 지역 — greens/teals
   'busan-stake':       { bg: '#ecfdf5', text: '#065f46' },
   'daegu-stake':       { bg: '#d1fae5', text: '#064e3b' },
   'changwon-stake':    { bg: '#ccfbf1', text: '#0f766e' },
   'ulsan-district':    { bg: '#cffafe', text: '#155e75' },
-  // 미군 지방부
-  'military-district': { bg: '#f0fdf4', text: '#166534' },
-  // 강릉 지방부
-  'gangneung-district': { bg: '#fff7ed', text: '#9a3412' },
 }
 
 export function getUnitColor(unitId: string): { bg: string; text: string } {
@@ -52,37 +50,39 @@ export const REGIONS: Region[] = [
   { id: 'busan', name: '부산 CCM' },
 ]
 
+// 서울 CC: 서울, 서울동, 서울남, 서울서, 강릉, 미군
 export const UNITS_SEOUL: Omit<Unit, 'presidentUid'>[] = [
-  { id: 'seoul-stake', name: '서울 스테이크', type: 'stake', regionId: 'seoul' },
-  { id: 'seoul-east-stake', name: '서울동 스테이크', type: 'stake', regionId: 'seoul' },
-  { id: 'seoul-west-stake', name: '서울서 스테이크', type: 'stake', regionId: 'seoul' },
-  { id: 'gyeonggi-stake', name: '경기 스테이크', type: 'stake', regionId: 'seoul' },
+  { id: 'seoul-stake',       name: '서울 스테이크',  type: 'stake',    regionId: 'seoul' },
+  { id: 'seoul-east-stake',  name: '서울동 스테이크', type: 'stake',    regionId: 'seoul' },
+  { id: 'seoul-south-stake', name: '서울남 스테이크', type: 'stake',    regionId: 'seoul' },
+  { id: 'seoul-west-stake',  name: '서울서 스테이크', type: 'stake',    regionId: 'seoul' },
+  { id: 'gangneung-district', name: '강릉 지방부',   type: 'district', regionId: 'seoul' },
+  { id: 'military-district',  name: '미군 지방부',   type: 'district', regionId: 'seoul' },
 ]
 
+// 서울남 CC: 경기, 대전, 청주, 전주
 export const UNITS_SEOUL_SOUTH: Omit<Unit, 'presidentUid'>[] = [
-  { id: 'seoul-south-stake', name: '서울남 스테이크', type: 'stake', regionId: 'seoul-south' },
-  { id: 'daejeon-stake', name: '대전 스테이크', type: 'stake', regionId: 'seoul-south' },
+  { id: 'gyeonggi-stake', name: '경기 스테이크', type: 'stake', regionId: 'seoul-south' },
+  { id: 'daejeon-stake',  name: '대전 스테이크', type: 'stake', regionId: 'seoul-south' },
   { id: 'cheongju-stake', name: '청주 스테이크', type: 'stake', regionId: 'seoul-south' },
-  { id: 'jeonju-stake', name: '전주 스테이크', type: 'stake', regionId: 'seoul-south' },
-  { id: 'gwangju-stake', name: '광주 스테이크', type: 'stake', regionId: 'seoul-south' },
+  { id: 'jeonju-stake',   name: '전주 스테이크', type: 'stake', regionId: 'seoul-south' },
 ]
 
+// 부산 CC: 광주, 부산, 대구, 창원, 울산
 export const UNITS_BUSAN: Omit<Unit, 'presidentUid'>[] = [
-  { id: 'busan-stake', name: '부산 스테이크', type: 'stake', regionId: 'busan' },
-  { id: 'daegu-stake', name: '대구 스테이크', type: 'stake', regionId: 'busan' },
-  { id: 'changwon-stake', name: '창원 스테이크', type: 'stake', regionId: 'busan' },
-  { id: 'ulsan-district', name: '울산 지방부', type: 'district', regionId: 'busan' },
+  { id: 'gwangju-stake',   name: '광주 스테이크', type: 'stake',    regionId: 'busan' },
+  { id: 'busan-stake',     name: '부산 스테이크', type: 'stake',    regionId: 'busan' },
+  { id: 'daegu-stake',     name: '대구 스테이크', type: 'stake',    regionId: 'busan' },
+  { id: 'changwon-stake',  name: '창원 스테이크', type: 'stake',    regionId: 'busan' },
+  { id: 'ulsan-district',  name: '울산 지방부',   type: 'district', regionId: 'busan' },
 ]
 
-export const UNITS_MILITARY: Omit<Unit, 'presidentUid'>[] = [
-  { id: 'military-district', name: '미군 지방부', type: 'district', regionId: 'seoul' },
-]
+/** @deprecated use ALL_UNITS filtered by regionId instead */
+export const UNITS_MILITARY = UNITS_SEOUL.filter(u => u.id === 'military-district')
+/** @deprecated use ALL_UNITS filtered by regionId instead */
+export const UNITS_GANGNEUNG = UNITS_SEOUL.filter(u => u.id === 'gangneung-district')
 
-export const UNITS_GANGNEUNG: Omit<Unit, 'presidentUid'>[] = [
-  { id: 'gangneung-district', name: '강릉 지방부', type: 'district', regionId: 'seoul' },
-]
-
-export const ALL_UNITS = [...UNITS_SEOUL, ...UNITS_SEOUL_SOUTH, ...UNITS_BUSAN, ...UNITS_MILITARY, ...UNITS_GANGNEUNG]
+export const ALL_UNITS = [...UNITS_SEOUL, ...UNITS_SEOUL_SOUTH, ...UNITS_BUSAN]
 
 export const getUnitsByRegion = (regionId: string) =>
   ALL_UNITS.filter(u => u.regionId === regionId)

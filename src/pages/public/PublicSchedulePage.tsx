@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
-import { Video, CalendarDays, Building2, MoonStar } from 'lucide-react'
+import { Video, CalendarDays, Building2, MoonStar, RefreshCw } from 'lucide-react'
 import { ALL_UNITS } from '@/constants/regions'
 import { fetchPublicSchedules, type PublicScheduleItem } from '@/services/scheduleService'
 import { fetchPublicGeneralSchedules } from '@/services/generalScheduleService'
@@ -34,6 +34,8 @@ export default function PublicSchedulePage() {
   const [isPrivate, setIsPrivate] = useState(false)
   const [fetchError, setFetchError] = useState(false)
   const [generalSchedules, setGeneralSchedules] = useState<GeneralSchedule[]>([])
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
 
   // Initialize language from localStorage — run once on mount only
   useEffect(() => {
@@ -48,6 +50,7 @@ export default function PublicSchedulePage() {
       setLoading(false)
       return
     }
+    setRefreshing(true)
     Promise.all([
       fetchPublicSchedules(token),
       fetchPublicGeneralSchedules().catch(() => [] as GeneralSchedule[]),
@@ -56,6 +59,7 @@ export default function PublicSchedulePage() {
         setSchedules(s)
         setScopeDisplayName(name)
         setGeneralSchedules(generals)
+        setFetchError(false)
       })
       .catch((e) => {
         if (e?.code === 'functions/permission-denied' || e?.message?.includes('permission-denied')) {
@@ -64,8 +68,8 @@ export default function PublicSchedulePage() {
           setFetchError(true)
         }
       })
-      .finally(() => setLoading(false))
-  }, [token])
+      .finally(() => { setLoading(false); setRefreshing(false) })
+  }, [token, refreshKey])
 
   const toggleLang = () => {
     const next = i18n.language === 'ko' ? 'en' : 'ko'
@@ -154,6 +158,15 @@ export default function PublicSchedulePage() {
           </a>
           <button className={styles.langToggle} onClick={toggleLang}>
             {lang === 'ko' ? 'EN' : '한'}
+          </button>
+          <button
+            className={styles.langToggle}
+            onClick={() => setRefreshKey(k => k + 1)}
+            disabled={refreshing}
+            title={t('common.refresh')}
+            aria-label={t('common.refresh')}
+          >
+            <RefreshCw size={14} className={refreshing ? styles.spinning : undefined} />
           </button>
         </div>
       </header>
