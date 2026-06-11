@@ -14,6 +14,7 @@ interface PublicSchedule {
   zoomLink?: string | null
   customTitle?: string | null
   confirmedAt?: string
+  notes?: string | null
 }
 
 export const getPublicSchedules = functions
@@ -97,6 +98,7 @@ export const getPublicSchedules = functions
           ...(sd.zoomLink != null ? { zoomLink: sd.zoomLink } : {}),
           ...(sd.customTitle != null ? { customTitle: sd.customTitle } : {}),
           ...(sd.confirmedAt ? { confirmedAt: sd.confirmedAt } : {}),
+          ...(sd.notes != null ? { notes: sd.notes } : {}),
         }
       })
 

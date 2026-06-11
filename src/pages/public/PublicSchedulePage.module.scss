@@ -95,7 +95,7 @@
 // ─── Schedule Row ─────────────────────────────────────────────────────────
 .scheduleRow {
   display: flex;
-  align-items: stretch;
+  flex-direction: column;
   border-radius: $border-radius-lg;
   border: 1px solid $color-border;
   background: $color-surface;
@@ -104,6 +104,11 @@
   &[data-past='true'] {
     opacity: 0.6;
   }
+}
+
+.scheduleRowMain {
+  display: flex;
+  align-items: stretch;
 }
 
 .colorBar {
@@ -196,7 +201,59 @@
   border: 1px solid $color-border;
   border-radius: $border-radius-sm;
   padding: 2px $space-2;
-  margin-right: $space-3;
+  margin-right: $space-1;
+}
+
+.notesBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  align-self: stretch;
+  border: none;
+  background: none;
+  color: $color-text-muted;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0 $space-2;
+  transition:
+    color 0.12s,
+    background 0.12s;
+
+  &:hover {
+    color: $color-text;
+    background: $color-bg;
+  }
+
+  &.notesBtnOpen {
+    color: $color-primary;
+    background: rgba($color-primary, 0.08);
+  }
+}
+
+.notesPanel {
+  padding: $space-2 $space-3 $space-3;
+  border-top: 1px solid $color-border;
+  background: $color-bg;
+}
+
+.notesText {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.notesLink {
+  color: $color-primary;
+  text-decoration: none;
+  word-break: break-all;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 // ─── General Schedule Category Colors ─────────────────────────────────────

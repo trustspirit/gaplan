@@ -138,6 +138,7 @@ export interface PublicScheduleItem {
   wardName?: string
   zoomLink?: string | null
   customTitle?: string | null
+  notes?: string | null
 }
 
 export async function fetchPublicSchedules(token: string): Promise<{ schedules: PublicScheduleItem[]; scopeDisplayName: string | null }> {

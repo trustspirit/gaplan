@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
-import { Video, CalendarDays, Building2, MoonStar, RefreshCw, CalendarPlus } from 'lucide-react'
+import { Video, CalendarDays, Building2, MoonStar, RefreshCw, CalendarPlus, FileText, ChevronUp } from 'lucide-react'
 import { ALL_UNITS } from '@/constants/regions'
 import { fetchPublicSchedules, type PublicScheduleItem } from '@/services/scheduleService'
 import { fetchPublicGeneralSchedules } from '@/services/generalScheduleService'
@@ -15,6 +15,22 @@ const DOW_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 function getUnitName(unitId: string) {
   return ALL_UNITS.find((u) => u.id === unitId)?.name ?? unitId
+}
+
+function NotesText({ text, linkClass, textClass }: { text: string; linkClass: string; textClass: string }) {
+  const urlRegex = /https?:\/\/[^\s)>\]"']+/g
+  const parts: React.ReactNode[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  // eslint-disable-next-line no-cond-assign
+  while ((match = urlRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
+    const url = match[0]
+    parts.push(<a key={match.index} href={url} target="_blank" rel="noopener noreferrer" className={linkClass}>{url}</a>)
+    lastIndex = match.index + url.length
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex))
+  return <p className={textClass}>{parts}</p>
 }
 
 function buildSubscribeUrls(token: string) {
@@ -37,6 +53,15 @@ export default function PublicSchedulePage() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
   const [showSubscribeMenu, setShowSubscribeMenu] = useState(false)
+  const [openNotes, setOpenNotes] = useState<Set<string>>(new Set())
+
+  const toggleNotes = (id: string) => {
+    setOpenNotes(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
 
   // Initialize language from localStorage — run once on mount only
   useEffect(() => {
@@ -218,37 +243,61 @@ export default function PublicSchedulePage() {
                     const displayTitle = s.customTitle
                       ?? (unitName + (s.wardName ? ` · ${s.wardName}` : ''))
                     const safeZoom = s.zoomLink && /^https?:\/\//i.test(s.zoomLink) ? s.zoomLink : null
+                    const hasNotes = !!s.notes?.trim()
+                    const notesOpen = openNotes.has(s.id)
 
                     return (
                       <div key={s.id} className={styles.scheduleRow} data-past={isPast}>
-                        <div
-                          className={styles.colorBar}
-                          data-type={isVisit ? 'visit' : isMeeting ? 'meeting' : 'interview'}
-                        />
-                        <div
-                          className={styles.dateCol}
-                          data-type={isVisit ? 'visit' : isMeeting ? 'meeting' : 'interview'}
-                        >
-                          <span className={styles.date}>{date.format('M.D')}</span>
-                          <span className={styles.dow}>{dow}</span>
-                        </div>
-                        <div className={styles.itemBody}>
-                          <span className={styles.typeBadge}>{typeLabel(s.type)}</span>
-                          <p className={styles.title}>{displayTitle}</p>
-                          <p className={styles.time}>{s.startTime} – {s.endTime}</p>
-                          {safeZoom && (
-                            <a
-                              href={safeZoom}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={styles.zoomLink}
+                        <div className={styles.scheduleRowMain}>
+                          <div
+                            className={styles.colorBar}
+                            data-type={isVisit ? 'visit' : isMeeting ? 'meeting' : 'interview'}
+                          />
+                          <div
+                            className={styles.dateCol}
+                            data-type={isVisit ? 'visit' : isMeeting ? 'meeting' : 'interview'}
+                          >
+                            <span className={styles.date}>{date.format('M.D')}</span>
+                            <span className={styles.dow}>{dow}</span>
+                          </div>
+                          <div className={styles.itemBody}>
+                            <span className={styles.typeBadge}>{typeLabel(s.type)}</span>
+                            <p className={styles.title}>{displayTitle}</p>
+                            <p className={styles.time}>{s.startTime} – {s.endTime}</p>
+                            {safeZoom && (
+                              <a
+                                href={safeZoom}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.zoomLink}
+                              >
+                                <Video size={11} />
+                                <span>Zoom</span>
+                              </a>
+                            )}
+                          </div>
+                          {isPast && <span className={styles.pastBadge}>{t('public.pastBadge')}</span>}
+                          {hasNotes && (
+                            <button
+                              type="button"
+                              className={clsx(styles.notesBtn, notesOpen && styles.notesBtnOpen)}
+                              onClick={() => toggleNotes(s.id)}
+                              title="메모 보기"
+                              aria-expanded={notesOpen}
                             >
-                              <Video size={11} />
-                              <span>Zoom</span>
-                            </a>
+                              {notesOpen ? <ChevronUp size={14} /> : <FileText size={14} />}
+                            </button>
                           )}
                         </div>
-                        {isPast && <span className={styles.pastBadge}>{t('public.pastBadge')}</span>}
+                        {notesOpen && hasNotes && (
+                          <div className={styles.notesPanel}>
+                            <NotesText
+                              text={s.notes!}
+                              linkClass={styles.notesLink}
+                              textClass={styles.notesText}
+                            />
+                          </div>
+                        )}
                       </div>
                     )
                   })}
