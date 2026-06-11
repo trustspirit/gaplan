@@ -1,9 +1,9 @@
 // IMPORTANT: This data is duplicated from src/constants/regions.ts (no shared package).
 // Keep in sync when adding/removing stakes or districts.
 const REGION_UNITS: Record<string, string[]> = {
-  'seoul': ['seoul-stake', 'seoul-east-stake', 'seoul-west-stake', 'gyeonggi-stake', 'military-district', 'gangneung-district'],
-  'seoul-south': ['seoul-south-stake', 'daejeon-stake', 'cheongju-stake', 'jeonju-stake', 'gwangju-stake'],
-  'busan': ['busan-stake', 'daegu-stake', 'changwon-stake', 'ulsan-district'],
+  'seoul': ['seoul-stake', 'seoul-east-stake', 'seoul-south-stake', 'seoul-west-stake', 'gangneung-district', 'military-district'],
+  'seoul-south': ['gyeonggi-stake', 'daejeon-stake', 'cheongju-stake', 'jeonju-stake'],
+  'busan': ['gwangju-stake', 'busan-stake', 'daegu-stake', 'changwon-stake', 'ulsan-district'],
 }
 
 // All scope display names (regions + units)
@@ -13,9 +13,9 @@ const SCOPE_NAMES: Record<string, string> = {
   'busan': '부산 CCM',
   'seoul-stake': '서울 스테이크',
   'seoul-east-stake': '서울동 스테이크',
+  'seoul-south-stake': '서울남 스테이크',
   'seoul-west-stake': '서울서 스테이크',
   'gyeonggi-stake': '경기 스테이크',
-  'seoul-south-stake': '서울남 스테이크',
   'daejeon-stake': '대전 스테이크',
   'cheongju-stake': '청주 스테이크',
   'jeonju-stake': '전주 스테이크',

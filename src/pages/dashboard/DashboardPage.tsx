@@ -16,6 +16,8 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
 import { useReminders } from '@/hooks/useReminders'
 import { subscribeToSharedCalendar } from '@/services/calendarService'
+import { deleteScheduleViaCF } from '@/services/scheduleService'
+import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Skeleton, Button, Modal, BottomSheet } from '@/components/ui'
 import {
@@ -244,12 +246,12 @@ function SeventyDashboard() {
   const { getUnitName } = useUnits()
   const { setting: rangeSetting, range, save: saveRange, loading: rangeLoading } = useScheduleDateRange(user.uid)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
+  const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
   const regionIds = user.regionIds ?? (user.regionId ? [user.regionId] : [])
   const regionName = regionIds.map((id) => REGIONS.find((r) => r.id === id)?.name ?? id).join(', ')
 
   const upcoming = schedules
-    .filter(s => isActiveSchedule(s) && s.date >= range.start && s.date <= range.end)
+    .filter(s => isActiveSchedule(s) && s.date >= range.start && s.date <= range.end && !deletingIds.has(s.id))
     .sort(sortSchedulesByDate)
   const thisMonthCount = getThisMonthScheduleCount(schedules)
 
@@ -286,7 +288,7 @@ function SeventyDashboard() {
             getUnitName={getUnitName}
             canEdit
             onEdit={setEditTarget}
-            onDelete={setDeleteTarget}
+            onDelete={s => scheduleDelete(s.id, () => deleteScheduleViaCF(s.id), t('admin.scheduleCancelSuccess'))}
           />
         </div>
       </div>
@@ -296,14 +298,7 @@ function SeventyDashboard() {
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
           onSaved={() => toast.success(t('admin.scheduleEditSuccess'))}
-        />
-      )}
-      {deleteTarget && (
-        <EditScheduleModal
-          schedule={deleteTarget}
-          initialConfirmDelete
-          onClose={() => setDeleteTarget(null)}
-          onSaved={() => toast.success(t('admin.scheduleCancelSuccess'))}
+          onDelete={() => { scheduleDelete(editTarget.id, () => deleteScheduleViaCF(editTarget.id), t('admin.scheduleCancelSuccess')); setEditTarget(null) }}
         />
       )}
     </AppShell>
@@ -320,7 +315,7 @@ function AdminDashboardContent() {
   const { setting: rangeSetting, range, save: saveRange, loading: rangeLoading } = useScheduleDateRange(user.uid)
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
+  const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
   const [schedulePublic, setSchedulePublic] = useState(false)
   const [publicCopied, setPublicCopied] = useState(false)
   const [globalToken, setGlobalToken] = useState<string | null>(null)
@@ -354,7 +349,7 @@ function AdminDashboardContent() {
   const upcoming = schedules
     .filter(
       (schedule) =>
-        isActiveSchedule(schedule) && schedule.date >= range.start && schedule.date <= range.end,
+        isActiveSchedule(schedule) && schedule.date >= range.start && schedule.date <= range.end && !deletingIds.has(schedule.id),
     )
     .sort(sortSchedulesByDate)
     .slice(0, 8)
@@ -398,7 +393,7 @@ function AdminDashboardContent() {
             getUnitName={getUnitName}
             canEdit
             onEdit={setEditTarget}
-            onDelete={setDeleteTarget}
+            onDelete={s => scheduleDelete(s.id, () => deleteScheduleViaCF(s.id), t('admin.scheduleCancelSuccess'))}
           />
         </div>
       </div>
@@ -417,14 +412,7 @@ function AdminDashboardContent() {
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
           onSaved={() => toast.success(t('admin.scheduleEditSuccess'))}
-        />
-      )}
-      {deleteTarget && (
-        <EditScheduleModal
-          schedule={deleteTarget}
-          initialConfirmDelete
-          onClose={() => setDeleteTarget(null)}
-          onSaved={() => toast.success(t('admin.scheduleCancelSuccess'))}
+          onDelete={() => { scheduleDelete(editTarget.id, () => deleteScheduleViaCF(editTarget.id), t('admin.scheduleCancelSuccess')); setEditTarget(null) }}
         />
       )}
     </AppShell>

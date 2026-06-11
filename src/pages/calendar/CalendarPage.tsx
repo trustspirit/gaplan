@@ -9,8 +9,9 @@ import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
 import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
 import { useGeneralSchedules } from '@/hooks/useGeneralSchedules'
-import { manualCalendarSync } from '@/services/scheduleService'
+import { manualCalendarSync, deleteScheduleViaCF } from '@/services/scheduleService'
 import { registerAttendance, cancelAttendance } from '@/services/generalScheduleService'
+import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Button } from '@/components/ui'
 import type { Schedule, GeneralSchedule } from '@/types'
@@ -24,8 +25,8 @@ export function CalendarPage() {
   const [syncing, setSyncing] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
   const [detailTarget, setDetailTarget] = useState<GeneralSchedule | null>(null)
+  const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
   const { generalSchedules } = useGeneralSchedules()
 
   const handleManualSync = async () => {
@@ -56,9 +57,9 @@ export function CalendarPage() {
   }
 
   const daySchedules = selectedDate
-    ? schedules.filter(s => s.status === 'confirmed' && s.date === selectedDate)
+    ? schedules.filter(s => s.status === 'confirmed' && s.date === selectedDate && !deletingIds.has(s.id))
     : schedules
-        .filter(s => s.status === 'confirmed' && s.date >= range.start && s.date <= range.end)
+        .filter(s => s.status === 'confirmed' && s.date >= range.start && s.date <= range.end && !deletingIds.has(s.id))
         .sort((a, b) => a.date.localeCompare(b.date))
 
   const myAttendances = schedules.filter(
@@ -241,7 +242,7 @@ export function CalendarPage() {
                         showCalendarAdd={user.role === 'president'}
                         canEdit={user.role === 'admin' || user.role === 'seventy'}
                         onEdit={() => setEditTarget(s)}
-                        onDelete={() => setDeleteTarget(s)}
+                        onDelete={() => scheduleDelete(s.id, () => deleteScheduleViaCF(s.id), t('admin.scheduleCancelSuccess'))}
                       />
                     )
                   })
@@ -265,14 +266,7 @@ export function CalendarPage() {
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
           onSaved={() => { setEditTarget(null); toast.success(t('admin.scheduleEditSuccess')) }}
-        />
-      )}
-      {deleteTarget && (
-        <EditScheduleModal
-          schedule={deleteTarget}
-          initialConfirmDelete
-          onClose={() => setDeleteTarget(null)}
-          onSaved={() => { setDeleteTarget(null); toast.success(t('admin.scheduleCancelSuccess')) }}
+          onDelete={() => { scheduleDelete(editTarget.id, () => deleteScheduleViaCF(editTarget.id), t('admin.scheduleCancelSuccess')); setEditTarget(null) }}
         />
       )}
       <GeneralScheduleDetailSheet

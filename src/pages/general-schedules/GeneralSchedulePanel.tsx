@@ -11,6 +11,7 @@ import {
   cancelAttendance,
   updateGeneralSchedule,
 } from '@/services/generalScheduleService'
+import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { Card, CardHeader, CardBody, Button } from '@/components/ui'
 import {
   GeneralEventItem,
@@ -30,6 +31,7 @@ export function GeneralSchedulePanel() {
   const [formOpen, setFormOpen]         = useState(false)
   const [editTarget, setEditTarget]     = useState<GeneralSchedule | null>(null)
   const [detailTarget, setDetailTarget] = useState<GeneralSchedule | null>(null)
+  const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
 
   const handleAttend = async (gsId: string) => {
     try {
@@ -57,15 +59,9 @@ export function GeneralSchedulePanel() {
     }
   }
 
-  const handleDelete = async (gs: GeneralSchedule) => {
-    if (!confirm(t('generalSchedule.deleteConfirm'))) return
-    try {
-      await deleteGeneralSchedule(gs.id)
-      toast.success(t('generalSchedule.deletedSuccess'))
-      setDetailTarget(null)
-    } catch {
-      toast.error('삭제에 실패했습니다.')
-    }
+  const handleDelete = (gs: GeneralSchedule) => {
+    setDetailTarget(null)
+    scheduleDelete(gs.id, () => deleteGeneralSchedule(gs.id), t('generalSchedule.deletedSuccess'))
   }
 
   const myAttendances = schedules.filter(
@@ -95,7 +91,7 @@ export function GeneralSchedulePanel() {
             {!loading && visibleSchedules.length === 0 && (
               <p className={styles.empty}>{t('generalSchedule.empty')}</p>
             )}
-            {visibleSchedules.map(gs => {
+            {visibleSchedules.filter(gs => !deletingIds.has(gs.id)).map(gs => {
               const attendance = myAttendances.find(a => a.generalScheduleId === gs.id)
               return (
                 <GeneralEventItem

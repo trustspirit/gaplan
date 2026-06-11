@@ -144,7 +144,10 @@
     "copyLink": "Copy link",
     "publicLink": "Public link",
     "publicLinkMissing": "Public link needs to be regenerated. Go to Calendar Settings and toggle the public schedule off then on.",
-    "helpButton": "Help"
+    "helpButton": "Help",
+    "deleted": "Deleted.",
+    "deleteFailed": "Failed to delete.",
+    "undo": "Undo"
   },
   "scope": {
     "myAssigned": "My Assigned",

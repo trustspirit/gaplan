@@ -9,16 +9,15 @@ import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
 import styles from './EditScheduleModal.module.scss'
 
 const adminEditScheduleFn = httpsCallable(functions, 'adminEditSchedule')
-const adminDeleteScheduleFn = httpsCallable(functions, 'adminDeleteSchedule')
 
 interface Props {
   schedule: Schedule
   onClose: () => void
   onSaved: () => void
-  initialConfirmDelete?: boolean
+  onDelete?: () => void
 }
 
-export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDelete = false }: Props) {
+export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Props) {
   const { t } = useTranslation()
   const { users } = useUsers()
 
@@ -34,7 +33,6 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
   const [projectId, setProjectId] = useState(schedule.projectId ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState(initialConfirmDelete)
 
   const isFirstUnitChange = useRef(true)
   useEffect(() => {
@@ -42,6 +40,8 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
     setWardName('')
     setPresidentUid('')
   }, [unitId])
+
+
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -92,32 +92,17 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
     }
   }
 
-  const handleDelete = async () => {
-    setSaving(true)
-    setError(null)
-    try {
-      await adminDeleteScheduleFn({ scheduleId: schedule.id })
-      onSaved()
-      onClose()
-    } catch (e: unknown) {
-      const err = e as { message?: string; details?: string }
-      setError(err?.details ?? err?.message ?? t('common.unknownError'))
-    } finally {
-      setSaving(false)
-    }
-  }
-
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.sheet} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
-          <h3 className={styles.title}>{confirmDelete ? t('admin.scheduleDelete') : t('schedule.editTitle')}</h3>
-          <button type="button" onClick={onClose} className={styles.closeBtn}>{t('common.close')}</button>
+          <h3 className={styles.title}>{t('schedule.editTitle')}</h3>
+          <button type="button" onClick={onClose} className={styles.closeBtn} aria-label={t('common.close')}>{t('common.close')}</button>
         </div>
 
         {error && <div className={styles.errorBanner}>{error}</div>}
 
-        {!confirmDelete && <div className={styles.fields}>
+        <div className={styles.fields}>
           {/* Stake/District */}
           <label className={styles.fieldLabel}>
             {t(schedule.type === 'meeting' ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel')}
@@ -186,31 +171,17 @@ export function EditScheduleModal({ schedule, onClose, onSaved, initialConfirmDe
           <textarea className={styles.fieldTextarea} value={note} onChange={e => setNote(e.target.value)} rows={3} />
 
           <ProjectPicker value={projectId} onChange={setProjectId} />
-        </div>}
+        </div>
 
         <div className={styles.actions}>
-          {confirmDelete ? (
-            <div className={styles.deleteConfirm}>
-              <p className={styles.deleteConfirmText}>{t('schedule.deleteConfirmText')}</p>
-              <div className={styles.deleteConfirmBtns}>
-                <button type="button" className={styles.cancelBtn} onClick={initialConfirmDelete ? onClose : () => setConfirmDelete(false)}>
-                  {t('common.cancel')}
-                </button>
-                <button type="button" className={styles.deleteBtn} onClick={handleDelete} disabled={saving}>
-                  {saving ? t('common.loading') : t('common.confirm')}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <button type="button" className={styles.deleteBtn} onClick={() => setConfirmDelete(true)}>
-                {t('common.delete')}
-              </button>
-              <button type="button" className={styles.saveBtn} onClick={handleSave} disabled={saving}>
-                {saving ? t('common.loading') : t('common.save')}
-              </button>
-            </>
+          {onDelete && (
+            <button type="button" className={styles.deleteBtn} onClick={onDelete}>
+              {t('common.delete')}
+            </button>
           )}
+          <button type="button" className={styles.saveBtn} onClick={handleSave} disabled={saving}>
+            {saving ? t('common.loading') : t('common.save')}
+          </button>
         </div>
       </div>
     </div>

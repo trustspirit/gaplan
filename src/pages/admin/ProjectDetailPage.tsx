@@ -8,6 +8,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { authUserAtom } from '@/store/authAtom'
 import { getProject, updateProject, deleteProject } from '@/services/projectService'
+import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Button, Input, Spinner } from '@/components/ui'
 import type { Project, ProjectStatus, Schedule } from '@/types'
@@ -25,6 +26,7 @@ export function ProjectDetailPage() {
   const [title, setTitle] = useState('')
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState<ProjectStatus>('active')
+  const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
 
   useEffect(() => {
     if (!id) return
@@ -49,15 +51,12 @@ export function ProjectDetailPage() {
     }
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!project) return
-    if (!confirm(t('project.deleteConfirm'))) return
-    try {
+    scheduleDelete(project.id, async () => {
       await deleteProject(project.id)
       navigate('/admin/projects')
-    } catch {
-      toast.error('삭제에 실패했습니다.')
-    }
+    }, t('common.deleted'))
   }
 
   if (loading) {
@@ -84,7 +83,7 @@ export function ProjectDetailPage() {
                 <option value="dropped">{t('project.status.dropped')}</option>
               </select>
               <div className={styles.actions}>
-                <Button variant="secondary" size="sm" onClick={handleDelete}>{t('project.delete')}</Button>
+                <Button variant="secondary" size="sm" onClick={handleDelete} disabled={deletingIds.has(project.id)}>{t('project.delete')}</Button>
                 <Button size="sm" onClick={handleSave}>{t('project.save')}</Button>
               </div>
             </div>

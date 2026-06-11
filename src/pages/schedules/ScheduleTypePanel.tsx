@@ -9,6 +9,8 @@ import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
 import { useSchedulePageData } from '@/hooks/useSchedulePageData'
 import { useEffectiveScope } from '@/hooks/useEffectiveScope'
+import { deleteScheduleViaCF } from '@/services/scheduleService'
+import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { Button } from '@/components/ui'
 import { EditScheduleModal, ScheduleFormModal, ScheduleItem } from '@/components/domain'
 import type { Schedule, ScheduleType } from '@/types'
@@ -50,8 +52,8 @@ export function ScheduleTypePanel({
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
   const [filterRegion, setFilterRegion] = useState<string | null>(null)
+  const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
 
   const scope = useEffectiveScope()
 
@@ -71,9 +73,10 @@ export function ScheduleTypePanel({
   const { schedules: rawSchedules } = useSchedules(filters)
   const { getUnitName } = useUnits()
 
-  const schedules = filterRegion != null
+  const schedules = (filterRegion != null
     ? rawSchedules.filter(s => ALL_UNITS.find(u => u.id === s.unitId)?.regionId === filterRegion)
     : rawSchedules
+  ).filter(s => !deletingIds.has(s.id))
 
   const { orderedKeys, grouped, upcomingList, thisMonthCount, upcomingCount, completedCount } =
     useSchedulePageData(schedules, scheduleType, activeTab)
@@ -171,7 +174,7 @@ export function ScheduleTypePanel({
                         showCalendarAdd={user.role === 'president'}
                         canEdit={canUseAdminTools(user) || user.role === 'seventy'}
                         onEdit={() => setEditTarget(schedule)}
-                        onDelete={() => setDeleteTarget(schedule)}
+                        onDelete={() => scheduleDelete(schedule.id, () => deleteScheduleViaCF(schedule.id), t('admin.scheduleCancelSuccess'))}
                       />
                     ))}
                   </div>
@@ -200,17 +203,7 @@ export function ScheduleTypePanel({
             setEditTarget(null)
             toast.success(t('admin.scheduleEditSuccess'))
           }}
-        />
-      )}
-      {deleteTarget && (
-        <EditScheduleModal
-          schedule={deleteTarget}
-          initialConfirmDelete
-          onClose={() => setDeleteTarget(null)}
-          onSaved={() => {
-            setDeleteTarget(null)
-            toast.success(t('admin.scheduleCancelSuccess'))
-          }}
+          onDelete={() => { scheduleDelete(editTarget.id, () => deleteScheduleViaCF(editTarget.id), t('admin.scheduleCancelSuccess')); setEditTarget(null) }}
         />
       )}
 

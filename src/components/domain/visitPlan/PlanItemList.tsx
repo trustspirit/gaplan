@@ -12,16 +12,19 @@ interface Props {
   lastVisitByWard: Map<string, LastVisitEntry>
   generalSchedules: GeneralSchedule[]
   onRemove: (itemId: string) => void
+  pendingDeleteIds?: Set<string>
 }
 
-export function PlanItemList({ items, lastVisitByWard, generalSchedules, onRemove }: Props) {
+export function PlanItemList({ items, lastVisitByWard, generalSchedules, onRemove, pendingDeleteIds }: Props) {
   const { t } = useTranslation()
 
-  if (items.length === 0) {
+  const visibleItems = pendingDeleteIds ? items.filter(i => !pendingDeleteIds.has(i.itemId)) : items
+
+  if (visibleItems.length === 0) {
     return <p className={styles.empty}>{t('visitPlan.noItems')}</p>
   }
 
-  const sorted = [...items].sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
+  const sorted = [...visibleItems].sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
 
   return (
     <ul className={styles.list}>

@@ -144,7 +144,10 @@
     "copyLink": "링크 복사",
     "publicLink": "공개 링크",
     "publicLinkMissing": "공개 링크를 다시 활성화해 주세요. 캘린더 설정에서 공개 일정표를 껐다 켜면 새 링크가 생성됩니다.",
-    "helpButton": "도움말"
+    "helpButton": "도움말",
+    "deleted": "삭제되었습니다.",
+    "deleteFailed": "삭제 중 오류가 발생했습니다.",
+    "undo": "되돌리기"
   },
   "scope": {
     "myAssigned": "내 담당",

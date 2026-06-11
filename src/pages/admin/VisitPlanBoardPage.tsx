@@ -8,6 +8,7 @@ import {
   getVisitPlan, updateVisitPlanItems, deleteVisitPlan, publishVisitPlan, updateVisitPlanProject,
 } from '@/services/visitPlanService'
 import { deleteScheduleViaCF } from '@/services/scheduleService'
+import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { useVisitPlanContext } from '@/hooks/useVisitPlanContext'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Button, Spinner } from '@/components/ui'
@@ -29,6 +30,7 @@ export function VisitPlanBoardPage() {
   const [loadingPlan, setLoadingPlan] = useState(true)
   const [publishing, setPublishing] = useState(false)
   const [savingProject, setSavingProject] = useState(false)
+  const { pendingIds: deletingPlanIds, scheduleDelete: schedulePlanDelete } = useDeleteWithUndo()
 
   useEffect(() => {
     if (!planId) return
@@ -49,14 +51,16 @@ export function VisitPlanBoardPage() {
     persist(plan.id, [...(plan.items ?? []), { ...partial, itemId: uid() }])
   }
 
-  const handleRemove = async (itemId: string) => {
+  const handleRemove = (itemId: string) => {
     if (!plan) return
     const target = (plan.items ?? []).find(i => i.itemId === itemId)
-    if (target?.scheduleId) {
-      if (!confirm(t('visitPlan.removeItemConfirm'))) return
-      try { await deleteScheduleViaCF(target.scheduleId) } catch { /* 이미 삭제됨 등 무시 */ }
-    }
-    persist(plan.id, (plan.items ?? []).filter(i => i.itemId !== itemId))
+    const filtered = (plan.items ?? []).filter(i => i.itemId !== itemId)
+    schedulePlanDelete(itemId, async () => {
+      if (target?.scheduleId) {
+        try { await deleteScheduleViaCF(target.scheduleId) } catch { /* already deleted */ }
+      }
+      await updateVisitPlanItems(plan.id, filtered)
+    }, t('common.deleted'))
   }
 
   const handlePublish = async () => {
@@ -75,17 +79,17 @@ export function VisitPlanBoardPage() {
     }
   }
 
-  const handleDeletePlan = async () => {
+  const handleDeletePlan = () => {
     if (!plan) return
-    if (!confirm(t('visitPlan.deletePlanConfirm'))) return
-    // 발행된 항목의 연결 일정도 함께 삭제 (고아 일정 방지)
-    for (const it of plan.items) {
-      if (it.scheduleId) {
-        try { await deleteScheduleViaCF(it.scheduleId) } catch { /* 이미 삭제됨 등 무시 */ }
+    schedulePlanDelete(plan.id, async () => {
+      for (const it of plan.items) {
+        if (it.scheduleId) {
+          try { await deleteScheduleViaCF(it.scheduleId) } catch { /* already deleted */ }
+        }
       }
-    }
-    await deleteVisitPlan(plan.id)
-    navigate('/admin/visit-plans')
+      await deleteVisitPlan(plan.id)
+      navigate('/admin/visit-plans')
+    }, t('common.deleted'))
   }
 
   if (loadingPlan) {
@@ -101,7 +105,7 @@ export function VisitPlanBoardPage() {
         <div className={styles.header}>
           <h2 className={styles.title}>{plan.title}</h2>
           <div className={styles.actions}>
-            <Button variant="secondary" size="sm" onClick={handleDeletePlan}>{t('common.delete')}</Button>
+            <Button variant="secondary" size="sm" onClick={handleDeletePlan} disabled={deletingPlanIds.has(plan.id)}>{t('common.delete')}</Button>
             <Button size="sm" onClick={handlePublish} loading={publishing} disabled={savingProject}>{t('visitPlan.publish')}</Button>
           </div>
         </div>
@@ -124,6 +128,7 @@ export function VisitPlanBoardPage() {
                 lastVisitByWard={lastVisitByWard}
                 generalSchedules={generalSchedules}
                 onRemove={handleRemove}
+                pendingDeleteIds={deletingPlanIds}
               />
             </CardBody>
           </Card>
