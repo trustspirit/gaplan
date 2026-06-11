@@ -19,19 +19,11 @@
   justify-content: center;
 }
 
-.logoText {
-  font-size: 13px;
-  font-weight: $font-weight-bold;
-  color: #fff;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  width: 28px;
-  height: 28px;
+.logoImg {
+  width: 32px;
+  height: 32px;
   border-radius: $border-radius-md;
-  background: $color-primary;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
 }
 
 .nav {
