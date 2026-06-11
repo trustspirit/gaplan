@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import clsx from 'clsx'
 import type { Region } from '@/types/region'
-import type { StatsFilters, StatsPeriod, StatsGranularity } from '@/utils/visitStats'
+import type { StatsFilters, StatsPeriod } from '@/utils/visitStats'
 import styles from './StatsFilterBar.module.scss'
 
 interface Props {
@@ -46,18 +45,6 @@ export function StatsFilterBar({ filters, regions, showAllOption, onChange }: Pr
         ))}
       </select>
 
-      <div className={styles.toggle} role="group" aria-label={t('stats.granularity')}>
-        {(['ward', 'unit'] as StatsGranularity[]).map(g => (
-          <button
-            key={g}
-            type="button"
-            className={clsx(styles.toggleBtn, filters.granularity === g && styles.toggleActive)}
-            onClick={() => onChange({ ...filters, granularity: g })}
-          >
-            {t(g === 'ward' ? 'stats.granularityWard' : 'stats.granularityUnit')}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }

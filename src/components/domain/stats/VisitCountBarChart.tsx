@@ -1,6 +1,6 @@
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 import { useTranslation } from 'react-i18next'
 import type { CountEntry } from '@/utils/visitStats'
+import styles from './VisitCountBarChart.module.scss'
 
 interface Props {
   data: CountEntry[]
@@ -8,21 +8,27 @@ interface Props {
 
 export function VisitCountBarChart({ data }: Props) {
   const { t } = useTranslation()
-  const hasData = data.some(d => d.count > 0)
+  const sorted = [...data].filter(d => d.count > 0).sort((a, b) => b.count - a.count)
+  const max = Math.max(...sorted.map(d => d.count), 1)
 
-  if (!hasData) {
-    return <p style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>{t('stats.noData')}</p>
+  if (sorted.length === 0) {
+    return <p className={styles.empty}>{t('stats.noData')}</p>
   }
 
   return (
-    <ResponsiveContainer width="100%" height={240}>
-      <BarChart data={data} margin={{ top: 8, right: 8, bottom: 8, left: -16 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#eef2f6" vertical={false} />
-        <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-30} textAnchor="end" height={60} />
-        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-        <Tooltip />
-        <Bar dataKey="count" fill="#177C9C" radius={[3, 3, 0, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
+    <div className={styles.chart}>
+      {sorted.map(d => (
+        <div key={d.id} className={styles.row}>
+          <span className={styles.label}>{d.name}</span>
+          <div className={styles.track}>
+            <div
+              className={styles.bar}
+              style={{ width: `${Math.max((d.count / max) * 100, 3)}%` }}
+            />
+          </div>
+          <span className={styles.count}>{d.count}</span>
+        </div>
+      ))}
+    </div>
   )
 }

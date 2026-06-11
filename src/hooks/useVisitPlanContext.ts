@@ -42,7 +42,7 @@ export function useVisitPlanContext(seventyUid: string | undefined, planItems: V
     if (!regionIds.length) return []
     const stats = computeVisitStats(
       schedules,
-      { regionId: 'all', period: '6m', granularity: 'ward' },
+      { regionId: 'all', period: '6m' },
       regionIds,
       today,
     )

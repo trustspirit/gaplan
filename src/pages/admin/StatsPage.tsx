@@ -35,14 +35,9 @@ export function StatsPage() {
   const [filters, setFilters] = useState<StatsFilters>({
     regionId: showAllOption ? 'all' : (allowedRegions[0]?.id ?? 'all'),
     period: '6m',
-    granularity: 'ward',
   })
 
   const { stats, loading } = useVisitStats(filters)
-
-  const granularityLabel = filters.granularity === 'ward'
-    ? t('stats.granularityWard')
-    : t('stats.granularityUnit')
 
   return (
     <AppShell
@@ -76,13 +71,13 @@ export function StatsPage() {
                 <CardBody><MonthlyTrendChart data={stats.monthlyTrend} /></CardBody>
               </Card>
               <Card>
-                <CardHeader title={`${t('stats.lastVisit')} · ${granularityLabel}`} />
+                <CardHeader title={t('stats.lastVisit')} />
                 <CardBody><LastVisitList entries={stats.lastVisit} /></CardBody>
               </Card>
             </div>
 
             <Card>
-              <CardHeader title={`${t('stats.staleTitle')} · ${granularityLabel}`} />
+              <CardHeader title={t('stats.staleTitle')} />
               <CardBody>
                 <StaleWardsCard
                   entries={stats.staleTopN}

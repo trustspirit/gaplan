@@ -1,0 +1,57 @@
+@use '@/styles/variables' as *;
+
+.empty {
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  text-align: center;
+  padding: $space-6 0;
+}
+
+.chart {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: 24px;
+}
+
+.label {
+  width: 90px;
+  font-size: $font-size-xs;
+  color: $color-text;
+  text-align: right;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track {
+  flex: 1;
+  height: 18px;
+  background: $color-bg;
+  border-radius: $border-radius-sm;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  background: $color-primary;
+  border-radius: $border-radius-sm;
+  transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  min-width: 4px;
+}
+
+.count {
+  width: 22px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  text-align: right;
+  flex-shrink: 0;
+}

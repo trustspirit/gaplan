@@ -8,7 +8,6 @@ export type StatsGranularity = 'ward' | 'unit'
 export interface StatsFilters {
   regionId: string | 'all'
   period: StatsPeriod
-  granularity: StatsGranularity
 }
 
 export interface CountEntry { id: string; name: string; count: number }
@@ -33,7 +32,9 @@ export interface VisitStats {
 }
 
 export const STALE_TOP_N = 10
-const COUNT_TYPES: Schedule['type'][] = ['ward_visit', 'interview']
+const COUNT_TYPES: Schedule['type'][] = ['ward_visit']
+// Interviews count toward unit recency (last-contact date) but NOT toward visit counts
+const RECENCY_TYPES: Schedule['type'][] = ['ward_visit', 'interview']
 const ACTIVE_STATUS: Schedule['status'][] = ['confirmed', 'pending']
 
 export function periodStart(period: StatsPeriod, today: string): string {
@@ -106,7 +107,7 @@ function computeUnitLastVisit(
 ): LastVisitEntry[] {
   const latest = new Map<string, string>()
   for (const s of scoped) {
-    if (!COUNT_TYPES.includes(s.type)) continue
+    if (!RECENCY_TYPES.includes(s.type)) continue
     const prev = latest.get(s.unitId)
     if (!prev || s.date > prev) latest.set(s.unitId, s.date)
   }
@@ -176,9 +177,7 @@ export function computeVisitStats(
     cursor = cursor.add(1, 'month')
   }
 
-  const lastVisit = filters.granularity === 'ward'
-    ? computeWardLastVisit(scoped, allowedRegionIds, filters.regionId, today)
-    : computeUnitLastVisit(scoped, allowedRegionIds, filters.regionId, today)
+  const lastVisit = computeWardLastVisit(scoped, allowedRegionIds, filters.regionId, today)
 
   const staleTopN = [...lastVisit]
     .sort((a, b) => {
