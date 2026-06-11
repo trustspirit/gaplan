@@ -1,0 +1,42 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.tabBar {
+  display: flex;
+  gap: $space-1;
+  min-width: 0;
+  margin-bottom: $space-4;
+
+  @include mobile {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-bottom: $space-3;
+  }
+}
+
+.tabBtn {
+  min-width: 0;
+  min-height: 44px;
+  padding: $space-2 $space-4;
+  overflow: hidden;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-full;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover { color: $color-text; background: $color-bg; }
+
+  &[data-active='true'] {
+    color: #fff;
+    background: $color-primary;
+    border-color: $color-primary;
+  }
+
+  @include mobile { padding: $space-2; }
+}
