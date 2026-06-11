@@ -17,10 +17,10 @@ import type { Schedule } from '@/types'
 
 export function useReminders() {
   const user = useAtomValue(authUserAtom)
-  const { users } = useUsers()
+  const { users, loading: usersLoading } = useUsers()
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [dismissed, setDismissed] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
+  const [schedulesLoading, setSchedulesLoading] = useState(true)
   const today = useMemo(() => dayjs().format('YYYY-MM-DD'), [])
   const scope = useEffectiveScope()
   const viewSeventyUid = useAtomValue(seventyViewAtom)
@@ -28,7 +28,7 @@ export function useReminders() {
   useEffect(() => {
     if (!user) return
     let active = true
-    setLoading(true)
+    setSchedulesLoading(true)
     const q = currentQuarter(today)
     const start = q.start < today ? q.start : today
     // 향후 120일까지의 일정만 조회 — 그 이후 방문의 모임 리마인더는 제외(허용 한계)
@@ -45,8 +45,8 @@ export function useReminders() {
       getDismissedReminders(user.uid),
     ]).then(([sched, dis]) => {
       if (!active) return
-      setSchedules(sched); setDismissed(dis); setLoading(false)
-    }).catch(() => { if (active) { setSchedules([]); setDismissed([]); setLoading(false) } })
+      setSchedules(sched); setDismissed(dis); setSchedulesLoading(false)
+    }).catch(() => { if (active) { setSchedules([]); setDismissed([]); setSchedulesLoading(false) } })
     return () => { active = false }
   }, [user, today, viewSeventyUid])
 
@@ -82,6 +82,8 @@ export function useReminders() {
     setDismissed(prev => [...prev, key])
     await dismissReminder(user.uid, key)
   }
+
+  const loading = schedulesLoading || usersLoading
 
   return { loading, interviewReminders, meetingReminders, dismiss }
 }
