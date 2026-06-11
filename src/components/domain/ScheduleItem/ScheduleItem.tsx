@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { MapPin, Users, CalendarPlus, Coffee, MoreVertical, Video, Building2, Check, FileText, ChevronUp } from 'lucide-react'
+import { MapPin, Users, CalendarPlus, Coffee, MoreVertical, Video, Building2, Check, FileText, ChevronUp, UserCheck } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
@@ -117,6 +117,12 @@ export function ScheduleItem({
               )}
             </p>
             <p className={styles.time}>{schedule.startTime} – {schedule.endTime}</p>
+            {isVisit && schedule.presidentAccompanied && (
+              <span className={styles.presidentBadge} title="스테이크 회장 동행">
+                <UserCheck size={11} />
+                <span>회장 동행</span>
+              </span>
+            )}
             {schedule.zoomLink && (
               <a
                 href={schedule.zoomLink}

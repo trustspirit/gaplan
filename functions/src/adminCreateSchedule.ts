@@ -15,6 +15,7 @@ interface AdminCreateScheduleRequest {
   zoomLink?: string
   customTitle?: string
   projectId?: string
+  presidentAccompanied?: boolean
 }
 
 export const adminCreateSchedule = functions
@@ -24,7 +25,7 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, customTitle, projectId } = data
+    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, customTitle, projectId, presidentAccompanied } = data
 
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
@@ -73,6 +74,9 @@ export const adminCreateSchedule = functions
     }
     if (projectId !== undefined && typeof projectId !== 'string') {
       throw new functions.https.HttpsError('invalid-argument', 'projectId must be a string')
+    }
+    if (presidentAccompanied !== undefined && typeof presidentAccompanied !== 'boolean') {
+      throw new functions.https.HttpsError('invalid-argument', 'presidentAccompanied must be a boolean')
     }
 
     const db = admin.firestore()
@@ -134,6 +138,7 @@ export const adminCreateSchedule = functions
       zoomLink: zoomLink?.trim() ?? null,
       customTitle: customTitle?.trim() ?? null,
       projectId: (projectId && projectId.trim()) ? projectId.trim() : null,
+      presidentAccompanied: (type === 'ward_visit' && presidentAccompanied === true) ? true : null,
       status: 'confirmed',
       createdBy: context.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),

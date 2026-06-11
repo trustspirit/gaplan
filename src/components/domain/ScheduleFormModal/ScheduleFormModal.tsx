@@ -56,6 +56,7 @@ export function ScheduleFormModal({
   const [customTitle, setCustomTitle] = useState('')
   const [projectId, setProjectId] = useState('')
   const [isSabbath, setIsSabbath] = useState(false)
+  const [presidentAccompanied, setPresidentAccompanied] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -164,6 +165,7 @@ export function ScheduleFormModal({
         ...(zoomLink.trim() && type !== 'ward_visit' ? { zoomLink: zoomLink.trim() } : {}),
         ...(customTitle.trim() && type !== 'ward_visit' ? { customTitle: customTitle.trim() } : {}),
         ...(projectId ? { projectId } : {}),
+        ...(type === 'ward_visit' ? { presidentAccompanied } : {}),
       })
       onSaved()
       onClose()
@@ -290,6 +292,19 @@ export function ScheduleFormModal({
                   style={{ accentColor: 'var(--color-primary, #177C9C)' }}
                 />
                 <span className={styles.checkLabel}>{t('schedule.sabbathVisit')}</span>
+              </label>
+            )}
+
+            {type === 'ward_visit' && (
+              <label className={styles.checkRow}>
+                <input
+                  type="checkbox"
+                  checked={presidentAccompanied}
+                  onChange={e => setPresidentAccompanied(e.target.checked)}
+                  className={styles.checkbox}
+                  style={{ accentColor: 'var(--color-primary, #177C9C)' }}
+                />
+                <span className={styles.checkLabel}>{t('schedule.presidentAccompanied')}</span>
               </label>
             )}
 

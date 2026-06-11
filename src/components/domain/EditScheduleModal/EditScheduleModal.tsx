@@ -33,6 +33,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
   const [zoomLink, setZoomLink] = useState(schedule.zoomLink ?? '')
   const [customTitle, setCustomTitle] = useState(schedule.customTitle ?? '')
   const [projectId, setProjectId] = useState(schedule.projectId ?? '')
+  const [presidentAccompanied, setPresidentAccompanied] = useState(schedule.presidentAccompanied ?? false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -80,6 +81,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
           ...(!isVisit ? { zoomLink: zoomLink.trim() || null } : {}),
           ...(!isVisit ? { customTitle: customTitle.trim() || null } : {}),
           projectId: projectId || null,
+          ...(isVisit ? { presidentAccompanied: presidentAccompanied || null } : {}),
         },
       })
       onSaved()
@@ -134,6 +136,20 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                 {wardOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
+          )}
+
+          {/* President accompanied — ward_visit only */}
+          {isVisit && (
+            <label className={styles.checkRow}>
+              <input
+                type="checkbox"
+                checked={presidentAccompanied}
+                onChange={e => setPresidentAccompanied(e.target.checked)}
+                className={styles.checkbox}
+                style={{ accentColor: 'var(--color-primary, #003057)' }}
+              />
+              <span className={styles.checkLabel}>{t('schedule.presidentAccompanied')}</span>
+            </label>
           )}
 
           {/* President — interview only, optional */}

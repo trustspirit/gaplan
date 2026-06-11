@@ -15,6 +15,7 @@ interface AdminEditScheduleRequest {
     zoomLink?: string | null
     customTitle?: string | null
     projectId?: string | null
+    presidentAccompanied?: boolean | null
   }
 }
 
@@ -105,6 +106,12 @@ export const adminEditSchedule = functions
     }
     if (updates.projectId !== undefined) {
       allowed.projectId = updates.projectId || null
+    }
+    if (updates.presidentAccompanied !== undefined) {
+      if (updates.presidentAccompanied !== null && typeof updates.presidentAccompanied !== 'boolean') {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid presidentAccompanied')
+      }
+      allowed.presidentAccompanied = updates.presidentAccompanied === true ? true : null
     }
 
     if (Object.keys(allowed).length === 0) {
