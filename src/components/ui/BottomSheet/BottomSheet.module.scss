@@ -74,6 +74,7 @@
   padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: contain;
   flex: 1;
   min-width: 0;
   -webkit-overflow-scrolling: touch;

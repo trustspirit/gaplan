@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAtomValue } from 'jotai'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 import { authUserAtom } from '@/store/authAtom'
 import { useVisitStats } from '@/hooks/useVisitStats'
 import { AppShell, TopBar } from '@/components/layout'
@@ -20,6 +20,7 @@ import styles from './StatsPage.module.scss'
 
 export function StatsPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const user = useAtomValue(authUserAtom)!
   const scope = useEffectiveScope()
 
@@ -85,7 +86,7 @@ export function StatsPage() {
               <CardBody>
                 <StaleWardsCard
                   entries={stats.staleTopN}
-                  onSelect={() => toast.info(t('stats.selectHint'))}
+                  onSelect={(entry) => navigate('/admin/visit-plans', { state: { wardName: entry.name } })}
                 />
               </CardBody>
             </Card>

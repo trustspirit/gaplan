@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAtomValue } from 'jotai'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -15,12 +15,13 @@ import styles from './VisitPlanListPage.module.scss'
 export function VisitPlanListPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const user = useAtomValue(authUserAtom)!
   const { plans, loading } = useVisitPlans()
   const { users } = useUsers()
   const seventies = users.filter(u => u.role === 'seventy')
 
-  const [title, setTitle] = useState('')
+  const [title, setTitle] = useState((location.state as { wardName?: string } | null)?.wardName ?? '')
   const [seventyUid, setSeventyUid] = useState('')
   const [creating, setCreating] = useState(false)
 
