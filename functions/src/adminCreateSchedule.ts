@@ -81,12 +81,22 @@ export const adminCreateSchedule = functions
       db.collection('users').doc(seventyUid).get(),
     ])
 
-    const callerRole = callerSnap.data()?.role
+    const callerData = callerSnap.data()
+    const callerRole = callerData?.role
     if (!['admin', 'seventy', 'exec_secretary'].includes(callerRole)) {
       throw new functions.https.HttpsError('permission-denied', 'Admin, seventy, or exec_secretary only')
     }
     if (callerRole === 'seventy' && context.auth.uid !== seventyUid) {
       throw new functions.https.HttpsError('permission-denied', 'Seventy can only create schedules for themselves')
+    }
+    if (callerRole === 'exec_secretary') {
+      const assignedUid = callerData?.assignedSeventyUid as string | undefined
+      if (!assignedUid) {
+        throw new functions.https.HttpsError('permission-denied', 'exec_secretary has no assigned seventy')
+      }
+      if (seventyUid !== assignedUid) {
+        throw new functions.https.HttpsError('permission-denied', 'exec_secretary can only create schedules for their assigned seventy')
+      }
     }
 
     if (!seventySnap.exists || seventySnap.data()?.role !== 'seventy') {
