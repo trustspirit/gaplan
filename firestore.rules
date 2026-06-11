@@ -13,11 +13,17 @@ service cloud.firestore {
     function isAdmin() { return isAuth() && userRole() == 'admin'; }
     function isSeventy() { return isAuth() && userRole() == 'seventy'; }
     function isPresident() { return isAuth() && userRole() == 'president'; }
+    function isExecSecretary() { return isAuth() && userRole() == 'exec_secretary'; }
+    function myAssignedSeventy() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('assignedSeventyUid', null)
+        : null;
+    }
 
     match /users/{uid} {
       // Admin: all users. Seventy: all users (needed to resolve president names in task progress).
       // President/others: own document only.
-      allow read: if isAuth() && (request.auth.uid == uid || isAdmin() || isSeventy());
+      allow read: if isAuth() && (request.auth.uid == uid || isAdmin() || isSeventy() || isExecSecretary());
       allow create: if isAuth() && request.auth.uid == uid
         && (
           // Presidents self-create via onboarding
@@ -26,8 +32,8 @@ service cloud.firestore {
           || (request.resource.data.role == 'admin'
               && exists(/databases/$(database)/documents/settings/admin)
               && request.auth.token.email == get(/databases/$(database)/documents/settings/admin).data.get('email', null))
-          // Seventy: must have a valid invite
-          || (request.resource.data.role == 'seventy'
+          // Seventy/ExecSecretary: must have a valid invite
+          || ((request.resource.data.role == 'seventy' || request.resource.data.role == 'exec_secretary')
               && exists(/databases/$(database)/documents/invites/$(request.auth.token.email)))
         );
       // Admin can update any user's doc, but cannot change their own role (self-demotion prevention).
@@ -57,44 +63,49 @@ service cloud.firestore {
 
     match /schedules/{scheduleId} {
       // Admin: all. Seventy: only schedules they are assigned to (seventyUid).
+      // ExecSecretary: schedules belonging to their assigned seventy.
       // President: only their own confirmed schedules.
       allow read: if isAuth() && (
         isAdmin()
         || (isSeventy() && resource.data.seventyUid == request.auth.uid)
+        || (isExecSecretary() && resource.data.seventyUid == myAssignedSeventy())
         || resource.data.presidentUid == request.auth.uid
       );
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isAdmin() || isExecSecretary();
     }
 
     match /generalSchedules/{scheduleId} {
       // Authenticated users read all (calendar/list). Public page reads isPublic==true only.
       allow read: if isAuth() || resource.data.isPublic == true;
-      // Admin and seventy create/manage org-wide events.
-      allow create, update, delete: if isAdmin() || isSeventy();
+      // Admin, seventy, and exec_secretary create/manage org-wide events.
+      allow create, update, delete: if isAdmin() || isSeventy() || isExecSecretary();
     }
 
     match /visitPlans/{planId} {
-      // 방문 계획 도구는 admin 전용
-      allow read, write: if isAdmin();
+      // 방문 계획 도구는 admin 및 exec_secretary 전용
+      allow read, write: if isAdmin() || isExecSecretary();
     }
 
     match /projects/{projectId} {
-      // 프로젝트 메모는 admin 전용
-      allow read, write: if isAdmin();
+      // 프로젝트 메모는 admin 및 exec_secretary 전용
+      allow read, write: if isAdmin() || isExecSecretary();
     }
 
     match /tasks/{taskId} {
       // Admin: all. Seventy: only tasks in their region (seventyUid matches).
+      // ExecSecretary: tasks belonging to their assigned seventy.
       // President: only tasks assigned to them.
       allow read: if isAuth() && (
         isAdmin()
         || (isSeventy() && resource.data.seventyUid == request.auth.uid)
+        || (isExecSecretary() && resource.data.seventyUid == myAssignedSeventy())
         || resource.data.assignedTo == request.auth.uid
       );
-      allow create, delete: if isAdmin();
-      // Admin: unrestricted. Seventy: only their region's tasks, status-only.
+      allow create, delete: if isAdmin() || isExecSecretary();
+      // Admin: unrestricted. ExecSecretary: unrestricted. Seventy: only their region's tasks, status-only.
       // President: own tasks, limited fields only.
       allow update: if isAdmin()
+        || isExecSecretary()
         || (isSeventy() && resource.data.seventyUid == request.auth.uid
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['status']))
