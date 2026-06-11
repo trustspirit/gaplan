@@ -71,7 +71,8 @@ export const calendarSync = functions
       (before?.zoomLink ?? null) !== (after.zoomLink ?? null) ||
       (before?.customTitle ?? null) !== (after.customTitle ?? null) ||
       (before?.unitId ?? '') !== (after.unitId ?? '') ||
-      (before?.wardName ?? null) !== (after.wardName ?? null)
+      (before?.wardName ?? null) !== (after.wardName ?? null) ||
+      (before?.notes ?? null) !== (after.notes ?? null)
     if (after.googleCalendarEventId && !needsUpdate) return
 
     const startDateTime = `${after.date}T${after.startTime}:00+09:00`
@@ -85,12 +86,15 @@ export const calendarSync = functions
     const zoomLinkValue = after.zoomLink?.trim() ?? ''
 
     try {
+      const description = after.notes?.trim() || undefined
+
       if (existingEventId) {
         await calendar.events.update({
           calendarId: sharedCalendarId,
           eventId: existingEventId,
           requestBody: {
             summary: title,
+            description: description ?? '',
             start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
             end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
             location: zoomLinkValue,
@@ -101,6 +105,7 @@ export const calendarSync = functions
           calendarId: sharedCalendarId,
           requestBody: {
             summary: title,
+            ...(description ? { description } : {}),
             start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
             end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
             ...(zoomLinkValue ? { location: zoomLinkValue } : {}),
