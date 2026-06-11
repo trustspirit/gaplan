@@ -10,7 +10,7 @@ import { useUnits } from '@/hooks/useUnits'
 import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
 import { useGeneralSchedules } from '@/hooks/useGeneralSchedules'
 import { manualCalendarSync, deleteScheduleViaCF } from '@/services/scheduleService'
-import { registerAttendance, cancelAttendance } from '@/services/generalScheduleService'
+import { registerAttendance, cancelAttendance, updateGeneralSchedule } from '@/services/generalScheduleService'
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Button } from '@/components/ui'
@@ -81,6 +81,14 @@ export function CalendarPage() {
       toast.success(t('generalSchedule.cancelSuccess'))
     } catch (e: unknown) {
       toast.error((e as { message?: string })?.message ?? '참석 취소에 실패했습니다.')
+    }
+  }
+
+  const handleToggleVisibility = async (gs: GeneralSchedule) => {
+    try {
+      await updateGeneralSchedule(gs.id, { isPublic: !gs.isPublic })
+    } catch {
+      toast.error('공개 설정 변경에 실패했습니다.')
     }
   }
 
@@ -227,8 +235,10 @@ export function CalendarPage() {
                           event={gs}
                           isAttending={!!attendance}
                           canAttend={user.role === 'admin' || user.role === 'seventy'}
+                          canToggleVisibility={user.role === 'admin'}
                           onAttend={() => handleAttend(gs.id)}
                           onCancelAttend={() => attendance && handleCancelAttend(attendance.id)}
+                          onToggleVisibility={() => handleToggleVisibility(gs)}
                           onClick={() => setDetailTarget(gs)}
                         />
                       )

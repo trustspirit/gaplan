@@ -93,19 +93,23 @@ export const publicScheduleIcs = functions
         calName = getScopeDisplayName(scopeValue) || '일정표'
       }
 
-      let schedulesQuery: admin.firestore.Query = admin.firestore()
-        .collection('schedules')
-        .where('status', '==', 'confirmed')
-        .orderBy('date', 'asc')
+      // Date cutoff: 7 days ago — same window as the web view
+      const cutoff = new Date()
+      cutoff.setDate(cutoff.getDate() - 7)
+      const cutoffStr = cutoff.toISOString().split('T')[0]
 
-      if (unitIds !== null) {
-        schedulesQuery = schedulesQuery.where('unitId', 'in', unitIds)
-      }
-
+      // Query using (status, date) index; filter unitId in code
       const [schedulesSnap, unitsSnap2] = await Promise.all([
-        schedulesQuery.get(),
+        admin.firestore()
+          .collection('schedules')
+          .where('status', '==', 'confirmed')
+          .where('date', '>=', cutoffStr)
+          .orderBy('date', 'asc')
+          .get(),
         admin.firestore().collection('units').get(),
       ])
+
+      const unitSet = unitIds !== null ? new Set(unitIds) : null
 
       const unitMap: Record<string, string> = {}
       unitsSnap2.docs.forEach((d) => { unitMap[d.id] = d.data().name ?? d.id })
@@ -113,7 +117,7 @@ export const publicScheduleIcs = functions
       const dtstamp = nowDtStamp()
       const events: string[] = []
 
-      schedulesSnap.docs.forEach((d) => {
+      schedulesSnap.docs.filter(d => unitSet === null || unitSet.has(d.data().unitId)).forEach((d) => {
         const data = d.data()
         const unitName = unitMap[data.unitId] ?? data.unitId ?? ''
         const summary = buildSummary(data, unitName)

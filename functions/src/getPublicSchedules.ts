@@ -62,34 +62,40 @@ export const getPublicSchedules = functions
       scopeDisplayName = getScopeDisplayName(scopeValue) || null
     }
 
-    // Build query
-    let query: admin.firestore.Query = admin.firestore()
+    // Date cutoff: show schedules from 7 days ago onward
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - 7)
+    const cutoffStr = cutoff.toISOString().split('T')[0]
+
+    // Query using (status, date) composite index — filter unitId in code to avoid
+    // needing a separate (unitId, status, date) composite index
+    const snap = await admin.firestore()
       .collection('schedules')
       .where('status', '==', 'confirmed')
+      .where('date', '>=', cutoffStr)
       .orderBy('date', 'asc')
+      .get()
 
-    if (unitIds !== null) {
-      query = query.where('unitId', 'in', unitIds)
-    }
+    const unitSet = unitIds !== null ? new Set(unitIds) : null
 
-    const snap = await query.get()
-
-    const schedules: PublicSchedule[] = snap.docs.map((d) => {
-      const sd = d.data()
-      return {
-        id: d.id,
-        type: sd.type,
-        unitId: sd.unitId,
-        date: sd.date,
-        startTime: sd.startTime,
-        endTime: sd.endTime,
-        status: sd.status,
-        ...(sd.wardName ? { wardName: sd.wardName } : {}),
-        ...(sd.zoomLink != null ? { zoomLink: sd.zoomLink } : {}),
-        ...(sd.customTitle != null ? { customTitle: sd.customTitle } : {}),
-        ...(sd.confirmedAt ? { confirmedAt: sd.confirmedAt } : {}),
-      }
-    })
+    const schedules: PublicSchedule[] = snap.docs
+      .filter((d) => unitSet === null || unitSet.has(d.data().unitId))
+      .map((d) => {
+        const sd = d.data()
+        return {
+          id: d.id,
+          type: sd.type,
+          unitId: sd.unitId,
+          date: sd.date,
+          startTime: sd.startTime,
+          endTime: sd.endTime,
+          status: sd.status,
+          ...(sd.wardName ? { wardName: sd.wardName } : {}),
+          ...(sd.zoomLink != null ? { zoomLink: sd.zoomLink } : {}),
+          ...(sd.customTitle != null ? { customTitle: sd.customTitle } : {}),
+          ...(sd.confirmedAt ? { confirmedAt: sd.confirmedAt } : {}),
+        }
+      })
 
     return { schedules, scopeDisplayName }
   })
