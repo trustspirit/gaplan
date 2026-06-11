@@ -64,8 +64,8 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
   const user = useAtomValue(authUserAtom)
   const [viewSeventyUid, setViewSeventyUid] = useAtom(seventyViewAtom)
 
-  const isAdminExecSec = user?.role === 'admin' && !!user.assignedSeventyUid
-  const isShowingAll = viewSeventyUid === SCOPE_ALL || (!viewSeventyUid && !user?.assignedSeventyUid)
+  const isAdminExecSec = user?.role === 'admin' && (user.secondaryRole === 'exec_secretary' || user.secondaryRole === 'seventy')
+  const isShowingAll = viewSeventyUid === SCOPE_ALL || (!viewSeventyUid && !user?.secondaryRole)
 
   useEffect(() => {
     if (!open) return

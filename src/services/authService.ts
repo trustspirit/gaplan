@@ -91,11 +91,18 @@ export async function resolveUser(firebaseUser: User): Promise<AppUser | null> {
   const regionIds: string[] =
     (inviteData?.assignedRegionIds as string[] | undefined)?.filter(Boolean) ??
     (inviteData?.assignedRegionId ? [inviteData.assignedRegionId as string] : [])
-  const regionFields = role === 'seventy' && regionIds.length > 0
+  const secondaryRole = inviteData?.secondaryRole as 'exec_secretary' | 'seventy' | 'president' | undefined
+  const regionFields = (role === 'seventy' || (role === 'admin' && secondaryRole === 'seventy')) && regionIds.length > 0
     ? { regionIds, regionId: regionIds[0] }
     : {}
-  const execSecretaryFields = role === 'exec_secretary' && inviteData?.assignedSeventyUid
+  const execSecretaryFields = (role === 'exec_secretary' || (role === 'admin' && secondaryRole === 'exec_secretary')) && inviteData?.assignedSeventyUid
     ? { assignedSeventyUid: inviteData.assignedSeventyUid as string }
+    : {}
+  const presidentFields = (role === 'admin' && secondaryRole === 'president') && inviteData?.unitId
+    ? { unitId: inviteData.unitId as string }
+    : {}
+  const secondaryRoleFields = role === 'admin' && secondaryRole
+    ? { secondaryRole }
     : {}
 
   const newUser: Omit<AppUser, 'uid'> = {
@@ -104,6 +111,8 @@ export async function resolveUser(firebaseUser: User): Promise<AppUser | null> {
     role,
     ...regionFields,
     ...execSecretaryFields,
+    ...presidentFields,
+    ...secondaryRoleFields,
     createdAt: new Date().toISOString(),
   }
   await setDoc(userRef, { ...newUser, createdAt: serverTimestamp() })

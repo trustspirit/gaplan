@@ -10,7 +10,16 @@ import { REGIONS, ALL_UNITS } from '@/constants/regions'
 import { ROLE_LABELS } from '@/constants/roles'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Input, Select, Button, Badge, Avatar, Skeleton, Modal } from '@/components/ui'
-import type { AppUser, UserRole } from '@/types'
+import type { AppUser, UserRole, SecondaryRole } from '@/types'
+
+type SecondaryRoleOrNull = SecondaryRole | null
+
+const SECONDARY_ROLE_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: '없음' },
+  { value: 'exec_secretary', label: ROLE_LABELS.exec_secretary },
+  { value: 'seventy', label: ROLE_LABELS.seventy },
+  { value: 'president', label: ROLE_LABELS.president },
+]
 import styles from './UserManagement.module.scss'
 
 const ROLE_OPTIONS = (['admin', 'exec_secretary', 'seventy', 'president'] as UserRole[]).map(r => ({ value: r, label: ROLE_LABELS[r] }))
@@ -33,6 +42,7 @@ function EditUserModal({
     new Set(user.regionIds ?? (user.regionId ? [user.regionId] : []))
   )
   const [assignedSeventyUid, setAssignedSeventyUid] = useState(user.assignedSeventyUid ?? '')
+  const [secondaryRole, setSecondaryRole] = useState<SecondaryRoleOrNull>(user.secondaryRole ?? null)
   const [loading, setLoading] = useState(false)
 
   const { users: allUsers } = useUsers()
@@ -56,19 +66,28 @@ function EditUserModal({
         toast.error('집행서기는 담당 지역 칠십인을 선택해야 합니다')
         return
       }
+      if (role === 'admin' && secondaryRole === 'exec_secretary' && !assignedSeventyUid) {
+        toast.error('집행서기 보조 역할에는 담당 지역 칠십인을 선택해야 합니다')
+        return
+      }
       const tasks: Promise<void>[] = []
       if (name.trim() !== user.name) tasks.push(updateUserName(user.uid, name.trim()))
       const newRegionIds = Array.from(selectedRegions)
-      const regionChanged = role === 'seventy' && (
-        JSON.stringify(newRegionIds.sort()) !== JSON.stringify((user.regionIds ?? []).sort())
+      const regionChanged = (role === 'seventy' || (role === 'admin' && secondaryRole === 'seventy')) && (
+        JSON.stringify([...newRegionIds].sort()) !== JSON.stringify((user.regionIds ?? []).sort())
       )
-      const seventyChanged = role === 'exec_secretary' && assignedSeventyUid !== (user.assignedSeventyUid ?? '')
-      if (role !== user.role || regionChanged || seventyChanged) {
+      const seventyChanged = (role === 'exec_secretary' || (role === 'admin' && secondaryRole === 'exec_secretary')) &&
+        assignedSeventyUid !== (user.assignedSeventyUid ?? '')
+      const secondaryChanged = role === 'admin' && secondaryRole !== (user.secondaryRole ?? null)
+      const unitChanged = role === 'admin' && secondaryRole === 'president' && unitId !== (user.unitId ?? '')
+      if (role !== user.role || regionChanged || seventyChanged || secondaryChanged || unitChanged) {
         tasks.push(updateUserRole(
           user.uid,
           role,
-          role === 'seventy' ? newRegionIds : undefined,
-          role === 'exec_secretary' ? assignedSeventyUid || undefined : undefined,
+          role === 'seventy' ? newRegionIds : (secondaryRole === 'seventy' ? newRegionIds : undefined),
+          role === 'exec_secretary' ? assignedSeventyUid || undefined : (secondaryRole === 'exec_secretary' ? assignedSeventyUid || undefined : undefined),
+          role === 'admin' ? secondaryRole : null,
+          secondaryRole === 'president' ? unitId || undefined : undefined,
         ))
       }
       if (user.preRegistered) {
@@ -151,6 +170,51 @@ function EditUserModal({
             options={seventyOptions}
           />
         )}
+        {role === 'admin' && (
+          <>
+            <Select
+              label={t('user.secondaryRole')}
+              value={secondaryRole ?? ''}
+              onChange={e => setSecondaryRole((e.target.value as SecondaryRole) || null)}
+              options={SECONDARY_ROLE_OPTIONS}
+            />
+            {secondaryRole === 'exec_secretary' && (
+              <Select
+                label={t('user.editAssignedSeventy')}
+                value={assignedSeventyUid}
+                onChange={e => setAssignedSeventyUid(e.target.value)}
+                options={seventyOptions}
+              />
+            )}
+            {secondaryRole === 'seventy' && (
+              <div className={styles.regionCheckGroup}>
+                <p className={styles.regionCheckLabel}>{t('user.inviteRegion')} (복수 선택 가능)</p>
+                <div className={styles.regionCheckList}>
+                  {REGIONS.map(r => (
+                    <label key={r.id} className={styles.regionCheckRow}>
+                      <input
+                        type="checkbox"
+                        checked={selectedRegions.has(r.id)}
+                        onChange={() => toggleRegion(r.id)}
+                        className={styles.regionCheckbox}
+                        style={{ accentColor: 'var(--color-primary, #177C9C)' }}
+                      />
+                      <span className={styles.regionCheckName}>{r.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+            {secondaryRole === 'president' && (
+              <Select
+                label={t('user.preRegUnit')}
+                value={unitId}
+                onChange={e => setUnitId(e.target.value)}
+                options={UNIT_OPTIONS}
+              />
+            )}
+          </>
+        )}
         <div className={styles.modalActions}>
           <Button variant="ghost" type="button" onClick={onClose}>{t('common.cancel')}</Button>
           <Button type="submit" loading={loading}>{t('common.save')}</Button>
@@ -218,6 +282,8 @@ export function UserManagement() {
   const [role, setRole] = useState<UserRole>('president')
   const [inviteRegionIds, setInviteRegionIds] = useState<Set<string>>(new Set())
   const [inviteSeventyUid, setInviteSeventyUid] = useState('')
+  const [inviteSecondaryRole, setInviteSecondaryRole] = useState<SecondaryRoleOrNull>(null)
+  const [inviteUnitId, setInviteUnitId] = useState('')
   const [inviteLoading, setInviteLoading] = useState(false)
 
   const seventyUsers = users.filter(u => u.role === 'seventy')
@@ -251,18 +317,29 @@ export function UserManagement() {
       setInviteLoading(false)
       return
     }
+    if (role === 'admin' && inviteSecondaryRole === 'exec_secretary' && !inviteSeventyUid) {
+      toast.error('집행서기 보조 역할에는 담당 지역 칠십인을 선택해야 합니다')
+      setInviteLoading(false)
+      return
+    }
     try {
       await inviteUser(
         email.trim(),
         role,
-        role === 'seventy' ? Array.from(inviteRegionIds) : undefined,
+        role === 'seventy' ? Array.from(inviteRegionIds)
+          : (role === 'admin' && inviteSecondaryRole === 'seventy' ? Array.from(inviteRegionIds) : undefined),
         currentUser.uid,
-        role === 'exec_secretary' ? inviteSeventyUid || undefined : undefined,
+        role === 'exec_secretary' ? inviteSeventyUid || undefined
+          : (role === 'admin' && inviteSecondaryRole === 'exec_secretary' ? inviteSeventyUid || undefined : undefined),
+        role === 'admin' ? inviteSecondaryRole : null,
+        role === 'admin' && inviteSecondaryRole === 'president' ? inviteUnitId || undefined : undefined,
       )
       toast.success(`${email}${t('user.inviteSuccess')}`)
       setEmail('')
       setInviteRegionIds(new Set())
       setInviteSeventyUid('')
+      setInviteSecondaryRole(null)
+      setInviteUnitId('')
     } catch {
       toast.error(t('user.inviteFailed'))
     } finally {
@@ -330,6 +407,51 @@ export function UserManagement() {
                     onChange={e => setInviteSeventyUid(e.target.value)}
                     options={seventyOptions}
                   />
+                )}
+                {role === 'admin' && (
+                  <>
+                    <Select
+                      label={t('user.secondaryRole')}
+                      value={inviteSecondaryRole ?? ''}
+                      onChange={e => setInviteSecondaryRole((e.target.value as SecondaryRole) || null)}
+                      options={SECONDARY_ROLE_OPTIONS}
+                    />
+                    {inviteSecondaryRole === 'exec_secretary' && (
+                      <Select
+                        label={t('user.inviteAssignedSeventy')}
+                        value={inviteSeventyUid}
+                        onChange={e => setInviteSeventyUid(e.target.value)}
+                        options={seventyOptions}
+                      />
+                    )}
+                    {inviteSecondaryRole === 'seventy' && (
+                      <div className={styles.regionCheckGroup}>
+                        <p className={styles.regionCheckLabel}>{t('user.inviteRegion')} (복수 선택 가능)</p>
+                        <div className={styles.regionCheckList}>
+                          {REGIONS.map(r => (
+                            <label key={r.id} className={styles.regionCheckRow}>
+                              <input
+                                type="checkbox"
+                                checked={inviteRegionIds.has(r.id)}
+                                onChange={() => toggleInviteRegion(r.id)}
+                                className={styles.regionCheckbox}
+                                style={{ accentColor: 'var(--color-primary, #177C9C)' }}
+                              />
+                              <span className={styles.regionCheckName}>{r.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {inviteSecondaryRole === 'president' && (
+                      <Select
+                        label={t('user.preRegUnit')}
+                        value={inviteUnitId}
+                        onChange={e => setInviteUnitId(e.target.value)}
+                        options={UNIT_OPTIONS}
+                      />
+                    )}
+                  </>
                 )}
                 <Button type="submit" loading={inviteLoading}>{t('user.inviteSend')}</Button>
               </form>

@@ -36,14 +36,29 @@ export function resolveEffectiveScope(
   if (!user) return EMPTY
 
   if (user.role === 'admin') {
-    // '__all__' = 전체 보기 명시 선택
     if (viewSeventyUid === SCOPE_ALL) return ALL
-    // null = 기본값: assignedSeventyUid가 있으면 그 칠십인 스코프, 없으면 전체
-    const activeUid = viewSeventyUid ?? user.assignedSeventyUid ?? null
-    if (!activeUid) return ALL
-    const regionIds = regionIdsOf(activeUid, users)
-    if (regionIds === null) return ALL  // 선택한 칠십인 삭제됨 → 전체 폴백
-    return { regionIds, actingSeventyUid: activeUid }
+
+    // Explicit seventy selection from TopBar (admin browsing a specific seventy's scope)
+    if (viewSeventyUid) {
+      const regionIds = regionIdsOf(viewSeventyUid, users)
+      return regionIds !== null ? { regionIds, actingSeventyUid: viewSeventyUid } : ALL
+    }
+
+    // Default scope based on secondaryRole
+    const sr = user.secondaryRole
+    if (sr === 'exec_secretary') {
+      const activeUid = user.assignedSeventyUid ?? null
+      if (!activeUid) return ALL
+      const regionIds = regionIdsOf(activeUid, users)
+      return regionIds !== null ? { regionIds, actingSeventyUid: activeUid } : ALL
+    }
+    if (sr === 'seventy') {
+      const regionIds = user.regionIds ?? (user.regionId ? [user.regionId] : [])
+      if (regionIds.length === 0) return ALL
+      return { regionIds, actingSeventyUid: user.uid }
+    }
+    // president secondary role or no secondary role → admin sees all
+    return ALL
   }
 
   if (user.role === 'exec_secretary') {

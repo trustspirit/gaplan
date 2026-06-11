@@ -33,13 +33,20 @@ export function useReminders() {
     const start = q.start < today ? q.start : today
     // 향후 120일까지의 일정만 조회 — 그 이후 방문의 모임 리마인더는 제외(허용 한계)
     const end = dayjs(today).add(120, 'day').format('YYYY-MM-DD')
-    // For admin: resolve the effective seventy uid for the server query.
-    // null viewSeventyUid + assignedSeventyUid → use assignedSeventyUid (admin+exec_sec default)
-    // SCOPE_ALL or no assignedSeventyUid → null → server returns all
-    const querySeventyUid: string | null =
-      user.role === 'admin'
-        ? (viewSeventyUid === SCOPE_ALL ? null : (viewSeventyUid ?? user.assignedSeventyUid ?? null))
-        : null
+    // Resolve the seventy uid to scope the CF query for admin users.
+    // viewSeventyUid overrides; SCOPE_ALL = no filter; secondary role provides the default.
+    let querySeventyUid: string | null = null
+    if (user.role === 'admin') {
+      if (viewSeventyUid !== SCOPE_ALL) {
+        if (viewSeventyUid) {
+          querySeventyUid = viewSeventyUid
+        } else if (user.secondaryRole === 'exec_secretary') {
+          querySeventyUid = user.assignedSeventyUid ?? null
+        } else if (user.secondaryRole === 'seventy') {
+          querySeventyUid = user.uid  // admin IS the seventy
+        }
+      }
+    }
     Promise.all([
       fetchScopedSchedulesInRange(start, end, user.role === 'admin' ? querySeventyUid : undefined),
       getDismissedReminders(user.uid),

@@ -411,7 +411,8 @@
     "preRegDeleteSuccess": "{{name}} deleted",
     "preRegDeleteFailed": "Failed to delete",
     "inviteAssignedSeventy": "Assigned Area Seventy",
-    "editAssignedSeventy": "Assigned Area Seventy"
+    "editAssignedSeventy": "Assigned Area Seventy",
+    "secondaryRole": "Secondary Role (optional)"
   },
   "region": {
     "seoul": "Seoul CCM",

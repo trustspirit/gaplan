@@ -5,7 +5,7 @@ import {
 } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/firebase'
-import type { AppUser, UserRole } from '@/types'
+import type { AppUser, UserRole, SecondaryRole } from '@/types'
 
 export async function inviteUser(
   email: string,
@@ -13,12 +13,16 @@ export async function inviteUser(
   assignedRegionIds: string[] | undefined,
   invitedBy: string,
   assignedSeventyUid?: string,
+  secondaryRole?: SecondaryRole | null,
+  unitId?: string,
 ): Promise<void> {
   await setDoc(doc(db, 'invites', email), {
     role,
+    secondaryRole: secondaryRole ?? null,
     assignedRegionIds: assignedRegionIds ?? [],
-    assignedRegionId: assignedRegionIds?.[0] ?? null,  // backward compat
+    assignedRegionId: assignedRegionIds?.[0] ?? null,
     assignedSeventyUid: assignedSeventyUid ?? null,
+    unitId: unitId ?? null,
     invitedBy,
     createdAt: serverTimestamp(),
   })
@@ -37,16 +41,35 @@ export async function updateUserRole(
   role: UserRole,
   regionIds?: string[],
   assignedSeventyUid?: string,
+  secondaryRole?: SecondaryRole | null,
+  unitId?: string,
 ): Promise<void> {
-  const regionFields = role === 'seventy' && regionIds && regionIds.length > 0
-    ? { regionIds, regionId: regionIds[0] }
-    : {}
-  const execSecFields = role === 'exec_secretary' && assignedSeventyUid
-    ? { assignedSeventyUid }
-    : role !== 'exec_secretary'
-      ? { assignedSeventyUid: null }  // clear when switching away from exec_secretary
-      : {}
-  await updateDoc(doc(db, 'users', uid), { role, ...regionFields, ...execSecFields })
+  const fields: Record<string, unknown> = { role }
+
+  if (role === 'admin') {
+    fields.secondaryRole = secondaryRole ?? null
+    if (secondaryRole === 'exec_secretary') {
+      fields.assignedSeventyUid = assignedSeventyUid || null
+      fields.regionIds = null; fields.regionId = null; fields.unitId = null
+    } else if (secondaryRole === 'seventy') {
+      const rIds = regionIds ?? []
+      fields.regionIds = rIds; fields.regionId = rIds[0] ?? null
+      fields.assignedSeventyUid = null; fields.unitId = null
+    } else if (secondaryRole === 'president') {
+      fields.unitId = unitId || null
+      fields.assignedSeventyUid = null; fields.regionIds = null; fields.regionId = null
+    } else {
+      fields.assignedSeventyUid = null; fields.regionIds = null; fields.regionId = null; fields.unitId = null
+    }
+  } else {
+    fields.secondaryRole = null
+    if (role === 'seventy' && regionIds && regionIds.length > 0) {
+      fields.regionIds = regionIds; fields.regionId = regionIds[0]
+    }
+    fields.assignedSeventyUid = role === 'exec_secretary' ? (assignedSeventyUid || null) : null
+  }
+
+  await updateDoc(doc(db, 'users', uid), fields)
 }
 
 export async function updateUserName(uid: string, name: string): Promise<void> {
