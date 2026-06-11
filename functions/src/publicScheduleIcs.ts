@@ -119,7 +119,7 @@ export const publicScheduleIcs = functions
 
       schedulesSnap.docs.filter(d => {
         const sd = d.data()
-        return unitSet === null || unitSet.has(sd.unitId)
+        return unitSet === null || (unitSet.has(sd.unitId) && sd.type === 'ward_visit')
       }).forEach((d) => {
         const data = d.data()
         const unitName = unitMap[data.unitId] ?? data.unitId ?? ''

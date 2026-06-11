@@ -14,7 +14,7 @@
 
 .layout {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 1fr 360px;
   gap: $space-4;
   align-items: start;
 
@@ -24,13 +24,21 @@
 }
 
 .calendarCol {
-}
-.listCol {
+  min-width: 0;
 }
 
-.calendarCol,
 .listCol {
   min-width: 0;
+  position: sticky;
+  top: $space-5;
+  max-height: calc(100dvh - #{$topbar-height} - #{$space-5} * 2);
+  overflow-y: auto;
+
+  @include mobile {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
 }
 
 .empty {

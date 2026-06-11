@@ -5,6 +5,11 @@
   background: $color-bg;
   display: flex;
   flex-direction: column;
+  padding-top: 4rem;
+
+  @media (max-width: 600px) {
+    padding-top: 3rem;
+  }
 }
 
 .loading,
@@ -25,9 +30,10 @@
 
 // ─── Header ────────────────────────────────────────────────────────────────
 .header {
-  flex-shrink: 0;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 10;
   background: $color-sidebar;
   color: #fff;
