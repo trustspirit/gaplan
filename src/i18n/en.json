@@ -10,7 +10,9 @@
     "generalSchedules": "Events",
     "stats": "Statistics",
     "visitPlans": "Visit Plans",
-    "projects": "Projects"
+    "projects": "Projects",
+    "schedules": "Schedules",
+    "more": "More"
   },
   "stats": {
     "pageTitle": "Visit Statistics",

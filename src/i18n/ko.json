@@ -10,7 +10,9 @@
     "generalSchedules": "행사 일정",
     "stats": "통계",
     "visitPlans": "방문 계획",
-    "projects": "프로젝트"
+    "projects": "프로젝트",
+    "schedules": "일정",
+    "more": "더보기"
   },
   "stats": {
     "pageTitle": "방문 통계",
