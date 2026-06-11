@@ -12,11 +12,13 @@ export async function inviteUser(
   role: UserRole,
   assignedRegionIds: string[] | undefined,
   invitedBy: string,
+  assignedSeventyUid?: string,
 ): Promise<void> {
   await setDoc(doc(db, 'invites', email), {
     role,
     assignedRegionIds: assignedRegionIds ?? [],
     assignedRegionId: assignedRegionIds?.[0] ?? null,  // backward compat
+    assignedSeventyUid: assignedSeventyUid ?? null,
     invitedBy,
     createdAt: serverTimestamp(),
   })
@@ -33,15 +35,18 @@ export function subscribeToUsers(callback: (users: AppUser[]) => void): Unsubscr
 export async function updateUserRole(
   uid: string,
   role: UserRole,
-  regionIds?: string[],   // multiple regions for seventy
+  regionIds?: string[],
+  assignedSeventyUid?: string,
 ): Promise<void> {
   const regionFields = role === 'seventy' && regionIds && regionIds.length > 0
-    ? {
-        regionIds,
-        regionId: regionIds[0],  // keep primary for backward compat
-      }
+    ? { regionIds, regionId: regionIds[0] }
     : {}
-  await updateDoc(doc(db, 'users', uid), { role, ...regionFields })
+  const execSecFields = role === 'exec_secretary' && assignedSeventyUid
+    ? { assignedSeventyUid }
+    : role !== 'exec_secretary'
+      ? { assignedSeventyUid: null }  // clear when switching away from exec_secretary
+      : {}
+  await updateDoc(doc(db, 'users', uid), { role, ...regionFields, ...execSecFields })
 }
 
 export async function updateUserName(uid: string, name: string): Promise<void> {

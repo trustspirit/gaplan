@@ -94,12 +94,16 @@ export async function resolveUser(firebaseUser: User): Promise<AppUser | null> {
   const regionFields = role === 'seventy' && regionIds.length > 0
     ? { regionIds, regionId: regionIds[0] }
     : {}
+  const execSecretaryFields = role === 'exec_secretary' && inviteData?.assignedSeventyUid
+    ? { assignedSeventyUid: inviteData.assignedSeventyUid as string }
+    : {}
 
   const newUser: Omit<AppUser, 'uid'> = {
     email,
     name: firebaseUser.displayName ?? email,
     role,
     ...regionFields,
+    ...execSecretaryFields,
     createdAt: new Date().toISOString(),
   }
   await setDoc(userRef, { ...newUser, createdAt: serverTimestamp() })
