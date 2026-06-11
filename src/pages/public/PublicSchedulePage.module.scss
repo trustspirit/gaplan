@@ -249,7 +249,7 @@
   flex-shrink: 0;
 
   &:hover {
-    background: $color-primary-dark;
+    background: $color-primary-hover;
     transform: translateY(-1px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
   }
