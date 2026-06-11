@@ -3,12 +3,11 @@
 
 .shell {
   display: flex;
-  width: 100%;
-  min-width: 0;
-  height: 100dvh;
-  height: var(--app-height, 100dvh);
+  // position:fixed inset:0 fills the viewport precisely on all iOS modes
+  // without relying on height calculations that vary between Safari/PWA/dvh
+  position: fixed;
+  inset: 0;
   overflow: hidden;
-  padding-top: env(safe-area-inset-top, 0px);
   background: $color-sidebar;
 
   @include mobile {
@@ -28,7 +27,12 @@
   z-index: $z-sidebar;
   @include mobile {
     display: flex;
-    height: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px));
+    // base height: 60px
+    // extend into home indicator only in PWA standalone mode
+    height: $bottom-tab-height;
+    @media (display-mode: standalone) {
+      height: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px));
+    }
   }
 }
 .main {
@@ -39,6 +43,8 @@
   min-height: 0;
   overflow: hidden;
   background: $color-bg;
+  // status bar area uses main background (white) instead of sidebar (dark blue)
+  padding-top: env(safe-area-inset-top, 0px);
 }
 .topbar {
   flex-shrink: 0;
