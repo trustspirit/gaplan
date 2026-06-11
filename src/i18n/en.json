@@ -403,7 +403,9 @@
     "preRegDeleteConfirm": "Delete this pre-registered user?",
     "preRegDeleteWarning": "Any schedules linked to this user will lose their assignee.",
     "preRegDeleteSuccess": "{{name}} deleted",
-    "preRegDeleteFailed": "Failed to delete"
+    "preRegDeleteFailed": "Failed to delete",
+    "inviteAssignedSeventy": "Assigned Area Seventy",
+    "editAssignedSeventy": "Assigned Area Seventy"
   },
   "region": {
     "seoul": "Seoul CCM",

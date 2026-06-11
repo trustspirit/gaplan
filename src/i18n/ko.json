@@ -403,7 +403,9 @@
     "preRegDeleteConfirm": "사전 등록된 사용자를 삭제하시겠습니까?",
     "preRegDeleteWarning": "연결된 일정의 담당자 정보가 비어집니다.",
     "preRegDeleteSuccess": "{{name}} 삭제됨",
-    "preRegDeleteFailed": "삭제에 실패했습니다"
+    "preRegDeleteFailed": "삭제에 실패했습니다",
+    "inviteAssignedSeventy": "담당 지역 칠십인",
+    "editAssignedSeventy": "담당 지역 칠십인"
   },
   "region": {
     "seoul": "서울 CCM",

@@ -13,7 +13,7 @@ import { Card, CardHeader, CardBody, Input, Select, Button, Badge, Avatar, Skele
 import type { AppUser, UserRole } from '@/types'
 import styles from './UserManagement.module.scss'
 
-const ROLE_OPTIONS = (['admin', 'seventy', 'president'] as UserRole[]).map(r => ({ value: r, label: ROLE_LABELS[r] }))
+const ROLE_OPTIONS = (['admin', 'exec_secretary', 'seventy', 'president'] as UserRole[]).map(r => ({ value: r, label: ROLE_LABELS[r] }))
 const PRE_ROLE_OPTIONS = (['president', 'seventy'] as UserRole[]).map(r => ({ value: r, label: ROLE_LABELS[r] }))
 const UNIT_OPTIONS = ALL_UNITS.map(u => ({ value: u.id, label: u.name }))
 
@@ -32,7 +32,13 @@ function EditUserModal({
   const [selectedRegions, setSelectedRegions] = useState<Set<string>>(
     new Set(user.regionIds ?? (user.regionId ? [user.regionId] : []))
   )
+  const [assignedSeventyUid, setAssignedSeventyUid] = useState(user.assignedSeventyUid ?? '')
   const [loading, setLoading] = useState(false)
+
+  const { users: allUsers } = useUsers()
+  const seventyOptions = allUsers
+    .filter(u => u.role === 'seventy')
+    .map(u => ({ value: u.uid, label: u.name }))
 
   function toggleRegion(regionId: string) {
     setSelectedRegions(prev => {
@@ -52,8 +58,14 @@ function EditUserModal({
       const regionChanged = role === 'seventy' && (
         JSON.stringify(newRegionIds.sort()) !== JSON.stringify((user.regionIds ?? []).sort())
       )
-      if (role !== user.role || regionChanged) {
-        tasks.push(updateUserRole(user.uid, role, role === 'seventy' ? newRegionIds : undefined))
+      const seventyChanged = role === 'exec_secretary' && assignedSeventyUid !== (user.assignedSeventyUid ?? '')
+      if (role !== user.role || regionChanged || seventyChanged) {
+        tasks.push(updateUserRole(
+          user.uid,
+          role,
+          role === 'seventy' ? newRegionIds : undefined,
+          role === 'exec_secretary' ? assignedSeventyUid || undefined : undefined,
+        ))
       }
       if (user.preRegistered) {
         const preFields: Parameters<typeof updatePreRegisteredUserFields>[1] = {}
@@ -127,6 +139,14 @@ function EditUserModal({
             </div>
           </div>
         )}
+        {role === 'exec_secretary' && (
+          <Select
+            label={t('user.editAssignedSeventy')}
+            value={assignedSeventyUid}
+            onChange={e => setAssignedSeventyUid(e.target.value)}
+            options={seventyOptions}
+          />
+        )}
         <div className={styles.modalActions}>
           <Button variant="ghost" type="button" onClick={onClose}>{t('common.cancel')}</Button>
           <Button type="submit" loading={loading}>{t('common.save')}</Button>
@@ -193,7 +213,11 @@ export function UserManagement() {
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<UserRole>('president')
   const [inviteRegionIds, setInviteRegionIds] = useState<Set<string>>(new Set())
+  const [inviteSeventyUid, setInviteSeventyUid] = useState('')
   const [inviteLoading, setInviteLoading] = useState(false)
+
+  const seventyUsers = users.filter(u => u.role === 'seventy')
+  const seventyOptions = seventyUsers.map(u => ({ value: u.uid, label: u.name }))
 
   // Manual pre-registration
   const [preName, setPreName] = useState('')
@@ -219,10 +243,17 @@ export function UserManagement() {
     if (!email.trim()) return
     setInviteLoading(true)
     try {
-      await inviteUser(email.trim(), role, role === 'seventy' ? Array.from(inviteRegionIds) : undefined, currentUser.uid)
+      await inviteUser(
+        email.trim(),
+        role,
+        role === 'seventy' ? Array.from(inviteRegionIds) : undefined,
+        currentUser.uid,
+        role === 'exec_secretary' ? inviteSeventyUid || undefined : undefined,
+      )
       toast.success(`${email}${t('user.inviteSuccess')}`)
       setEmail('')
       setInviteRegionIds(new Set())
+      setInviteSeventyUid('')
     } catch {
       toast.error(t('user.inviteFailed'))
     } finally {
@@ -282,6 +313,14 @@ export function UserManagement() {
                       ))}
                     </div>
                   </div>
+                )}
+                {role === 'exec_secretary' && (
+                  <Select
+                    label={t('user.inviteAssignedSeventy')}
+                    value={inviteSeventyUid}
+                    onChange={e => setInviteSeventyUid(e.target.value)}
+                    options={seventyOptions}
+                  />
                 )}
                 <Button type="submit" loading={inviteLoading}>{t('user.inviteSend')}</Button>
               </form>
