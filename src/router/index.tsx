@@ -8,9 +8,7 @@ import { OnboardingPage } from '@/pages/auth/OnboardingPage'
 import { PendingPage } from '@/pages/auth/PendingPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { CalendarPage } from '@/pages/calendar/CalendarPage'
-import { GeneralSchedulePage } from '@/pages/general-schedules/GeneralSchedulePage'
-import { VisitsPage } from '@/pages/visits/VisitsPage'
-import { InterviewsPage } from '@/pages/interviews/InterviewsPage'
+import { SchedulesPage } from '@/pages/schedules/SchedulesPage'
 import { TasksPage } from '@/pages/tasks/TasksPage'
 import { AdminDashboard } from '@/pages/admin/AdminDashboard'
 import { UserManagement } from '@/pages/admin/UserManagement'
@@ -36,9 +34,11 @@ export function AppRouter() {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard"    element={<DashboardPage />} />
           <Route path="/calendar"     element={<CalendarPage />} />
-          <Route path="/general-schedules" element={<GeneralSchedulePage />} />
-          <Route path="/visits"       element={<VisitsPage />} />
-          <Route path="/interviews"   element={<InterviewsPage />} />
+          <Route path="/schedules" element={<Navigate to="/schedules/visits" replace />} />
+          <Route path="/schedules/:tab" element={<SchedulesPage />} />
+          <Route path="/visits"            element={<Navigate to="/schedules/visits" replace />} />
+          <Route path="/interviews"        element={<Navigate to="/schedules/interviews" replace />} />
+          <Route path="/general-schedules" element={<Navigate to="/schedules/events" replace />} />
 
           <Route element={<RoleRoute allow={['president']} />}>
             <Route path="/tasks" element={<TasksPage />} />
