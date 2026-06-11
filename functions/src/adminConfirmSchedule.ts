@@ -39,6 +39,15 @@ export const adminConfirmSchedule = functions
     }
     const taskData = taskSnap.data()!
 
+    if (callerRole === 'exec_secretary') {
+      const callerData = callerSnap.data()
+      const assignedUid = callerData?.assignedSeventyUid as string | undefined
+      if (!assignedUid || taskData?.seventyUid !== assignedUid) {
+        throw new functions.https.HttpsError('permission-denied',
+          'exec_secretary can only confirm schedules for their assigned seventy')
+      }
+    }
+
     if (taskData.status !== 'responded') {
       return { success: false, error: '아직 회장이 가능 시간을 제출하지 않았습니다.' }
     }

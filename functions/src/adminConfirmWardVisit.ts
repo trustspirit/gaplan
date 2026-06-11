@@ -31,6 +31,16 @@ export const adminConfirmWardVisit = functions
     }
 
     const taskData = taskSnap.data()!
+
+    if (callerRole === 'exec_secretary') {
+      const callerData = callerSnap.data()
+      const assignedUid = callerData?.assignedSeventyUid as string | undefined
+      if (!assignedUid || taskData?.seventyUid !== assignedUid) {
+        throw new functions.https.HttpsError('permission-denied',
+          'exec_secretary can only confirm ward visits for their assigned seventy')
+      }
+    }
+
     if (taskData.type !== 'select_visit') {
       throw new functions.https.HttpsError('invalid-argument', 'Only ward visit tasks can be confirmed this way')
     }

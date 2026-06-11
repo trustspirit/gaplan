@@ -38,6 +38,15 @@ export const adminDeleteSchedule = functions
       throw new functions.https.HttpsError('permission-denied', 'Seventy can only delete their own schedules')
     }
 
+    if (callerRole === 'exec_secretary') {
+      const callerData = callerSnap.data()
+      const assignedUid = callerData?.assignedSeventyUid as string | undefined
+      if (!assignedUid || schedule.seventyUid !== assignedUid) {
+        throw new functions.https.HttpsError('permission-denied',
+          'exec_secretary can only delete schedules for their assigned seventy')
+      }
+    }
+
     // Idempotency guard — already cancelled, nothing to do
     if (schedule.status === 'cancelled') {
       return { success: true }

@@ -52,6 +52,10 @@ function EditUserModal({
     e.preventDefault()
     setLoading(true)
     try {
+      if (role === 'exec_secretary' && !assignedSeventyUid) {
+        toast.error('집행서기는 담당 지역 칠십인을 선택해야 합니다')
+        return
+      }
       const tasks: Promise<void>[] = []
       if (name.trim() !== user.name) tasks.push(updateUserName(user.uid, name.trim()))
       const newRegionIds = Array.from(selectedRegions)
@@ -242,6 +246,11 @@ export function UserManagement() {
     e.preventDefault()
     if (!email.trim()) return
     setInviteLoading(true)
+    if (role === 'exec_secretary' && !inviteSeventyUid) {
+      toast.error('집행서기 초대 시 담당 지역 칠십인을 선택해야 합니다')
+      setInviteLoading(false)
+      return
+    }
     try {
       await inviteUser(
         email.trim(),

@@ -122,6 +122,15 @@ export const adminEditSchedule = functions
       throw new functions.https.HttpsError('permission-denied', 'Seventy can only edit their own schedules')
     }
 
+    if (callerRole === 'exec_secretary') {
+      const callerData = callerSnap.data()
+      const assignedUid = callerData?.assignedSeventyUid as string | undefined
+      if (!assignedUid || snap.data()?.seventyUid !== assignedUid) {
+        throw new functions.https.HttpsError('permission-denied',
+          'exec_secretary can only edit schedules for their assigned seventy')
+      }
+    }
+
     if (allowed.startTime !== undefined || allowed.endTime !== undefined) {
       const current = snap.data()!
       const effectiveStart = (allowed.startTime as string | undefined) ?? current.startTime
