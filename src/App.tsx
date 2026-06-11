@@ -20,7 +20,14 @@ export default function App() {
   return (
     <>
       <AppRouter />
-      <Toaster position="top-right" richColors />
+      <Toaster
+        position="top-right"
+        richColors
+        style={{
+          '--offset-top': 'max(calc(env(safe-area-inset-top, 0px) + 8px), 32px)',
+          '--mobile-offset-top': 'max(calc(env(safe-area-inset-top, 0px) + 8px), 32px)',
+        } as React.CSSProperties}
+      />
     </>
   )
 }

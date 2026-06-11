@@ -7,11 +7,13 @@
   min-width: 0;
   height: 100dvh;
   overflow: hidden;
-  /* Push content below the iOS status bar in standalone/PWA mode */
+  /* iOS safe area: top pushes content down, bottom fills home-indicator area with sidebar color */
   padding-top: env(safe-area-inset-top, 0px);
+  background: $color-sidebar;
 
   @include mobile {
     flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 .sidebar {
@@ -24,7 +26,7 @@
 .bottomTab {
   display: none;
   flex-shrink: 0;
-  height: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px));
+  height: $bottom-tab-height;
   z-index: $z-sidebar;
   @include mobile {
     display: flex;
