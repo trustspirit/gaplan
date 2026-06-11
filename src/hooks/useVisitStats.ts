@@ -21,7 +21,7 @@ export function useVisitStats(filters: StatsFilters) {
     let active = true
     setLoading(true)
     const start = dayjs().subtract(FETCH_MONTHS, 'month').format('YYYY-MM-DD')
-    const end = dayjs().format('YYYY-MM-DD')
+    const end = dayjs().add(12, 'month').format('YYYY-MM-DD')
     fetchScopedSchedulesInRange(start, end, user?.role === 'admin' ? viewSeventyUid : undefined)
       .then(data => { if (active) { setSchedules(data); setLoading(false) } })
       .catch(() => { if (active) { setSchedules([]); setLoading(false) } })

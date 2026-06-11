@@ -141,7 +141,7 @@ export function computeVisitStats(
   )
 
   const countSet = scoped.filter(s =>
-    COUNT_TYPES.includes(s.type) && s.date >= start && s.date <= today,
+    COUNT_TYPES.includes(s.type) && s.date >= start,
   )
 
   const regionCounts = new Map<string, number>()
@@ -169,7 +169,7 @@ export function computeVisitStats(
   }
   const monthlyTrend: MonthEntry[] = []
   let cursor = dayjs(start).startOf('month')
-  const endMonth = dayjs(today).startOf('month')
+  const endMonth = dayjs(today).add(6, 'month').startOf('month')
   while (cursor.isBefore(endMonth) || cursor.isSame(endMonth)) {
     const m = cursor.format('YYYY-MM')
     monthlyTrend.push({ month: m, count: monthCounts.get(m) ?? 0 })

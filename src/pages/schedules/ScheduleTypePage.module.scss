@@ -34,7 +34,6 @@
   min-width: 0;
 
   @include mobile {
-    order: -1;
     flex: none;
     width: 100%;
   }
