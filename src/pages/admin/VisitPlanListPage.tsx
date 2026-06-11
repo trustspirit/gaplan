@@ -8,6 +8,7 @@ import { authUserAtom } from '@/store/authAtom'
 import { useVisitPlans } from '@/hooks/useVisitPlans'
 import { useUsers } from '@/hooks/useUsers'
 import { createVisitPlan } from '@/services/visitPlanService'
+import { ROLE } from '@/constants/roles'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Button, Input, Select, Badge } from '@/components/ui'
 import styles from './VisitPlanListPage.module.scss'
@@ -19,7 +20,7 @@ export function VisitPlanListPage() {
   const user = useAtomValue(authUserAtom)!
   const { plans, loading } = useVisitPlans()
   const { users } = useUsers()
-  const seventies = users.filter(u => u.role === 'seventy')
+  const seventies = users.filter(u => u.role === ROLE.SEVENTY)
 
   const [title, setTitle] = useState((location.state as { wardName?: string } | null)?.wardName ?? '')
   const [seventyUid, setSeventyUid] = useState('')

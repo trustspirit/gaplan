@@ -7,7 +7,7 @@ import { authUserAtom } from '@/store/authAtom'
 import { inviteUser, updateUserRole, updateUserName, deleteUserAccount, addPreRegisteredUser, deletePreRegisteredUser, updatePreRegisteredUserFields } from '@/services/userService'
 import { useUsers } from '@/hooks/useUsers'
 import { REGIONS, ALL_UNITS } from '@/constants/regions'
-import { ROLE_LABELS } from '@/constants/roles'
+import { ROLE, ROLE_LABELS, MANAGEABLE_ROLES, PRE_REG_ROLES, SECONDARY_ROLES } from '@/constants/roles'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Input, Select, Button, Badge, Avatar, Skeleton, Modal } from '@/components/ui'
 import type { AppUser, UserRole, SecondaryRole } from '@/types'
@@ -16,14 +16,12 @@ type SecondaryRoleOrNull = SecondaryRole | null
 
 const SECONDARY_ROLE_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: '없음' },
-  { value: 'exec_secretary', label: ROLE_LABELS.exec_secretary },
-  { value: 'seventy', label: ROLE_LABELS.seventy },
-  { value: 'president', label: ROLE_LABELS.president },
+  ...SECONDARY_ROLES.map(r => ({ value: r, label: ROLE_LABELS[r] })),
 ]
 import styles from './UserManagement.module.scss'
 
-const ROLE_OPTIONS = (['admin', 'exec_secretary', 'seventy', 'president'] as UserRole[]).map(r => ({ value: r, label: ROLE_LABELS[r] }))
-const PRE_ROLE_OPTIONS = (['president', 'seventy', 'exec_secretary'] as UserRole[]).map(r => ({ value: r, label: ROLE_LABELS[r] }))
+const ROLE_OPTIONS = MANAGEABLE_ROLES.map(r => ({ value: r, label: ROLE_LABELS[r] }))
+const PRE_ROLE_OPTIONS = PRE_REG_ROLES.map(r => ({ value: r, label: ROLE_LABELS[r] }))
 const UNIT_OPTIONS = ALL_UNITS.map(u => ({ value: u.id, label: u.name }))
 
 function EditUserModal({
@@ -49,7 +47,7 @@ function EditUserModal({
 
   const { users: allUsers } = useUsers()
   const seventyOptions = allUsers
-    .filter(u => u.role === 'seventy')
+    .filter(u => u.role === ROLE.SEVENTY)
     .map(u => ({ value: u.uid, label: u.name }))
 
   function toggleRegion(regionId: string) {
@@ -290,7 +288,7 @@ export function UserManagement() {
   const [inviteUnitId, setInviteUnitId] = useState('')
   const [inviteLoading, setInviteLoading] = useState(false)
 
-  const seventyUsers = users.filter(u => u.role === 'seventy')
+  const seventyUsers = users.filter(u => u.role === ROLE.SEVENTY)
   const seventyOptions = seventyUsers.map(u => ({ value: u.uid, label: u.name }))
 
   // Manual pre-registration

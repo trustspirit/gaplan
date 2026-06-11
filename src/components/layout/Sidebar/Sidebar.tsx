@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { LayoutDashboard, Calendar, CalendarRange, CheckSquare, Settings, LogOut, ClipboardList, Languages, BarChart3, ClipboardPen, FolderKanban, MoreHorizontal } from 'lucide-react'
 import clsx from 'clsx'
 import type { UserRole } from '@/types'
+import { ROLE } from '@/constants/roles'
 import { Avatar, BottomSheet } from '@/components/ui'
 import { signOut } from '@/services/authService'
 import { LANGUAGES, type SupportedLang } from '@/i18n'
@@ -11,16 +12,20 @@ import styles from './Sidebar.module.scss'
 
 interface NavItem { to: string; icon: React.ReactNode; labelKey: string; roles: UserRole[] }
 
+const ALL_ROLES: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY, ROLE.PRESIDENT]
+const ADMIN_STAFF: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY]
+const ADMIN_EXEC: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY]
+
 const NAV_ITEMS: NavItem[] = [
-  { to: '/dashboard',           icon: <LayoutDashboard size={20} />, labelKey: 'nav.dashboard',    roles: ['admin','exec_secretary','seventy','president'] },
-  { to: '/calendar',            icon: <Calendar size={20} />,        labelKey: 'nav.calendar',     roles: ['admin','exec_secretary','seventy','president'] },
-  { to: '/schedules',           icon: <CalendarRange size={20} />,   labelKey: 'nav.schedules',    roles: ['admin','exec_secretary','seventy','president'] },
-  { to: '/tasks',               icon: <CheckSquare size={20} />,     labelKey: 'nav.tasks',        roles: ['president'] },
-  { to: '/admin/task-progress', icon: <ClipboardList size={20} />,   labelKey: 'nav.taskProgress', roles: ['admin','exec_secretary','seventy'] },
-  { to: '/admin/stats',         icon: <BarChart3 size={20} />,       labelKey: 'nav.stats',        roles: ['admin','exec_secretary','seventy'] },
-  { to: '/admin/visit-plans',   icon: <ClipboardPen size={20} />,    labelKey: 'nav.visitPlans',   roles: ['admin','exec_secretary'] },
-  { to: '/admin/projects',      icon: <FolderKanban size={20} />,    labelKey: 'nav.projects',     roles: ['admin','exec_secretary'] },
-  { to: '/admin',               icon: <Settings size={20} />,        labelKey: 'nav.admin',        roles: ['admin'] },
+  { to: '/dashboard',           icon: <LayoutDashboard size={20} />, labelKey: 'nav.dashboard',    roles: ALL_ROLES },
+  { to: '/calendar',            icon: <Calendar size={20} />,        labelKey: 'nav.calendar',     roles: ALL_ROLES },
+  { to: '/schedules',           icon: <CalendarRange size={20} />,   labelKey: 'nav.schedules',    roles: ALL_ROLES },
+  { to: '/tasks',               icon: <CheckSquare size={20} />,     labelKey: 'nav.tasks',        roles: [ROLE.PRESIDENT] },
+  { to: '/admin/task-progress', icon: <ClipboardList size={20} />,   labelKey: 'nav.taskProgress', roles: ADMIN_STAFF },
+  { to: '/admin/stats',         icon: <BarChart3 size={20} />,       labelKey: 'nav.stats',        roles: ADMIN_STAFF },
+  { to: '/admin/visit-plans',   icon: <ClipboardPen size={20} />,    labelKey: 'nav.visitPlans',   roles: ADMIN_EXEC },
+  { to: '/admin/projects',      icon: <FolderKanban size={20} />,    labelKey: 'nav.projects',     roles: ADMIN_EXEC },
+  { to: '/admin',               icon: <Settings size={20} />,        labelKey: 'nav.admin',        roles: [ROLE.ADMIN] },
 ]
 
 interface SidebarProps { role: UserRole; name: string; mobile?: boolean }
