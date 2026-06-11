@@ -11,6 +11,14 @@ export default function App() {
   const setLoading = useSetAtom(authLoadingAtom)
 
   useEffect(() => {
+    const syncHeight = () =>
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`)
+    syncHeight()
+    window.addEventListener('resize', syncHeight)
+    return () => window.removeEventListener('resize', syncHeight)
+  }, [])
+
+  useEffect(() => {
     consumeRedirectResult()
     return subscribeToAuthState(setUser, setLoading, () => {
       toast.error(i18n.t('common.loginError'))
