@@ -266,6 +266,8 @@
     "filterRolling": "기본",
     "filterCustom": "직접 입력",
     "periodSchedules": "기간 내 일정",
+    "sabbathVisit": "안식일 방문",
+    "sabbathVisitNotes": "성찬식 방문",
     "type": {
       "ward_visit": "와드 방문",
       "interview": "접견",

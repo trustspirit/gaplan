@@ -41,6 +41,8 @@ export function ScheduleFormModal({
   const [seventyUid, setSeventyUid] = useState(
     user.role === 'seventy' ? user.uid :
     user.role === 'exec_secretary' ? (user.assignedSeventyUid ?? '') :
+    user.role === 'admin' && user.secondaryRole === 'seventy' ? user.uid :
+    user.role === 'admin' && user.secondaryRole === 'exec_secretary' ? (user.assignedSeventyUid ?? '') :
     ''
   )
   const [unitId, setUnitId] = useState('')
@@ -53,6 +55,7 @@ export function ScheduleFormModal({
   const [zoomLink, setZoomLink] = useState('')
   const [customTitle, setCustomTitle] = useState('')
   const [projectId, setProjectId] = useState('')
+  const [isSabbath, setIsSabbath] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -88,6 +91,21 @@ export function ScheduleFormModal({
   }
 
   const seventyUsers = users.filter((u) => u.role === 'seventy')
+
+  // Auto-select when only one seventy is available and none is selected yet
+  useEffect(() => {
+    if (seventyUid || seventyUsers.length !== 1) return
+    if (user.role === 'admin' && !user.secondaryRole) setSeventyUid(seventyUsers[0].uid)
+  }, [seventyUsers, seventyUid, user.role, user.secondaryRole])
+
+  const handleSabbathToggle = (checked: boolean) => {
+    setIsSabbath(checked)
+    if (checked) {
+      setStartTime('10:00')
+      setEndTime('12:00')
+      setNotes(prev => prev.trim() || t('schedule.sabbathVisitNotes'))
+    }
+  }
   const selectedSeventy = users.find((u) => u.uid === seventyUid)
   const seventyRegionIds =
     selectedSeventy?.regionIds ?? (selectedSeventy?.regionId ? [selectedSeventy.regionId] : [])
@@ -260,6 +278,19 @@ export function ScheduleFormModal({
                 options={presidentOptions}
                 disabled={!unitId}
               />
+            )}
+
+            {type === 'ward_visit' && (
+              <label className={styles.checkRow}>
+                <input
+                  type="checkbox"
+                  checked={isSabbath}
+                  onChange={e => handleSabbathToggle(e.target.checked)}
+                  className={styles.checkbox}
+                  style={{ accentColor: 'var(--color-primary, #177C9C)' }}
+                />
+                <span className={styles.checkLabel}>{t('schedule.sabbathVisit')}</span>
+              </label>
             )}
 
             <Input

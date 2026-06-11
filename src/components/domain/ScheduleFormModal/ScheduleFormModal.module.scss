@@ -251,6 +251,27 @@ form :global(textarea) {
   margin-left: 0;
 }
 
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.checkLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
 .fieldGroup {
   display: flex;
   flex-direction: column;

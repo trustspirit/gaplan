@@ -266,6 +266,8 @@
     "filterRolling": "Default",
     "filterCustom": "Custom",
     "periodSchedules": "Schedules in Period",
+    "sabbathVisit": "Sabbath Visit",
+    "sabbathVisitNotes": "Sacrament meeting visit",
     "type": {
       "ward_visit": "Ward Visit",
       "interview": "Interview",
