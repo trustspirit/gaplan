@@ -2,7 +2,7 @@ import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { getScopeUnitIds } from './regions'
 
-interface Req { startDate: string; endDate: string }
+interface Req { startDate: string; endDate: string; viewSeventyUid?: string }
 
 export const getSchedulesInRange = functions
   .region('asia-northeast3')
@@ -10,7 +10,7 @@ export const getSchedulesInRange = functions
     if (!context.auth) {
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
-    const { startDate, endDate } = data
+    const { startDate, endDate, viewSeventyUid } = data
     if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
       throw new functions.https.HttpsError('invalid-argument', 'startDate and endDate required')
     }
@@ -19,8 +19,8 @@ export const getSchedulesInRange = functions
     const callerSnap = await db.collection('users').doc(context.auth.uid).get()
     const caller = callerSnap.data()
     const role = caller?.role
-    if (role !== 'admin' && role !== 'seventy') {
-      throw new functions.https.HttpsError('permission-denied', 'Admin or seventy only')
+    if (role !== 'admin' && role !== 'seventy' && role !== 'exec_secretary') {
+      throw new functions.https.HttpsError('permission-denied', 'Admin, seventy, or exec_secretary only')
     }
 
     const snap = await db.collection('schedules')
@@ -29,12 +29,29 @@ export const getSchedulesInRange = functions
       .get()
     let docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Record<string, unknown>))
 
+    // Determine scope seventy uid:
+    //  - seventy: themselves
+    //  - exec_secretary: their assigned seventy (assignedSeventyUid)
+    //  - admin: viewSeventyUid if provided, else no filter (all schedules)
+    let scopeSeventyUid: string | null = null
     if (role === 'seventy') {
-      const regionIds: string[] = caller?.regionIds ?? (caller?.regionId ? [caller.regionId] : [])
+      scopeSeventyUid = context.auth.uid
+    } else if (role === 'exec_secretary') {
+      scopeSeventyUid = (caller?.assignedSeventyUid as string | undefined) ?? null
+      if (!scopeSeventyUid) return { schedules: [] }
+    } else if (role === 'admin' && viewSeventyUid) {
+      scopeSeventyUid = viewSeventyUid
+    }
+
+    if (scopeSeventyUid) {
+      const sevSnap = await db.collection('users').doc(scopeSeventyUid).get()
+      const sev = sevSnap.data()
+      const regionIds: string[] = sev?.regionIds ?? (sev?.regionId ? [sev.regionId] : [])
       const allowedUnits = new Set<string>()
       for (const r of regionIds) for (const u of getScopeUnitIds(r)) allowedUnits.add(u)
-      const uid = context.auth.uid
-      docs = docs.filter(s => allowedUnits.has(s.unitId as string) || s.seventyUid === uid)
+      docs = docs.filter(
+        s => allowedUnits.has(s.unitId as string) || s.seventyUid === scopeSeventyUid,
+      )
     }
 
     return { schedules: docs }
