@@ -38,7 +38,11 @@ export function ScheduleFormModal({
   const { users } = useUsers()
 
   const [type, setType] = useState<ScheduleType>(initialType ?? 'ward_visit')
-  const [seventyUid, setSeventyUid] = useState(user.role === 'seventy' ? user.uid : '')
+  const [seventyUid, setSeventyUid] = useState(
+    user.role === 'seventy' ? user.uid :
+    user.role === 'exec_secretary' ? (user.assignedSeventyUid ?? '') :
+    ''
+  )
   const [unitId, setUnitId] = useState('')
   const [wardName, setWardName] = useState('')
   const [presidentUid, setPresidentUid] = useState('')
@@ -114,7 +118,7 @@ export function ScheduleFormModal({
       setError(t('admin.scheduleTimeError'))
       return
     }
-    if (user.role === 'admin' && !seventyUid) {
+    if ((user.role === 'admin' || user.role === 'exec_secretary') && !seventyUid) {
       setError(t('schedule.errorSeventyRequired'))
       return
     }
@@ -217,6 +221,15 @@ export function ScheduleFormModal({
               />
             )}
 
+            {user.role === 'exec_secretary' && (
+              <Input
+                label={t('schedule.seventyLabel')}
+                value={users.find(u => u.uid === seventyUid)?.name ?? seventyUid}
+                disabled
+                onChange={() => {}}
+              />
+            )}
+
             {/* Stake/District — required for ward_visit/interview, optional for meeting */}
             <Select
               label={
@@ -306,7 +319,7 @@ export function ScheduleFormModal({
               />
             </div>
 
-            {user.role === 'admin' && (
+            {(user.role === 'admin' || user.role === 'exec_secretary') && (
               <ProjectPicker value={projectId} onChange={setProjectId} />
             )}
           </div>
