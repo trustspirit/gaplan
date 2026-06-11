@@ -46,18 +46,10 @@ export function ScheduleDateRangeFilter({ setting, currentRange, onChange }: Pro
         <button
           type="button"
           className={styles.presetBtn}
-          data-active={setting.preset === 'q1'}
-          onClick={() => onChange({ preset: 'q1' })}
+          data-active={setting.preset === 'rolling'}
+          onClick={() => onChange({ preset: 'rolling' })}
         >
-          {t('schedule.filterQ1')}
-        </button>
-        <button
-          type="button"
-          className={styles.presetBtn}
-          data-active={setting.preset === 'q2'}
-          onClick={() => onChange({ preset: 'q2' })}
-        >
-          {t('schedule.filterQ2')}
+          {t('schedule.filterRolling')}
         </button>
         <button
           type="button"

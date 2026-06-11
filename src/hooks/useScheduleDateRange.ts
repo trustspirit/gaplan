@@ -4,7 +4,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import dayjs from 'dayjs'
 import { db } from '@/firebase'
 
-export type DateRangePreset = 'q1' | 'q2' | 'custom'
+export type DateRangePreset = 'rolling' | 'custom'
 
 export interface ScheduleDateRangeSetting {
   preset: DateRangePreset
@@ -25,19 +25,19 @@ interface RangeCache {
 // Module-level atom — shared across all page instances, single Firestore read per session
 const _rangeCache = atom<RangeCache | null>(null)
 
-function presetRange(preset: 'q1' | 'q2', year: number): DateRange {
-  return preset === 'q1'
-    ? { start: `${year}-01-01`, end: `${year}-06-30` }
-    : { start: `${year}-07-01`, end: `${year}-12-31` }
+function rollingRange(today?: string): DateRange {
+  const base = today ? dayjs(today) : dayjs()
+  return {
+    start: base.subtract(2, 'month').format('YYYY-MM-DD'),
+    end: base.add(6, 'month').format('YYYY-MM-DD'),
+  }
 }
 
 export function useScheduleDateRange(uid: string) {
   const [cache, setCache] = useAtom(_rangeCache)
-  const currentYear = dayjs().year()
-  const defaultPreset: DateRangePreset = (dayjs().month() + 1) <= 6 ? 'q1' : 'q2'
 
   const setting: ScheduleDateRangeSetting =
-    cache?.uid === uid ? cache.setting : { preset: defaultPreset }
+    cache?.uid === uid ? cache.setting : { preset: 'rolling' }
   const loading = cache?.uid !== uid
   const loadedForUid = cache?.uid ?? null
 
@@ -46,12 +46,15 @@ export function useScheduleDateRange(uid: string) {
     getDoc(doc(db, 'userSettings', uid))
       .then(snap => {
         const data = snap.data()
-        const saved = (data?.scheduleDateRange as ScheduleDateRangeSetting) ?? { preset: defaultPreset }
-        setCache({ uid, setting: saved })
+        const saved = (data?.scheduleDateRange as ScheduleDateRangeSetting) ?? { preset: 'rolling' }
+        // Migrate legacy presets
+        const migrated: ScheduleDateRangeSetting =
+          (saved.preset === ('q1' as string) || saved.preset === ('q2' as string)) ? { preset: 'rolling' } : saved
+        setCache({ uid, setting: migrated })
       })
       .catch(e => {
         console.error('[useScheduleDateRange] load failed:', e)
-        setCache({ uid, setting: { preset: defaultPreset } })
+        setCache({ uid, setting: { preset: 'rolling' } })
       })
   }, [uid, loadedForUid]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -69,9 +72,8 @@ export function useScheduleDateRange(uid: string) {
   const range = useMemo((): DateRange => {
     if (setting.preset === 'custom' && setting.customStart && setting.customEnd)
       return { start: setting.customStart, end: setting.customEnd }
-    const activePreset = setting.preset === 'custom' ? defaultPreset : setting.preset
-    return presetRange(activePreset, currentYear)
-  }, [setting, currentYear, defaultPreset])
+    return rollingRange()
+  }, [setting])
 
   return { setting, range, loading, save }
 }

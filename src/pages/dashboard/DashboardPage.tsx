@@ -21,7 +21,6 @@ import { Card, CardHeader, CardBody, Skeleton, Button, Modal, BottomSheet } from
 import {
   TaskCard,
   ScheduleItem,
-  CalendarView,
   TaskPickerContent,
   taskPickerTitle,
   ScheduleDateRangeFilter,
@@ -144,6 +143,7 @@ function PresidentDashboard() {
   const { schedules, loading: schedulesLoading } = useSchedules({ presidentUid: user.uid })
   const { getUnitName } = useUnits()
   const isMobile = useIsMobile()
+  const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
   const {
     activeTask,
     selectedSlots,
@@ -158,7 +158,9 @@ function PresidentDashboard() {
 
   const { handleSubmitWards, wardSubmitting } = useWardSubmit(activeTask, closeTask)
 
-  const upcoming = getUpcomingSchedules(schedules).slice(0, 5)
+  const upcoming = schedules
+    .filter(s => s.status === 'confirmed' && s.date >= range.start && s.date <= range.end)
+    .sort(sortSchedulesByDate)
 
   const pickerTitle = taskPickerTitle(activeTask)
 
@@ -206,21 +208,17 @@ function PresidentDashboard() {
             </CardBody>
           </Card>
 
+          <ScheduleDateRangeFilter
+            setting={rangeSetting}
+            currentRange={range}
+            onChange={saveRange}
+          />
           <ScheduleListCard
             schedules={upcoming}
             loading={schedulesLoading}
             getUnitName={getUnitName}
             showCalendarAdd
           />
-        </div>
-
-        <div className={styles.sideCol}>
-          <Card>
-            <CardHeader title={t('nav.calendar')} />
-            <CardBody>
-              <CalendarView schedules={schedules} getUnitName={getUnitName} />
-            </CardBody>
-          </Card>
         </div>
       </div>
 
@@ -240,15 +238,18 @@ function PresidentDashboard() {
 function SeventyDashboard() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
-  const { schedules } = useSchedules({ seventyUid: user.uid })
+  const { schedules, loading: schedulesLoading } = useSchedules({ seventyUid: user.uid })
   const { interviewReminders, meetingReminders, dismiss } = useReminders()
   const { getUnitName } = useUnits()
+  const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
   const regionIds = user.regionIds ?? (user.regionId ? [user.regionId] : [])
   const regionName = regionIds.map((id) => REGIONS.find((r) => r.id === id)?.name ?? id).join(', ')
 
-  const upcoming = getUpcomingSchedules(schedules).slice(0, 10)
+  const upcoming = schedules
+    .filter(s => s.status === 'confirmed' && s.date >= range.start && s.date <= range.end)
+    .sort(sortSchedulesByDate)
   const thisMonthCount = getThisMonthScheduleCount(schedules)
 
   return (
@@ -267,8 +268,14 @@ function SeventyDashboard() {
             onDismiss={dismiss}
           />
 
+          <ScheduleDateRangeFilter
+            setting={rangeSetting}
+            currentRange={range}
+            onChange={saveRange}
+          />
           <ScheduleListCard
             schedules={upcoming}
+            loading={schedulesLoading}
             action={
               <span className={styles.headerCount}>
                 {t('schedule.thisMonth', { count: thisMonthCount })}
@@ -279,15 +286,6 @@ function SeventyDashboard() {
             onEdit={setEditTarget}
             onDelete={setDeleteTarget}
           />
-        </div>
-
-        <div className={styles.sideCol}>
-          <Card>
-            <CardHeader title={t('nav.calendar')} />
-            <CardBody>
-              <CalendarView schedules={schedules} getUnitName={getUnitName} />
-            </CardBody>
-          </Card>
         </div>
       </div>
 
@@ -314,7 +312,7 @@ function AdminDashboardContent() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const navigate = useNavigate()
-  const { schedules } = useSchedules({})
+  const { schedules, loading: schedulesLoading } = useSchedules({})
   const { interviewReminders, meetingReminders, dismiss } = useReminders()
   const { getUnitName } = useUnits()
   const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
@@ -379,6 +377,7 @@ function AdminDashboardContent() {
           />
           <ScheduleListCard
             schedules={upcoming}
+            loading={schedulesLoading}
             action={
               <div className={styles.headerActions}>
                 <span className={styles.headerCount}>
@@ -398,15 +397,6 @@ function AdminDashboardContent() {
             onEdit={setEditTarget}
             onDelete={setDeleteTarget}
           />
-        </div>
-
-        <div className={styles.sideCol}>
-          <Card>
-            <CardHeader title={t('nav.calendar')} />
-            <CardBody>
-              <CalendarView schedules={schedules} getUnitName={getUnitName} />
-            </CardBody>
-          </Card>
         </div>
       </div>
 
