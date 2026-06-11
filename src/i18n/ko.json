@@ -20,10 +20,10 @@
     "regionFilter": "지역 선택",
     "periodFilter": "기간 선택",
     "allRegions": "전체 지역",
-    "period3m": "최근 3개월",
-    "period6m": "최근 6개월",
-    "period12m": "최근 12개월",
-    "periodThisYear": "올해",
+    "period3m": "3개월 전부터",
+    "period6m": "6개월 전부터",
+    "period12m": "12개월 전부터",
+    "periodThisYear": "올해 전체",
     "granularity": "집계 단위",
     "granularityWard": "와드/지부",
     "granularityUnit": "스테이크/지방부",
@@ -164,6 +164,7 @@
     "accountMenu": "계정 메뉴"
   },
   "task": {
+    "createNew": "새 태스크 만들기",
     "type": {
       "select_visit": "와드 방문",
       "select_interview": "접견/모임"
@@ -497,7 +498,9 @@
     "attendSuccess": "참석이 등록되었습니다.",
     "cancelSuccess": "참석이 취소되었습니다.",
     "savedSuccess": "행사 일정이 저장되었습니다.",
-    "deletedSuccess": "행사 일정이 삭제되었습니다."
+    "deletedSuccess": "행사 일정이 삭제되었습니다.",
+    "showToPublic": "공개 페이지에 표시",
+    "hideFromPublic": "공개 페이지에서 숨김"
   },
   "pageHelp": {
     "admin": {

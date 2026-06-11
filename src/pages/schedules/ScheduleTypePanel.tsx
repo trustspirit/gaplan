@@ -177,14 +177,12 @@ export function ScheduleTypePanel({
         />
       )}
 
-      <div className={styles.sideCol}>
-        <div className={styles.sideCard}>
-          <div className={styles.sideCardHeader}>{t(sideTitleKey)}</div>
-          <div className={styles.sideCardBody}>
-            {upcomingList.length === 0 ? (
-              <p className={styles.sideEmpty}>{t(`${translationPrefix}.noUpcoming`)}</p>
-            ) : (
-              upcomingList.map((schedule) => (
+      {upcomingList.length > 0 && (
+        <div className={styles.sideCol}>
+          <div className={styles.sideCard}>
+            <div className={styles.sideCardHeader}>{t(sideTitleKey)}</div>
+            <div className={styles.sideCardBody}>
+              {upcomingList.map((schedule) => (
                 <div key={schedule.id} className={styles.upcomingItem}>
                   <span className={styles.upcomingDate}>
                     {dayjs(schedule.date).format('M/D (ddd)')}
@@ -196,11 +194,11 @@ export function ScheduleTypePanel({
                     )}
                   </span>
                 </div>
-              ))
-            )}
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { Building2, MoonStar, CalendarDays, Check } from 'lucide-react'
+import { Building2, MoonStar, CalendarDays, Check, Eye, EyeOff } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
@@ -17,8 +17,10 @@ interface GeneralEventItemProps {
   event: GeneralSchedule
   isAttending: boolean
   canAttend: boolean
+  canToggleVisibility?: boolean
   onAttend: () => void
   onCancelAttend: () => void
+  onToggleVisibility?: () => void
   onClick: () => void
 }
 
@@ -26,8 +28,10 @@ export function GeneralEventItem({
   event,
   isAttending,
   canAttend,
+  canToggleVisibility,
   onAttend,
   onCancelAttend,
+  onToggleVisibility,
   onClick,
 }: GeneralEventItemProps) {
   const { t } = useTranslation()
@@ -62,23 +66,36 @@ export function GeneralEventItem({
         )}
       </div>
 
-      {canAttend && (
-        <button
-          type="button"
-          className={clsx(styles.attendBtn, isAttending && styles.attending)}
-          onClick={e => {
-            e.stopPropagation()
-            isAttending ? onCancelAttend() : onAttend()
-          }}
-          aria-label={isAttending ? t('generalSchedule.cancelAttend') : t('generalSchedule.attend')}
-        >
-          {isAttending ? (
-            <><Check size={12} strokeWidth={3} /> {t('generalSchedule.attending')}</>
-          ) : (
-            t('generalSchedule.attend')
-          )}
-        </button>
-      )}
+      <div className={styles.actions}>
+        {canToggleVisibility && (
+          <button
+            type="button"
+            className={clsx(styles.visibilityBtn, !event.isPublic && styles.hidden)}
+            onClick={e => { e.stopPropagation(); onToggleVisibility?.() }}
+            aria-label={event.isPublic ? t('generalSchedule.hideFromPublic') : t('generalSchedule.showToPublic')}
+            title={event.isPublic ? t('generalSchedule.hideFromPublic') : t('generalSchedule.showToPublic')}
+          >
+            {event.isPublic ? <Eye size={14} /> : <EyeOff size={14} />}
+          </button>
+        )}
+        {canAttend && (
+          <button
+            type="button"
+            className={clsx(styles.attendBtn, isAttending && styles.attending)}
+            onClick={e => {
+              e.stopPropagation()
+              isAttending ? onCancelAttend() : onAttend()
+            }}
+            aria-label={isAttending ? t('generalSchedule.cancelAttend') : t('generalSchedule.attend')}
+          >
+            {isAttending ? (
+              <><Check size={12} strokeWidth={3} /> {t('generalSchedule.attending')}</>
+            ) : (
+              t('generalSchedule.attend')
+            )}
+          </button>
+        )}
+      </div>
     </div>
   )
 }

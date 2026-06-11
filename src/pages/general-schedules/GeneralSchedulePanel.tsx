@@ -9,6 +9,7 @@ import {
   deleteGeneralSchedule,
   registerAttendance,
   cancelAttendance,
+  updateGeneralSchedule,
 } from '@/services/generalScheduleService'
 import { Card, CardHeader, CardBody, Button } from '@/components/ui'
 import {
@@ -45,6 +46,14 @@ export function GeneralSchedulePanel() {
       toast.success(t('generalSchedule.cancelSuccess'))
     } catch (e: unknown) {
       toast.error((e as { message?: string })?.message ?? '참석 취소에 실패했습니다.')
+    }
+  }
+
+  const handleToggleVisibility = async (gs: GeneralSchedule) => {
+    try {
+      await updateGeneralSchedule(gs.id, { isPublic: !gs.isPublic })
+    } catch {
+      toast.error('공개 설정 변경에 실패했습니다.')
     }
   }
 
@@ -94,8 +103,10 @@ export function GeneralSchedulePanel() {
                   event={gs}
                   isAttending={!!attendance}
                   canAttend={user.role === 'admin' || user.role === 'seventy'}
+                  canToggleVisibility={user.role === 'admin'}
                   onAttend={() => handleAttend(gs.id)}
                   onCancelAttend={() => attendance && handleCancelAttend(attendance.id)}
+                  onToggleVisibility={() => handleToggleVisibility(gs)}
                   onClick={() => setDetailTarget(gs)}
                 />
               )

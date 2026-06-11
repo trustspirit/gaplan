@@ -20,10 +20,10 @@
     "regionFilter": "Select region",
     "periodFilter": "Select period",
     "allRegions": "All regions",
-    "period3m": "Last 3 months",
-    "period6m": "Last 6 months",
-    "period12m": "Last 12 months",
-    "periodThisYear": "This year",
+    "period3m": "3 months back+",
+    "period6m": "6 months back+",
+    "period12m": "12 months back+",
+    "periodThisYear": "Full year",
     "granularity": "Granularity",
     "granularityWard": "Ward/Branch",
     "granularityUnit": "Stake/District",
@@ -164,6 +164,7 @@
     "accountMenu": "Account menu"
   },
   "task": {
+    "createNew": "New task",
     "type": {
       "select_visit": "Ward Visit",
       "select_interview": "Interview / Meeting"
@@ -497,7 +498,9 @@
     "attendSuccess": "Attendance registered.",
     "cancelSuccess": "Attendance cancelled.",
     "savedSuccess": "Event saved.",
-    "deletedSuccess": "Event deleted."
+    "deletedSuccess": "Event deleted.",
+    "showToPublic": "Show on public page",
+    "hideFromPublic": "Hide from public page"
   },
   "pageHelp": {
     "admin": {

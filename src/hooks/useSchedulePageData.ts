@@ -23,21 +23,22 @@ export function useSchedulePageData(
   const today = dayjs()
   const thisMonth = today.format('YYYY-M')
 
-  // Base set: type + status only — stats and sidebar always reflect full picture
-  const allConfirmed = schedules.filter(s => s.type === type && s.status === 'confirmed')
+  // Base set: type + active statuses — includes both confirmed and pending
+  const allActive = schedules.filter(s => s.type === type && (s.status === 'confirmed' || s.status === 'pending'))
 
   // Range-filtered set: used only for the grouped list view
   const all = dateRange
-    ? allConfirmed.filter(s => s.date >= dateRange.start && s.date <= dateRange.end)
-    : allConfirmed
+    ? allActive.filter(s => s.date >= dateRange.start && s.date <= dateRange.end)
+    : allActive
 
-  const thisMonthCount = allConfirmed.filter(s => dayjs(s.date).format('YYYY-M') === thisMonth).length
-  const upcomingCount = allConfirmed.filter(s => !dayjs(s.date).isBefore(today, 'day')).length
-  const completedCount = allConfirmed.filter(s => dayjs(s.date).isBefore(today, 'day')).length
+  const thisMonthCount = allActive.filter(s => dayjs(s.date).format('YYYY-M') === thisMonth).length
+  const upcomingCount = allActive.filter(s => !dayjs(s.date).isBefore(today, 'day')).length
+  // completed = only confirmed past visits (pending past = not completed, just expired)
+  const completedCount = allActive.filter(s => s.status === 'confirmed' && dayjs(s.date).isBefore(today, 'day')).length
 
   const filtered = all.filter(s => {
     if (activeTab === 'upcoming') return !dayjs(s.date).isBefore(today, 'day')
-    if (activeTab === 'completed') return dayjs(s.date).isBefore(today, 'day')
+    if (activeTab === 'completed') return s.status === 'confirmed' && dayjs(s.date).isBefore(today, 'day')
     return true
   })
 
@@ -56,7 +57,7 @@ export function useSchedulePageData(
   ]
 
   // upcomingList: from unfiltered base so sidebar always shows real next items
-  const upcomingList = allConfirmed
+  const upcomingList = allActive
     .filter(s => !dayjs(s.date).isBefore(today, 'day'))
     .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0)
     .slice(0, upcomingLimit)

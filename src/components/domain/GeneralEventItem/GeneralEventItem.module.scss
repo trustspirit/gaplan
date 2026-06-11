@@ -94,13 +94,38 @@ $other-bar:         #6b7280;
   margin: 0;
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex-shrink: 0;
+  margin: 0 $space-3;
+}
+
+.visibilityBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  border-radius: $border-radius-md;
+  cursor: pointer;
+  color: $color-text-muted;
+  transition: background 0.12s, color 0.12s;
+
+  &:hover { background: $color-bg; color: $color-text; }
+
+  &.hidden { color: $color-text-light; }
+}
+
 .attendBtn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   align-self: center;
   flex-shrink: 0;
-  margin: 0 $space-3;
   padding: 5px $space-3;
   border: 1px solid $conference-bar;
   border-radius: $border-radius-full;

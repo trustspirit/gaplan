@@ -33,7 +33,7 @@ import { useWardSubmit } from '@/hooks/useWardSubmit'
 import { REGIONS } from '@/constants/regions'
 import styles from './DashboardPage.module.scss'
 
-const isConfirmedSchedule = (schedule: Schedule) => schedule.status === 'confirmed'
+const isActiveSchedule = (schedule: Schedule) => schedule.status === 'confirmed' || schedule.status === 'pending'
 
 const sortSchedulesByDate = (a: Schedule, b: Schedule) =>
   a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime)
@@ -42,14 +42,14 @@ const getUpcomingSchedules = (schedules: Schedule[]) =>
   schedules
     .filter(
       (schedule) =>
-        isConfirmedSchedule(schedule) && dayjs(schedule.date).isAfter(dayjs().subtract(1, 'day')),
+        isActiveSchedule(schedule) && dayjs(schedule.date).isAfter(dayjs().subtract(1, 'day')),
     )
     .sort(sortSchedulesByDate)
 
 const getThisMonthScheduleCount = (schedules: Schedule[]) =>
   schedules.filter(
     (schedule) =>
-      isConfirmedSchedule(schedule) &&
+      isActiveSchedule(schedule) &&
       dayjs(schedule.date).format('YYYY-M') === dayjs().format('YYYY-M'),
   ).length
 
@@ -159,7 +159,7 @@ function PresidentDashboard() {
   const { handleSubmitWards, wardSubmitting } = useWardSubmit(activeTask, closeTask)
 
   const upcoming = schedules
-    .filter(s => s.status === 'confirmed' && s.date >= range.start && s.date <= range.end)
+    .filter(s => isActiveSchedule(s) && s.date >= range.start && s.date <= range.end)
     .sort(sortSchedulesByDate)
 
   const pickerTitle = taskPickerTitle(activeTask)
@@ -240,7 +240,7 @@ function SeventyDashboard() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { schedules, loading: schedulesLoading } = useSchedules({ seventyUid: user.uid })
-  const { interviewReminders, meetingReminders, dismiss } = useReminders()
+  const { interviewReminders, meetingReminders, dismiss, loading: remindersLoading } = useReminders()
   const { getUnitName } = useUnits()
   const { setting: rangeSetting, range, save: saveRange, loading: rangeLoading } = useScheduleDateRange(user.uid)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
@@ -249,7 +249,7 @@ function SeventyDashboard() {
   const regionName = regionIds.map((id) => REGIONS.find((r) => r.id === id)?.name ?? id).join(', ')
 
   const upcoming = schedules
-    .filter(s => s.status === 'confirmed' && s.date >= range.start && s.date <= range.end)
+    .filter(s => isActiveSchedule(s) && s.date >= range.start && s.date <= range.end)
     .sort(sortSchedulesByDate)
   const thisMonthCount = getThisMonthScheduleCount(schedules)
 
@@ -266,6 +266,7 @@ function SeventyDashboard() {
           <RemindersCard
             interviewReminders={interviewReminders}
             meetingReminders={meetingReminders}
+            loading={remindersLoading}
             onDismiss={dismiss}
           />
 
@@ -314,7 +315,7 @@ function AdminDashboardContent() {
   const user = useAtomValue(authUserAtom)!
   const navigate = useNavigate()
   const { schedules, loading: schedulesLoading } = useSchedules({})
-  const { interviewReminders, meetingReminders, dismiss } = useReminders()
+  const { interviewReminders, meetingReminders, dismiss, loading: remindersLoading } = useReminders()
   const { getUnitName } = useUnits()
   const { setting: rangeSetting, range, save: saveRange, loading: rangeLoading } = useScheduleDateRange(user.uid)
   const [formOpen, setFormOpen] = useState(false)
@@ -353,7 +354,7 @@ function AdminDashboardContent() {
   const upcoming = schedules
     .filter(
       (schedule) =>
-        isConfirmedSchedule(schedule) && schedule.date >= range.start && schedule.date <= range.end,
+        isActiveSchedule(schedule) && schedule.date >= range.start && schedule.date <= range.end,
     )
     .sort(sortSchedulesByDate)
     .slice(0, 8)
@@ -369,6 +370,7 @@ function AdminDashboardContent() {
           <RemindersCard
             interviewReminders={interviewReminders}
             meetingReminders={meetingReminders}
+            loading={remindersLoading}
             onDismiss={dismiss}
           />
           <ScheduleDateRangeFilter

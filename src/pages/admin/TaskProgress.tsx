@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
 import { toast } from 'sonner'
@@ -547,6 +548,7 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName, generalSchedul
 
 export function TaskProgress() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const user = useAtomValue(authUserAtom)!
   // Seventy: only their assigned tasks. exec_secretary: their assigned seventy's tasks. Admin: all tasks.
   const { tasks, loading } = useAllTasks(
@@ -586,6 +588,13 @@ export function TaskProgress() {
   return (
     <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('admin.taskProgress')} helpInfoKey="pageHelp.taskProgress" />}>
       <div className={styles.page}>
+        {(user.role === 'admin' || user.role === 'exec_secretary') && (
+          <div className={styles.pageActions}>
+            <Button variant="primary" size="sm" onClick={() => navigate('/admin/visit-planner')}>
+              + {t('task.createNew')}
+            </Button>
+          </div>
+        )}
         <div className={styles.summary}>
           <div className={styles.summaryItem}>
             <span className={clsx(styles.summaryNum, styles.summaryNumResponded)}>{totalResponded}</span>
