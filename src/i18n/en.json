@@ -143,7 +143,8 @@
     "selectAll": "Select All",
     "copyLink": "Copy link",
     "publicLink": "Public link",
-    "publicLinkMissing": "Public link needs to be regenerated. Go to Calendar Settings and toggle the public schedule off then on."
+    "publicLinkMissing": "Public link needs to be regenerated. Go to Calendar Settings and toggle the public schedule off then on.",
+    "helpButton": "Help"
   },
   "auth": {
     "greeting": "Hello, {{name}}",
@@ -159,7 +160,8 @@
     "pendingHint": "Please sign in again after approval.",
     "logoutFailed": "Sign out failed.",
     "nameSaved": "Name updated successfully.",
-    "nameSaveFailed": "Failed to update name."
+    "nameSaveFailed": "Failed to update name.",
+    "accountMenu": "Account menu"
   },
   "task": {
     "type": {
@@ -496,5 +498,55 @@
     "cancelSuccess": "Attendance cancelled.",
     "savedSuccess": "Event saved.",
     "deletedSuccess": "Event deleted."
+  },
+  "pageHelp": {
+    "admin": {
+      "title": "Admin Menu",
+      "body": "Quick access to key admin features.\n• Invite and manage users\n• Create and assign tasks to stake/district presidents\n• Plan visit schedules\n• Set up Google Calendar integration"
+    },
+    "dashboardAdmin": {
+      "title": "Dashboard",
+      "body": "View confirmed schedules and reminders for your selected date range.\n• Adjust the date range to see the period you want\n• Check quarterly interview/visit reminders\n• Add new schedules with the + button\n• Copy the public schedule link to share externally"
+    },
+    "dashboardSeventy": {
+      "title": "Dashboard",
+      "body": "View confirmed schedules and reminders for your assigned area.\n• Adjust the date range to see the period you want\n• Check pre-meeting reminders for interviews and visits\n• Subscribe to Google Calendar for automatic sync"
+    },
+    "dashboardPresident": {
+      "title": "Dashboard",
+      "body": "View your assigned tasks and confirmed schedules.\n• Respond to pending tasks\n• Adjust the date range to see the period you want\n• Subscribe to Google Calendar for automatic sync"
+    },
+    "calendar": {
+      "title": "Calendar",
+      "body": "View schedules in a monthly calendar layout.\n• Click a date to view or add schedules for that day\n• Export schedule data as CSV\n• Subscribe to Google Calendar for automatic sync"
+    },
+    "schedules": {
+      "title": "Schedules",
+      "body": "View visit, interview, and event schedules organized by tabs.\n• Filter by All, Upcoming, or Completed\n• Quickly check upcoming schedules in the side panel\n• Add new schedules with the + button"
+    },
+    "stats": {
+      "title": "Statistics",
+      "body": "Analyze visit and interview activity by region.\n• Filter by region, period, and unit (ward/branch)\n• View visit counts, monthly trends, and last-visit dates\n• Includes both completed and planned visits\n• See a list of wards that haven't been visited recently"
+    },
+    "visitPlans": {
+      "title": "Visit Plans",
+      "body": "Draft visit plans by ward/branch.\n• Manage visit assignments per plan\n• Edit assignments on the plan board\n• Register confirmed plans as schedules"
+    },
+    "projects": {
+      "title": "Projects",
+      "body": "Manage ongoing work projects.\n• Add titles and notes to each project\n• Link schedules to related projects\n• Track status: In Progress, Completed, or Dropped"
+    },
+    "taskProgress": {
+      "title": "Task Progress",
+      "body": "Track the status of tasks sent to stake/district presidents.\n• Check response status and submitted content\n• Confirm schedules after reviewing responses\n• Use the expire button to close a task"
+    },
+    "tasks": {
+      "title": "Tasks",
+      "body": "Respond to tasks assigned to you.\n• Select available dates and submit\n• For ward assignment tasks, assign dates per ward\n• You can resubmit as long as the task is still open"
+    },
+    "users": {
+      "title": "User Management",
+      "body": "Invite and manage app users.\n• Invite new users by email\n• Edit roles and assigned regions\n• Pre-register to assign roles without an invitation\n• Deleting a user removes their access"
+    }
   }
 }

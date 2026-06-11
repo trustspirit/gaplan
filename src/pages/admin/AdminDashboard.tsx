@@ -37,7 +37,7 @@ export function AdminDashboard() {
     <AppShell
       role={user.role}
       name={user.name}
-      topBar={<TopBar name={user.name} subtext={t('admin.dashboard')} />}
+      topBar={<TopBar name={user.name} subtext={t('admin.dashboard')} helpInfoKey="pageHelp.admin" />}
     >
       <div className={styles.page}>
         <div className={styles.cardGrid}>

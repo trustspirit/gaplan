@@ -25,7 +25,7 @@ export function SchedulesPage() {
   const active: TabKey = TABS.some(x => x.key === tab) ? (tab as TabKey) : 'visits'
 
   return (
-    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('nav.schedules')} />}>
+    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('nav.schedules')} helpInfoKey="pageHelp.schedules" />}>
       <div className={styles.tabBar}>
         {TABS.map(x => (
           <button

@@ -295,7 +295,7 @@ export function UserManagement() {
 
 
   return (
-    <AppShell role={currentUser.role} name={currentUser.name} topBar={<TopBar name={currentUser.name} subtext={t('admin.users')} />}>
+    <AppShell role={currentUser.role} name={currentUser.name} topBar={<TopBar name={currentUser.name} subtext={t('admin.users')} helpInfoKey="pageHelp.users" />}>
       <div className={styles.page}>
         <div className={styles.inviteCol}>
           <Card>

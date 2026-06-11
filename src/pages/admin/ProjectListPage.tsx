@@ -45,7 +45,7 @@ export function ProjectListPage() {
   ]
 
   return (
-    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('project.listSubtext')} />}>
+    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('project.listSubtext')} helpInfoKey="pageHelp.projects" />}>
       <div className={styles.page}>
         <Card>
           <CardHeader title={t('project.newProject')} />

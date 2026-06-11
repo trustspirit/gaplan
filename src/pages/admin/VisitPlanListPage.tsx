@@ -37,7 +37,7 @@ export function VisitPlanListPage() {
   }
 
   return (
-    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('visitPlan.listSubtext')} />}>
+    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('visitPlan.listSubtext')} helpInfoKey="pageHelp.visitPlans" />}>
       <div className={styles.page}>
         <Card>
           <CardHeader title={t('visitPlan.newPlan')} />

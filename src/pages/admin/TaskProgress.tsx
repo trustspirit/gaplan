@@ -546,6 +546,7 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName, generalSchedul
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export function TaskProgress() {
+  const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   // Seventy: only their assigned tasks. exec_secretary: their assigned seventy's tasks. Admin: all tasks.
   const { tasks, loading } = useAllTasks(
@@ -583,7 +584,7 @@ export function TaskProgress() {
   ]
 
   return (
-    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext="Task 진행 현황" />}>
+    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('admin.taskProgress')} helpInfoKey="pageHelp.taskProgress" />}>
       <div className={styles.page}>
         <div className={styles.summary}>
           <div className={styles.summaryItem}>

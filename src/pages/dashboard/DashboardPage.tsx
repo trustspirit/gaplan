@@ -188,6 +188,7 @@ function PresidentDashboard() {
           name={user.name}
           subtext={dayjs().format('YYYY년 M월')}
           pendingCount={tasks.length}
+          helpInfoKey="pageHelp.dashboardPresident"
         />
       }
     >
@@ -256,7 +257,7 @@ function SeventyDashboard() {
     <AppShell
       role={user.role}
       name={user.name}
-      topBar={<TopBar name={user.name} subtext={regionName} />}
+      topBar={<TopBar name={user.name} subtext={regionName} helpInfoKey="pageHelp.dashboardSeventy" />}
     >
       <div className={styles.layout}>
         <div className={styles.mainCol}>
@@ -361,7 +362,7 @@ function AdminDashboardContent() {
     <AppShell
       role={user.role}
       name={user.name}
-      topBar={<TopBar name={user.name} subtext={t('admin.dashboard')} />}
+      topBar={<TopBar name={user.name} subtext={t('admin.dashboard')} helpInfoKey="pageHelp.dashboardAdmin" />}
     >
       <div className={styles.layout}>
         <div className={styles.mainCol}>

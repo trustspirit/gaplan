@@ -131,7 +131,7 @@ export function CalendarPage() {
   return (
     <AppShell
       role={user.role} name={user.name}
-      topBar={<TopBar name={user.name} subtext={t('calendar.subtext')} />}
+      topBar={<TopBar name={user.name} subtext={t('calendar.subtext')} helpInfoKey="pageHelp.calendar" />}
     >
       <div className={styles.page}>
         <div className={styles.layout}>

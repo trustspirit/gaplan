@@ -1,17 +1,18 @@
 import { useState, useEffect, useRef } from 'react'
-import { LogOut, Pencil, Languages } from 'lucide-react'
+import { LogOut, Pencil, Languages, HelpCircle } from 'lucide-react'
 import { useAtom } from 'jotai'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
-import { Badge, Avatar } from '@/components/ui'
+import { Badge, Avatar, Modal, BottomSheet } from '@/components/ui'
 import { signOut } from '@/services/authService'
 import { updateUserName } from '@/services/userService'
 import { authUserAtom } from '@/store/authAtom'
 import { LANGUAGES, type SupportedLang } from '@/i18n'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import styles from './TopBar.module.scss'
 
-interface TopBarProps { name: string; subtext?: string; pendingCount?: number }
+interface TopBarProps { name: string; subtext?: string; pendingCount?: number; helpInfoKey?: string }
 
 function EditNameRow({ onDone }: { onDone: () => void }) {
   const [user, setUser] = useAtom(authUserAtom)
@@ -45,16 +46,18 @@ function EditNameRow({ onDone }: { onDone: () => void }) {
         maxLength={30}
       />
       <button type="button" className={styles.editNameSave} onClick={handleSave} disabled={saving}>
-        {saving ? '…' : '저장'}
+        {saving ? '…' : t('common.save')}
       </button>
     </div>
   )
 }
 
-export function TopBar({ name, subtext, pendingCount = 0 }: TopBarProps) {
+export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarProps) {
   const { t, i18n } = useTranslation()
   const [open, setOpen] = useState(false)
   const [editingName, setEditingName] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
+  const isMobile = useIsMobile()
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -74,14 +77,25 @@ export function TopBar({ name, subtext, pendingCount = 0 }: TopBarProps) {
       </div>
       <div className={styles.right}>
         {pendingCount > 0 && (
-          <Badge variant="warning">처리 필요 {pendingCount}건</Badge>
+          <Badge variant="warning">{t('task.pendingCount', { count: pendingCount })}</Badge>
+        )}
+        {helpInfoKey && (
+          <button
+            type="button"
+            className={styles.helpBtn}
+            onClick={() => setHelpOpen(true)}
+            aria-label={t('common.helpButton')}
+            title={t('common.helpButton')}
+          >
+            <HelpCircle size={18} />
+          </button>
         )}
         <div className={styles.avatarWrap} ref={ref}>
           <button
             type="button"
             className={styles.avatarBtn}
             onClick={() => { setOpen(v => !v); setEditingName(false) }}
-            aria-label="계정 메뉴"
+            aria-label={t('auth.accountMenu')}
           >
             <Avatar name={name} size="sm" />
           </button>
@@ -127,6 +141,17 @@ export function TopBar({ name, subtext, pendingCount = 0 }: TopBarProps) {
           )}
         </div>
       </div>
+      {helpInfoKey && helpOpen && (
+        isMobile ? (
+          <BottomSheet open={helpOpen} onClose={() => setHelpOpen(false)} title={t(`${helpInfoKey}.title`)}>
+            <p className={styles.helpBody}>{t(`${helpInfoKey}.body`)}</p>
+          </BottomSheet>
+        ) : (
+          <Modal open={helpOpen} onClose={() => setHelpOpen(false)} title={t(`${helpInfoKey}.title`)}>
+            <p className={styles.helpBody}>{t(`${helpInfoKey}.body`)}</p>
+          </Modal>
+        )
+      )}
     </header>
   )
 }

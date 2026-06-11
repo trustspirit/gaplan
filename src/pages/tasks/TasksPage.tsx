@@ -48,7 +48,7 @@ export function TasksPage() {
   return (
     <AppShell
       role={user.role} name={user.name}
-      topBar={<TopBar name={user.name} pendingCount={pendingTasks.length} />}
+      topBar={<TopBar name={user.name} pendingCount={pendingTasks.length} helpInfoKey="pageHelp.tasks" />}
     >
       <div className={styles.layout}>
         {/* ── Main column ── */}

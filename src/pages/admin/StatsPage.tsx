@@ -47,7 +47,7 @@ export function StatsPage() {
     <AppShell
       role={user.role}
       name={user.name}
-      topBar={<TopBar name={user.name} subtext={t('stats.subtext')} />}
+      topBar={<TopBar name={user.name} subtext={t('stats.subtext')} helpInfoKey="pageHelp.stats" />}
     >
       <div className={styles.page}>
         <StatsFilterBar

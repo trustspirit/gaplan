@@ -172,3 +172,26 @@
   color: #fff;
   &:hover { background: $color-primary; color: #fff; }
 }
+
+.helpBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  border-radius: $border-radius-md;
+  cursor: pointer;
+  color: $color-text-muted;
+  transition: background 0.12s, color 0.12s;
+  &:hover { background: rgba(255,255,255,0.15); color: $color-text-light; }
+}
+
+.helpBody {
+  font-size: $font-size-sm;
+  color: $color-text;
+  line-height: 1.7;
+  white-space: pre-line;
+  padding: $space-2 0;
+}
