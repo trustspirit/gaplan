@@ -14,7 +14,10 @@ export function useSchedules(options: UseSchedulesOptions) {
     setError(null)
     const unsub = subscribeToSchedules(
       options,
-      data => { setSchedules(data); setLoading(false) },
+      (data, fromCache) => {
+        setSchedules(data)
+        if (!fromCache) setLoading(false)
+      },
       err => { setError(err.message); setLoading(false) },
     )
     return unsub

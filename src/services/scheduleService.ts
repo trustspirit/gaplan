@@ -9,7 +9,7 @@ import type { Schedule, TimeSlot } from '@/types'
 
 export function subscribeToSchedules(
   filters: { presidentUid?: string; seventyUid?: string },
-  callback: (schedules: Schedule[]) => void,
+  callback: (schedules: Schedule[], fromCache: boolean) => void,
   onError?: (error: Error) => void,
 ): Unsubscribe {
   let q = query(collection(db, 'schedules'), orderBy('date', 'asc'))
@@ -24,8 +24,13 @@ export function subscribeToSchedules(
     const queryStart = sixMonthsAgo < startOfYear ? sixMonthsAgo : startOfYear
     q = query(q, where('date', '>=', queryStart))
   }
-  return onSnapshot(q,
-    snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule)),
+  return onSnapshot(
+    q,
+    { includeMetadataChanges: true },
+    snap => callback(
+      snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule),
+      snap.metadata.fromCache,
+    ),
     err => { console.error('[schedules] onSnapshot error:', err.code, err.message); onError?.(err) },
   )
 }

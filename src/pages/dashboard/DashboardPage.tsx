@@ -143,7 +143,7 @@ function PresidentDashboard() {
   const { schedules, loading: schedulesLoading } = useSchedules({ presidentUid: user.uid })
   const { getUnitName } = useUnits()
   const isMobile = useIsMobile()
-  const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
+  const { setting: rangeSetting, range, save: saveRange, loading: rangeLoading } = useScheduleDateRange(user.uid)
   const {
     activeTask,
     selectedSlots,
@@ -216,7 +216,7 @@ function PresidentDashboard() {
           />
           <ScheduleListCard
             schedules={upcoming}
-            loading={schedulesLoading}
+            loading={schedulesLoading || rangeLoading}
             getUnitName={getUnitName}
             showCalendarAdd
           />
@@ -242,7 +242,7 @@ function SeventyDashboard() {
   const { schedules, loading: schedulesLoading } = useSchedules({ seventyUid: user.uid })
   const { interviewReminders, meetingReminders, dismiss } = useReminders()
   const { getUnitName } = useUnits()
-  const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
+  const { setting: rangeSetting, range, save: saveRange, loading: rangeLoading } = useScheduleDateRange(user.uid)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
   const regionIds = user.regionIds ?? (user.regionId ? [user.regionId] : [])
@@ -276,7 +276,7 @@ function SeventyDashboard() {
           />
           <ScheduleListCard
             schedules={upcoming}
-            loading={schedulesLoading}
+            loading={schedulesLoading || rangeLoading}
             action={
               <span className={styles.headerCount}>
                 {t('schedule.thisMonth', { count: thisMonthCount })}
@@ -316,7 +316,7 @@ function AdminDashboardContent() {
   const { schedules, loading: schedulesLoading } = useSchedules({})
   const { interviewReminders, meetingReminders, dismiss } = useReminders()
   const { getUnitName } = useUnits()
-  const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
+  const { setting: rangeSetting, range, save: saveRange, loading: rangeLoading } = useScheduleDateRange(user.uid)
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
@@ -378,7 +378,7 @@ function AdminDashboardContent() {
           />
           <ScheduleListCard
             schedules={upcoming}
-            loading={schedulesLoading}
+            loading={schedulesLoading || rangeLoading}
             action={
               <div className={styles.headerActions}>
                 <span className={styles.headerCount}>
