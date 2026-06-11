@@ -23,13 +23,14 @@
 }
 .bottomTab {
   display: none;
-  flex-shrink: 0;
-  height: $bottom-tab-height;
-  z-index: $z-sidebar;
   @include mobile {
     display: flex;
-    /* extend into home indicator area */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     height: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px));
+    z-index: $z-sidebar;
   }
 }
 .main {
@@ -49,4 +50,7 @@
   min-width: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  @include mobile {
+    padding-bottom: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px));
+  }
 }
