@@ -45,16 +45,22 @@ export async function fetchSchedulesInRange(
   return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule)
 }
 
-// 역할 스코프 1회 조회 — seventy는 본인 지역 unit ∪ 본인 일정만 (CF가 서버에서 필터)
+// 역할 스코프 1회 조회 — seventy/exec_secretary는 담당 지역 unit ∪ 담당 일정만 (CF가 서버에서 필터).
+// admin이 viewSeventyUid를 주면 그 칠십인 시점으로 스코프 (CF가 admin에 한해 적용).
 export async function fetchScopedSchedulesInRange(
   startDate: string,
   endDate: string,
+  viewSeventyUid?: string | null,
 ): Promise<Schedule[]> {
-  const fn = httpsCallable<{ startDate: string; endDate: string }, { schedules: Schedule[] }>(
-    functions,
-    'getSchedulesInRange',
-  )
-  const res = await fn({ startDate, endDate })
+  const fn = httpsCallable<
+    { startDate: string; endDate: string; viewSeventyUid?: string },
+    { schedules: Schedule[] }
+  >(functions, 'getSchedulesInRange')
+  const res = await fn({
+    startDate,
+    endDate,
+    ...(viewSeventyUid ? { viewSeventyUid } : {}),
+  })
   return res.data.schedules
 }
 

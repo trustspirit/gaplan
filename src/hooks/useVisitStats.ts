@@ -4,6 +4,8 @@ import dayjs from 'dayjs'
 import { authUserAtom } from '@/store/authAtom'
 import { fetchScopedSchedulesInRange } from '@/services/scheduleService'
 import { computeVisitStats, type StatsFilters, type VisitStats } from '@/utils/visitStats'
+import { useEffectiveScope } from '@/hooks/useEffectiveScope'
+import { seventyViewAtom } from '@/store/seventyViewAtom'
 import type { Schedule } from '@/types'
 
 const FETCH_MONTHS = 24
@@ -12,24 +14,22 @@ export function useVisitStats(filters: StatsFilters) {
   const user = useAtomValue(authUserAtom)
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [loading, setLoading] = useState(true)
+  const scope = useEffectiveScope()
+  const viewSeventyUid = useAtomValue(seventyViewAtom)
 
   useEffect(() => {
     let active = true
     setLoading(true)
     const start = dayjs().subtract(FETCH_MONTHS, 'month').format('YYYY-MM-DD')
     const end = dayjs().format('YYYY-MM-DD')
-    fetchScopedSchedulesInRange(start, end)
+    fetchScopedSchedulesInRange(start, end, user?.role === 'admin' ? viewSeventyUid : undefined)
       .then(data => { if (active) { setSchedules(data); setLoading(false) } })
       .catch(() => { if (active) { setSchedules([]); setLoading(false) } })
     return () => { active = false }
-    // 조회 윈도우는 고정 — 마운트 시 1회만 조회
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [viewSeventyUid, user?.role])
 
-  const allowedRegionIds = useMemo<string[] | null>(() => {
-    if (!user || user.role === 'admin') return null
-    return user.regionIds ?? (user.regionId ? [user.regionId] : [])
-  }, [user])
+  const allowedRegionIds = useMemo<string[] | null>(() => scope.regionIds, [scope])
 
   const today = useMemo(() => dayjs().format('YYYY-MM-DD'), [])
 

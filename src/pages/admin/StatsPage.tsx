@@ -14,20 +14,22 @@ import {
   StaleWardsCard,
 } from '@/components/domain'
 import { REGIONS } from '@/constants/regions'
+import { useEffectiveScope } from '@/hooks/useEffectiveScope'
 import type { StatsFilters } from '@/utils/visitStats'
 import styles from './StatsPage.module.scss'
 
 export function StatsPage() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
+  const scope = useEffectiveScope()
 
   const allowedRegions = useMemo(() => {
-    if (user.role === 'admin') return REGIONS
-    const ids = user.regionIds ?? (user.regionId ? [user.regionId] : [])
-    return REGIONS.filter(r => ids.includes(r.id))
-  }, [user])
+    if (scope.regionIds === null) return REGIONS
+    const ids = new Set(scope.regionIds)
+    return REGIONS.filter(r => ids.has(r.id))
+  }, [scope])
 
-  const showAllOption = user.role === 'admin' || allowedRegions.length > 1
+  const showAllOption = scope.regionIds === null || allowedRegions.length > 1
 
   const [filters, setFilters] = useState<StatsFilters>({
     regionId: showAllOption ? 'all' : (allowedRegions[0]?.id ?? 'all'),

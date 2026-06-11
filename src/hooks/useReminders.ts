@@ -10,6 +10,8 @@ import {
   type InterviewReminder, type MeetingReminder,
 } from '@/utils/reminders'
 import { ALL_UNITS } from '@/constants/regions'
+import { useEffectiveScope } from '@/hooks/useEffectiveScope'
+import { seventyViewAtom } from '@/store/seventyViewAtom'
 import type { Schedule } from '@/types'
 
 export function useReminders() {
@@ -19,6 +21,8 @@ export function useReminders() {
   const [dismissed, setDismissed] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const today = useMemo(() => dayjs().format('YYYY-MM-DD'), [])
+  const scope = useEffectiveScope()
+  const viewSeventyUid = useAtomValue(seventyViewAtom)
 
   useEffect(() => {
     if (!user) return
@@ -29,21 +33,21 @@ export function useReminders() {
     // 향후 120일까지의 일정만 조회 — 그 이후 방문의 모임 리마인더는 제외(허용 한계)
     const end = dayjs(today).add(120, 'day').format('YYYY-MM-DD')
     Promise.all([
-      fetchScopedSchedulesInRange(start, end),
+      fetchScopedSchedulesInRange(start, end, user.role === 'admin' ? viewSeventyUid : undefined),
       getDismissedReminders(user.uid),
     ]).then(([sched, dis]) => {
       if (!active) return
       setSchedules(sched); setDismissed(dis); setLoading(false)
     }).catch(() => { if (active) { setSchedules([]); setDismissed([]); setLoading(false) } })
     return () => { active = false }
-  }, [user, today])
+  }, [user, today, viewSeventyUid])
 
   const scopeUnits = useMemo(() => {
     if (!user) return [] as { id: string; name: string }[]
-    if (user.role === 'admin') return ALL_UNITS.map(u => ({ id: u.id, name: u.name }))
-    const regionIds = user.regionIds ?? (user.regionId ? [user.regionId] : [])
-    return ALL_UNITS.filter(u => regionIds.includes(u.regionId)).map(u => ({ id: u.id, name: u.name }))
-  }, [user])
+    if (scope.regionIds === null) return ALL_UNITS.map(u => ({ id: u.id, name: u.name }))
+    const allowed = new Set(scope.regionIds)
+    return ALL_UNITS.filter(u => allowed.has(u.regionId)).map(u => ({ id: u.id, name: u.name }))
+  }, [scope])
 
   const presidentNameByUnit = useMemo(() => {
     const m = new Map<string, string>()
