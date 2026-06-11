@@ -23,7 +23,7 @@ const SECONDARY_ROLE_OPTIONS: { value: string; label: string }[] = [
 import styles from './UserManagement.module.scss'
 
 const ROLE_OPTIONS = (['admin', 'exec_secretary', 'seventy', 'president'] as UserRole[]).map(r => ({ value: r, label: ROLE_LABELS[r] }))
-const PRE_ROLE_OPTIONS = (['president', 'seventy'] as UserRole[]).map(r => ({ value: r, label: ROLE_LABELS[r] }))
+const PRE_ROLE_OPTIONS = (['president', 'seventy', 'exec_secretary'] as UserRole[]).map(r => ({ value: r, label: ROLE_LABELS[r] }))
 const UNIT_OPTIONS = ALL_UNITS.map(u => ({ value: u.id, label: u.name }))
 
 function EditUserModal({
@@ -296,9 +296,10 @@ export function UserManagement() {
   // Manual pre-registration
   const [preName, setPreName] = useState('')
   const [preEmail, setPreEmail] = useState('')
-  const [preRole, setPreRole] = useState<'president' | 'seventy'>('president')
+  const [preRole, setPreRole] = useState<'president' | 'seventy' | 'exec_secretary'>('president')
   const [preUnitId, setPreUnitId] = useState('')
   const [preRegionIds, setPreRegionIds] = useState<Set<string>>(new Set())
+  const [preSeventyUid, setPreSeventyUid] = useState('')
   const [preLoading, setPreLoading] = useState(false)
 
   function toggleInviteRegion(id: string) {
@@ -354,6 +355,10 @@ export function UserManagement() {
   const handlePreRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!preName.trim()) return
+    if (preRole === 'exec_secretary' && !preSeventyUid) {
+      toast.error('집행서기 등록 시 담당 칠십인을 선택해야 합니다')
+      return
+    }
     setPreLoading(true)
     try {
       await addPreRegisteredUser({
@@ -364,9 +369,10 @@ export function UserManagement() {
         ...(preRole === 'seventy' && preRegionIds.size > 0
           ? { regionIds: Array.from(preRegionIds), regionId: Array.from(preRegionIds)[0] }
           : {}),
+        ...(preRole === 'exec_secretary' && preSeventyUid ? { assignedSeventyUid: preSeventyUid } : {}),
       })
       toast.success(t('user.preRegSuccess', { name: preName.trim() }))
-      setPreName(''); setPreEmail(''); setPreUnitId(''); setPreRegionIds(new Set())
+      setPreName(''); setPreEmail(''); setPreUnitId(''); setPreRegionIds(new Set()); setPreSeventyUid('')
     } catch {
       toast.error(t('user.preRegFailed'))
     } finally {
@@ -469,9 +475,17 @@ export function UserManagement() {
               <form className={styles.form} onSubmit={handlePreRegister}>
                 <Input label={t('user.name')} value={preName} onChange={e => setPreName(e.target.value)} required />
                 <Input label={t('user.preRegEmail')} type="email" value={preEmail} onChange={e => setPreEmail(e.target.value)} placeholder="example@gmail.com" />
-                <Select label={t('user.role')} value={preRole} onChange={e => setPreRole(e.target.value as 'president' | 'seventy')} options={PRE_ROLE_OPTIONS} />
+                <Select label={t('user.role')} value={preRole} onChange={e => setPreRole(e.target.value as 'president' | 'seventy' | 'exec_secretary')} options={PRE_ROLE_OPTIONS} />
                 {preRole === 'president' && (
                   <Select label={t('user.preRegUnit')} value={preUnitId} onChange={e => setPreUnitId(e.target.value)} options={UNIT_OPTIONS} />
+                )}
+                {preRole === 'exec_secretary' && (
+                  <Select
+                    label={t('user.inviteAssignedSeventy')}
+                    value={preSeventyUid}
+                    onChange={e => setPreSeventyUid(e.target.value)}
+                    options={seventyOptions}
+                  />
                 )}
                 {preRole === 'seventy' && (
                   <div className={styles.regionCheckGroup}>

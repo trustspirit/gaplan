@@ -93,10 +93,11 @@ export async function updatePreRegisteredUserFields(
 export async function addPreRegisteredUser(data: {
   name: string
   email: string
-  role: 'president' | 'seventy'
+  role: 'president' | 'seventy' | 'exec_secretary'
   unitId?: string
   regionId?: string
   regionIds?: string[]
+  assignedSeventyUid?: string
 }): Promise<void> {
   await httpsCallable(functions, 'adminAddPreRegisteredUser')(data)
 }

@@ -208,6 +208,10 @@
   font-weight: $font-weight-semibold;
   color: $color-text;
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .time {
