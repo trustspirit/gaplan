@@ -94,7 +94,8 @@
     "empty": "No plans"
   },
   "role": {
-    "admin": "Executive Secretary",
+    "admin": "Administrator",
+    "exec_secretary": "Executive Secretary",
     "seventy": "Area Seventy",
     "president": "Stake/District President",
     "pending": "Pending Approval"
