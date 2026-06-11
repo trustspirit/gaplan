@@ -47,9 +47,12 @@ export function AppRouter() {
           <Route element={<RoleRoute allow={['admin']} />}>
             <Route path="/admin"                   element={<AdminDashboard />} />
             <Route path="/admin/users"             element={<UserManagement />} />
-            <Route path="/admin/tasks"             element={<TaskCreation />} />
             <Route path="/admin/availability"      element={<AvailabilitySettings />} />
             <Route path="/admin/calendar"          element={<CalendarSettings />} />
+          </Route>
+
+          <Route element={<RoleRoute allow={['admin', 'exec_secretary']} />}>
+            <Route path="/admin/tasks"             element={<TaskCreation />} />
             <Route path="/admin/visit-planner"     element={<VisitPlanner />} />
             <Route path="/admin/visit-plans"          element={<VisitPlanListPage />} />
             <Route path="/admin/visit-plans/:planId"  element={<VisitPlanBoardPage />} />
@@ -57,7 +60,7 @@ export function AppRouter() {
             <Route path="/admin/projects/:id"    element={<ProjectDetailPage />} />
           </Route>
 
-          <Route element={<RoleRoute allow={['admin', 'seventy']} />}>
+          <Route element={<RoleRoute allow={['admin', 'exec_secretary', 'seventy']} />}>
             <Route path="/admin/task-progress" element={<TaskProgress />} />
             <Route path="/admin/stats" element={<StatsPage />} />
           </Route>

@@ -12,14 +12,14 @@ import styles from './Sidebar.module.scss'
 interface NavItem { to: string; icon: React.ReactNode; labelKey: string; roles: UserRole[] }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/dashboard',           icon: <LayoutDashboard size={20} />, labelKey: 'nav.dashboard',    roles: ['admin','seventy','president'] },
-  { to: '/calendar',            icon: <Calendar size={20} />,        labelKey: 'nav.calendar',     roles: ['admin','seventy','president'] },
-  { to: '/schedules',           icon: <CalendarRange size={20} />,   labelKey: 'nav.schedules',    roles: ['admin','seventy','president'] },
+  { to: '/dashboard',           icon: <LayoutDashboard size={20} />, labelKey: 'nav.dashboard',    roles: ['admin','exec_secretary','seventy','president'] },
+  { to: '/calendar',            icon: <Calendar size={20} />,        labelKey: 'nav.calendar',     roles: ['admin','exec_secretary','seventy','president'] },
+  { to: '/schedules',           icon: <CalendarRange size={20} />,   labelKey: 'nav.schedules',    roles: ['admin','exec_secretary','seventy','president'] },
   { to: '/tasks',               icon: <CheckSquare size={20} />,     labelKey: 'nav.tasks',        roles: ['president'] },
-  { to: '/admin/task-progress', icon: <ClipboardList size={20} />,   labelKey: 'nav.taskProgress', roles: ['admin','seventy'] },
-  { to: '/admin/stats',         icon: <BarChart3 size={20} />,       labelKey: 'nav.stats',        roles: ['admin','seventy'] },
-  { to: '/admin/visit-plans',   icon: <ClipboardPen size={20} />,    labelKey: 'nav.visitPlans',   roles: ['admin'] },
-  { to: '/admin/projects',      icon: <FolderKanban size={20} />,    labelKey: 'nav.projects',     roles: ['admin'] },
+  { to: '/admin/task-progress', icon: <ClipboardList size={20} />,   labelKey: 'nav.taskProgress', roles: ['admin','exec_secretary','seventy'] },
+  { to: '/admin/stats',         icon: <BarChart3 size={20} />,       labelKey: 'nav.stats',        roles: ['admin','exec_secretary','seventy'] },
+  { to: '/admin/visit-plans',   icon: <ClipboardPen size={20} />,    labelKey: 'nav.visitPlans',   roles: ['admin','exec_secretary'] },
+  { to: '/admin/projects',      icon: <FolderKanban size={20} />,    labelKey: 'nav.projects',     roles: ['admin','exec_secretary'] },
   { to: '/admin',               icon: <Settings size={20} />,        labelKey: 'nav.admin',        roles: ['admin'] },
 ]
 
