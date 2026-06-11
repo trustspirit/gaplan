@@ -28,9 +28,11 @@ const UNIT_OPTIONS = ALL_UNITS.map(u => ({ value: u.id, label: u.name }))
 
 function EditUserModal({
   user,
+  isSelf,
   onClose,
 }: {
   user: AppUser
+  isSelf?: boolean
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -134,6 +136,7 @@ function EditUserModal({
           value={role}
           onChange={e => setRole(e.target.value as UserRole)}
           options={user.preRegistered ? PRE_ROLE_OPTIONS : ROLE_OPTIONS}
+          disabled={isSelf}
         />
         {user.preRegistered && role === 'president' && (
           <Select
@@ -514,16 +517,14 @@ export function UserManagement() {
                         {ROLE_LABELS[u.role]}
                       </Badge>
                       <div className={styles.userActions}>
-                        {u.uid !== currentUser.uid && (
-                          <button
-                            className={styles.iconBtn}
-                            title={t('common.edit')}
-                            type="button"
-                            onClick={() => setEditingUser(u)}
-                          >
-                            <Pencil size={14} />
-                          </button>
-                        )}
+                        <button
+                          className={styles.iconBtn}
+                          title={t('common.edit')}
+                          type="button"
+                          onClick={() => setEditingUser(u)}
+                        >
+                          <Pencil size={14} />
+                        </button>
                         {u.uid !== currentUser.uid && (
                           <button
                             className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
@@ -546,6 +547,7 @@ export function UserManagement() {
       {editingUser && (
         <EditUserModal
           user={editingUser}
+          isSelf={editingUser.uid === currentUser.uid}
           onClose={() => setEditingUser(null)}
         />
       )}
