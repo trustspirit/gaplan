@@ -37,11 +37,14 @@ export function RemindersCard({ interviewReminders, meetingReminders, loading, o
             <p className={styles.sectionTitle}>{t('reminder.quarterlyInterview')}</p>
             <ul className={styles.list}>
               {interviewReminders.map(r => (
-                <li key={r.unitId} className={styles.row}>
+                <li key={r.key} className={styles.row}>
                   <span className={clsx(styles.dot, styles[r.severity])} />
                   <span className={styles.text}>
                     {r.unitName} · {r.presidentName ?? t('reminder.noPresident')}
                   </span>
+                  <button type="button" className={styles.dismiss} onClick={() => onDismiss(r.key)}>
+                    <Check size={13} /> {t('reminder.acknowledge')}
+                  </button>
                 </li>
               ))}
             </ul>

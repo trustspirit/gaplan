@@ -54,22 +54,22 @@ describe('computeInterviewReminders', () => {
   const today = '2026-05-15'
 
   it('flags units with no interview this quarter', () => {
-    const r = computeInterviewReminders(units, names, [], today)
+    const r = computeInterviewReminders(units, names, [], new Set(), today)
     expect(r).toHaveLength(2)
     expect(r[0].presidentName).toBe('김회장')
   })
   it('omits a unit that has an interview in the quarter', () => {
     const schedules = [sched({ type: 'interview', unitId: 'seoul-stake', date: '2026-05-10' })]
-    const r = computeInterviewReminders(units, names, schedules, today)
+    const r = computeInterviewReminders(units, names, schedules, new Set(), today)
     expect(r.map(x => x.unitId)).toEqual(['gyeonggi-stake'])
   })
   it('ignores interviews outside the quarter', () => {
     const schedules = [sched({ type: 'interview', unitId: 'seoul-stake', date: '2026-01-10' })]
-    const r = computeInterviewReminders(units, names, schedules, today)
+    const r = computeInterviewReminders(units, names, schedules, new Set(), today)
     expect(r).toHaveLength(2)
   })
   it('uses null presidentName when unit has no president', () => {
-    const r = computeInterviewReminders([{ id: 'x-stake', name: 'X' }], new Map(), [], today)
+    const r = computeInterviewReminders([{ id: 'x-stake', name: 'X' }], new Map(), [], new Set(), today)
     expect(r[0].presidentName).toBeNull()
   })
 })

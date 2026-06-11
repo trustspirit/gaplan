@@ -58,8 +58,8 @@ export function useReminders() {
   }, [users])
 
   const interviewReminders: InterviewReminder[] = useMemo(
-    () => computeInterviewReminders(scopeUnits, presidentNameByUnit, schedules, today),
-    [scopeUnits, presidentNameByUnit, schedules, today],
+    () => computeInterviewReminders(scopeUnits, presidentNameByUnit, schedules, new Set(dismissed), today),
+    [scopeUnits, presidentNameByUnit, schedules, dismissed, today],
   )
 
   const scopeUnitIds = useMemo(() => new Set(scopeUnits.map(u => u.id)), [scopeUnits])

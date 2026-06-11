@@ -6,6 +6,7 @@ export type ReminderSeverity = 'green' | 'amber' | 'red'
 export interface QuarterInfo { start: string; end: string; daysLeft: number }
 
 export interface InterviewReminder {
+  key: string            // `interview:{unitId}:{quarterStart}`
   unitId: string
   unitName: string
   presidentName: string | null
@@ -51,10 +52,15 @@ export function meetingSeverity(daysUntilMeetingBy: number): ReminderSeverity {
   return 'red'
 }
 
+export function interviewReminderKey(unitId: string, quarterStart: string) {
+  return `interview:${unitId}:${quarterStart}`
+}
+
 export function computeInterviewReminders(
   units: { id: string; name: string }[],
   presidentNameByUnit: Map<string, string>,
   schedules: Schedule[],
+  dismissedKeys: Set<string>,
   today: string,
 ): InterviewReminder[] {
   const q = currentQuarter(today)
@@ -66,8 +72,14 @@ export function computeInterviewReminders(
     s.date >= q.start && s.date <= q.end,
   )
   return units
-    .filter(u => !hasInterview(u.id))
+    .filter(u => {
+      if (hasInterview(u.id)) return false
+      const key = interviewReminderKey(u.id, q.start)
+      if (dismissedKeys.has(key)) return false
+      return true
+    })
     .map(u => ({
+      key: interviewReminderKey(u.id, q.start),
       unitId: u.id,
       unitName: u.name,
       presidentName: presidentNameByUnit.get(u.id) ?? null,
