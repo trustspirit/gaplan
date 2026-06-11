@@ -63,8 +63,11 @@ export async function updateUserRole(
     }
   } else {
     fields.secondaryRole = null
+    fields.unitId = null
     if (role === 'seventy' && regionIds && regionIds.length > 0) {
       fields.regionIds = regionIds; fields.regionId = regionIds[0]
+    } else {
+      fields.regionIds = null; fields.regionId = null
     }
     fields.assignedSeventyUid = role === 'exec_secretary' ? (assignedSeventyUid || null) : null
   }

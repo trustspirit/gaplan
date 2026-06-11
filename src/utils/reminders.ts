@@ -95,7 +95,7 @@ export function computeMeetingReminders(
 ): MeetingReminder[] {
   const result: MeetingReminder[] = []
   for (const v of wardVisits) {
-    if (v.type !== 'ward_visit' || !ACTIVE(v) || v.date < today) continue
+    if (v.type !== 'ward_visit' || !ACTIVE(v) || v.date <= today) continue
     const key = `meeting:${v.id}`
     if (dismissedKeys.has(key)) continue
     const meetingBy = dayjs(v.date).subtract(MEETING_LEAD_DAYS, 'day')

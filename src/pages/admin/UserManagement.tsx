@@ -76,7 +76,7 @@ function EditUserModal({
       if (name.trim() !== user.name) tasks.push(updateUserName(user.uid, name.trim()))
       const newRegionIds = Array.from(selectedRegions)
       const regionChanged = (role === 'seventy' || (role === 'admin' && secondaryRole === 'seventy')) && (
-        JSON.stringify([...newRegionIds].sort()) !== JSON.stringify((user.regionIds ?? []).sort())
+        JSON.stringify([...newRegionIds].sort()) !== JSON.stringify([...(user.regionIds ?? [])].sort())
       )
       const seventyChanged = (role === 'exec_secretary' || (role === 'admin' && secondaryRole === 'exec_secretary')) &&
         assignedSeventyUid !== (user.assignedSeventyUid ?? '')
@@ -180,6 +180,7 @@ function EditUserModal({
               value={secondaryRole ?? ''}
               onChange={e => setSecondaryRole((e.target.value as SecondaryRole) || null)}
               options={SECONDARY_ROLE_OPTIONS}
+              disabled={isSelf}
             />
             {secondaryRole === 'exec_secretary' && (
               <Select

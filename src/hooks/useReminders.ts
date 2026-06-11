@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAtomValue } from 'jotai'
+import { toast } from 'sonner'
 import dayjs from 'dayjs'
 import { authUserAtom } from '@/store/authAtom'
 import { useUsers } from '@/hooks/useUsers'
@@ -70,7 +71,11 @@ export function useReminders() {
     ]).then(([sched, dis]) => {
       if (!active) return
       setSchedules(sched); setDismissed(dis); setSchedulesLoading(false)
-    }).catch(() => { if (active) { setSchedules([]); setDismissed([]); setSchedulesLoading(false) } })
+    }).catch(() => {
+      if (!active) return
+      setSchedules([]); setDismissed([]); setSchedulesLoading(false)
+      toast.error('리마인더 데이터를 불러오지 못했습니다.')
+    })
     return () => { active = false }
   }, [user, today, viewSeventyUid, querySeventyUid, scheduleVersion])
 
