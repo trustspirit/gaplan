@@ -108,7 +108,6 @@ export const WARDS: WardUnit[] = [
   { id: 'seoul-east-uijeongbu',  name: '의정부 와드',  type: 'ward', unitId: 'seoul-east-stake' },
   { id: 'seoul-east-chuncheon',  name: '춘천 와드',    type: 'ward', unitId: 'seoul-east-stake' },
   // 서울서 스테이크
-  { id: 'seoul-west-gimpo',       name: '김포 와드',   type: 'ward', unitId: 'seoul-west-stake' },
   { id: 'seoul-west-bucheon',     name: '부천 와드',   type: 'ward', unitId: 'seoul-west-stake' },
   { id: 'seoul-west-yeongdeungpo',name: '영등포 와드', type: 'ward', unitId: 'seoul-west-stake' },
   { id: 'seoul-west-incheon1',    name: '인천1 와드',  type: 'ward', unitId: 'seoul-west-stake' },
