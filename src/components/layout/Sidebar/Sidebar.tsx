@@ -112,7 +112,7 @@ export function Sidebar({ role, name, mobile }: SidebarProps) {
   return (
     <aside className={styles.sidebar}>
       <div className={styles.logo}>
-        <img src="/favicon.svg" alt="가플랜" className={styles.logoImg} />
+        <img src="/favicon.svg" alt="GA Plan" className={styles.logoImg} />
       </div>
       <nav className={styles.nav}>
         {items.map(item => (
