@@ -1,6 +1,6 @@
 import { useAtomValue } from 'jotai'
 import { Link } from 'react-router-dom'
-import { Users, ListChecks, CalendarCheck, MapPin } from 'lucide-react'
+import { Users, CalendarCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { AppShell, TopBar } from '@/components/layout'
@@ -9,18 +9,6 @@ import styles from './AdminDashboard.module.scss'
 
 const ACTION_CARD_DEFS = [
   { icon: Users, titleKey: 'admin.users', descKey: 'admin.inviteDesc', link: '/admin/users' },
-  {
-    icon: ListChecks,
-    titleKey: 'admin.taskCreate',
-    descKey: 'admin.taskCreateDesc',
-    link: '/admin/tasks',
-  },
-  {
-    icon: MapPin,
-    titleKey: 'admin.visitPlanner',
-    descKey: 'admin.visitPlannerDesc',
-    link: '/admin/visit-planner',
-  },
   {
     icon: CalendarCheck,
     titleKey: 'admin.calendar',
