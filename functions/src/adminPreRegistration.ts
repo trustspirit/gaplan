@@ -4,10 +4,11 @@ import * as admin from 'firebase-admin'
 interface AddPreRegRequest {
   name: string
   email?: string
-  role: 'president' | 'seventy'
+  role: 'president' | 'seventy' | 'exec_secretary'
   unitId?: string
   regionId?: string
   regionIds?: string[]
+  assignedSeventyUid?: string
 }
 
 async function assertAdmin(uid: string): Promise<void> {
@@ -26,8 +27,8 @@ export const adminAddPreRegisteredUser = functions
     if (!data.name?.trim()) {
       throw new functions.https.HttpsError('invalid-argument', 'name required')
     }
-    if (!['president', 'seventy'].includes(data.role)) {
-      throw new functions.https.HttpsError('invalid-argument', 'role must be president or seventy')
+    if (!['president', 'seventy', 'exec_secretary'].includes(data.role)) {
+      throw new functions.https.HttpsError('invalid-argument', 'role must be president, seventy, or exec_secretary')
     }
 
     const db = admin.firestore()
@@ -39,6 +40,7 @@ export const adminAddPreRegisteredUser = functions
       ...(data.unitId ? { unitId: data.unitId } : {}),
       ...(data.regionId ? { regionId: data.regionId } : {}),
       ...(data.regionIds ? { regionIds: data.regionIds } : {}),
+      ...(data.assignedSeventyUid ? { assignedSeventyUid: data.assignedSeventyUid } : {}),
       preRegistered: true,
       createdBy: context.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -51,10 +53,11 @@ interface UpdatePreRegRequest {
   uid: string
   name?: string
   email?: string
-  role?: 'president' | 'seventy'
+  role?: 'president' | 'seventy' | 'exec_secretary'
   unitId?: string | null
   regionId?: string | null
   regionIds?: string[]
+  assignedSeventyUid?: string | null
 }
 
 export const adminUpdatePreRegisteredUser = functions
@@ -93,8 +96,8 @@ export const adminUpdatePreRegisteredUser = functions
       updates.email = normalized
     }
     if (data.role !== undefined) {
-      if (!['president', 'seventy'].includes(data.role)) {
-        throw new functions.https.HttpsError('invalid-argument', 'role must be president or seventy')
+      if (!['president', 'seventy', 'exec_secretary'].includes(data.role)) {
+        throw new functions.https.HttpsError('invalid-argument', 'role must be president, seventy, or exec_secretary')
       }
       updates.role = data.role
       // Clear unitId when switching away from president
@@ -108,6 +111,7 @@ export const adminUpdatePreRegisteredUser = functions
     if (data.unitId !== undefined) updates.unitId = data.unitId ?? null
     if (data.regionId !== undefined) updates.regionId = data.regionId ?? null
     if (data.regionIds !== undefined) updates.regionIds = data.regionIds
+    if (data.assignedSeventyUid !== undefined) updates.assignedSeventyUid = data.assignedSeventyUid ?? null
 
     if (Object.keys(updates).length === 0) {
       throw new functions.https.HttpsError('invalid-argument', 'No fields to update')
