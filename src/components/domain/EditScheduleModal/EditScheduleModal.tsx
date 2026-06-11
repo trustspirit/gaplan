@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { httpsCallable } from 'firebase/functions'
 import { useTranslation } from 'react-i18next'
+import { X } from 'lucide-react'
 import { functions } from '@/firebase'
 import { useUsers } from '@/hooks/useUsers'
 import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
@@ -40,8 +42,6 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
     setWardName('')
     setPresidentUid('')
   }, [unitId])
-
-
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -92,33 +92,37 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
     }
   }
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.sheet} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <h3 className={styles.title}>{t('schedule.editTitle')}</h3>
-          <button type="button" onClick={onClose} className={styles.closeBtn} aria-label={t('common.close')}>{t('common.close')}</button>
+          <button type="button" onClick={onClose} className={styles.closeBtn} aria-label={t('common.close')}>
+            <X size={18} />
+          </button>
         </div>
 
         {error && <div className={styles.errorBanner}>{error}</div>}
 
         <div className={styles.fields}>
           {/* Stake/District */}
-          <label className={styles.fieldLabel}>
-            {t(schedule.type === 'meeting' ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel')}
-          </label>
-          <select
-            className={styles.fieldSelect}
-            value={unitId}
-            onChange={e => setUnitId(e.target.value)}
-          >
-            <option value="">{t('common.select')}</option>
-            {unitOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>
+              {t(schedule.type === 'meeting' ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel')}
+            </label>
+            <select
+              className={styles.fieldSelect}
+              value={unitId}
+              onChange={e => setUnitId(e.target.value)}
+            >
+              <option value="">{t('common.select')}</option>
+              {unitOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
 
           {/* Ward — ward_visit only */}
           {isVisit && (
-            <>
+            <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>{t('schedule.wardLabel')}</label>
               <select
                 className={styles.fieldSelect}
@@ -129,12 +133,12 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                 <option value="">{t('common.select')}</option>
                 {wardOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
-            </>
+            </div>
           )}
 
           {/* President — interview only, optional */}
           {isInterview && (
-            <>
+            <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>{t('schedule.presidentLabelOptional')}</label>
               <select
                 className={styles.fieldSelect}
@@ -145,31 +149,61 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                 <option value="">{t('common.select')}</option>
                 {presidentOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
-            </>
+            </div>
           )}
 
-          <label className={styles.fieldLabel}>{t('schedule.dateLabel')}</label>
-          <input type="date" className={styles.fieldInput} value={date} onChange={e => setDate(e.target.value)} />
+          {/* Date */}
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>{t('schedule.dateLabel')}</label>
+            <input type="date" className={styles.fieldInput} value={date} onChange={e => setDate(e.target.value)} />
+          </div>
 
-          <label className={styles.fieldLabel}>{t('common.startTime')}</label>
-          <input type="time" className={styles.fieldInput} value={startTime} onChange={e => setStartTime(e.target.value)} />
+          {/* Start / End time */}
+          <div className={styles.timeRow}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>{t('common.startTime')}</label>
+              <input type="time" className={styles.fieldInput} value={startTime} onChange={e => setStartTime(e.target.value)} />
+            </div>
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>{t('common.endTime')}</label>
+              <input type="time" className={styles.fieldInput} value={endTime} onChange={e => setEndTime(e.target.value)} />
+            </div>
+          </div>
 
-          <label className={styles.fieldLabel}>{t('common.endTime')}</label>
-          <input type="time" className={styles.fieldInput} value={endTime} onChange={e => setEndTime(e.target.value)} />
+          {/* Custom title — non-visit only */}
+          {!isVisit && (
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>{t('schedule.customTitleOptional')}</label>
+              <input
+                className={styles.fieldInput}
+                value={customTitle}
+                onChange={e => setCustomTitle(e.target.value)}
+                placeholder={t('schedule.customTitlePlaceholder')}
+              />
+            </div>
+          )}
 
-          {!isVisit && <>
-            <label className={styles.fieldLabel}>{t('schedule.customTitleOptional')}</label>
-            <input className={styles.fieldInput} value={customTitle} onChange={e => setCustomTitle(e.target.value)} placeholder={t('schedule.customTitlePlaceholder')} />
-          </>}
+          {/* Zoom link — non-visit only */}
+          {!isVisit && (
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>{t('schedule.zoomLinkOptional')}</label>
+              <input
+                type="url"
+                className={styles.fieldInput}
+                value={zoomLink}
+                onChange={e => setZoomLink(e.target.value)}
+                placeholder="https://zoom.us/j/..."
+              />
+            </div>
+          )}
 
-          {!isVisit && <>
-            <label className={styles.fieldLabel}>{t('schedule.zoomLinkOptional')}</label>
-            <input type="url" className={styles.fieldInput} value={zoomLink} onChange={e => setZoomLink(e.target.value)} placeholder="https://zoom.us/j/..." />
-          </>}
+          {/* Notes */}
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>{t('schedule.notesLabelOptional')}</label>
+            <textarea className={styles.fieldTextarea} value={note} onChange={e => setNote(e.target.value)} rows={3} />
+          </div>
 
-          <label className={styles.fieldLabel}>{t('schedule.notesLabelOptional')}</label>
-          <textarea className={styles.fieldTextarea} value={note} onChange={e => setNote(e.target.value)} rows={3} />
-
+          {/* Project */}
           <ProjectPicker value={projectId} onChange={setProjectId} />
         </div>
 
@@ -184,6 +218,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
