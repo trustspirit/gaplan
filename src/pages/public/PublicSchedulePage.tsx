@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
-import { Video, CalendarDays, Building2, MoonStar, RefreshCw } from 'lucide-react'
+import { Video, CalendarDays, Building2, MoonStar, RefreshCw, CalendarPlus } from 'lucide-react'
 import { ALL_UNITS } from '@/constants/regions'
 import { fetchPublicSchedules, type PublicScheduleItem } from '@/services/scheduleService'
 import { fetchPublicGeneralSchedules } from '@/services/generalScheduleService'
@@ -36,6 +36,7 @@ export default function PublicSchedulePage() {
   const [generalSchedules, setGeneralSchedules] = useState<GeneralSchedule[]>([])
   const [refreshKey, setRefreshKey] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+  const [showSubscribeMenu, setShowSubscribeMenu] = useState(false)
 
   // Initialize language from localStorage — run once on mount only
   useEffect(() => {
@@ -112,7 +113,7 @@ export default function PublicSchedulePage() {
     | { kind: 'general'; data: GeneralSchedule }
 
   const mergedMap = new Map<string, ListEntry[]>()
-  for (const s of schedules) {
+  for (const s of schedules.filter(s => s.type === 'ward_visit')) {
     const key = dayjs(s.date).format('YYYY-MM')
     if (!mergedMap.has(key)) mergedMap.set(key, [])
     mergedMap.get(key)!.push({ kind: 'schedule', data: s })
@@ -147,15 +148,7 @@ export default function PublicSchedulePage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <h1 className={styles.headerTitle}>{title}</h1>
-        <div className={styles.subscribeRow}>
-          <CalendarDays size={14} className={styles.subscribeIcon} />
-          <span className={styles.subscribeLabel}>{t('public.subscribeLabel')}</span>
-          <a href={icsWebcal} className={styles.subscribeBtn}>
-            {t('public.appleCalendar')}
-          </a>
-          <a href={googleUrl} target="_blank" rel="noopener noreferrer" className={styles.subscribeBtn}>
-            {t('public.googleCalendar')}
-          </a>
+        <div className={styles.headerActions}>
           <button className={styles.langToggle} onClick={toggleLang}>
             {lang === 'ko' ? 'EN' : '한'}
           </button>
@@ -265,6 +258,42 @@ export default function PublicSchedulePage() {
           })
         )}
       </main>
+
+      {showSubscribeMenu && (
+        <div className={styles.fabBackdrop} onClick={() => setShowSubscribeMenu(false)} />
+      )}
+      <div className={styles.fabArea}>
+        {showSubscribeMenu && (
+          <div className={styles.subscribeMenu}>
+            <a
+              href={icsWebcal}
+              className={styles.subscribeOption}
+              onClick={() => setShowSubscribeMenu(false)}
+            >
+              <CalendarDays size={15} />
+              {t('public.appleCalendar')}
+            </a>
+            <a
+              href={googleUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.subscribeOption}
+              onClick={() => setShowSubscribeMenu(false)}
+            >
+              <CalendarDays size={15} />
+              {t('public.googleCalendar')}
+            </a>
+          </div>
+        )}
+        <button
+          className={styles.fab}
+          onClick={() => setShowSubscribeMenu(v => !v)}
+          aria-label={t('public.subscribeLabel')}
+          aria-expanded={showSubscribeMenu}
+        >
+          <CalendarPlus size={22} />
+        </button>
+      </div>
     </div>
   )
 }

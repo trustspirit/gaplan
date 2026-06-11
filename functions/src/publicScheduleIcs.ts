@@ -117,7 +117,10 @@ export const publicScheduleIcs = functions
       const dtstamp = nowDtStamp()
       const events: string[] = []
 
-      schedulesSnap.docs.filter(d => unitSet === null || unitSet.has(d.data().unitId)).forEach((d) => {
+      schedulesSnap.docs.filter(d => {
+        const sd = d.data()
+        return (unitSet === null || unitSet.has(sd.unitId)) && sd.type === 'ward_visit'
+      }).forEach((d) => {
         const data = d.data()
         const unitName = unitMap[data.unitId] ?? data.unitId ?? ''
         const summary = buildSummary(data, unitName)
