@@ -181,6 +181,8 @@
   align-items: center;
   justify-content: space-around;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  // push tab items above home indicator; background fills the rest
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .tabItem {
