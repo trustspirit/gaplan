@@ -12,6 +12,7 @@ import {
 import { ALL_UNITS } from '@/constants/regions'
 import { useEffectiveScope } from '@/hooks/useEffectiveScope'
 import { seventyViewAtom } from '@/store/seventyViewAtom'
+import { SCOPE_ALL } from '@/utils/scope'
 import type { Schedule } from '@/types'
 
 export function useReminders() {
@@ -32,8 +33,15 @@ export function useReminders() {
     const start = q.start < today ? q.start : today
     // 향후 120일까지의 일정만 조회 — 그 이후 방문의 모임 리마인더는 제외(허용 한계)
     const end = dayjs(today).add(120, 'day').format('YYYY-MM-DD')
+    // For admin: resolve the effective seventy uid for the server query.
+    // null viewSeventyUid + assignedSeventyUid → use assignedSeventyUid (admin+exec_sec default)
+    // SCOPE_ALL or no assignedSeventyUid → null → server returns all
+    const querySeventyUid: string | null =
+      user.role === 'admin'
+        ? (viewSeventyUid === SCOPE_ALL ? null : (viewSeventyUid ?? user.assignedSeventyUid ?? null))
+        : null
     Promise.all([
-      fetchScopedSchedulesInRange(start, end, user.role === 'admin' ? viewSeventyUid : undefined),
+      fetchScopedSchedulesInRange(start, end, user.role === 'admin' ? querySeventyUid : undefined),
       getDismissedReminders(user.uid),
     ]).then(([sched, dis]) => {
       if (!active) return

@@ -161,7 +161,7 @@ export function ScheduleTypePanel({
               const items = grouped.get(monthKey)!
               return (
                 <div key={monthKey} className={styles.monthGroup}>
-                  <h3 className={styles.monthLabel}>{monthKey}</h3>
+                  <h3 className={styles.monthLabel}>{dayjs(monthKey).format('YYYY년 M월')}</h3>
                   <div className={styles.itemList}>
                     {items.map((schedule) => (
                       <ScheduleItem

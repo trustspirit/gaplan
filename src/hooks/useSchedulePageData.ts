@@ -49,11 +49,11 @@ export function useSchedulePageData(
   const grouped = groupByMonth(sorted)
   const monthKeys = sortMonthKeys(Array.from(grouped.keys()))
 
-  const currentMonthKey = today.format('YYYY년 M월')
+  const currentMonthKey = today.format('YYYY-MM')
   const orderedKeys = [
     ...monthKeys.filter(k => k === currentMonthKey),
-    ...monthKeys.filter(k => dayjs(k, 'YYYY년 M월').isAfter(today, 'month')),
-    ...monthKeys.filter(k => dayjs(k, 'YYYY년 M월').isBefore(today, 'month')),
+    ...monthKeys.filter(k => k > currentMonthKey),
+    ...monthKeys.filter(k => k < currentMonthKey),
   ]
 
   // upcomingList: from unfiltered base so sidebar always shows real next items
