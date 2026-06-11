@@ -129,6 +129,36 @@
   }
 }
 
+.regionFilter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin-bottom: $space-3;
+}
+
+.regionChip {
+  padding: 4px $space-3;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-full;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+
+  &:hover {
+    color: $color-text;
+    background: $color-bg;
+  }
+
+  &[data-active='true'] {
+    color: $color-primary;
+    background: color-mix(in srgb, #{$color-primary} 8%, transparent);
+    border-color: $color-primary;
+  }
+}
+
 .stats {
   display: flex;
   align-items: center;

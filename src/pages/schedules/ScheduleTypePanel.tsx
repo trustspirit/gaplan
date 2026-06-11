@@ -8,10 +8,12 @@ import { authUserAtom } from '@/store/authAtom'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
 import { useSchedulePageData } from '@/hooks/useSchedulePageData'
+import { useEffectiveScope } from '@/hooks/useEffectiveScope'
 import { Button } from '@/components/ui'
 import { EditScheduleModal, ScheduleFormModal, ScheduleItem } from '@/components/domain'
 import type { Schedule, ScheduleType } from '@/types'
 import { canUseAdminTools } from '@/utils/permissions'
+import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import styles from './ScheduleTypePage.module.scss'
 
 type FilterTab = 'all' | 'upcoming' | 'completed'
@@ -49,6 +51,13 @@ export function ScheduleTypePanel({
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null)
+  const [filterRegion, setFilterRegion] = useState<string | null>(null)
+
+  const scope = useEffectiveScope()
+
+  const allowedRegions = scope.regionIds != null
+    ? REGIONS.filter(r => scope.regionIds!.includes(r.id))
+    : []
 
   const filters =
     user.role === 'president'
@@ -59,8 +68,12 @@ export function ScheduleTypePanel({
           ? { seventyUid: user.assignedSeventyUid ?? '' }
           : {}
 
-  const { schedules } = useSchedules(filters)
+  const { schedules: rawSchedules } = useSchedules(filters)
   const { getUnitName } = useUnits()
+
+  const schedules = filterRegion != null
+    ? rawSchedules.filter(s => ALL_UNITS.find(u => u.id === s.unitId)?.regionId === filterRegion)
+    : rawSchedules
 
   const { orderedKeys, grouped, upcomingList, thisMonthCount, upcomingCount, completedCount } =
     useSchedulePageData(schedules, scheduleType, activeTab)
@@ -76,6 +89,30 @@ export function ScheduleTypePanel({
             <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
               + {t(`${translationPrefix}.addSchedule`)}
             </Button>
+          </div>
+        )}
+
+        {allowedRegions.length > 1 && (
+          <div className={styles.regionFilter}>
+            <button
+              type="button"
+              className={styles.regionChip}
+              data-active={filterRegion === null}
+              onClick={() => setFilterRegion(null)}
+            >
+              {t('common.all')}
+            </button>
+            {allowedRegions.map(r => (
+              <button
+                key={r.id}
+                type="button"
+                className={styles.regionChip}
+                data-active={filterRegion === r.id}
+                onClick={() => setFilterRegion(r.id)}
+              >
+                {r.name}
+              </button>
+            ))}
           </div>
         )}
 
