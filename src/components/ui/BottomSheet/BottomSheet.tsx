@@ -12,8 +12,28 @@ interface BottomSheetProps {
 }
 export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
+    if (open) {
+      const scrollY = window.scrollY
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.width = '100%'
+      document.body.dataset.sheetScrollY = String(scrollY)
+    } else {
+      const scrollY = parseInt(document.body.dataset.sheetScrollY ?? '0', 10)
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      delete document.body.dataset.sheetScrollY
+      window.scrollTo(0, scrollY)
+    }
+    return () => {
+      const scrollY = parseInt(document.body.dataset.sheetScrollY ?? '0', 10)
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      delete document.body.dataset.sheetScrollY
+      window.scrollTo(0, scrollY)
+    }
   }, [open])
 
   return createPortal(
