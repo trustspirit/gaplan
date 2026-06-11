@@ -213,3 +213,21 @@
   @include truncate;
   max-width: 100%;
 }
+
+.moreList {
+  display: flex;
+  flex-direction: column;
+}
+
+.moreItem {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-2;
+  color: $color-text;
+  font-size: $font-size-md;
+  text-decoration: none;
+  border-bottom: 1px solid $color-border;
+
+  &.active { color: $color-primary; }
+}
