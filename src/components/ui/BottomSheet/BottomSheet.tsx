@@ -4,35 +4,42 @@ import { X } from 'lucide-react'
 import clsx from 'clsx'
 import styles from './BottomSheet.module.scss'
 
+// Module-level ref-count: multiple nested BottomSheets share one scroll lock
+let scrollLockCount = 0
+let savedScrollY = 0
+
+function acquireScrollLock() {
+  if (scrollLockCount === 0) {
+    savedScrollY = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${savedScrollY}px`
+    document.body.style.width = '100%'
+  }
+  scrollLockCount++
+}
+
+function releaseScrollLock() {
+  scrollLockCount = Math.max(0, scrollLockCount - 1)
+  if (scrollLockCount === 0) {
+    document.body.style.position = ''
+    document.body.style.top = ''
+    document.body.style.width = ''
+    window.scrollTo(0, savedScrollY)
+  }
+}
+
 interface BottomSheetProps {
   open: boolean
   onClose: () => void
   title?: string
   children: React.ReactNode
 }
+
 export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
   useEffect(() => {
     if (open) {
-      const scrollY = window.scrollY
-      document.body.style.position = 'fixed'
-      document.body.style.top = `-${scrollY}px`
-      document.body.style.width = '100%'
-      document.body.dataset.sheetScrollY = String(scrollY)
-    } else {
-      const scrollY = parseInt(document.body.dataset.sheetScrollY ?? '0', 10)
-      document.body.style.position = ''
-      document.body.style.top = ''
-      document.body.style.width = ''
-      delete document.body.dataset.sheetScrollY
-      window.scrollTo(0, scrollY)
-    }
-    return () => {
-      const scrollY = parseInt(document.body.dataset.sheetScrollY ?? '0', 10)
-      document.body.style.position = ''
-      document.body.style.top = ''
-      document.body.style.width = ''
-      delete document.body.dataset.sheetScrollY
-      window.scrollTo(0, scrollY)
+      acquireScrollLock()
+      return () => releaseScrollLock()
     }
   }, [open])
 

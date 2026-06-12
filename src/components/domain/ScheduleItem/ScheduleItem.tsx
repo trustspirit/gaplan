@@ -190,7 +190,9 @@ export function ScheduleItem({
                 <div className={styles.menuOverlay} onClick={() => setMenuOpen(false)} />
                 <div className={styles.menu} style={{ top: menuPos.top, right: menuPos.right }}>
                   <button type="button" onClick={() => { setMenuOpen(false); onEdit?.() }}>편집</button>
-                  <button type="button" className={styles.deleteMenuItem} onClick={() => { setMenuOpen(false); setShowDeleteConfirm(true) }}>삭제</button>
+                  {onDelete && (
+                    <button type="button" className={styles.deleteMenuItem} onClick={() => { setMenuOpen(false); setShowDeleteConfirm(true) }}>삭제</button>
+                  )}
                 </div>
               </>
             )}
