@@ -153,7 +153,12 @@ export function ScheduleItem({
             </button>
           )}
 
-          {isPast && <span className={styles.pastBadge}>{t('common.complete')}</span>}
+          {isPast && (
+            <span className={styles.pastBadge}>
+              <Check size={10} strokeWidth={2.5} />
+              <span className={styles.pastBadgeText}>{t('common.complete')}</span>
+            </span>
+          )}
           {showCalendarAdd && !isPast && (
             <a
               href={buildGCalUrl(schedule, unitName)}

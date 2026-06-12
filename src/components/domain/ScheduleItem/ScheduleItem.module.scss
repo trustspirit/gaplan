@@ -309,6 +309,9 @@
 }
 
 .pastBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-size: $font-size-xs;
   color: $color-text-muted;
   border: 1px solid $color-border;
@@ -316,6 +319,16 @@
   padding: 2px 8px;
   white-space: nowrap;
   flex-shrink: 0;
+
+  @include mobile {
+    padding: 3px 5px;
+  }
+}
+
+.pastBadgeText {
+  @include mobile {
+    display: none;
+  }
 }
 
 .calendarAddBtn {

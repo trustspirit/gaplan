@@ -155,10 +155,7 @@ export function ScheduleFormModal({
     // Prepend leader contact info at top of notes on save
     const buildNotesWithLeader = (): string => {
       let leaderInfo = ''
-      if (type === 'ward_visit' && wardName) {
-        const leader = getLeaderByUnitName(wardName)
-        if (leader) leaderInfo = `${leader.role}: ${leader.name} (${leader.phone ?? '번호 없음'})`
-      } else if ((type === 'interview' || type === 'meeting') && unitId) {
+      if (unitId) {
         const unit = ALL_UNITS.find(u => u.id === unitId)
         if (unit) {
           const leader = getLeaderByUnitName(unit.name.ko)
