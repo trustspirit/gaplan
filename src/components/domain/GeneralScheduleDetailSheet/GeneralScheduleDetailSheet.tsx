@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Building2, MoonStar, CalendarDays, Clock, Globe, GlobeLock, Check, Pencil, Trash2 } from 'lucide-react'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
@@ -5,7 +6,7 @@ import clsx from 'clsx'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { BottomSheet } from '@/components/ui/BottomSheet/BottomSheet'
 import { Modal } from '@/components/ui/Modal/Modal'
-import { Button } from '@/components/ui'
+import { Button, DeleteConfirmSheet } from '@/components/ui'
 import type { GeneralSchedule, Schedule } from '@/types'
 import styles from './GeneralScheduleDetailSheet.module.scss'
 
@@ -41,6 +42,7 @@ export function GeneralScheduleDetailSheet({
 }: GeneralScheduleDetailSheetProps) {
   const { t } = useTranslation()
   const isMobile = useIsMobile()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   if (!event) return null
 
@@ -62,7 +64,7 @@ export function GeneralScheduleDetailSheet({
             <button type="button" className={styles.actionBtn} onClick={onEdit} aria-label="편집">
               <Pencil size={15} />
             </button>
-            <button type="button" className={clsx(styles.actionBtn, styles.deleteBtn)} onClick={onDelete} aria-label="삭제">
+            <button type="button" className={clsx(styles.actionBtn, styles.deleteBtn)} onClick={() => setShowDeleteConfirm(true)} aria-label="삭제">
               <Trash2 size={15} />
             </button>
           </div>
@@ -127,17 +129,23 @@ export function GeneralScheduleDetailSheet({
     </div>
   )
 
-  if (isMobile) {
-    return (
-      <BottomSheet open={!!event} onClose={onClose} title="">
-        {content}
-      </BottomSheet>
-    )
-  }
-
   return (
-    <Modal open={!!event} onClose={onClose}>
-      {content}
-    </Modal>
+    <>
+      {isMobile ? (
+        <BottomSheet open={!!event} onClose={onClose} title="">
+          {content}
+        </BottomSheet>
+      ) : (
+        <Modal open={!!event} onClose={onClose}>
+          {content}
+        </Modal>
+      )}
+      <DeleteConfirmSheet
+        open={showDeleteConfirm}
+        description={event.title}
+        onConfirm={() => { setShowDeleteConfirm(false); onDelete() }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+    </>
   )
 }
