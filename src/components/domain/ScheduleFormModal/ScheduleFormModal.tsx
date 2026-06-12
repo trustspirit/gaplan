@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { functions } from '@/firebase'
 import { useUsers } from '@/hooks/useUsers'
+import { useLeaders } from '@/hooks/useLeaders'
 import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
 import { isGeneralScheduleRelevant } from '@/types'
 import type { ScheduleType, GeneralSchedule, AppUser } from '@/types'
@@ -36,6 +37,7 @@ export function ScheduleFormModal({
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { users } = useUsers()
+  const { getLeaderByUnitName } = useLeaders()
 
   const [type, setType] = useState<ScheduleType>(initialType ?? 'ward_visit')
   const [seventyUid, setSeventyUid] = useState(
@@ -76,6 +78,7 @@ export function ScheduleFormModal({
     setPresidentUid('')
     setZoomLink('')
     setCustomTitle('')
+    setNotes('')
   }
 
   const handleSeventyChange = (nextSeventyUid: string) => {
@@ -99,12 +102,31 @@ export function ScheduleFormModal({
     if (user.role === 'admin' && !user.secondaryRole) setSeventyUid(seventyUsers[0].uid)
   }, [seventyUsers, seventyUid, user.role, user.secondaryRole])
 
+  // ward_visit: wardName 변경 시 감독/지부 회장 정보 자동 입력
+  useEffect(() => {
+    if (!wardName || type !== 'ward_visit') return
+    const leader = getLeaderByUnitName(wardName)
+    if (leader && !notes.trim()) {
+      setNotes(`${leader.role}: ${leader.name} (${leader.phone ?? '번호 없음'})`)
+    }
+  }, [wardName]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // interview/meeting: unitId 변경 시 스테이크/지방부 회장 정보 자동 입력
+  useEffect(() => {
+    if (!unitId || type === 'ward_visit') return
+    const unit = ALL_UNITS.find(u => u.id === unitId)
+    if (!unit) return
+    const leader = getLeaderByUnitName(unit.name.ko)
+    if (leader && !notes.trim()) {
+      setNotes(`${leader.role}: ${leader.name} (${leader.phone ?? '번호 없음'})`)
+    }
+  }, [unitId, type]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSabbathToggle = (checked: boolean) => {
     setIsSabbath(checked)
     if (checked) {
       setStartTime('10:00')
       setEndTime('12:00')
-      setNotes(prev => prev.trim() || t('schedule.sabbathVisitNotes'))
     }
   }
   const selectedSeventy = users.find((u) => u.uid === seventyUid)

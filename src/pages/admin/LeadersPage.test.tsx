@@ -16,7 +16,7 @@ vi.mock('react-i18next', () => ({
 
 // Mock the AppShell, TopBar to isolate component
 vi.mock('@/components/layout', async (importOriginal) => {
-  const actual = await importOriginal()
+  const actual = await importOriginal<typeof import('@/components/layout')>()
   return {
     ...actual,
     AppShell: ({ children }: { children: React.ReactNode }) => <div data-testid="app-shell">{children}</div>,
