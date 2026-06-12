@@ -100,7 +100,6 @@
 
 // ─── Schedule Row ─────────────────────────────────────────────────────────
 .scheduleRow {
-  position: relative;
   display: flex;
   flex-direction: column;
   border-radius: $border-radius-lg;
@@ -160,6 +159,14 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
 }
 
 .typeBadge {
@@ -200,10 +207,8 @@
 }
 
 .presidentBadge {
-  position: absolute;
-  top: 6px;
-  right: 8px;
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 3px;
   font-size: 10px;
@@ -212,8 +217,6 @@
   background: rgba($color-primary, 0.08);
   border-radius: $border-radius-full;
   padding: 1px 6px;
-  pointer-events: none;
-  z-index: 1;
 }
 
 .pastBadge {

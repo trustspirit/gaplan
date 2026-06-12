@@ -248,12 +248,6 @@ export default function PublicSchedulePage() {
 
                     return (
                       <div key={s.id} className={styles.scheduleRow} data-past={isPast}>
-                        {s.presidentAccompanied && (
-                          <span className={styles.presidentBadge}>
-                            <UserCheck size={10} />
-                            <span>{t('schedule.presidentAccompanied')}</span>
-                          </span>
-                        )}
                         <div className={styles.scheduleRowMain}>
                           <div
                             className={styles.colorBar}
@@ -267,7 +261,15 @@ export default function PublicSchedulePage() {
                             <span className={styles.dow}>{dow}</span>
                           </div>
                           <div className={styles.itemBody}>
-                            <span className={styles.typeBadge}>{typeLabel(s.type)}</span>
+                            <div className={styles.topRow}>
+                              <span className={styles.typeBadge}>{typeLabel(s.type)}</span>
+                              {s.presidentAccompanied && (
+                                <span className={styles.presidentBadge}>
+                                  <UserCheck size={10} />
+                                  <span>{t('schedule.presidentAccompanied')}</span>
+                                </span>
+                              )}
+                            </div>
                             <p className={styles.title}>{displayTitle}</p>
                             <p className={styles.time}>{s.startTime} – {s.endTime}</p>
                             {safeZoom && (
