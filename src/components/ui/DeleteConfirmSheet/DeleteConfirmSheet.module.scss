@@ -1,0 +1,21 @@
+@use '@/styles/_variables' as *;
+
+.message {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  line-height: $line-height-loose;
+  margin-bottom: $space-4;
+}
+
+.description {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  margin-bottom: $space-1;
+}
+
+.actions {
+  display: flex;
+  gap: $space-2;
+}
