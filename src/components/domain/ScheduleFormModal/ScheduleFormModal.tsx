@@ -102,26 +102,6 @@ export function ScheduleFormModal({
     if (user.role === 'admin' && !user.secondaryRole) setSeventyUid(seventyUsers[0].uid)
   }, [seventyUsers, seventyUid, user.role, user.secondaryRole])
 
-  // ward_visit: wardName 변경 시 감독/지부 회장 정보 자동 입력
-  useEffect(() => {
-    if (!wardName || type !== 'ward_visit') return
-    const leader = getLeaderByUnitName(wardName)
-    if (leader && !notes.trim()) {
-      setNotes(`${leader.role}: ${leader.name} (${leader.phone ?? '번호 없음'})`)
-    }
-  }, [wardName]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // interview/meeting: unitId 변경 시 스테이크/지방부 회장 정보 자동 입력
-  useEffect(() => {
-    if (!unitId || type === 'ward_visit') return
-    const unit = ALL_UNITS.find(u => u.id === unitId)
-    if (!unit) return
-    const leader = getLeaderByUnitName(unit.name.ko)
-    if (leader && !notes.trim()) {
-      setNotes(`${leader.role}: ${leader.name} (${leader.phone ?? '번호 없음'})`)
-    }
-  }, [unitId, type]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleSabbathToggle = (checked: boolean) => {
     setIsSabbath(checked)
     if (checked) {
@@ -172,6 +152,24 @@ export function ScheduleFormModal({
       return
     }
 
+    // Prepend leader contact info at top of notes on save
+    const buildNotesWithLeader = (): string => {
+      let leaderInfo = ''
+      if (type === 'ward_visit' && wardName) {
+        const leader = getLeaderByUnitName(wardName)
+        if (leader) leaderInfo = `${leader.role}: ${leader.name} (${leader.phone ?? '번호 없음'})`
+      } else if ((type === 'interview' || type === 'meeting') && unitId) {
+        const unit = ALL_UNITS.find(u => u.id === unitId)
+        if (unit) {
+          const leader = getLeaderByUnitName(unit.name.ko)
+          if (leader) leaderInfo = `${leader.role}: ${leader.name} (${leader.phone ?? '번호 없음'})`
+        }
+      }
+      if (!leaderInfo) return notes
+      return notes.trim() ? `${leaderInfo}\n${notes}` : leaderInfo
+    }
+    const finalNotes = buildNotesWithLeader()
+
     setSaving(true)
     try {
       await adminCreateScheduleFn({
@@ -183,7 +181,7 @@ export function ScheduleFormModal({
         date,
         startTime,
         endTime,
-        ...(notes.trim() ? { notes: notes.trim() } : {}),
+        ...(finalNotes.trim() ? { notes: finalNotes.trim() } : {}),
         ...(zoomLink.trim() && type !== 'ward_visit' ? { zoomLink: zoomLink.trim() } : {}),
         ...(customTitle.trim() && type !== 'ward_visit' ? { customTitle: customTitle.trim() } : {}),
         ...(projectId ? { projectId } : {}),

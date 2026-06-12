@@ -129,5 +129,12 @@ service cloud.firestore {
     match /userSettings/{uid} {
       allow read, write: if isAuth() && request.auth.uid == uid;
     }
+
+    match /leaders/{leaderId} {
+      // All authenticated users can read (auto-fill needs seventy role)
+      allow read: if isAuth();
+      // Only admin can write (import script runs with admin SDK, bypasses rules)
+      allow write: if isAdmin();
+    }
   }
 }
