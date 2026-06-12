@@ -46,7 +46,7 @@ describe('severityOf', () => {
 })
 
 describe('computeVisitStats - counts', () => {
-  it('counts ward_visit + interview within period, excludes cancelled and meeting', () => {
+  it('counts ward_visit within period, excludes interview/meeting/cancelled', () => {
     const schedules = [
       mk({ type: 'ward_visit', date: '2026-05-01', wardName: ward.name.ko }),
       mk({ type: 'interview', date: '2026-05-02' }),
@@ -56,9 +56,9 @@ describe('computeVisitStats - counts', () => {
     ]
     const stats = compute(schedules, { regionId: 'all', period: '3m' }, null, TODAY)
     const region = stats.byRegion.find(r => r.id === regionId)
-    expect(region?.count).toBe(2)
+    expect(region?.count).toBe(1)
     const unit = stats.byUnit.find(u => u.id === unitId)
-    expect(unit?.count).toBe(2)
+    expect(unit?.count).toBe(1)
   })
 
   it('builds a continuous monthly trend across the period', () => {
@@ -115,7 +115,7 @@ describe('computeVisitStats - region scope', () => {
 describe('computeVisitStats - unit granularity', () => {
   it('unit mode: interview updates unit recency', () => {
     const schedules = [mk({ type: 'interview', date: '2026-06-05' })]
-    const stats = compute(schedules, { regionId: regionId, period: '3m' }, null, TODAY)
+    const stats = compute(schedules, { regionId: regionId, period: '3m', granularity: 'unit' }, null, TODAY)
     const u = stats.lastVisit.find(x => x.id === unitId)
     expect(u?.lastVisitDate).toBe('2026-06-05')
   })
@@ -123,7 +123,7 @@ describe('computeVisitStats - unit granularity', () => {
   it('unit mode: never-visited unit has null daysSince', () => {
     const otherUnit = ALL_UNITS.find(u => u.id !== unitId && getRegionIdByUnit(u.id) === regionId)
     const schedules = [mk({ type: 'ward_visit', date: '2026-06-05', wardName: ward.name.ko })]
-    const stats = compute(schedules, { regionId: regionId, period: '3m' }, null, TODAY)
+    const stats = compute(schedules, { regionId: regionId, period: '3m', granularity: 'unit' }, null, TODAY)
     if (otherUnit) {
       const u = stats.lastVisit.find(x => x.id === otherUnit.id)
       expect(u?.daysSince).toBeNull()
@@ -134,7 +134,7 @@ describe('computeVisitStats - unit granularity', () => {
   })
 
   it('staleTopN in unit mode contains units', () => {
-    const stats = compute([], { regionId: 'all', period: '3m' }, null, TODAY)
+    const stats = compute([], { regionId: 'all', period: '3m', granularity: 'unit' }, null, TODAY)
     const unitIds = new Set(ALL_UNITS.map(u => u.id))
     expect(stats.staleTopN.every(e => unitIds.has(e.id))).toBe(true)
   })

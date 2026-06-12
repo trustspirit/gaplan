@@ -8,6 +8,7 @@ export type StatsGranularity = 'ward' | 'unit'
 export interface StatsFilters {
   regionId: string | 'all'
   period: StatsPeriod
+  granularity?: StatsGranularity
 }
 
 export interface CountEntry { id: string; name: string; count: number }
@@ -177,7 +178,9 @@ export function computeVisitStats(
     cursor = cursor.add(1, 'month')
   }
 
-  const lastVisit = computeWardLastVisit(scoped, allowedRegionIds, filters.regionId, today)
+  const lastVisit = filters.granularity === 'unit'
+    ? computeUnitLastVisit(scoped, allowedRegionIds, filters.regionId, today)
+    : computeWardLastVisit(scoped, allowedRegionIds, filters.regionId, today)
 
   const staleTopN = [...lastVisit]
     .sort((a, b) => {

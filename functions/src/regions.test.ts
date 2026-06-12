@@ -8,27 +8,27 @@ describe('regions', () => {
       expect(result).toEqual([
         'seoul-stake',
         'seoul-east-stake',
+        'seoul-south-stake',
         'seoul-west-stake',
-        'gyeonggi-stake',
-        'military-district',
         'gangneung-district',
+        'military-district',
       ])
     })
 
-    it('returns 5 Seoul-South units for seoul-south region', () => {
+    it('returns 4 Seoul-South units for seoul-south region', () => {
       const result = getScopeUnitIds('seoul-south')
       expect(result).toEqual([
-        'seoul-south-stake',
+        'gyeonggi-stake',
         'daejeon-stake',
         'cheongju-stake',
         'jeonju-stake',
-        'gwangju-stake',
       ])
     })
 
-    it('returns 4 Busan units for busan region', () => {
+    it('returns 5 Busan units for busan region', () => {
       const result = getScopeUnitIds('busan')
       expect(result).toEqual([
+        'gwangju-stake',
         'busan-stake',
         'daegu-stake',
         'changwon-stake',
