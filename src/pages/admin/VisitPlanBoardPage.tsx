@@ -11,7 +11,7 @@ import { deleteScheduleViaCF } from '@/services/scheduleService'
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { useVisitPlanContext } from '@/hooks/useVisitPlanContext'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Button, Spinner } from '@/components/ui'
+import { Card, CardHeader, CardBody, Button, Spinner, DeleteConfirmSheet } from '@/components/ui'
 import { AddVisitPanel, PlanItemList, BalancePanel, ProjectPicker } from '@/components/domain'
 import type { VisitPlan, VisitPlanItem } from '@/types'
 import styles from './VisitPlanBoardPage.module.scss'
@@ -30,6 +30,7 @@ export function VisitPlanBoardPage() {
   const [loadingPlan, setLoadingPlan] = useState(true)
   const [publishing, setPublishing] = useState(false)
   const [savingProject, setSavingProject] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const { pendingIds: deletingPlanIds, scheduleDelete: schedulePlanDelete } = useDeleteWithUndo()
 
   useEffect(() => {
@@ -105,7 +106,7 @@ export function VisitPlanBoardPage() {
         <div className={styles.header}>
           <h2 className={styles.title}>{plan.title}</h2>
           <div className={styles.actions}>
-            <Button variant="secondary" size="sm" onClick={handleDeletePlan} disabled={deletingPlanIds.has(plan.id)}>{t('common.delete')}</Button>
+            <Button variant="secondary" size="sm" onClick={() => setShowDeleteConfirm(true)} disabled={deletingPlanIds.has(plan.id)}>{t('common.delete')}</Button>
             <Button size="sm" onClick={handlePublish} loading={publishing} disabled={savingProject}>{t('visitPlan.publish')}</Button>
           </div>
         </div>
@@ -147,6 +148,12 @@ export function VisitPlanBoardPage() {
           </div>
         </div>
       </div>
+      <DeleteConfirmSheet
+        open={showDeleteConfirm}
+        description={plan.title}
+        onConfirm={() => { setShowDeleteConfirm(false); handleDeletePlan() }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </AppShell>
   )
 }
