@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
 import type { Schedule } from '@/types'
+import { DeleteConfirmSheet } from '@/components/ui'
 import styles from './ScheduleItem.module.scss'
 
 const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -64,6 +65,7 @@ export function ScheduleItem({
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null)
   const [notesOpen, setNotesOpen] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -84,10 +86,12 @@ export function ScheduleItem({
   const dow = DOW_LABELS[date.day()]
   const isPast = past ?? date.isBefore(dayjs(), 'day')
   const hasNotes = !!schedule.notes?.trim()
+  const deleteDescription = schedule.customTitle ?? unitName
 
   const typeClass = isVisit ? styles.visit : isMeeting ? styles.meeting : isAttendance ? styles.attendance : styles.interview
 
   return (
+    <>
     <div className={styles.wrapper}>
       {/* ── Main row ── */}
       <div className={styles.row}>
@@ -186,7 +190,7 @@ export function ScheduleItem({
                 <div className={styles.menuOverlay} onClick={() => setMenuOpen(false)} />
                 <div className={styles.menu} style={{ top: menuPos.top, right: menuPos.right }}>
                   <button type="button" onClick={() => { setMenuOpen(false); onEdit?.() }}>편집</button>
-                  <button type="button" className={styles.deleteMenuItem} onClick={() => { setMenuOpen(false); onDelete?.() }}>삭제</button>
+                  <button type="button" className={styles.deleteMenuItem} onClick={() => { setMenuOpen(false); setShowDeleteConfirm(true) }}>삭제</button>
                 </div>
               </>
             )}
@@ -201,5 +205,14 @@ export function ScheduleItem({
         </div>
       )}
     </div>
+    {onDelete && (
+      <DeleteConfirmSheet
+        open={showDeleteConfirm}
+        description={deleteDescription}
+        onConfirm={() => { setShowDeleteConfirm(false); onDelete() }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+    )}
+    </>
   )
 }
