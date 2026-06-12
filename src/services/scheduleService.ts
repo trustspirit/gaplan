@@ -139,6 +139,7 @@ export interface PublicScheduleItem {
   zoomLink?: string | null
   customTitle?: string | null
   notes?: string | null
+  presidentAccompanied?: boolean
 }
 
 export async function fetchPublicSchedules(token: string): Promise<{ schedules: PublicScheduleItem[]; scopeDisplayName: string | null }> {

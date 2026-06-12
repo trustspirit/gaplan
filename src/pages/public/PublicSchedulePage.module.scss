@@ -198,6 +198,19 @@
   &:hover { text-decoration: underline; }
 }
 
+.presidentBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-primary;
+  background: rgba($color-primary, 0.08);
+  border-radius: $border-radius-full;
+  padding: 2px 6px;
+  margin-top: 2px;
+}
+
 .pastBadge {
   align-self: center;
   flex-shrink: 0;

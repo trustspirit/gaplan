@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
-import { Video, CalendarDays, Building2, MoonStar, RefreshCw, CalendarPlus, FileText, ChevronUp } from 'lucide-react'
+import { Video, CalendarDays, Building2, MoonStar, RefreshCw, CalendarPlus, FileText, ChevronUp, UserCheck } from 'lucide-react'
 import { ALL_UNITS } from '@/constants/regions'
 import { fetchPublicSchedules, type PublicScheduleItem } from '@/services/scheduleService'
 import { fetchPublicGeneralSchedules } from '@/services/generalScheduleService'
@@ -264,6 +264,12 @@ export default function PublicSchedulePage() {
                             <span className={styles.typeBadge}>{typeLabel(s.type)}</span>
                             <p className={styles.title}>{displayTitle}</p>
                             <p className={styles.time}>{s.startTime} – {s.endTime}</p>
+                            {s.presidentAccompanied && (
+                              <span className={styles.presidentBadge}>
+                                <UserCheck size={11} />
+                                <span>{t('schedule.presidentAccompanied')}</span>
+                              </span>
+                            )}
                             {safeZoom && (
                               <a
                                 href={safeZoom}

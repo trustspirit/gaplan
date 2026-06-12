@@ -15,6 +15,7 @@ interface PublicSchedule {
   customTitle?: string | null
   confirmedAt?: string
   notes?: string | null
+  presidentAccompanied?: boolean
 }
 
 export const getPublicSchedules = functions
@@ -99,6 +100,8 @@ export const getPublicSchedules = functions
           ...(sd.customTitle != null ? { customTitle: sd.customTitle } : {}),
           ...(sd.confirmedAt ? { confirmedAt: sd.confirmedAt } : {}),
           ...(sd.notes != null ? { notes: sd.notes } : {}),
+          // 동행 정보는 전체 공유에서만 노출 — CCM 지역별 공유에는 내려주지 않음
+          ...(unitSet === null && sd.presidentAccompanied === true ? { presidentAccompanied: true } : {}),
         }
       })
 

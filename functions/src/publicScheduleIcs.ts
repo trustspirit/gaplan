@@ -135,7 +135,11 @@ export const publicScheduleIcs = functions
           `DTEND;TZID=Asia/Seoul:${dtend}`,
           `SUMMARY:${escape(summary)}`,
         ]
-        if (data.notes) lines.push(`DESCRIPTION:${escape(data.notes)}`)
+        const descParts: string[] = []
+        // 동행 정보는 전체 공유에서만 노출 — CCM 지역별 공유에는 포함하지 않음
+        if (unitSet === null && data.presidentAccompanied === true) descParts.push('스테이크 회장 동행')
+        if (data.notes) descParts.push(data.notes)
+        if (descParts.length > 0) lines.push(`DESCRIPTION:${escape(descParts.join('\n'))}`)
         const zoomUrl = safeUrl(data.zoomLink)
         if (zoomUrl) lines.push(`URL:${zoomUrl}`)
         lines.push('END:VEVENT')
