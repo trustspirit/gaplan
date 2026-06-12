@@ -12,7 +12,8 @@
     "visitPlans": "Visit Plans",
     "projects": "Projects",
     "schedules": "Schedules",
-    "more": "More"
+    "more": "More",
+    "leaders": "Directory"
   },
   "stats": {
     "pageTitle": "Visit Statistics",
@@ -512,6 +513,10 @@
     "deletedSuccess": "Event deleted.",
     "showToPublic": "Show on public page",
     "hideFromPublic": "Hide from public page"
+  },
+  "leaders": {
+    "searchPlaceholder": "Search by name or unit",
+    "empty": "No results found"
   },
   "pageHelp": {
     "admin": {

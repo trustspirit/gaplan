@@ -47,6 +47,7 @@ const VisitPlanListPage = lazyRetry(() => import('@/pages/admin/VisitPlanListPag
 const VisitPlanBoardPage = lazyRetry(() => import('@/pages/admin/VisitPlanBoardPage').then(m => ({ default: m.VisitPlanBoardPage })))
 const ProjectListPage = lazyRetry(() => import('@/pages/admin/ProjectListPage').then(m => ({ default: m.ProjectListPage })))
 const ProjectDetailPage = lazyRetry(() => import('@/pages/admin/ProjectDetailPage').then(m => ({ default: m.ProjectDetailPage })))
+const LeadersPage = lazyRetry(() => import('@/pages/admin/LeadersPage').then(m => ({ default: m.LeadersPage })))
 
 export function AppRouter() {
   return (
@@ -75,6 +76,7 @@ export function AppRouter() {
               <Route path="/admin/users"             element={<UserManagement />} />
               <Route path="/admin/availability"      element={<AvailabilitySettings />} />
               <Route path="/admin/calendar"          element={<CalendarSettings />} />
+              <Route path="/admin/leaders"           element={<LeadersPage />} />
             </Route>
 
             <Route element={<RoleRoute allow={['admin', 'exec_secretary']} />}>

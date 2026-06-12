@@ -12,7 +12,8 @@
     "visitPlans": "방문 계획",
     "projects": "프로젝트",
     "schedules": "일정",
-    "more": "더보기"
+    "more": "더보기",
+    "leaders": "주소록"
   },
   "stats": {
     "pageTitle": "방문 통계",
@@ -512,6 +513,10 @@
     "deletedSuccess": "행사 일정이 삭제되었습니다.",
     "showToPublic": "공개 페이지에 표시",
     "hideFromPublic": "공개 페이지에서 숨김"
+  },
+  "leaders": {
+    "searchPlaceholder": "이름 또는 단위 검색",
+    "empty": "검색 결과가 없습니다"
   },
   "pageHelp": {
     "admin": {

@@ -1,0 +1,100 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  padding: $space-6;
+  max-width: 900px;
+  margin: 0 auto;
+
+  @include mobile {
+    padding: $space-4;
+    padding-bottom: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px) + #{$space-4});
+  }
+}
+
+.searchInput {
+  width: 100%;
+  margin-bottom: $space-4;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  padding: $space-4;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.cardInfo {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex-wrap: wrap;
+}
+
+.cardName {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.cardUnit {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex-wrap: wrap;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.cardContacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-3;
+}
+
+.contactLink {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+    color: $color-primary-hover;
+  }
+}
+
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px $space-2;
+  border-radius: $border-radius-full;
+  background: rgba($color-primary, 0.1);
+  color: $color-primary;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+}
+
+.skeletonItem {
+  border-radius: $border-radius-lg;
+}
+
+.sentinel {
+  height: 1px;
+}
+
+.empty {
+  text-align: center;
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  padding: $space-8 0;
+}

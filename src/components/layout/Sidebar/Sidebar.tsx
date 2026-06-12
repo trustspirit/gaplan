@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { LayoutDashboard, Calendar, CalendarRange, CheckSquare, Settings, LogOut, ClipboardList, Languages, BarChart3, ClipboardPen, FolderKanban, MoreHorizontal } from 'lucide-react'
+import { LayoutDashboard, Calendar, CalendarRange, CheckSquare, Settings, LogOut, ClipboardList, Languages, BarChart3, ClipboardPen, FolderKanban, MoreHorizontal, BookUser } from 'lucide-react'
 import clsx from 'clsx'
 import type { UserRole } from '@/types'
 import { ROLE } from '@/constants/roles'
@@ -25,6 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin/stats',         icon: <BarChart3 size={20} />,       labelKey: 'nav.stats',        roles: ADMIN_STAFF },
   { to: '/admin/visit-plans',   icon: <ClipboardPen size={20} />,    labelKey: 'nav.visitPlans',   roles: ADMIN_EXEC },
   { to: '/admin/projects',      icon: <FolderKanban size={20} />,    labelKey: 'nav.projects',     roles: ADMIN_EXEC },
+  { to: '/admin/leaders',        icon: <BookUser size={20} />,        labelKey: 'nav.leaders',      roles: [ROLE.ADMIN] },
   { to: '/admin',               icon: <Settings size={20} />,        labelKey: 'nav.admin',        roles: [ROLE.ADMIN] },
 ]
 
