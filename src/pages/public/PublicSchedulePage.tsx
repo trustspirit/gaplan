@@ -8,6 +8,11 @@ import { ALL_UNITS } from '@/constants/regions'
 import { fetchPublicSchedules, type PublicScheduleItem } from '@/services/scheduleService'
 import { fetchPublicGeneralSchedules } from '@/services/generalScheduleService'
 import type { GeneralSchedule } from '@/types'
+import {
+  loadScheduleCache,
+  saveScheduleCache,
+  clearScheduleCache,
+} from '@/utils/scheduleCache'
 import styles from './PublicSchedulePage.module.scss'
 
 const DOW_KO = ['일', '월', '화', '수', '목', '금', '토']
@@ -15,6 +20,32 @@ const DOW_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 function getUnitName(unitId: string) {
   return ALL_UNITS.find((u) => u.id === unitId)?.name ?? unitId
+}
+
+function SkeletonCards() {
+  return (
+    <>
+      <div className={clsx(styles.skeleton, styles.skeletonMonthLabel)} />
+      <div className={styles.itemList}>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className={styles.scheduleRow}>
+            <div className={styles.scheduleRowMain}>
+              <div className={clsx(styles.colorBar, styles.skeletonBar)} />
+              <div className={clsx(styles.dateCol, styles.skeletonDateCol)}>
+                <div className={clsx(styles.skeleton, styles.skeletonDate)} />
+                <div className={clsx(styles.skeleton, styles.skeletonDow)} />
+              </div>
+              <div className={styles.itemBody}>
+                <div className={clsx(styles.skeleton, styles.skeletonBadge)} />
+                <div className={clsx(styles.skeleton, styles.skeletonTitle)} />
+                <div className={clsx(styles.skeleton, styles.skeletonTime)} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  )
 }
 
 function NotesText({ text, linkClass, textClass }: { text: string; linkClass: string; textClass: string }) {
@@ -46,7 +77,7 @@ export default function PublicSchedulePage() {
   const { t, i18n } = useTranslation()
   const [schedules, setSchedules] = useState<PublicScheduleItem[]>([])
   const [scopeDisplayName, setScopeDisplayName] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [isPrivate, setIsPrivate] = useState(false)
   const [fetchError, setFetchError] = useState(false)
   const [generalSchedules, setGeneralSchedules] = useState<GeneralSchedule[]>([])
@@ -73,9 +104,20 @@ export default function PublicSchedulePage() {
 
   useEffect(() => {
     if (!token) {
-      setLoading(false)
+      setIsInitialLoading(false)
       return
     }
+
+    // 동기 캐시 체크 — 캐시 히트 시 즉시 렌더 (스켈레톤 스킵)
+    const cached = loadScheduleCache(token)
+    if (cached) {
+      setSchedules(cached.schedules)
+      setGeneralSchedules(cached.generalSchedules)
+      setScopeDisplayName(cached.scopeDisplayName)
+      setIsInitialLoading(false)
+    }
+
+    // 항상 최신 데이터 백그라운드 fetch
     setRefreshing(true)
     Promise.all([
       fetchPublicSchedules(token),
@@ -86,15 +128,20 @@ export default function PublicSchedulePage() {
         setScopeDisplayName(name)
         setGeneralSchedules(generals)
         setFetchError(false)
+        saveScheduleCache(token, { schedules: s, generalSchedules: generals, scopeDisplayName: name })
       })
       .catch((e) => {
-        if (e?.code === 'functions/permission-denied' || e?.message?.includes('permission-denied')) {
+        const isPermission =
+          e?.code === 'functions/permission-denied' ||
+          e?.message?.includes('permission-denied')
+        if (isPermission) {
           setIsPrivate(true)
-        } else {
+        } else if (!cached) {
+          // 캐시 없을 때만 에러 표시 — 캐시 있으면 stale 데이터 유지
           setFetchError(true)
         }
       })
-      .finally(() => { setLoading(false); setRefreshing(false) })
+      .finally(() => { setIsInitialLoading(false); setRefreshing(false) })
   }, [token, refreshKey])
 
   const toggleLang = () => {
@@ -103,15 +150,12 @@ export default function PublicSchedulePage() {
     localStorage.setItem('publicLang', next)
   }
 
-  const lang = i18n.language
-
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.loading}>{t('public.loading')}</div>
-      </div>
-    )
+  const handleRefresh = () => {
+    if (token) clearScheduleCache(token)
+    setRefreshKey(k => k + 1)
   }
+
+  const lang = i18n.language
 
   if (isPrivate) {
     return (
@@ -179,7 +223,7 @@ export default function PublicSchedulePage() {
           </button>
           <button
             className={styles.langToggle}
-            onClick={() => setRefreshKey(k => k + 1)}
+            onClick={handleRefresh}
             disabled={refreshing}
             title={t('common.refresh')}
             aria-label={t('common.refresh')}
@@ -190,7 +234,9 @@ export default function PublicSchedulePage() {
       </header>
 
       <main className={styles.main}>
-        {monthKeys.length === 0 ? (
+        {isInitialLoading ? (
+          <SkeletonCards />
+        ) : monthKeys.length === 0 ? (
           <div className={styles.empty}>{t('public.empty')}</div>
         ) : (
           monthKeys.map((monthKey) => {
