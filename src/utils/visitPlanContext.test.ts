@@ -75,7 +75,7 @@ describe('findNearbyEvents', () => {
 
 describe('computeUnitBalance', () => {
   it('counts actual confirmed ward visits in window plus planned items', () => {
-    const units = [{ id: unit.id, name: unit.name }]
+    const units = [{ id: unit.id, name: unit.name.ko }]
     const schedules = [
       sched({ date: '2026-05-01' }),                       // 집계됨
       sched({ date: '2026-05-02', status: 'cancelled' }),  // 제외 (status)

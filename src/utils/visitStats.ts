@@ -84,11 +84,11 @@ function computeWardLastVisit(
   return WARDS
     .filter(w => inRegionScope(getRegionIdByUnit(w.unitId), allowedRegionIds, selected))
     .map(w => {
-      const last = latest.get(w.name) ?? null
+      const last = latest.get(w.name.ko) ?? null
       const daysSince = last ? dayjs(today).diff(dayjs(last), 'day') : null
       return {
         id: w.id,
-        name: w.name,
+        name: w.name.ko,
         regionId: getRegionIdByUnit(w.unitId)!,
         lastVisitDate: last,
         daysSince,
@@ -118,7 +118,7 @@ function computeUnitLastVisit(
       const daysSince = last ? dayjs(today).diff(dayjs(last), 'day') : null
       return {
         id: u.id,
-        name: u.name,
+        name: u.name.ko,
         regionId: u.regionId,
         lastVisitDate: last,
         daysSince,
@@ -161,7 +161,7 @@ export function computeVisitStats(
   for (const s of countSet) unitCounts.set(s.unitId, (unitCounts.get(s.unitId) ?? 0) + 1)
   const byUnit: CountEntry[] = ALL_UNITS
     .filter(u => inRegionScope(u.regionId, allowedRegionIds, filters.regionId))
-    .map(u => ({ id: u.id, name: u.name, count: unitCounts.get(u.id) ?? 0 }))
+    .map(u => ({ id: u.id, name: u.name.ko, count: unitCounts.get(u.id) ?? 0 }))
 
   const monthCounts = new Map<string, number>()
   for (const s of countSet) {

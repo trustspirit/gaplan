@@ -198,7 +198,7 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
                         e.target.checked ? [...prev, u.id] : prev.filter(x => x !== u.id)
                       )}
                     />
-                    {u.name}
+                    {u.name.ko}
                   </label>
                 ))}
             </div>

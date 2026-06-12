@@ -19,7 +19,7 @@ const DOW_KO = ['일', '월', '화', '수', '목', '금', '토']
 const DOW_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 function getUnitName(unitId: string) {
-  return ALL_UNITS.find((u) => u.id === unitId)?.name ?? unitId
+  return ALL_UNITS.find((u) => u.id === unitId)?.name.ko ?? unitId
 }
 
 function SkeletonCards() {

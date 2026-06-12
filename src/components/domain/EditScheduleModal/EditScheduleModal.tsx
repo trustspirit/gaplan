@@ -64,8 +64,8 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
   const unitPool = seventyRegionIds.length > 0
     ? ALL_UNITS.filter(u => seventyRegionIds.includes(u.regionId ?? ''))
     : ALL_UNITS
-  const unitOptions = unitPool.map(u => ({ value: u.id, label: u.name }))
-  const wardOptions = unitId ? getWardsByUnit(unitId).map(w => ({ value: w.name, label: w.name })) : []
+  const unitOptions = unitPool.map(u => ({ value: u.id, label: u.name.ko }))
+  const wardOptions = unitId ? getWardsByUnit(unitId).map(w => ({ value: w.name.ko, label: w.name.ko })) : []
   const presidentOptions = users
     .filter(u => u.role === 'president' && u.unitId === unitId && !!unitId)
     .map(u => ({ value: u.uid, label: u.preRegistered ? u.name : `${u.name} ✓` }))

@@ -22,7 +22,7 @@ import styles from './UserManagement.module.scss'
 
 const ROLE_OPTIONS = MANAGEABLE_ROLES.map(r => ({ value: r, label: ROLE_LABELS[r] }))
 const PRE_ROLE_OPTIONS = PRE_REG_ROLES.map(r => ({ value: r, label: ROLE_LABELS[r] }))
-const UNIT_OPTIONS = ALL_UNITS.map(u => ({ value: u.id, label: u.name }))
+const UNIT_OPTIONS = ALL_UNITS.map(u => ({ value: u.id, label: u.name.ko }))
 
 function EditUserModal({
   user,

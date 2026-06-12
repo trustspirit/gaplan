@@ -563,7 +563,7 @@ export function TaskProgress() {
   const getUnitName = (uid: string) => {
     const president = users.find(u => u.uid === uid)
     const unit = ALL_UNITS.find(u => u.id === president?.unitId)
-    return unit?.name ?? '-'
+    return unit?.name.ko ?? '-'
   }
 
   // Group tasks by regionId

@@ -8,7 +8,7 @@ export interface Region {
 
 export interface Unit {
   id: string
-  name: string
+  name: { ko: string; en: string }
   type: UnitType
   regionId: string
   presidentUid?: string

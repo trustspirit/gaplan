@@ -20,7 +20,7 @@ export function OnboardingPage() {
   const setUser = useSetAtom(authUserAtom)
   const navigate = useNavigate()
 
-  const unitOptions = ALL_UNITS.map(u => ({ value: u.id, label: u.name }))
+  const unitOptions = ALL_UNITS.map(u => ({ value: u.id, label: u.name.ko }))
 
   // Invited president → saves as president, pending user → saves as pending
   const isPending = currentUser?.role === 'pending'

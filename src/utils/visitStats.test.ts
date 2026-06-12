@@ -48,11 +48,11 @@ describe('severityOf', () => {
 describe('computeVisitStats - counts', () => {
   it('counts ward_visit + interview within period, excludes cancelled and meeting', () => {
     const schedules = [
-      mk({ type: 'ward_visit', date: '2026-05-01', wardName: ward.name }),
+      mk({ type: 'ward_visit', date: '2026-05-01', wardName: ward.name.ko }),
       mk({ type: 'interview', date: '2026-05-02' }),
       mk({ type: 'meeting', date: '2026-05-03' }),
       mk({ type: 'ward_visit', date: '2026-05-04', status: 'cancelled' }),
-      mk({ type: 'ward_visit', date: '2025-01-01', wardName: ward.name }),
+      mk({ type: 'ward_visit', date: '2025-01-01', wardName: ward.name.ko }),
     ]
     const stats = compute(schedules, { regionId: 'all', period: '3m' }, null, TODAY)
     const region = stats.byRegion.find(r => r.id === regionId)
@@ -62,7 +62,7 @@ describe('computeVisitStats - counts', () => {
   })
 
   it('builds a continuous monthly trend across the period', () => {
-    const schedules = [mk({ date: '2026-05-01', wardName: ward.name })]
+    const schedules = [mk({ date: '2026-05-01', wardName: ward.name.ko })]
     const stats = compute(schedules, { regionId: 'all', period: '3m' }, null, TODAY)
     const months = stats.monthlyTrend.map(m => m.month)
     expect(months).toContain('2026-03')
@@ -74,7 +74,7 @@ describe('computeVisitStats - counts', () => {
 
 describe('computeVisitStats - last visit & staleTopN', () => {
   it('ward mode: never-visited wards have null daysSince and sort first', () => {
-    const schedules = [mk({ type: 'ward_visit', date: '2026-06-01', wardName: ward.name })]
+    const schedules = [mk({ type: 'ward_visit', date: '2026-06-01', wardName: ward.name.ko })]
     const stats = compute(schedules, { regionId: regionId, period: '3m' }, null, TODAY)
     const visited = stats.lastVisit.find(w => w.id === ward.id)
     expect(visited?.lastVisitDate).toBe('2026-06-01')
@@ -85,14 +85,14 @@ describe('computeVisitStats - last visit & staleTopN', () => {
   })
 
   it('ward mode ignores interview type for recency', () => {
-    const schedules = [mk({ type: 'interview', date: '2026-06-01', wardName: ward.name })]
+    const schedules = [mk({ type: 'interview', date: '2026-06-01', wardName: ward.name.ko })]
     const stats = compute(schedules, { regionId: regionId, period: '3m' }, null, TODAY)
     const w = stats.lastVisit.find(x => x.id === ward.id)
     expect(w?.lastVisitDate).toBeNull()
   })
 
   it('recency uses full history, not the selected period', () => {
-    const schedules = [mk({ type: 'ward_visit', date: '2026-01-15', wardName: ward.name })]
+    const schedules = [mk({ type: 'ward_visit', date: '2026-01-15', wardName: ward.name.ko })]
     const stats = compute(schedules, { regionId: regionId, period: '3m' }, null, TODAY)
     const w = stats.lastVisit.find(x => x.id === ward.id)
     expect(w?.lastVisitDate).toBe('2026-01-15')
@@ -103,7 +103,7 @@ describe('computeVisitStats - region scope', () => {
   it('seventy scope excludes regions outside allowedRegionIds', () => {
     const otherUnit = ALL_UNITS.find(u => u.regionId !== regionId)!
     const schedules = [
-      mk({ unitId, date: '2026-05-01', wardName: ward.name }),
+      mk({ unitId, date: '2026-05-01', wardName: ward.name.ko }),
       mk({ unitId: otherUnit.id, date: '2026-05-01' }),
     ]
     const stats = compute(schedules, { regionId: 'all', period: '3m' }, [regionId], TODAY)
@@ -122,7 +122,7 @@ describe('computeVisitStats - unit granularity', () => {
 
   it('unit mode: never-visited unit has null daysSince', () => {
     const otherUnit = ALL_UNITS.find(u => u.id !== unitId && getRegionIdByUnit(u.id) === regionId)
-    const schedules = [mk({ type: 'ward_visit', date: '2026-06-05', wardName: ward.name })]
+    const schedules = [mk({ type: 'ward_visit', date: '2026-06-05', wardName: ward.name.ko })]
     const stats = compute(schedules, { regionId: regionId, period: '3m' }, null, TODAY)
     if (otherUnit) {
       const u = stats.lastVisit.find(x => x.id === otherUnit.id)

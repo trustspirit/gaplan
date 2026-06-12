@@ -19,12 +19,12 @@ export function AddVisitPanel({ staleWards, onAdd }: Props) {
   const [startTime, setStartTime] = useState('10:00')
   const [endTime, setEndTime] = useState('13:00')
 
-  const selectedWard = WARDS.find(w => w.name === wardName)
+  const selectedWard = WARDS.find(w => w.name.ko === wardName)
   const canAdd = !!selectedWard && !!date && startTime < endTime
 
   const handleAdd = () => {
     if (!selectedWard || !date) return
-    onAdd({ unitId: selectedWard.unitId, wardName: selectedWard.name, date, startTime, endTime })
+    onAdd({ unitId: selectedWard.unitId, wardName: selectedWard.name.ko, date, startTime, endTime })
     setWardName('')
     setDate('')
   }

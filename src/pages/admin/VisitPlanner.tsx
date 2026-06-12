@@ -177,7 +177,7 @@ export function VisitPlanner() {
                           <input type="checkbox" checked={selectedPresidents.has(p.uid)}
                             onChange={() => togglePresident(p.uid)} className={styles.checkbox} />
                           <span className={styles.presidentName}>{p.name}</span>
-                          {unit && <span className={styles.presidentUnit}>{unit.name}</span>}
+                          {unit && <span className={styles.presidentUnit}>{unit.name.ko}</span>}
                         </label>
                       )
                     })

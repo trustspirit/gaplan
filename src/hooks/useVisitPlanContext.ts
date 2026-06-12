@@ -64,7 +64,7 @@ export function useVisitPlanContext(seventyUid: string | undefined, planItems: V
   const balance: BalanceEntry[] = useMemo(() => {
     const units = ALL_UNITS
       .filter(u => regionIds.includes(u.regionId))
-      .map(u => ({ id: u.id, name: u.name }))
+      .map(u => ({ id: u.id, name: u.name.ko }))
     const since = dayjs(today).subtract(BALANCE_MONTHS, 'month').format('YYYY-MM-DD')
     return computeUnitBalance(units, schedules, planItems, since, today)
   }, [regionIds, schedules, planItems, today])

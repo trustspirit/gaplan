@@ -259,7 +259,7 @@ export function CalendarSettings() {
                   </div>
                   {getUnitsByRegion(region.id).map(unit => (
                     <div key={unit.id} className={`${styles.unitRow} ${styles.unitRowIndented}`}>
-                      <span className={styles.unitName}>{unit.name}</span>
+                      <span className={styles.unitName}>{unit.name.ko}</span>
                       <label className={styles.toggleLabel}>
                         <input
                           type="checkbox"

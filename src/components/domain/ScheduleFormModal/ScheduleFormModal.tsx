@@ -114,9 +114,9 @@ export function ScheduleFormModal({
     seventyRegionIds.length > 0
       ? ALL_UNITS.filter((u) => seventyRegionIds.includes(u.regionId ?? ''))
       : ALL_UNITS
-  const unitOptions = unitPool.map((u) => ({ value: u.id, label: u.name }))
+  const unitOptions = unitPool.map((u) => ({ value: u.id, label: u.name.ko }))
   const wardOptions = unitId
-    ? getWardsByUnit(unitId).map((w) => ({ value: w.name, label: w.name }))
+    ? getWardsByUnit(unitId).map((w) => ({ value: w.name.ko, label: w.name.ko }))
     : []
   const seventyOptions = seventyUsers.map((u) => ({
     value: u.uid,

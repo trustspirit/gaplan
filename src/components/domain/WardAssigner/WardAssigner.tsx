@@ -32,7 +32,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
     const base = Object.fromEntries(wards.map(w => [w.id, null as string | null]))
     if (initialAssignments) {
       for (const { wardName, date } of initialAssignments) {
-        const ward = wards.find(w => w.name === wardName)
+        const ward = wards.find(w => w.name.ko === wardName)
         if (ward) base[ward.id] = date
       }
     }
@@ -56,7 +56,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
   function buildResult(): { wardName: string; date: string }[] {
     return wards
       .filter(w => assignments[w.id])
-      .map(w => ({ wardName: w.name, date: assignments[w.id]! }))
+      .map(w => ({ wardName: w.name.ko, date: assignments[w.id]! }))
   }
 
   function detectWarnings(result: { wardName: string; date: string }[]): Warning[] {
@@ -79,7 +79,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
     }
 
     // 2. Unassigned wards
-    const unassigned = wards.filter(w => !assignments[w.id]).map(w => w.name)
+    const unassigned = wards.filter(w => !assignments[w.id]).map(w => w.name.ko)
     if (unassigned.length > 0) {
       found.push({
         type: 'missing',
@@ -154,7 +154,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
             return (
               <div key={ward.id} className={clsx(styles.wardRow, assigned && styles.wardRowAssigned)}>
                 <div className={styles.wardName}>
-                  <span className={styles.wardNameText}>{ward.name}</span>
+                  <span className={styles.wardNameText}>{ward.name.ko}</span>
                   {assigned && (
                     <span className={styles.wardAssignedBadge}>
                       {dayjs(assigned).format('M/D')}
@@ -179,7 +179,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
                         onClick={() => assign(ward.id, d)}
                         title={
                           otherWardOnDate
-                            ? `${otherWardOnDate.name} — ${t('ward.takenDateHint')}`
+                            ? `${otherWardOnDate.name.ko} — ${t('ward.takenDateHint')}`
                             : dayjs(d).format('M월 D일')
                         }
                       >
