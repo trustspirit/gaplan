@@ -1,11 +1,24 @@
 import { lazy, Suspense, type ComponentType } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useAtomValue } from 'jotai'
 import { ProtectedRoute } from './ProtectedRoute'
 import RespondPage from '@/pages/respond/RespondPage'
 import PublicSchedulePage from '@/pages/public/PublicSchedulePage'
 import { RoleRoute } from './RoleRoute'
 import { Spinner } from '@/components/ui'
+import { AppShell, TopBar } from '@/components/layout'
+import { authUserAtom } from '@/store/authAtom'
 import styles from './Router.module.scss'
+
+function ShellFallback() {
+  const currentUser = useAtomValue(authUserAtom)
+  if (!currentUser) return <div className={styles.loadingScreen}><Spinner /></div>
+  return (
+    <AppShell role={currentUser.role} name={currentUser.name} topBar={<TopBar name={currentUser.name} />}>
+      <div className={styles.loadingContent}><Spinner /></div>
+    </AppShell>
+  )
+}
 
 // After a deploy, tabs opened on the previous version hold an index.html that
 // references chunk hashes no longer on hosting — the dynamic import rejects.
@@ -52,7 +65,7 @@ const LeadersPage = lazyRetry(() => import('@/pages/admin/LeadersPage').then(m =
 export function AppRouter() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<div className={styles.loadingScreen}><Spinner /></div>}>
+      <Suspense fallback={<ShellFallback />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />

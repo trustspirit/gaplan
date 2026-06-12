@@ -1,3 +1,4 @@
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 .loadingScreen { min-height: 100dvh; @include flex-center; }
+.loadingContent { @include flex-center; height: 100%; }
