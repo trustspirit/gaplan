@@ -53,10 +53,11 @@ export const publicScheduleIcs = functions
         return
       }
 
-      // Resolve token and global flag in parallel
-      const [tokensSnap, settingsSnap] = await Promise.all([
+      // Resolve token, global flag, and per-unit flags in parallel
+      const [tokensSnap, settingsSnap, unitsSnap] = await Promise.all([
         admin.firestore().doc('settings/publicTokens').get(),
         admin.firestore().doc('settings/public').get(),
+        admin.firestore().doc('settings/publicUnits').get(),
       ])
 
       const scopeValue: string | undefined = tokensSnap.exists ? tokensSnap.data()?.[token] : undefined
@@ -77,7 +78,6 @@ export const publicScheduleIcs = functions
       let calName = '일정표'
 
       if (scopeValue !== '__all__') {
-        const unitsSnap = await admin.firestore().doc('settings/publicUnits').get()
         const unitEnabled = unitsSnap.exists && unitsSnap.data()?.[scopeValue]?.enabled === true
         if (!unitEnabled) {
           res.setHeader('Cache-Control', 'no-store')
@@ -98,10 +98,14 @@ export const publicScheduleIcs = functions
       cutoff.setDate(cutoff.getDate() - 7)
       const cutoffStr = cutoff.toISOString().split('T')[0]
 
-      // Query using (status, date) index; filter unitId in code
+      // Regional scopes query with unitId 'in' (≤6 units per CCM region, Firestore
+      // limit 30) backed by the (unitId, status, date) composite index; the
+      // stake-wide scope reads everything via the (status, date) index.
+      let schedulesQuery = admin.firestore()
+        .collection('schedules') as admin.firestore.Query
+      if (unitIds !== null) schedulesQuery = schedulesQuery.where('unitId', 'in', unitIds)
       const [schedulesSnap, unitsSnap2] = await Promise.all([
-        admin.firestore()
-          .collection('schedules')
+        schedulesQuery
           .where('status', '==', 'confirmed')
           .where('date', '>=', cutoffStr)
           .orderBy('date', 'asc')
@@ -118,8 +122,8 @@ export const publicScheduleIcs = functions
       const events: string[] = []
 
       schedulesSnap.docs.filter(d => {
-        const sd = d.data()
-        return unitSet === null || (unitSet.has(sd.unitId) && sd.type === 'ward_visit')
+        // Regional shares expose ward visits only
+        return unitSet === null || d.data().type === 'ward_visit'
       }).forEach((d) => {
         const data = d.data()
         const unitName = unitMap[data.unitId] ?? data.unitId ?? ''

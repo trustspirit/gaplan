@@ -27,10 +27,11 @@ export const getPublicSchedules = functions
       throw new functions.https.HttpsError('invalid-argument', 'token is required')
     }
 
-    // Resolve token and global flag in parallel
-    const [tokensSnap, settingsSnap] = await Promise.all([
+    // Resolve token, global flag, and per-unit flags in parallel
+    const [tokensSnap, settingsSnap, unitsSnap] = await Promise.all([
       admin.firestore().doc('settings/publicTokens').get(),
       admin.firestore().doc('settings/public').get(),
+      admin.firestore().doc('settings/publicUnits').get(),
     ])
 
     const scopeValue: string | undefined = tokensSnap.exists ? tokensSnap.data()?.[token] : undefined
@@ -50,7 +51,6 @@ export const getPublicSchedules = functions
 
     if (scopeValue !== '__all__') {
       // Check per-unit flag
-      const unitsSnap = await admin.firestore().doc('settings/publicUnits').get()
       const unitEnabled = unitsSnap.exists && unitsSnap.data()?.[scopeValue]?.enabled === true
 
       if (!unitEnabled) {
@@ -69,10 +69,13 @@ export const getPublicSchedules = functions
     cutoff.setDate(cutoff.getDate() - 7)
     const cutoffStr = cutoff.toISOString().split('T')[0]
 
-    // Query using (status, date) composite index — filter unitId in code to avoid
-    // needing a separate (unitId, status, date) composite index
-    const snap = await admin.firestore()
-      .collection('schedules')
+    // Regional scopes query with unitId 'in' (≤6 units per CCM region, Firestore
+    // limit 30) backed by the (unitId, status, date) composite index; the
+    // stake-wide scope reads everything via the (status, date) index.
+    let query = admin.firestore()
+      .collection('schedules') as admin.firestore.Query
+    if (unitIds !== null) query = query.where('unitId', 'in', unitIds)
+    const snap = await query
       .where('status', '==', 'confirmed')
       .where('date', '>=', cutoffStr)
       .orderBy('date', 'asc')
@@ -82,8 +85,8 @@ export const getPublicSchedules = functions
 
     const schedules: PublicSchedule[] = snap.docs
       .filter((d) => {
-        const sd = d.data()
-        return unitSet === null || (unitSet.has(sd.unitId) && sd.type === 'ward_visit')
+        // Regional shares expose ward visits only
+        return unitSet === null || d.data().type === 'ward_visit'
       })
       .map((d) => {
         const sd = d.data()
