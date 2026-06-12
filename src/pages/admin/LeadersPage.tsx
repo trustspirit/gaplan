@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Search } from 'lucide-react'
 import { useAtomValue } from 'jotai'
 import { useTranslation } from 'react-i18next'
@@ -7,63 +7,85 @@ import type { Leader } from '@/types/leader'
 import { authUserAtom } from '@/store/authAtom'
 import { AppShell, TopBar } from '@/components/layout'
 import { Skeleton } from '@/components/ui'
+import { ALL_UNITS, WARDS } from '@/constants/regions'
 import styles from './LeadersPage.module.scss'
 
-const PAGE_SIZE = 20
+const WARD_TO_UNIT_ID = new Map(WARDS.map(w => [w.name.ko, w.unitId]))
+const UNIT_ID_TO_NAME = new Map(ALL_UNITS.map(u => [u.id, u.name.ko]))
+
+interface WardGroup { wardNameKo: string; leaders: Leader[] }
+interface StakeGroup { stakeNameKo: string; stakeLeaders: Leader[]; wardGroups: WardGroup[] }
+
+function LeaderCard({ leader }: { leader: Leader }) {
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardInfo}>
+        <span className={styles.roleBadge}>{leader.role}</span>
+        <span className={styles.cardName}>{leader.name}</span>
+      </div>
+      {(leader.phone || leader.email) && (
+        <div className={styles.cardContacts}>
+          {leader.phone && (
+            <a href={`tel:${leader.phone}`} className={styles.contactLink} aria-label={`${leader.name} 전화`}>
+              {leader.phone}
+            </a>
+          )}
+          {leader.email && (
+            <a href={`mailto:${leader.email}`} className={styles.contactLink} aria-label={`${leader.name} 이메일`}>
+              {leader.email}
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function LeadersPage() {
   const { t } = useTranslation()
   const currentUser = useAtomValue(authUserAtom)!
   const { leaders, loading } = useLeaders()
   const [query, setQuery] = useState('')
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
-  const sentinelRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE)
-  }, [query])
 
   const filtered = useMemo(() => {
     const q = query.trim()
-    const list = q
+    return q
       ? leaders.filter(l => l.name.includes(q) || l.unitNameKo.includes(q))
       : leaders
-    return [...list].sort((a, b) => a.unitNameKo.localeCompare(b.unitNameKo, 'ko'))
   }, [leaders, query])
 
-  const visible = filtered.slice(0, visibleCount)
+  const groups = useMemo((): StakeGroup[] => {
+    type RawGroup = { stakeLeaders: Leader[]; wardLeaders: Map<string, Leader[]> }
+    const stakeMap = new Map<string, RawGroup>()
 
-  const groups = useMemo(() => {
-    const result: { unitName: string; leaders: Leader[] }[] = []
-    for (const leader of visible) {
-      const last = result[result.length - 1]
-      if (last?.unitName === leader.unitNameKo) {
-        last.leaders.push(leader)
+    for (const leader of filtered) {
+      const isStakeLevel = leader.role === '스테이크 회장' || leader.role === '지방부 회장'
+      if (isStakeLevel) {
+        let g = stakeMap.get(leader.unitNameKo)
+        if (!g) { g = { stakeLeaders: [], wardLeaders: new Map() }; stakeMap.set(leader.unitNameKo, g) }
+        g.stakeLeaders.push(leader)
       } else {
-        result.push({ unitName: leader.unitNameKo, leaders: [leader] })
+        const unitId = WARD_TO_UNIT_ID.get(leader.unitNameKo)
+        const stakeName = unitId ? UNIT_ID_TO_NAME.get(unitId) : undefined
+        if (!stakeName) continue
+        let g = stakeMap.get(stakeName)
+        if (!g) { g = { stakeLeaders: [], wardLeaders: new Map() }; stakeMap.set(stakeName, g) }
+        const list = g.wardLeaders.get(leader.unitNameKo) ?? []
+        if (!g.wardLeaders.has(leader.unitNameKo)) g.wardLeaders.set(leader.unitNameKo, list)
+        list.push(leader)
       }
     }
-    return result
-  }, [visible])
 
-  // Always update ref with latest filtered.length to avoid stale closure in observer
-  const loadMoreRef = useRef<() => void>(() => {})
-  loadMoreRef.current = () => {
-    setVisibleCount(prev => Math.min(prev + PAGE_SIZE, filtered.length))
-  }
-
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      entries => {
-        if (entries[0].isIntersecting) loadMoreRef.current()
-      },
-      { threshold: 0.1 },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+    return ALL_UNITS
+      .filter(u => stakeMap.has(u.name.ko))
+      .map(u => {
+        const g = stakeMap.get(u.name.ko)!
+        const wardGroups = WARDS
+          .filter(w => w.unitId === u.id && g.wardLeaders.has(w.name.ko))
+          .map(w => ({ wardNameKo: w.name.ko, leaders: g.wardLeaders.get(w.name.ko)! }))
+        return { stakeNameKo: u.name.ko, stakeLeaders: g.stakeLeaders, wardGroups }
+      })
+  }, [filtered])
 
   return (
     <AppShell
@@ -91,45 +113,24 @@ export function LeadersPage() {
           ) : groups.length === 0 ? (
             <p className={styles.empty}>{t('leaders.empty')}</p>
           ) : (
-            groups.map(group => (
-              <div key={group.unitName} className={styles.group}>
-                <h3 className={styles.groupHeader}>{group.unitName}</h3>
-                {group.leaders.map(leader => (
-                  <div key={leader.id} className={styles.card}>
-                    <div className={styles.cardInfo}>
-                      <span className={styles.roleBadge}>{leader.role}</span>
-                      <span className={styles.cardName}>{leader.name}</span>
-                    </div>
-                    {(leader.phone || leader.email) && (
-                      <div className={styles.cardContacts}>
-                        {leader.phone && (
-                          <a
-                            href={`tel:${leader.phone}`}
-                            className={styles.contactLink}
-                            aria-label={`${leader.name} 전화`}
-                          >
-                            {leader.phone}
-                          </a>
-                        )}
-                        {leader.email && (
-                          <a
-                            href={`mailto:${leader.email}`}
-                            className={styles.contactLink}
-                            aria-label={`${leader.name} 이메일`}
-                          >
-                            {leader.email}
-                          </a>
-                        )}
-                      </div>
-                    )}
+            groups.map(stakeGroup => (
+              <div key={stakeGroup.stakeNameKo} className={styles.stakeGroup}>
+                <h2 className={styles.stakeHeader}>{stakeGroup.stakeNameKo}</h2>
+                {stakeGroup.stakeLeaders.map(leader => (
+                  <LeaderCard key={leader.id} leader={leader} />
+                ))}
+                {stakeGroup.wardGroups.map(({ wardNameKo, leaders }) => (
+                  <div key={wardNameKo} className={styles.wardGroup}>
+                    <h3 className={styles.wardHeader}>{wardNameKo}</h3>
+                    {leaders.map(leader => (
+                      <LeaderCard key={leader.id} leader={leader} />
+                    ))}
                   </div>
                 ))}
               </div>
             ))
           )}
         </div>
-
-        <div ref={sentinelRef} className={styles.sentinel} />
       </div>
     </AppShell>
   )

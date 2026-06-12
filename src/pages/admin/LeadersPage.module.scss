@@ -57,18 +57,33 @@
   flex-direction: column;
 }
 
-.group {
-  margin-bottom: $space-4;
+.stakeGroup {
+  margin-bottom: $space-6;
 }
 
-.groupHeader {
-  font-size: $font-size-sm;
+.stakeHeader {
+  font-size: $font-size-base;
   font-weight: $font-weight-semibold;
+  color: $color-text;
+  margin: 0 0 $space-3;
+  padding: $space-2 0;
+  border-bottom: 2px solid $color-primary;
+  letter-spacing: 0.01em;
+}
+
+.wardGroup {
+  margin-top: $space-3;
+  margin-bottom: $space-2;
+  padding-left: $space-2;
+  border-left: 2px solid $color-border;
+}
+
+.wardHeader {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
   color: $color-text-muted;
   margin: 0 0 $space-2;
   padding: $space-1 0;
-  border-bottom: 1px solid $color-border;
-  letter-spacing: 0.02em;
 }
 
 .card {
@@ -131,10 +146,6 @@
 .skeletonItem {
   border-radius: $border-radius-lg;
   margin-bottom: $space-2;
-}
-
-.sentinel {
-  height: 1px;
 }
 
 .empty {

@@ -123,7 +123,7 @@ export function ScheduleItem({
             {isVisit && schedule.presidentAccompanied && (
               <span className={styles.presidentBadge} title="스테이크 회장 동행">
                 <UserCheck size={11} />
-                <span>회장 동행</span>
+                <span className={styles.presidentBadgeText}>회장 동행</span>
               </span>
             )}
             {schedule.zoomLink && (
