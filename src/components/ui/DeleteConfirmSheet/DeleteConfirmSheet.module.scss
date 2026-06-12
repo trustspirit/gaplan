@@ -17,5 +17,6 @@
 
 .actions {
   display: flex;
+  flex-direction: row;
   gap: $space-2;
 }
