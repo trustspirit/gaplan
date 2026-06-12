@@ -159,7 +159,7 @@ export const WARDS: WardUnit[] = [
   { id: 'gwangju-chungjang',name: '충장 와드', type: 'ward',   unitId: 'gwangju-stake' },
   // 부산 스테이크
   { id: 'busan-gwangan',  name: '광안 와드',  type: 'ward',   unitId: 'busan-stake' },
-  { id: 'busan-goejeong', name: '괴정 지부',  type: 'branch', unitId: 'busan-stake' },
+  { id: 'busan-goejeong', name: '명지 지부',  type: 'branch', unitId: 'busan-stake' },
   { id: 'busan-gupo',     name: '구포 지부',  type: 'branch', unitId: 'busan-stake' },
   { id: 'busan-geumjeong',name: '금정 와드',  type: 'ward',   unitId: 'busan-stake' },
   { id: 'busan-gimhae',   name: '김해 와드',  type: 'ward',   unitId: 'busan-stake' },
