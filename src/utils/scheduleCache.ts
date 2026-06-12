@@ -19,12 +19,13 @@ function cacheKey(token: string) {
 }
 
 export function loadScheduleCache(token: string): ScheduleCacheData | null {
+  const key = cacheKey(token)
   try {
-    const raw = sessionStorage.getItem(cacheKey(token))
+    const raw = sessionStorage.getItem(key)
     if (!raw) return null
     const entry: CacheEntry = JSON.parse(raw)
     if (Date.now() - entry.cachedAt > CACHE_TTL) {
-      sessionStorage.removeItem(cacheKey(token))
+      sessionStorage.removeItem(key)
       return null
     }
     return entry.data
@@ -43,5 +44,9 @@ export function saveScheduleCache(token: string, data: ScheduleCacheData): void 
 }
 
 export function clearScheduleCache(token: string): void {
-  sessionStorage.removeItem(cacheKey(token))
+  try {
+    sessionStorage.removeItem(cacheKey(token))
+  } catch {
+    // 무시
+  }
 }
