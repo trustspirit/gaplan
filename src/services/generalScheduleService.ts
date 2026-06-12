@@ -8,6 +8,7 @@ import { httpsCallable } from 'firebase/functions'
 import dayjs from 'dayjs'
 import { db, functions } from '@/firebase'
 import type { GeneralSchedule } from '@/types'
+import { mapDocs, snapshotErrHandler } from './_utils'
 
 export function subscribeToGeneralSchedules(
   callback: (schedules: GeneralSchedule[]) => void,
@@ -21,8 +22,8 @@ export function subscribeToGeneralSchedules(
   )
   return onSnapshot(
     q,
-    snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as GeneralSchedule)),
-    err => { console.error('[generalSchedules] onSnapshot error:', err.code, err.message); onError?.(err) },
+    snap => callback(mapDocs<GeneralSchedule>(snap)),
+    snapshotErrHandler('generalSchedules', onError),
   )
 }
 
@@ -66,7 +67,7 @@ export async function fetchPublicGeneralSchedules(): Promise<GeneralSchedule[]> 
     orderBy('date', 'asc'),
   )
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as GeneralSchedule)
+  return mapDocs<GeneralSchedule>(snap)
 }
 
 export async function registerAttendance(generalScheduleId: string): Promise<void> {

@@ -1,10 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { LeadersPage } from './LeadersPage'
 import * as useLeadersModule from '@/hooks/useLeaders'
 import type { Leader } from '@/types/leader'
 
 vi.mock('@/hooks/useLeaders')
+
+beforeAll(() => {
+  global.IntersectionObserver = vi.fn().mockImplementation(() => ({
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+    unobserve: vi.fn(),
+  })) as unknown as typeof IntersectionObserver
+})
 vi.mock('jotai', () => ({
   atom: vi.fn(),
   useAtomValue: vi.fn().mockReturnValue({ uid: 'test', role: 'admin', name: '관리자' }),

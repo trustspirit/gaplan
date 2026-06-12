@@ -5,9 +5,8 @@ import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
 import type { Schedule } from '@/types'
 import { DeleteConfirmSheet } from '@/components/ui'
+import { DOW_LABELS } from '@/utils/date'
 import styles from './ScheduleItem.module.scss'
-
-const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토']
 
 function buildGCalUrl(schedule: Schedule, unitName: string): string {
   const locationLabel = schedule.wardName ? `${unitName} ${schedule.wardName}` : unitName

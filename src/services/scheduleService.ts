@@ -6,6 +6,7 @@ import { httpsCallable } from 'firebase/functions'
 import dayjs from 'dayjs'
 import { db, functions } from '@/firebase'
 import type { Schedule, TimeSlot } from '@/types'
+import { mapDocs, snapshotErrHandler } from './_utils'
 
 export function subscribeToSchedules(
   filters: { presidentUid?: string; seventyUid?: string },
@@ -27,11 +28,8 @@ export function subscribeToSchedules(
   return onSnapshot(
     q,
     { includeMetadataChanges: true },
-    snap => callback(
-      snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule),
-      snap.metadata.fromCache,
-    ),
-    err => { console.error('[schedules] onSnapshot error:', err.code, err.message); onError?.(err) },
+    snap => callback(mapDocs<Schedule>(snap), snap.metadata.fromCache),
+    snapshotErrHandler('schedules', onError),
   )
 }
 
@@ -47,7 +45,7 @@ export async function fetchSchedulesInRange(
     orderBy('date', 'asc'),
   )
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule)
+  return mapDocs<Schedule>(snap)
 }
 
 // 역할 스코프 1회 조회 — seventy/exec_secretary는 담당 지역 unit ∪ 담당 일정만 (CF가 서버에서 필터).

@@ -1,18 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useFirestoreSubscription } from './useFirestoreSubscription'
 import { subscribeToProjects } from '@/services/projectService'
 import type { Project } from '@/types'
 
 export function useProjects() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const unsub = subscribeToProjects(
-      data => { setProjects(data); setLoading(false) },
-      () => setLoading(false),
-    )
-    return unsub
-  }, [])
-
+  const { data: projects, loading } = useFirestoreSubscription<Project>(subscribeToProjects)
   return { projects, loading }
 }

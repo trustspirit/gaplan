@@ -6,6 +6,7 @@ import {
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/firebase'
 import type { Task, RespondedSlot } from '@/types'
+import { mapDocs, snapshotErrHandler } from './_utils'
 
 // President: pending + responded tasks (responded = awaiting admin/seventy confirmation)
 export function subscribeToTasks(assignedTo: string, callback: (tasks: Task[]) => void): Unsubscribe {
@@ -16,8 +17,8 @@ export function subscribeToTasks(assignedTo: string, callback: (tasks: Task[]) =
     orderBy('dueDate', 'asc'),
   )
   return onSnapshot(q,
-    snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Task)),
-    err => console.error('[tasks] onSnapshot error:', err.code, err.message),
+    snap => callback(mapDocs<Task>(snap)),
+    snapshotErrHandler('tasks'),
   )
 }
 
@@ -31,8 +32,8 @@ export function subscribeToAllTasks(
     q = query(q, where('seventyUid', '==', seventyUid))
   }
   return onSnapshot(q,
-    snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Task)),
-    err => console.error('[tasks] onSnapshot error:', err.code, err.message),
+    snap => callback(mapDocs<Task>(snap)),
+    snapshotErrHandler('tasks'),
   )
 }
 

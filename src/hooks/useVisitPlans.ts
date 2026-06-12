@@ -1,18 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useFirestoreSubscription } from './useFirestoreSubscription'
 import { subscribeToVisitPlans } from '@/services/visitPlanService'
 import type { VisitPlan } from '@/types'
 
 export function useVisitPlans() {
-  const [plans, setPlans] = useState<VisitPlan[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const unsub = subscribeToVisitPlans(
-      data => { setPlans(data); setLoading(false) },
-      () => setLoading(false),
-    )
-    return unsub
-  }, [])
-
+  const { data: plans, loading } = useFirestoreSubscription<VisitPlan>(subscribeToVisitPlans)
   return { plans, loading }
 }

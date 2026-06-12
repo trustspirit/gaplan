@@ -6,6 +6,7 @@ import {
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/firebase'
 import type { VisitPlan, VisitPlanItem } from '@/types'
+import { mapDocs, snapshotErrHandler } from './_utils'
 
 export function subscribeToVisitPlans(
   callback: (plans: VisitPlan[]) => void,
@@ -14,8 +15,8 @@ export function subscribeToVisitPlans(
   const q = query(collection(db, 'visitPlans'), orderBy('createdAt', 'desc'))
   return onSnapshot(
     q,
-    snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as VisitPlan)),
-    err => { console.error('[visitPlans] onSnapshot error:', err.code, err.message); onError?.(err) },
+    snap => callback(mapDocs<VisitPlan>(snap)),
+    snapshotErrHandler('visitPlans', onError),
   )
 }
 

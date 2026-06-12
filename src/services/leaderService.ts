@@ -1,6 +1,7 @@
 import { collection, onSnapshot, type Unsubscribe } from 'firebase/firestore'
 import { db } from '@/firebase'
 import type { Leader } from '@/types/leader'
+import { mapDocs, snapshotErrHandler } from './_utils'
 
 export function subscribeToLeaders(
   onData: (leaders: Leader[]) => void,
@@ -8,10 +9,7 @@ export function subscribeToLeaders(
 ): Unsubscribe {
   return onSnapshot(
     collection(db, 'leaders'),
-    snap => onData(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Leader)),
-    err => {
-      console.error('[leaders] onSnapshot error:', err.code, err.message)
-      onError?.(err)
-    },
+    snap => onData(mapDocs<Leader>(snap)),
+    snapshotErrHandler('leaders', onError),
   )
 }

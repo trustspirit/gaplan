@@ -3,9 +3,8 @@ import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
 import type { GeneralSchedule } from '@/types'
+import { DOW_LABELS } from '@/utils/date'
 import styles from './GeneralEventItem.module.scss'
-
-const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토']
 
 const CATEGORY_ICONS = {
   conference: Building2,

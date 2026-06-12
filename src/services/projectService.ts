@@ -5,6 +5,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import type { Project, ProjectStatus } from '@/types'
+import { mapDocs, snapshotErrHandler } from './_utils'
 
 export function subscribeToProjects(
   callback: (projects: Project[]) => void,
@@ -13,8 +14,8 @@ export function subscribeToProjects(
   const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'))
   return onSnapshot(
     q,
-    snap => callback(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Project)),
-    err => { console.error('[projects] onSnapshot error:', err.code, err.message); onError?.(err) },
+    snap => callback(mapDocs<Project>(snap)),
+    snapshotErrHandler('projects', onError),
   )
 }
 

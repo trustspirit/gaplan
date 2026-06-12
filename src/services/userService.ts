@@ -6,6 +6,7 @@ import {
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/firebase'
 import type { AppUser, UserRole, SecondaryRole } from '@/types'
+import { snapshotErrHandler } from './_utils'
 
 export async function inviteUser(
   email: string,
@@ -28,11 +29,14 @@ export async function inviteUser(
   })
 }
 
-export function subscribeToUsers(callback: (users: AppUser[]) => void): Unsubscribe {
+export function subscribeToUsers(
+  callback: (users: AppUser[]) => void,
+  onError?: (e: Error) => void,
+): Unsubscribe {
   return onSnapshot(
     collection(db, 'users'),
     snap => callback(snap.docs.map(d => ({ uid: d.id, ...d.data() }) as AppUser)),
-    err => console.error('[users] onSnapshot error:', err.code, err.message),
+    snapshotErrHandler('users', onError),
   )
 }
 
