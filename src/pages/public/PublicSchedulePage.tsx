@@ -108,6 +108,8 @@ export default function PublicSchedulePage() {
       return
     }
 
+    let cancelled = false
+
     // 동기 캐시 체크 — 캐시 히트 시 즉시 렌더 (스켈레톤 스킵)
     const cached = loadScheduleCache(token)
     if (cached) {
@@ -124,6 +126,7 @@ export default function PublicSchedulePage() {
       fetchPublicGeneralSchedules().catch(() => [] as GeneralSchedule[]),
     ])
       .then(([{ schedules: s, scopeDisplayName: name }, generals]) => {
+        if (cancelled) return
         setSchedules(s)
         setScopeDisplayName(name)
         setGeneralSchedules(generals)
@@ -131,6 +134,7 @@ export default function PublicSchedulePage() {
         saveScheduleCache(token, { schedules: s, generalSchedules: generals, scopeDisplayName: name })
       })
       .catch((e) => {
+        if (cancelled) return
         const isPermission =
           e?.code === 'functions/permission-denied' ||
           e?.message?.includes('permission-denied')
@@ -139,9 +143,17 @@ export default function PublicSchedulePage() {
         } else if (!cached) {
           // 캐시 없을 때만 에러 표시 — 캐시 있으면 stale 데이터 유지
           setFetchError(true)
+        } else {
+          console.warn('[PublicSchedulePage] background refresh failed:', e)
         }
       })
-      .finally(() => { setIsInitialLoading(false); setRefreshing(false) })
+      .finally(() => {
+        if (cancelled) return
+        setIsInitialLoading(false)
+        setRefreshing(false)
+      })
+
+    return () => { cancelled = true }
   }, [token, refreshKey])
 
   const toggleLang = () => {
