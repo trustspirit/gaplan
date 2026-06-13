@@ -18,8 +18,10 @@ import styles from './PublicSchedulePage.module.scss'
 const DOW_KO = ['일', '월', '화', '수', '목', '금', '토']
 const DOW_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-function getUnitName(unitId: string) {
-  return ALL_UNITS.find((u) => u.id === unitId)?.name.ko ?? unitId
+function getUnitName(unitId: string, lang: string) {
+  const unit = ALL_UNITS.find((u) => u.id === unitId)
+  if (!unit) return unitId
+  return lang === 'en' ? unit.name.en : unit.name.ko
 }
 
 function SkeletonCards() {
@@ -297,7 +299,7 @@ export default function PublicSchedulePage() {
                     const isPast = date.isBefore(dayjs(), 'day')
                     const isVisit = s.type === 'ward_visit'
                     const isMeeting = s.type === 'meeting'
-                    const unitName = getUnitName(s.unitId)
+                    const unitName = getUnitName(s.unitId, lang)
                     const displayTitle = s.customTitle
                       ?? (unitName + (s.wardName ? ` · ${s.wardName}` : ''))
                     const safeZoom = s.zoomLink && /^https?:\/\//i.test(s.zoomLink) ? s.zoomLink : null
