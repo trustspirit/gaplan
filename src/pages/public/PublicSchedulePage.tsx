@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
 import { Video, CalendarDays, Building2, MoonStar, RefreshCw, CalendarPlus, FileText, ChevronUp, UserCheck } from 'lucide-react'
-import { ALL_UNITS } from '@/constants/regions'
+import { ALL_UNITS, WARDS } from '@/constants/regions'
 import { fetchPublicSchedules, type PublicScheduleItem } from '@/services/scheduleService'
 import { fetchPublicGeneralSchedules } from '@/services/generalScheduleService'
 import type { GeneralSchedule } from '@/types'
@@ -22,6 +22,11 @@ function getUnitName(unitId: string, lang: string) {
   const unit = ALL_UNITS.find((u) => u.id === unitId)
   if (!unit) return unitId
   return lang === 'en' ? unit.name.en : unit.name.ko
+}
+
+function getWardName(wardNameKo: string, lang: string) {
+  if (lang !== 'en') return wardNameKo
+  return WARDS.find((w) => w.name.ko === wardNameKo)?.name.en ?? wardNameKo
 }
 
 function SkeletonCards() {
@@ -301,7 +306,7 @@ export default function PublicSchedulePage() {
                     const isMeeting = s.type === 'meeting'
                     const unitName = getUnitName(s.unitId, lang)
                     const displayTitle = s.customTitle
-                      ?? (unitName + (s.wardName ? ` · ${s.wardName}` : ''))
+                      ?? (unitName + (s.wardName ? ` · ${getWardName(s.wardName, lang)}` : ''))
                     const safeZoom = s.zoomLink && /^https?:\/\//i.test(s.zoomLink) ? s.zoomLink : null
                     const hasNotes = !!s.notes?.trim()
                     const notesOpen = openNotes.has(s.id)
