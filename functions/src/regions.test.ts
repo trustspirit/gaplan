@@ -50,7 +50,7 @@ describe('regions', () => {
   describe('getScopeDisplayName', () => {
     it('returns Korean display name for seoul region', () => {
       const result = getScopeDisplayName('seoul')
-      expect(result).toBe('서울 CCM')
+      expect(result).toBe('서울 CC')
     })
 
     it('returns Korean display name for busan-stake unit', () => {

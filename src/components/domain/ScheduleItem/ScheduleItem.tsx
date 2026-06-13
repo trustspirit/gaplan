@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
 import type { Schedule } from '@/types'
+import { useUnits } from '@/hooks/useUnits'
 import { DeleteConfirmSheet } from '@/components/ui'
 import { DOW_LABELS } from '@/utils/date'
 import styles from './ScheduleItem.module.scss'
@@ -61,6 +62,7 @@ export function ScheduleItem({
   onDelete,
 }: ScheduleItemProps) {
   const { t } = useTranslation()
+  const { getWardName } = useUnits()
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null)
   const [notesOpen, setNotesOpen] = useState(false)
@@ -112,7 +114,7 @@ export function ScheduleItem({
             </div>
             <p className={styles.unit}>
               {schedule.customTitle ?? unitName}
-              {!schedule.customTitle && schedule.wardName && <span className={styles.wardName}> · {schedule.wardName}</span>}
+              {!schedule.customTitle && schedule.wardName && <span className={styles.wardName}> · {getWardName(schedule.wardName)}</span>}
               {isAttendance && (
                 <span className={styles.verifiedBadge} aria-label="참석 확인됨">
                   <Check size={9} strokeWidth={3.5} />

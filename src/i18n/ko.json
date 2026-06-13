@@ -347,7 +347,7 @@
     "schedulePublicOn": "공개 활성화됨",
     "schedulePublicOff": "비공개 (기본값)",
     "perUnitPublicTitle": "지방부별 공개 일정표",
-    "perUnitPublicDesc": "지방부/CCM별로 공개 여부와 공유 링크를 관리합니다."
+    "perUnitPublicDesc": "지방부/CC별로 공개 여부와 공유 링크를 관리합니다."
   },
   "visits": {
     "title": "와드 방문 일정",
@@ -422,9 +422,9 @@
     "secondaryRole": "보조 역할 (선택)"
   },
   "region": {
-    "seoul": "서울 CCM",
-    "seoulSouth": "서울남 CCM",
-    "busan": "부산 CCM"
+    "seoul": "서울 CC",
+    "seoulSouth": "서울남 CC",
+    "busan": "부산 CC"
   },
   "slotDuration": {
     "label": "슬롯 길이 (분)",

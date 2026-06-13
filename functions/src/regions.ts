@@ -8,9 +8,9 @@ const REGION_UNITS: Record<string, string[]> = {
 
 // All scope display names (regions + units)
 const SCOPE_NAMES: Record<string, string> = {
-  'seoul': '서울 CCM',
-  'seoul-south': '서울남 CCM',
-  'busan': '부산 CCM',
+  'seoul': '서울 CC',
+  'seoul-south': '서울남 CC',
+  'busan': '부산 CC',
   'seoul-stake': '서울 스테이크',
   'seoul-east-stake': '서울동 스테이크',
   'seoul-south-stake': '서울남 스테이크',

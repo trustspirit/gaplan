@@ -40,7 +40,7 @@ export function CalendarPage() {
       setSyncing(false)
     }
   }
-  const { getUnitName } = useUnits()
+  const { getUnitName, getWardName } = useUnits()
   const filters = user.role === 'president'
     ? { presidentUid: user.uid }
     : user.role === 'seventy'
@@ -105,7 +105,7 @@ export function CalendarPage() {
       .filter(s => s.date >= range.start && s.date <= range.end && s.status === 'confirmed')
       .map(s => {
         const d = dayjs(s.date)
-        const title = s.customTitle ?? (s.wardName ? `${getUnitName(s.unitId)} ${s.wardName}` : getUnitName(s.unitId))
+        const title = s.customTitle ?? (s.wardName ? `${getUnitName(s.unitId)} ${getWardName(s.wardName)}` : getUnitName(s.unitId))
         return [s.date, DOW[d.day()], TYPE_LABEL[s.type] ?? s.type, title, s.startTime, s.endTime, '확정']
       })
 

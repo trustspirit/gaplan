@@ -11,10 +11,12 @@ import { ALL_UNITS, WARDS } from '@/constants/regions'
 import styles from './LeadersPage.module.scss'
 
 const WARD_TO_UNIT_ID = new Map(WARDS.map(w => [w.name.ko, w.unitId]))
-const UNIT_ID_TO_NAME = new Map(ALL_UNITS.map(u => [u.id, u.name.ko]))
+const UNIT_ID_TO_NAME = new Map(ALL_UNITS.map(u => [u.id, u.name]))
+const WARD_KO_TO_NAME = new Map(WARDS.map(w => [w.name.ko, w.name]))
 
-interface WardGroup { wardNameKo: string; leaders: Leader[] }
-interface StakeGroup { stakeNameKo: string; stakeLeaders: Leader[]; wardGroups: WardGroup[] }
+interface BilingualName { ko: string; en: string }
+interface WardGroup { wardName: BilingualName; leaders: Leader[] }
+interface StakeGroup { stakeName: BilingualName; stakeLeaders: Leader[]; wardGroups: WardGroup[] }
 
 function LeaderCard({ leader }: { leader: Leader }) {
   return (
@@ -42,15 +44,20 @@ function LeaderCard({ leader }: { leader: Leader }) {
 }
 
 export function LeadersPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.language === 'en' ? 'en' : 'ko'
   const currentUser = useAtomValue(authUserAtom)!
   const { leaders, loading } = useLeaders()
   const [query, setQuery] = useState('')
 
   const filtered = useMemo(() => {
-    const q = query.trim()
+    const q = query.trim().toLowerCase()
     return q
-      ? leaders.filter(l => l.name.includes(q) || l.unitNameKo.includes(q))
+      ? leaders.filter(l =>
+          l.name.toLowerCase().includes(q) ||
+          l.unitNameKo.toLowerCase().includes(q) ||
+          l.unitNameEn.toLowerCase().includes(q)
+        )
       : leaders
   }, [leaders, query])
 
@@ -66,7 +73,7 @@ export function LeadersPage() {
         g.stakeLeaders.push(leader)
       } else {
         const unitId = WARD_TO_UNIT_ID.get(leader.unitNameKo)
-        const stakeName = unitId ? UNIT_ID_TO_NAME.get(unitId) : undefined
+        const stakeName = unitId ? UNIT_ID_TO_NAME.get(unitId)?.ko : undefined
         if (!stakeName) continue
         let g = stakeMap.get(stakeName)
         if (!g) { g = { stakeLeaders: [], wardLeaders: new Map() }; stakeMap.set(stakeName, g) }
@@ -82,8 +89,11 @@ export function LeadersPage() {
         const g = stakeMap.get(u.name.ko)!
         const wardGroups = WARDS
           .filter(w => w.unitId === u.id && g.wardLeaders.has(w.name.ko))
-          .map(w => ({ wardNameKo: w.name.ko, leaders: g.wardLeaders.get(w.name.ko)! }))
-        return { stakeNameKo: u.name.ko, stakeLeaders: g.stakeLeaders, wardGroups }
+          .map(w => ({
+            wardName: WARD_KO_TO_NAME.get(w.name.ko) ?? w.name,
+            leaders: g.wardLeaders.get(w.name.ko)!,
+          }))
+        return { stakeName: u.name, stakeLeaders: g.stakeLeaders, wardGroups }
       })
   }, [filtered])
 
@@ -114,14 +124,14 @@ export function LeadersPage() {
             <p className={styles.empty}>{t('leaders.empty')}</p>
           ) : (
             groups.map(stakeGroup => (
-              <div key={stakeGroup.stakeNameKo} className={styles.stakeGroup}>
-                <h2 className={styles.stakeHeader}>{stakeGroup.stakeNameKo}</h2>
+              <div key={stakeGroup.stakeName.ko} className={styles.stakeGroup}>
+                <h2 className={styles.stakeHeader}>{stakeGroup.stakeName[lang]}</h2>
                 {stakeGroup.stakeLeaders.map(leader => (
                   <LeaderCard key={leader.id} leader={leader} />
                 ))}
-                {stakeGroup.wardGroups.map(({ wardNameKo, leaders }) => (
-                  <div key={wardNameKo} className={styles.wardGroup}>
-                    <h3 className={styles.wardHeader}>{wardNameKo}</h3>
+                {stakeGroup.wardGroups.map(({ wardName, leaders }) => (
+                  <div key={wardName.ko} className={styles.wardGroup}>
+                    <h3 className={styles.wardHeader}>{wardName[lang]}</h3>
                     {leaders.map(leader => (
                       <LeaderCard key={leader.id} leader={leader} />
                     ))}

@@ -53,9 +53,9 @@ export function getUnitName(
 }
 
 export const REGIONS: Region[] = [
-  { id: 'seoul', name: '서울 CCM' },
-  { id: 'seoul-south', name: '서울남 CCM' },
-  { id: 'busan', name: '부산 CCM' },
+  { id: 'seoul', name: '서울 CC' },
+  { id: 'seoul-south', name: '서울남 CC' },
+  { id: 'busan', name: '부산 CC' },
 ]
 
 // 서울 CC: 서울, 서울동, 서울남, 서울서, 강릉, 미군

@@ -347,7 +347,7 @@
     "schedulePublicOn": "Public access on",
     "schedulePublicOff": "Private (default)",
     "perUnitPublicTitle": "Per-Unit Public Schedule",
-    "perUnitPublicDesc": "Manage public access and share links per unit or CCM."
+    "perUnitPublicDesc": "Manage public access and share links per unit or CC."
   },
   "visits": {
     "title": "Ward Visit Schedule",
@@ -422,9 +422,9 @@
     "secondaryRole": "Secondary Role (optional)"
   },
   "region": {
-    "seoul": "Seoul CCM",
-    "seoulSouth": "Seoul South CCM",
-    "busan": "Busan CCM"
+    "seoul": "Seoul CC",
+    "seoulSouth": "Seoul South CC",
+    "busan": "Busan CC"
   },
   "slotDuration": {
     "label": "Slot Duration (minutes)",
