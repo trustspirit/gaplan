@@ -1,6 +1,6 @@
 import {
   collection, query, where, orderBy,
-  onSnapshot, addDoc, updateDoc, deleteDoc,
+  onSnapshot, addDoc, updateDoc,
   doc, getDocs, serverTimestamp, writeBatch,
   type Unsubscribe,
 } from 'firebase/firestore'

@@ -58,7 +58,8 @@ export function TaskCreation() {
   function togglePresident(uid: string) {
     setSelectedPresidents(prev => {
       const next = new Set(prev)
-      next.has(uid) ? next.delete(uid) : next.add(uid)
+      if (next.has(uid)) next.delete(uid)
+      else next.add(uid)
       return next
     })
   }
@@ -275,7 +276,8 @@ export function TaskCreation() {
                     onSetCell={(key, on) => {
                       setPaintedCells(prev => {
                         const next = new Set(prev)
-                        on ? next.add(key) : next.delete(key)
+                        if (on) next.add(key)
+                        else next.delete(key)
                         return next
                       })
                     }}

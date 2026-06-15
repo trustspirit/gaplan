@@ -40,14 +40,6 @@ const isActiveSchedule = (schedule: Schedule) => schedule.status === 'confirmed'
 const sortSchedulesByDate = (a: Schedule, b: Schedule) =>
   a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime)
 
-const getUpcomingSchedules = (schedules: Schedule[]) =>
-  schedules
-    .filter(
-      (schedule) =>
-        isActiveSchedule(schedule) && dayjs(schedule.date).isAfter(dayjs().subtract(1, 'day')),
-    )
-    .sort(sortSchedulesByDate)
-
 const getThisMonthScheduleCount = (schedules: Schedule[]) =>
   schedules.filter(
     (schedule) =>

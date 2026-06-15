@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
@@ -13,6 +13,7 @@ import {
   saveScheduleCache,
   clearScheduleCache,
 } from '@/utils/scheduleCache'
+import { getTodayMarkerPlacement } from './todayMarker'
 import styles from './PublicSchedulePage.module.scss'
 
 const DOW_KO = ['일', '월', '화', '수', '목', '금', '토']
@@ -60,7 +61,6 @@ function NotesText({ text, linkClass, textClass }: { text: string; linkClass: st
   const parts: React.ReactNode[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null
-  // eslint-disable-next-line no-cond-assign
   while ((match = urlRegex.exec(text)) !== null) {
     if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
     const url = match[0]
@@ -221,6 +221,14 @@ export default function PublicSchedulePage() {
     })
   }
   const monthKeys = [...mergedMap.keys()].sort()
+  const today = dayjs().format('YYYY-MM-DD')
+  const todayMarkerPlacement = getTodayMarkerPlacement(
+    monthKeys.map(monthKey => ({
+      groupKey: monthKey,
+      dates: mergedMap.get(monthKey)!.map(entry => entry.data.date),
+    })),
+    today,
+  )
   const { icsWebcal, googleUrl } = buildSubscribeUrls(token!)
 
   const typeLabel = (type: string) => {
@@ -231,6 +239,23 @@ export default function PublicSchedulePage() {
   }
 
   const dowLabels = lang === 'ko' ? DOW_KO : DOW_EN
+  const renderTodayMarker = (monthKey: string, itemIndex: number) => {
+    if (
+      todayMarkerPlacement?.groupKey !== monthKey ||
+      todayMarkerPlacement.itemIndex !== itemIndex
+    ) return null
+
+    return (
+      <div className={styles.todayMarker}>
+        <span className={styles.todayMarkerLine} />
+        <span className={styles.todayMarkerLabel}>
+          {t('public.todayMarker')}
+        </span>
+        <span className={styles.todayMarkerDate}>{dayjs(today).format('M.D')}</span>
+        <span className={styles.todayMarkerLine} />
+      </div>
+    )
+  }
 
   return (
     <div className={styles.page}>
@@ -266,7 +291,7 @@ export default function PublicSchedulePage() {
               <section key={monthKey} className={styles.monthGroup}>
                 <h2 className={styles.monthLabel}>{monthLabel}</h2>
                 <div className={styles.itemList}>
-                  {mergedMap.get(monthKey)!.map(entry => {
+                  {mergedMap.get(monthKey)!.map((entry, entryIndex) => {
                     if (entry.kind === 'general') {
                       const gs = entry.data
                       const ICONS = { conference: Building2, fasting: MoonStar, other: CalendarDays } as const
@@ -278,7 +303,9 @@ export default function PublicSchedulePage() {
                           ? (lang === 'ko' ? '금식' : 'Fasting')
                           : (lang === 'ko' ? '기타' : 'Other')
                       return (
-                        <div key={`gs-${gs.id}`} className={styles.scheduleRow}>
+                        <Fragment key={`gs-${gs.id}`}>
+                          {renderTodayMarker(monthKey, entryIndex)}
+                          <div className={styles.scheduleRow}>
                           <div className={clsx(styles.colorBar, styles[`general_${gs.category}`])} />
                           <div className={clsx(styles.dateCol, styles[`general_${gs.category}`])}>
                             <span className={styles.date}>{gDate.format('M.D')}</span>
@@ -294,7 +321,8 @@ export default function PublicSchedulePage() {
                               <p className={styles.time}>{gs.startTime} – {gs.endTime}</p>
                             )}
                           </div>
-                        </div>
+                          </div>
+                        </Fragment>
                       )
                     }
 
@@ -312,7 +340,9 @@ export default function PublicSchedulePage() {
                     const notesOpen = openNotes.has(s.id)
 
                     return (
-                      <div key={s.id} className={styles.scheduleRow} data-past={isPast}>
+                      <Fragment key={s.id}>
+                        {renderTodayMarker(monthKey, entryIndex)}
+                        <div className={styles.scheduleRow} data-past={isPast}>
                         <div className={styles.scheduleRowMain}>
                           <div
                             className={styles.colorBar}
@@ -371,9 +401,11 @@ export default function PublicSchedulePage() {
                             />
                           </div>
                         )}
-                      </div>
+                        </div>
+                      </Fragment>
                     )
                   })}
+                  {renderTodayMarker(monthKey, mergedMap.get(monthKey)!.length)}
                 </div>
               </section>
             )

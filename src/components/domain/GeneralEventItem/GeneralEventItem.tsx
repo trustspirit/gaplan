@@ -83,7 +83,8 @@ export function GeneralEventItem({
             className={clsx(styles.attendBtn, isAttending && styles.attending)}
             onClick={e => {
               e.stopPropagation()
-              isAttending ? onCancelAttend() : onAttend()
+              if (isAttending) onCancelAttend()
+              else onAttend()
             }}
             aria-label={isAttending ? t('generalSchedule.cancelAttend') : t('generalSchedule.attend')}
           >

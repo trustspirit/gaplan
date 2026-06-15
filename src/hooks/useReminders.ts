@@ -84,7 +84,7 @@ export function useReminders() {
     if (scope.regionIds === null) return ALL_UNITS.map(u => ({ id: u.id, name: u.name.ko }))
     const allowed = new Set(scope.regionIds)
     return ALL_UNITS.filter(u => allowed.has(u.regionId)).map(u => ({ id: u.id, name: u.name.ko }))
-  }, [scope])
+  }, [scope, user])
 
   const presidentNameByUnit = useMemo(() => {
     const m = new Map<string, string>()

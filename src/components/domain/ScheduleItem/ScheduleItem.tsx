@@ -27,7 +27,6 @@ function NotesContent({ text }: { text: string }) {
   const parts: React.ReactNode[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null
-  // eslint-disable-next-line no-cond-assign
   while ((match = urlRegex.exec(text)) !== null) {
     if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
     const url = match[0]

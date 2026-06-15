@@ -106,7 +106,8 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: Respons
   function toggleHidden(id: string) {
     setHiddenIds(prev => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }
@@ -197,7 +198,7 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: Respons
                       <td key={date} className={clsx(styles.td, styles.tdSlot, heatClass(ratio))}>
                         <span className={styles.slotCount}>{visibleCount}/{totalVisible}</span>
                         <div className={styles.slotNames}>
-                          {slotRespondentList.map((r, idx) => {
+                          {slotRespondentList.map(r => {
                             const isConfirming = confirming === `${r.task.id}_${date}_${time}`
                             const isCompleted = r.task.status === 'completed'
                             return (
@@ -232,7 +233,7 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: Respons
             <thead>
               <tr>
                 <th className={clsx(styles.th, styles.thTime)}>날짜 / 시간</th>
-                {visibleRespondents.map((r, idx) => (
+                {visibleRespondents.map(r => (
                   <th key={r.task.id} className={clsx(styles.th, styles.thParticipant)}
                     style={{ color: respondentColor(respondents.indexOf(r)) }}>
                     {r.name}

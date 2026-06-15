@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import dayjs from 'dayjs'
-import { useSchedules } from '@/hooks/useSchedules'
 import { computeInterviewSlots } from '@/services/availabilityService'
 import { confirmSchedule } from '@/services/scheduleService'
 import { submitAvailability } from '@/services/taskService'
@@ -12,9 +10,6 @@ export function useTaskConfirm(presidentUid: string, unitId: string | undefined)
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null)
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([])
   const [submitting, setSubmitting] = useState(false)
-
-  const { schedules } = useSchedules({ presidentUid })
-  const confirmedDates = schedules.filter(s => s.status === 'confirmed').map(s => s.date)
 
   const isVisit = activeTask?.type === 'select_visit'
   const isMultiSelect = activeTask?.type === 'select_interview'

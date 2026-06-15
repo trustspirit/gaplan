@@ -38,7 +38,8 @@ export function VisitPlanner() {
   function togglePresident(uid: string) {
     setSelectedPresidents(prev => {
       const next = new Set(prev)
-      next.has(uid) ? next.delete(uid) : next.add(uid)
+      if (next.has(uid)) next.delete(uid)
+      else next.add(uid)
       return next
     })
   }

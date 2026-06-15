@@ -13,6 +13,10 @@ import { isGeneralScheduleRelevant } from '@/types'
 import type { ScheduleType, GeneralSchedule, AppUser } from '@/types'
 import { Button, Select, Input } from '@/components/ui'
 import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
+import {
+  buildNotesWithLeaderContact,
+  getContactTargetOptions,
+} from './leaderContactNotes'
 import styles from './ScheduleFormModal.module.scss'
 
 const adminCreateScheduleFn = httpsCallable(functions, 'adminCreateSchedule')
@@ -37,7 +41,7 @@ export function ScheduleFormModal({
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { users } = useUsers()
-  const { getLeaderByUnitName } = useLeaders()
+  const { leaders } = useLeaders()
 
   const [type, setType] = useState<ScheduleType>(initialType ?? 'ward_visit')
   const [seventyUid, setSeventyUid] = useState(
@@ -50,6 +54,7 @@ export function ScheduleFormModal({
   const [unitId, setUnitId] = useState('')
   const [wardName, setWardName] = useState('')
   const [presidentUid, setPresidentUid] = useState('')
+  const [contactTargetValue, setContactTargetValue] = useState('')
   const [date, setDate] = useState(initialDate ?? '')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
@@ -76,6 +81,7 @@ export function ScheduleFormModal({
     setUnitId('')
     setWardName('')
     setPresidentUid('')
+    setContactTargetValue('')
     setZoomLink('')
     setCustomTitle('')
     setNotes('')
@@ -86,21 +92,28 @@ export function ScheduleFormModal({
     setUnitId('')
     setWardName('')
     setPresidentUid('')
+    setContactTargetValue('')
   }
 
   const handleUnitChange = (nextUnitId: string) => {
     setUnitId(nextUnitId)
     setWardName('')
     setPresidentUid('')
+    setContactTargetValue('')
+  }
+
+  const handleContactTargetChange = (nextValue: string) => {
+    setContactTargetValue(nextValue)
+    const option = contactTargetOptions.find(o => o.value === nextValue)
+    setPresidentUid(option?.presidentUid ?? '')
   }
 
   const seventyUsers = users.filter((u) => u.role === 'seventy')
-
-  // Auto-select when only one seventy is available and none is selected yet
-  useEffect(() => {
-    if (seventyUid || seventyUsers.length !== 1) return
-    if (user.role === 'admin' && !user.secondaryRole) setSeventyUid(seventyUsers[0].uid)
-  }, [seventyUsers, seventyUid, user.role, user.secondaryRole])
+  const autoSeventyUid =
+    user.role === 'admin' && !user.secondaryRole && seventyUsers.length === 1
+      ? seventyUsers[0].uid
+      : ''
+  const effectiveSeventyUid = seventyUid || autoSeventyUid
 
   const handleSabbathToggle = (checked: boolean) => {
     setIsSabbath(checked)
@@ -109,7 +122,7 @@ export function ScheduleFormModal({
       setEndTime('12:00')
     }
   }
-  const selectedSeventy = users.find((u) => u.uid === seventyUid)
+  const selectedSeventy = users.find((u) => u.uid === effectiveSeventyUid)
   const seventyRegionIds =
     selectedSeventy?.regionIds ?? (selectedSeventy?.regionId ? [selectedSeventy.regionId] : [])
   const unitPool =
@@ -124,9 +137,8 @@ export function ScheduleFormModal({
     value: u.uid,
     label: u.preRegistered ? u.name : `${u.name} ✓`,
   }))
-  const presidentOptions = users
-    .filter((u) => u.role === 'president' && u.unitId === unitId && !!unitId)
-    .map((u) => ({ value: u.uid, label: u.preRegistered ? u.name : `${u.name} ✓` }))
+  const contactTargetOptions = getContactTargetOptions({ type, unitId, leaders, users })
+  const selectedContactTarget = contactTargetOptions.find(o => o.value === contactTargetValue)
 
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault()
@@ -139,7 +151,7 @@ export function ScheduleFormModal({
       setError(t('admin.scheduleTimeError'))
       return
     }
-    if ((user.role === 'admin' || user.role === 'exec_secretary') && !seventyUid) {
+    if ((user.role === 'admin' || user.role === 'exec_secretary') && !effectiveSeventyUid) {
       setError(t('schedule.errorSeventyRequired'))
       return
     }
@@ -152,26 +164,19 @@ export function ScheduleFormModal({
       return
     }
 
-    // Prepend leader contact info at top of notes on save
-    const buildNotesWithLeader = (): string => {
-      let leaderInfo = ''
-      if (unitId) {
-        const unit = ALL_UNITS.find(u => u.id === unitId)
-        if (unit) {
-          const leader = getLeaderByUnitName(unit.name.ko)
-          if (leader) leaderInfo = `${leader.role}: ${leader.name} (${leader.phone ?? '번호 없음'})`
-        }
-      }
-      if (!leaderInfo) return notes
-      return notes.trim() ? `${leaderInfo}\n${notes}` : leaderInfo
-    }
-    const finalNotes = buildNotesWithLeader()
+    const finalNotes = buildNotesWithLeaderContact({
+      type,
+      unitId,
+      contactTargetUnitName: selectedContactTarget?.unitNameKo ?? '',
+      notes,
+      leaders,
+    })
 
     setSaving(true)
     try {
       await adminCreateScheduleFn({
         type,
-        seventyUid,
+        seventyUid: effectiveSeventyUid,
         ...(unitId ? { unitId } : {}),
         ...(wardName ? { wardName } : {}),
         ...(presidentUid ? { presidentUid } : {}),
@@ -252,7 +257,7 @@ export function ScheduleFormModal({
             {user.role === 'admin' && (
               <Select
                 label={t('schedule.seventyLabel')}
-                value={seventyUid}
+                value={effectiveSeventyUid}
                 onChange={(e) => handleSeventyChange(e.target.value)}
                 options={seventyOptions}
               />
@@ -261,7 +266,7 @@ export function ScheduleFormModal({
             {user.role === 'exec_secretary' && (
               <Input
                 label={t('schedule.seventyLabel')}
-                value={users.find(u => u.uid === seventyUid)?.name ?? seventyUid}
+                value={users.find(u => u.uid === effectiveSeventyUid)?.name ?? effectiveSeventyUid}
                 disabled
                 onChange={() => {}}
               />
@@ -288,14 +293,23 @@ export function ScheduleFormModal({
               />
             )}
 
-            {/* President — interview only, optional */}
+            {/* Contact target — interview: stake/district or ward/branch */}
             {type === 'interview' && (
               <Select
-                label={t('schedule.presidentLabelOptional')}
-                value={presidentUid}
-                onChange={(e) => setPresidentUid(e.target.value)}
-                options={presidentOptions}
+                label="접견 대상"
+                value={contactTargetValue}
+                onChange={(e) => handleContactTargetChange(e.target.value)}
+                options={contactTargetOptions}
                 disabled={!unitId}
+              />
+            )}
+
+            {type === 'meeting' && unitId && (
+              <Select
+                label="대상 와드/지부"
+                value={contactTargetValue}
+                onChange={(e) => handleContactTargetChange(e.target.value)}
+                options={contactTargetOptions}
               />
             )}
 

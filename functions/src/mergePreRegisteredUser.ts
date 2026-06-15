@@ -52,7 +52,9 @@ export const mergePreRegisteredUser = functions
 
     const batch = db.batch()
 
-    const { preRegistered: _drop, createdBy: _by, ...userData } = preUserData
+    const userData = { ...preUserData }
+    delete userData.preRegistered
+    delete userData.createdBy
     const mergedUserData = { ...userData, mergedAt: admin.firestore.FieldValue.serverTimestamp() }
 
     batch.set(db.collection('users').doc(realUid), mergedUserData)

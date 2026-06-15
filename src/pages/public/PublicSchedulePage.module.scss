@@ -98,6 +98,32 @@
   gap: $space-2;
 }
 
+.todayMarker {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 0;
+  color: $color-primary;
+}
+
+.todayMarkerLine {
+  height: 1px;
+  flex: 1;
+  background: rgba($color-primary, 0.28);
+}
+
+.todayMarkerLabel {
+  flex-shrink: 0;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+.todayMarkerDate {
+  flex-shrink: 0;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
 // ─── Schedule Row ─────────────────────────────────────────────────────────
 .scheduleRow {
   display: flex;

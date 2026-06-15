@@ -26,7 +26,6 @@ export function useVisitStats(filters: StatsFilters) {
       .then(data => { if (active) { setSchedules(data); setLoading(false) } })
       .catch(() => { if (active) { setSchedules([]); setLoading(false) } })
     return () => { active = false }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewSeventyUid, user?.role])
 
   const allowedRegionIds = useMemo<string[] | null>(() => scope.regionIds, [scope])

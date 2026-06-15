@@ -30,7 +30,7 @@ export const publicScheduleRenderer = onRequest(
 
     const pageUrl = `${HOSTING_URL}/public/schedule/${token}`
 
-    let indexHtml = ''
+    let indexHtml: string
     try {
       const r = await fetch(`${HOSTING_URL}/`, { signal: AbortSignal.timeout(5000) })
       indexHtml = await r.text()

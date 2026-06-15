@@ -36,8 +36,10 @@ function rollingRange(today?: string): DateRange {
 export function useScheduleDateRange(uid: string) {
   const [cache, setCache] = useAtom(_rangeCache)
 
-  const setting: ScheduleDateRangeSetting =
-    cache?.uid === uid ? cache.setting : { preset: 'rolling' }
+  const setting: ScheduleDateRangeSetting = useMemo(
+    () => cache?.uid === uid ? cache.setting : { preset: 'rolling' },
+    [cache, uid],
+  )
   const loading = cache?.uid !== uid
   const loadedForUid = cache?.uid ?? null
 

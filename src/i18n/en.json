@@ -477,6 +477,7 @@
     "typeVisit": "Ward Visit",
     "typeInterview": "Interview",
     "typeMeeting": "Meeting",
+    "todayMarker": "Today",
     "pastBadge": "Done"
   },
   "generalSchedule": {

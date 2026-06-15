@@ -53,7 +53,8 @@ function EditUserModal({
   function toggleRegion(regionId: string) {
     setSelectedRegions(prev => {
       const next = new Set(prev)
-      next.has(regionId) ? next.delete(regionId) : next.add(regionId)
+      if (next.has(regionId)) next.delete(regionId)
+      else next.add(regionId)
       return next
     })
   }
@@ -301,10 +302,20 @@ export function UserManagement() {
   const [preLoading, setPreLoading] = useState(false)
 
   function toggleInviteRegion(id: string) {
-    setInviteRegionIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+    setInviteRegionIds(prev => {
+      const n = new Set(prev)
+      if (n.has(id)) n.delete(id)
+      else n.add(id)
+      return n
+    })
   }
   function togglePreRegion(id: string) {
-    setPreRegionIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+    setPreRegionIds(prev => {
+      const n = new Set(prev)
+      if (n.has(id)) n.delete(id)
+      else n.add(id)
+      return n
+    })
   }
 
   const [editingUser, setEditingUser] = useState<AppUser | null>(null)

@@ -33,8 +33,13 @@ vi.mock('react-dom', () => ({
 }))
 
 import { ScheduleFormModal } from './ScheduleFormModal'
+import {
+  buildNotesWithLeaderContact,
+  getContactTargetOptions,
+} from './leaderContactNotes'
 import * as useLeadersModule from '@/hooks/useLeaders'
 import type { Leader } from '@/types/leader'
+import type { AppUser } from '@/types/user'
 
 const MOCK_LEADER_BISHOP: Leader = {
   id: '131334',
@@ -44,6 +49,35 @@ const MOCK_LEADER_BISHOP: Leader = {
   role: '감독',
   name: '조해준',
   phone: '010-9635-1193',
+}
+
+const MOCK_STAKE_PRESIDENT: Leader = {
+  id: 'stake-president',
+  externalUnitId: 1,
+  unitNameKo: '서울 스테이크',
+  unitNameEn: 'Seoul Stake',
+  role: '스테이크 회장',
+  name: '홍길동',
+  phone: '010-1111-2222',
+}
+
+const MOCK_BRANCH_PRESIDENT: Leader = {
+  id: 'branch-president',
+  externalUnitId: 2,
+  unitNameKo: '중앙 수어 지부',
+  unitNameEn: 'Jungang Sign Language Branch',
+  role: '지부 회장',
+  name: '박지부',
+  phone: '010-5555-6666',
+}
+
+const MOCK_PRESIDENT_USER: AppUser = {
+  uid: 'president-uid',
+  email: 'president@test.com',
+  name: '홍길동',
+  role: 'president',
+  unitId: 'seoul-stake',
+  createdAt: '2026-01-01',
 }
 
 describe('ScheduleFormModal 메모 자동 입력', () => {
@@ -76,5 +110,56 @@ describe('ScheduleFormModal 메모 자동 입력', () => {
     })
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     expect(getLeaderByUnitName).toBeDefined()
+  })
+})
+
+describe('ScheduleFormModal 연락처 대상', () => {
+  it('접견 대상에 스테이크/지방부 회장과 소속 와드/지부 지도자를 함께 노출한다', () => {
+    const options = getContactTargetOptions({
+      type: 'interview',
+      unitId: 'seoul-stake',
+      leaders: [MOCK_STAKE_PRESIDENT, MOCK_LEADER_BISHOP, MOCK_BRANCH_PRESIDENT],
+      users: [MOCK_PRESIDENT_USER],
+    })
+
+    expect(options).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        label: '서울 스테이크 · 스테이크 회장',
+        unitNameKo: '서울 스테이크',
+        presidentUid: 'president-uid',
+      }),
+      expect.objectContaining({
+        label: '녹번 와드 · 감독',
+        unitNameKo: '녹번 와드',
+      }),
+      expect.objectContaining({
+        label: '중앙 수어 지부 · 지부 회장',
+        unitNameKo: '중앙 수어 지부',
+      }),
+    ]))
+  })
+
+  it('모임에서 와드/지부를 선택하면 해당 감독/지부 회장 연락처를 메모 앞에 붙인다', () => {
+    const notes = buildNotesWithLeaderContact({
+      type: 'meeting',
+      unitId: 'seoul-stake',
+      contactTargetUnitName: '녹번 와드',
+      notes: '기존 메모',
+      leaders: [MOCK_STAKE_PRESIDENT, MOCK_LEADER_BISHOP],
+    })
+
+    expect(notes).toBe('감독: 조해준 (010-9635-1193)\n기존 메모')
+  })
+
+  it('연락처 대상을 따로 선택하지 않으면 기존처럼 스테이크/지방부 회장 연락처를 사용한다', () => {
+    const notes = buildNotesWithLeaderContact({
+      type: 'interview',
+      unitId: 'seoul-stake',
+      contactTargetUnitName: '',
+      notes: '',
+      leaders: [MOCK_STAKE_PRESIDENT, MOCK_LEADER_BISHOP],
+    })
+
+    expect(notes).toBe('스테이크 회장: 홍길동 (010-1111-2222)')
   })
 })

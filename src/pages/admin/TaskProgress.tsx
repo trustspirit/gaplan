@@ -14,7 +14,7 @@ import { adminConfirmSchedule, adminConfirmWardVisit } from '@/services/schedule
 import { expireTask, updateTaskDetails } from '@/services/taskService'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Select, Modal } from '@/components/ui'
+import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Modal } from '@/components/ui'
 import { MultiDatePicker, ResponseMatrix, ScheduleSuggestions } from '@/components/domain'
 import type { Task, RespondedSlot, GeneralSchedule, AppUser } from '@/types'
 import styles from './TaskProgress.module.scss'
