@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
@@ -13,7 +13,10 @@ import {
   saveScheduleCache,
   clearScheduleCache,
 } from '@/utils/scheduleCache'
-import { getTodayMarkerPlacement } from './todayMarker'
+import {
+  getTodayMarkerPlacement,
+  getTodayMarkerScrollTop,
+} from './todayMarker'
 import styles from './PublicSchedulePage.module.scss'
 
 const DOW_KO = ['일', '월', '화', '수', '목', '금', '토']
@@ -92,6 +95,8 @@ export default function PublicSchedulePage() {
   const [refreshing, setRefreshing] = useState(false)
   const [showSubscribeMenu, setShowSubscribeMenu] = useState(false)
   const [openNotes, setOpenNotes] = useState<Set<string>>(new Set())
+  const todayMarkerRef = useRef<HTMLDivElement | null>(null)
+  const autoScrolledToTodayRef = useRef(false)
 
   const toggleNotes = (id: string) => {
     setOpenNotes(prev => {
@@ -163,6 +168,10 @@ export default function PublicSchedulePage() {
     return () => { cancelled = true }
   }, [token, refreshKey])
 
+  useEffect(() => {
+    autoScrolledToTodayRef.current = false
+  }, [token])
+
   const toggleLang = () => {
     const next = i18n.language === 'ko' ? 'en' : 'ko'
     i18n.changeLanguage(next)
@@ -171,26 +180,11 @@ export default function PublicSchedulePage() {
 
   const handleRefresh = () => {
     if (token) clearScheduleCache(token)
+    autoScrolledToTodayRef.current = false
     setRefreshKey(k => k + 1)
   }
 
   const lang = i18n.language
-
-  if (isPrivate) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.errorBox}>{t('public.privateError')}</div>
-      </div>
-    )
-  }
-
-  if (fetchError) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.errorBox}>{t('public.fetchError')}</div>
-      </div>
-    )
-  }
 
   const title = scopeDisplayName
     ? t('public.scopedTitle', { name: scopeDisplayName })
@@ -229,7 +223,7 @@ export default function PublicSchedulePage() {
     })),
     today,
   )
-  const { icsWebcal, googleUrl } = buildSubscribeUrls(token!)
+  const { icsWebcal, googleUrl } = buildSubscribeUrls(token ?? '')
 
   const typeLabel = (type: string) => {
     if (type === 'ward_visit') return t('public.typeVisit')
@@ -239,6 +233,24 @@ export default function PublicSchedulePage() {
   }
 
   const dowLabels = lang === 'ko' ? DOW_KO : DOW_EN
+
+  useEffect(() => {
+    if (isInitialLoading || !todayMarkerPlacement || autoScrolledToTodayRef.current) return
+
+    const marker = todayMarkerRef.current
+    if (!marker) return
+
+    const targetTop = getTodayMarkerScrollTop({
+      markerTop: marker.getBoundingClientRect().top,
+      scrollY: window.scrollY,
+      viewportHeight: window.innerHeight,
+    })
+    if (targetTop === null) return
+
+    autoScrolledToTodayRef.current = true
+    window.scrollTo({ top: targetTop, behavior: 'smooth' })
+  }, [isInitialLoading, todayMarkerPlacement])
+
   const renderTodayMarker = (monthKey: string, itemIndex: number) => {
     if (
       todayMarkerPlacement?.groupKey !== monthKey ||
@@ -246,13 +258,29 @@ export default function PublicSchedulePage() {
     ) return null
 
     return (
-      <div className={styles.todayMarker}>
+      <div ref={todayMarkerRef} className={styles.todayMarker}>
         <span className={styles.todayMarkerLine} />
         <span className={styles.todayMarkerLabel}>
           {t('public.todayMarker')}
         </span>
         <span className={styles.todayMarkerDate}>{dayjs(today).format('M.D')}</span>
         <span className={styles.todayMarkerLine} />
+      </div>
+    )
+  }
+
+  if (isPrivate) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.errorBox}>{t('public.privateError')}</div>
+      </div>
+    )
+  }
+
+  if (fetchError) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.errorBox}>{t('public.fetchError')}</div>
       </div>
     )
   }
