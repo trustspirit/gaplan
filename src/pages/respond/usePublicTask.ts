@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { httpsCallable } from 'firebase/functions'
-import { functions } from '@/firebase'
+import type { HttpsCallable } from 'firebase/functions'
+import { publicCallable } from '@/services/publicFunctions'
 import type { TaskType } from '@/types/task'
 
 export interface PublicTaskInfo {
@@ -28,10 +28,20 @@ interface UsePublicTaskResult {
   error: string | null
 }
 
-const getPublicTaskInfoFn = httpsCallable<
+let getPublicTaskInfoFn: HttpsCallable<
   { taskId: string; token: string },
   PublicTaskInfo
->(functions, 'getPublicTaskInfo')
+> | null = null
+
+function getPublicTaskInfoCallable() {
+  if (!getPublicTaskInfoFn) {
+    getPublicTaskInfoFn = publicCallable<
+      { taskId: string; token: string },
+      PublicTaskInfo
+    >('getPublicTaskInfo')
+  }
+  return getPublicTaskInfoFn
+}
 
 export function usePublicTask(
   taskId: string | undefined,
@@ -48,7 +58,7 @@ export function usePublicTask(
       return
     }
 
-    getPublicTaskInfoFn({ taskId, token })
+    getPublicTaskInfoCallable()({ taskId, token })
       .then((res) => setTask(res.data))
       .catch((err) => setError(err.message ?? '정보를 불러올 수 없습니다.'))
       .finally(() => setLoading(false))

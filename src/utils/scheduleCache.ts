@@ -1,9 +1,8 @@
-import type { PublicScheduleItem } from '@/services/scheduleService'
-import type { GeneralSchedule } from '@/types'
+import type { PublicGeneralScheduleItem, PublicScheduleItem } from '@/types/publicSchedule'
 
 export interface ScheduleCacheData {
   schedules: PublicScheduleItem[]
-  generalSchedules: GeneralSchedule[]
+  generalSchedules: PublicGeneralScheduleItem[]
   scopeDisplayName: string | null
 }
 

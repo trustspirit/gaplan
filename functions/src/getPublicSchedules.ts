@@ -18,6 +18,20 @@ interface PublicSchedule {
   presidentAccompanied?: boolean
 }
 
+interface PublicGeneralSchedule {
+  id: string
+  title: string
+  date: string
+  startTime?: string
+  endTime?: string
+  category: 'conference' | 'fasting' | 'other'
+  isPublic: true
+}
+
+function todayInSeoul(): string {
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split('T')[0]
+}
+
 export const getPublicSchedules = onCall(
   { region: 'asia-northeast3' },
   async (request: CallableRequest<{ token?: string }>) => {
@@ -68,11 +82,19 @@ export const getPublicSchedules = onCall(
 
     let query = admin.firestore().collection('schedules') as admin.firestore.Query
     if (unitIds !== null) query = query.where('unitId', 'in', unitIds)
-    const snap = await query
-      .where('status', '==', 'confirmed')
-      .where('date', '>=', cutoffStr)
-      .orderBy('date', 'asc')
-      .get()
+    const [snap, generalSnap] = await Promise.all([
+      query
+        .where('status', '==', 'confirmed')
+        .where('date', '>=', cutoffStr)
+        .orderBy('date', 'asc')
+        .get(),
+      admin.firestore()
+        .collection('generalSchedules')
+        .where('isPublic', '==', true)
+        .where('date', '>=', todayInSeoul())
+        .orderBy('date', 'asc')
+        .get(),
+    ])
 
     const unitSet = unitIds !== null ? new Set(unitIds) : null
 
@@ -97,6 +119,19 @@ export const getPublicSchedules = onCall(
         }
       })
 
-    return { schedules, scopeDisplayName }
+    const generalSchedules: PublicGeneralSchedule[] = generalSnap.docs.map((d) => {
+      const data = d.data()
+      return {
+        id: d.id,
+        title: data.title,
+        date: data.date,
+        ...(data.startTime ? { startTime: data.startTime } : {}),
+        ...(data.endTime ? { endTime: data.endTime } : {}),
+        category: data.category,
+        isPublic: true,
+      }
+    })
+
+    return { schedules, generalSchedules, scopeDisplayName }
   },
 )

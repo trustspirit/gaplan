@@ -5,9 +5,11 @@ import dayjs from 'dayjs'
 import clsx from 'clsx'
 import { Video, CalendarDays, Building2, MoonStar, RefreshCw, CalendarPlus, FileText, ChevronUp, UserCheck } from 'lucide-react'
 import { ALL_UNITS, WARDS } from '@/constants/regions'
-import { fetchPublicSchedules, type PublicScheduleItem } from '@/services/scheduleService'
-import { fetchPublicGeneralSchedules } from '@/services/generalScheduleService'
-import type { GeneralSchedule } from '@/types'
+import {
+  fetchPublicSchedulePageData,
+  type PublicGeneralScheduleItem,
+  type PublicScheduleItem,
+} from '@/services/publicScheduleService'
 import {
   loadScheduleCache,
   saveScheduleCache,
@@ -90,7 +92,7 @@ export default function PublicSchedulePage() {
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [isPrivate, setIsPrivate] = useState(false)
   const [fetchError, setFetchError] = useState(false)
-  const [generalSchedules, setGeneralSchedules] = useState<GeneralSchedule[]>([])
+  const [generalSchedules, setGeneralSchedules] = useState<PublicGeneralScheduleItem[]>([])
   const [refreshKey, setRefreshKey] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
   const [showSubscribeMenu, setShowSubscribeMenu] = useState(false)
@@ -133,11 +135,8 @@ export default function PublicSchedulePage() {
 
     // 항상 최신 데이터 백그라운드 fetch
     setRefreshing(true)
-    Promise.all([
-      fetchPublicSchedules(token),
-      fetchPublicGeneralSchedules().catch(() => [] as GeneralSchedule[]),
-    ])
-      .then(([{ schedules: s, scopeDisplayName: name }, generals]) => {
+    fetchPublicSchedulePageData(token)
+      .then(({ schedules: s, generalSchedules: generals, scopeDisplayName: name }) => {
         if (cancelled) return
         setSchedules(s)
         setScopeDisplayName(name)
@@ -192,7 +191,7 @@ export default function PublicSchedulePage() {
 
   type ListEntry =
     | { kind: 'schedule'; data: PublicScheduleItem }
-    | { kind: 'general'; data: GeneralSchedule }
+    | { kind: 'general'; data: PublicGeneralScheduleItem }
 
   const mergedMap = new Map<string, ListEntry[]>()
   for (const s of schedules) {

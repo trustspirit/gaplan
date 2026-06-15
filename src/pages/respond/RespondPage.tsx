@@ -1,18 +1,44 @@
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { httpsCallable } from 'firebase/functions'
-import { functions } from '@/firebase'
+import type { HttpsCallable } from 'firebase/functions'
+import { publicCallable } from '@/services/publicFunctions'
 import { usePublicTask } from './usePublicTask'
 import { SlotSelectionGrid } from './SlotSelectionGrid'
 import styles from './RespondPage.module.scss'
-
-const submitAvailabilityAnonFn = httpsCallable(functions, 'submitAvailabilityAnon')
-const submitWardAssignmentsAnonFn = httpsCallable(functions, 'submitWardAssignmentsAnon')
 
 interface SelectedSlot {
   date: string
   startTime: string
   endTime: string
+}
+
+interface SubmitAvailabilityAnonRequest {
+  taskId: string
+  token: string
+  respondedSlots: SelectedSlot[]
+}
+
+interface SubmitWardAssignmentsAnonRequest {
+  taskId: string
+  token: string
+  wardAssignments: Array<{ wardName: string; date: string }>
+}
+
+let submitAvailabilityAnonFn: HttpsCallable<SubmitAvailabilityAnonRequest, unknown> | null = null
+let submitWardAssignmentsAnonFn: HttpsCallable<SubmitWardAssignmentsAnonRequest, unknown> | null = null
+
+function getSubmitAvailabilityAnonFn() {
+  if (!submitAvailabilityAnonFn) {
+    submitAvailabilityAnonFn = publicCallable<SubmitAvailabilityAnonRequest, unknown>('submitAvailabilityAnon')
+  }
+  return submitAvailabilityAnonFn
+}
+
+function getSubmitWardAssignmentsAnonFn() {
+  if (!submitWardAssignmentsAnonFn) {
+    submitWardAssignmentsAnonFn = publicCallable<SubmitWardAssignmentsAnonRequest, unknown>('submitWardAssignmentsAnon')
+  }
+  return submitWardAssignmentsAnonFn
 }
 
 export default function RespondPage() {
@@ -42,12 +68,12 @@ export default function RespondPage() {
     setSubmitting(true)
     try {
       if (task.type === 'select_interview') {
-        await submitAvailabilityAnonFn({ taskId, token, respondedSlots: selectedSlots })
+        await getSubmitAvailabilityAnonFn()({ taskId, token, respondedSlots: selectedSlots })
       } else {
         const wardAssignments = Object.entries(wardDateMap)
           .filter(([, date]) => date)
           .map(([wardName, date]) => ({ wardName, date }))
-        await submitWardAssignmentsAnonFn({ taskId, token, wardAssignments })
+        await getSubmitWardAssignmentsAnonFn()({ taskId, token, wardAssignments })
       }
       setSuccess(true)
     } catch (e) {

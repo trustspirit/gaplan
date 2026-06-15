@@ -6,6 +6,7 @@ import { httpsCallable } from 'firebase/functions'
 import dayjs from 'dayjs'
 import { db, functions } from '@/firebase'
 import type { Schedule, TimeSlot } from '@/types'
+import type { PublicScheduleItem } from '@/types/publicSchedule'
 import { mapDocs, snapshotErrHandler } from './_utils'
 
 export function subscribeToSchedules(
@@ -125,24 +126,8 @@ export async function deleteScheduleViaCF(scheduleId: string): Promise<void> {
   await adminDeleteScheduleFn({ scheduleId })
 }
 
-export interface PublicScheduleItem {
-  id: string
-  type: string
-  unitId: string
-  date: string
-  startTime: string
-  endTime: string
-  status: string
-  wardName?: string
-  zoomLink?: string | null
-  customTitle?: string | null
-  notes?: string | null
-  presidentAccompanied?: boolean
-}
-
 export async function fetchPublicSchedules(token: string): Promise<{ schedules: PublicScheduleItem[]; scopeDisplayName: string | null }> {
   const fn = httpsCallable<{ token: string }, { schedules: PublicScheduleItem[]; scopeDisplayName: string | null }>(functions, 'getPublicSchedules')
   const result = await fn({ token })
   return result.data
 }
-
