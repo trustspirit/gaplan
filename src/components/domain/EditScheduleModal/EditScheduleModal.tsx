@@ -8,7 +8,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
 import type { Schedule } from '@/types'
 import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
-import { DeleteConfirmSheet } from '@/components/ui'
+import { DeleteConfirmSheet, Input, Textarea } from '@/components/ui'
 import styles from './EditScheduleModal.module.scss'
 
 const adminEditScheduleFn = httpsCallable(functions, 'adminEditSchedule')
@@ -177,55 +177,69 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
               )}
 
               {/* Date */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>{t('schedule.dateLabel')}</label>
-                <input type="date" className={styles.fieldInput} value={date} onChange={e => setDate(e.target.value)} />
-              </div>
+              <Input
+                label={t('schedule.dateLabel')}
+                type="date"
+                className={styles.fieldInput}
+                wrapperClassName={styles.fieldGroup}
+                value={date}
+                onChange={e => setDate(e.target.value)}
+              />
 
               {/* Start / End time */}
               <div className={styles.timeRow}>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>{t('common.startTime')}</label>
-                  <input type="time" className={styles.fieldInput} value={startTime} onChange={e => setStartTime(e.target.value)} />
-                </div>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>{t('common.endTime')}</label>
-                  <input type="time" className={styles.fieldInput} value={endTime} onChange={e => setEndTime(e.target.value)} />
-                </div>
+                <Input
+                  label={t('common.startTime')}
+                  type="time"
+                  className={styles.fieldInput}
+                  wrapperClassName={styles.fieldGroup}
+                  value={startTime}
+                  onChange={e => setStartTime(e.target.value)}
+                />
+                <Input
+                  label={t('common.endTime')}
+                  type="time"
+                  className={styles.fieldInput}
+                  wrapperClassName={styles.fieldGroup}
+                  value={endTime}
+                  onChange={e => setEndTime(e.target.value)}
+                />
               </div>
 
               {/* Custom title — non-visit only */}
               {!isVisit && (
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>{t('schedule.customTitleOptional')}</label>
-                  <input
-                    className={styles.fieldInput}
-                    value={customTitle}
-                    onChange={e => setCustomTitle(e.target.value)}
-                    placeholder={t('schedule.customTitlePlaceholder')}
-                  />
-                </div>
+                <Input
+                  label={t('schedule.customTitleOptional')}
+                  className={styles.fieldInput}
+                  wrapperClassName={styles.fieldGroup}
+                  value={customTitle}
+                  onChange={e => setCustomTitle(e.target.value)}
+                  placeholder={t('schedule.customTitlePlaceholder')}
+                />
               )}
 
               {/* Zoom link — non-visit only */}
               {!isVisit && (
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>{t('schedule.zoomLinkOptional')}</label>
-                  <input
-                    type="url"
-                    className={styles.fieldInput}
-                    value={zoomLink}
-                    onChange={e => setZoomLink(e.target.value)}
-                    placeholder="https://zoom.us/j/..."
-                  />
-                </div>
+                <Input
+                  label={t('schedule.zoomLinkOptional')}
+                  type="url"
+                  className={styles.fieldInput}
+                  wrapperClassName={styles.fieldGroup}
+                  value={zoomLink}
+                  onChange={e => setZoomLink(e.target.value)}
+                  placeholder="https://zoom.us/j/..."
+                />
               )}
 
               {/* Notes */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>{t('schedule.notesLabelOptional')}</label>
-                <textarea className={styles.fieldTextarea} value={note} onChange={e => setNote(e.target.value)} rows={3} />
-              </div>
+              <Textarea
+                label={t('schedule.notesLabelOptional')}
+                className={styles.fieldTextarea}
+                wrapperClassName={styles.fieldGroup}
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                rows={3}
+              />
 
               {/* Project */}
               <ProjectPicker value={projectId} onChange={setProjectId} />

@@ -11,7 +11,7 @@ import { useLeaders } from '@/hooks/useLeaders'
 import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
 import { isGeneralScheduleRelevant } from '@/types'
 import type { ScheduleType, GeneralSchedule, AppUser } from '@/types'
-import { Button, Select, Input } from '@/components/ui'
+import { Button, Select, Input, Textarea } from '@/components/ui'
 import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
 import {
   buildNotesWithLeaderContact,
@@ -385,16 +385,15 @@ export function ScheduleFormModal({
               />
             )}
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.fieldLabel}>{t('schedule.notesLabelOptional')}</label>
-              <textarea
-                className={styles.textarea}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder={t('schedule.notesLabelOptional')}
-                rows={3}
-              />
-            </div>
+            <Textarea
+              label={t('schedule.notesLabelOptional')}
+              className={styles.textarea}
+              wrapperClassName={styles.fieldGroup}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={t('schedule.notesLabelOptional')}
+              rows={3}
+            />
 
             {(user.role === 'admin' || user.role === 'exec_secretary') && (
               <ProjectPicker value={projectId} onChange={setProjectId} />

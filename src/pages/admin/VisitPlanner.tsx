@@ -9,7 +9,7 @@ import { createTask } from '@/services/taskService'
 import { useUsers } from '@/hooks/useUsers'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Select, Button, Input, Badge } from '@/components/ui'
+import { Card, CardHeader, CardBody, Select, Button, Input, Badge, Textarea } from '@/components/ui'
 import { MultiDatePicker, ProjectPicker } from '@/components/domain'
 import styles from './VisitPlanner.module.scss'
 
@@ -189,16 +189,15 @@ export function VisitPlanner() {
               <Input label={t('task.dueDate')} type="date" value={dueDate}
                 onChange={e => setDueDate(e.target.value)} />
 
-              <div className={styles.textareaField}>
-                <label className={styles.textareaLabel}>{t('task.noteLabel', { defaultValue: '요청 사항 / 메모 (선택)' })}</label>
-                <textarea
-                  className={styles.textarea}
-                  value={taskNote}
-                  onChange={e => setTaskNote(e.target.value)}
-                  placeholder={t('task.notePlaceholder', { defaultValue: '회장이 Task를 받을 때 함께 볼 내용을 입력하세요.' })}
-                  rows={3}
-                />
-              </div>
+              <Textarea
+                label={t('task.noteLabel', { defaultValue: '요청 사항 / 메모 (선택)' })}
+                className={styles.textarea}
+                wrapperClassName={styles.textareaField}
+                value={taskNote}
+                onChange={e => setTaskNote(e.target.value)}
+                placeholder={t('task.notePlaceholder', { defaultValue: '회장이 Task를 받을 때 함께 볼 내용을 입력하세요.' })}
+                rows={3}
+              />
 
               <ProjectPicker value={projectId} onChange={setProjectId} />
 

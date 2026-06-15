@@ -1,5 +1,6 @@
 import { Fragment, useRef, type PointerEvent } from 'react'
 import dayjs from 'dayjs'
+import { Input } from '@/components/ui'
 import styles from './TimePainterPicker.module.scss'
 
 interface Props {
@@ -78,9 +79,11 @@ export function TimePainterPicker({
       <div className={styles.rangeRow}>
         <span className={styles.rangeLabel}>가능한 시간 선택</span>
         <div className={styles.rangeInputs}>
-          <input
+          <Input
             type="time"
             className={styles.timeInput}
+            wrapperClassName={styles.timeField}
+            aria-label="시작 시간"
             value={dailyRange[0]}
             onChange={(e) => {
               const v = e.target.value
@@ -88,9 +91,11 @@ export function TimePainterPicker({
             }}
           />
           <span className={styles.separator}>–</span>
-          <input
+          <Input
             type="time"
             className={styles.timeInput}
+            wrapperClassName={styles.timeField}
+            aria-label="종료 시간"
             value={dailyRange[1]}
             onChange={(e) => {
               const v = e.target.value

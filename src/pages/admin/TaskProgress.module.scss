@@ -266,11 +266,16 @@
   font-size: $font-size-xs;
 }
 
+.timeField {
+  width: 110px;
+  min-width: 0;
+}
+
 .timeInput {
   border: 1px solid $color-border;
   border-radius: $border-radius-sm;
-  padding: 2px 6px;
-  font-size: $font-size-xs;
+  padding: $space-2 $space-3;
+  font-size: $font-size-base;
   color: $color-text;
   background: $color-surface;
   &:focus { outline: 2px solid var(--color-primary, #177C9C); outline-offset: 1px; }

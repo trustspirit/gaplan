@@ -67,8 +67,18 @@
   }
 }
 
-.dateInput {
+.dateField {
   width: 170px;
+  min-width: 0;
+  max-width: 100%;
+
+  @include mobile {
+    width: 100%;
+  }
+}
+
+.dateInput {
+  width: 100%;
   min-width: 0;
   max-width: 100%;
   min-inline-size: 0;
@@ -78,7 +88,6 @@
   border-radius: $border-radius-md;
   padding: $space-2 $space-3;
   font-size: $font-size-sm;
-  min-height: 36px;
   background: $color-surface;
   color: $color-text;
 

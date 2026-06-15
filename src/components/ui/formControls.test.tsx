@@ -35,4 +35,18 @@ describe('form controls', () => {
   it('Textarea uses the same minimum touch height contract', () => {
     expect(readUiStyles('Textarea')).toMatch(/min-height:\s*44px/)
   })
+
+  it('supports wrapperClassName for compact inline layouts', () => {
+    const { container } = render(
+      <>
+        <Input label="시작" wrapperClassName="inlineField" />
+        <Select label="종류" wrapperClassName="inlineSelect" options={[]} />
+        <Textarea label="메모" wrapperClassName="inlineTextarea" />
+      </>,
+    )
+
+    expect(container.querySelector('.inlineField')).toBeInTheDocument()
+    expect(container.querySelector('.inlineSelect')).toBeInTheDocument()
+    expect(container.querySelector('.inlineTextarea')).toBeInTheDocument()
+  })
 })

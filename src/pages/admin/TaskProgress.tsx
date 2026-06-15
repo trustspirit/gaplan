@@ -176,15 +176,19 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
                       </div>
                       {(dateRanges[s.date] ?? []).map((r, idx) => (
                         <div key={idx} className={styles.timeRangeRow}>
-                          <input type="time" value={r.startTime}
+                          <Input type="time" value={r.startTime}
                             className={styles.timeInput}
+                            wrapperClassName={styles.timeField}
+                            aria-label={`${dayjs(s.date).format('M/D')} ${t('common.startTime')}`}
                             onChange={e => setDateRanges(prev => ({
                               ...prev,
                               [s.date]: prev[s.date].map((x, i) => i === idx ? { ...x, startTime: e.target.value } : x)
                             }))} />
                           <span>~</span>
-                          <input type="time" value={r.endTime}
+                          <Input type="time" value={r.endTime}
                             className={styles.timeInput}
+                            wrapperClassName={styles.timeField}
+                            aria-label={`${dayjs(s.date).format('M/D')} ${t('common.endTime')}`}
                             onChange={e => setDateRanges(prev => ({
                               ...prev,
                               [s.date]: prev[s.date].map((x, i) => i === idx ? { ...x, endTime: e.target.value } : x)

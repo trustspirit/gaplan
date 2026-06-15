@@ -6,11 +6,12 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string
   error?: string
   options: SelectOption[]
+  wrapperClassName?: string
 }
-export function Select({ label, error, options, className, id, ...props }: SelectProps) {
+export function Select({ label, error, options, className, wrapperClassName, id, ...props }: SelectProps) {
   const selectId = id ?? label
   return (
-    <div className={styles.wrapper}>
+    <div className={clsx(styles.wrapper, wrapperClassName)}>
       {label && <label htmlFor={selectId} className={styles.label}>{label}</label>}
       <select id={selectId} className={clsx(styles.select, error && styles.error, className)} {...props}>
         <option value="">선택하세요</option>

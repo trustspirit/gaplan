@@ -9,7 +9,7 @@ import { createTask } from '@/services/taskService'
 import { useUsers } from '@/hooks/useUsers'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Select, Button, Input, Badge } from '@/components/ui'
+import { Card, CardHeader, CardBody, Select, Button, Input, Badge, Textarea } from '@/components/ui'
 import { MultiDatePicker, ProjectPicker } from '@/components/domain'
 import { paintedCellsToDateSlots } from '@/components/domain/TimePainterPicker/paintedCellsToDateSlots'
 import { TimePainterPicker } from '@/components/domain/TimePainterPicker/TimePainterPicker'
@@ -191,16 +191,15 @@ export function TaskCreation() {
                 />
               )}
 
-              <div className={styles.textareaField}>
-                <label className={styles.textareaLabel}>{t('task.noteLabel')}</label>
-                <textarea
-                  className={styles.textarea}
-                  value={taskNote}
-                  onChange={e => setTaskNote(e.target.value)}
-                  placeholder={t('task.notePlaceholder')}
-                  rows={3}
-                />
-              </div>
+              <Textarea
+                label={t('task.noteLabel')}
+                className={styles.textarea}
+                wrapperClassName={styles.textareaField}
+                value={taskNote}
+                onChange={e => setTaskNote(e.target.value)}
+                placeholder={t('task.notePlaceholder')}
+                rows={3}
+              />
 
               <ProjectPicker value={projectId} onChange={setProjectId} />
 

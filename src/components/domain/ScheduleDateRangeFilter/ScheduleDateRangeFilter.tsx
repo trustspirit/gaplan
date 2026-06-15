@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Input } from '@/components/ui'
 import type { ScheduleDateRangeSetting, DateRange } from '@/hooks/useScheduleDateRange'
 import styles from './ScheduleDateRangeFilter.module.scss'
 
@@ -63,16 +64,20 @@ export function ScheduleDateRangeFilter({ setting, currentRange, onChange }: Pro
 
       {setting.preset === 'custom' && (
         <div className={styles.customRange}>
-          <input
+          <Input
             type="date"
             className={styles.dateInput}
+            wrapperClassName={styles.dateField}
+            aria-label={t('schedule.filterStartDate', { defaultValue: '시작일' })}
             value={localStart}
             onChange={e => handleStartChange(e.target.value)}
           />
           <span className={styles.rangeSep}>–</span>
-          <input
+          <Input
             type="date"
             className={styles.dateInput}
+            wrapperClassName={styles.dateField}
+            aria-label={t('schedule.filterEndDate', { defaultValue: '종료일' })}
             value={localEnd}
             onChange={e => handleEndChange(e.target.value)}
           />
