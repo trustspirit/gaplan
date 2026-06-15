@@ -9,7 +9,7 @@ import {
   createGeneralSchedule,
   updateGeneralSchedule,
 } from '@/services/generalScheduleService'
-import { Button, Input, Select } from '@/components/ui'
+import { Button, Input, Select, Textarea } from '@/components/ui'
 import type { GeneralSchedule, GeneralScheduleCategory } from '@/types'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import styles from './GeneralScheduleFormModal.module.scss'
@@ -134,16 +134,13 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
               onChange={e => setEndTime(e.target.value)}
             />
           </div>
-          <div className={styles.descriptionField}>
-            <label className={styles.label}>{t('generalSchedule.descriptionLabel')}</label>
-            <textarea
-              className={styles.textarea}
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              rows={3}
-              maxLength={500}
-            />
-          </div>
+          <Textarea
+            label={t('generalSchedule.descriptionLabel')}
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            rows={3}
+            maxLength={500}
+          />
           {user.role === 'admin' && (
             <label className={styles.checkboxRow}>
               <input

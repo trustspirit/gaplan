@@ -74,29 +74,6 @@
   gap: $space-3;
 }
 
-.descriptionField { display: flex; flex-direction: column; gap: $space-1; }
-
-.label {
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $color-text;
-}
-
-.textarea {
-  width: 100%;
-  padding: $space-3;
-  border: 1px solid $color-border;
-  border-radius: $border-radius-md;
-  font-size: $font-size-sm;
-  font-family: inherit;
-  resize: vertical;
-  color: $color-text;
-  background: $color-surface;
-  box-sizing: border-box;
-
-  &:focus { outline: none; border-color: $color-primary; }
-}
-
 .checkboxRow {
   display: flex;
   align-items: center;
