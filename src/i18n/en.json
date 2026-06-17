@@ -80,6 +80,7 @@
     "publish": "Publish",
     "publishConfirm": "Register all visits in this plan to the calendar?",
     "publishSuccess": "Published",
+    "saveSuccess": "Saved",
     "addVisit": "Add visit",
     "wardStaleFirst": "Ward (most overdue first)",
     "date": "Date",

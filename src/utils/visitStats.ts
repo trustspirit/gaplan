@@ -32,6 +32,10 @@ export interface VisitStats {
   staleTopN: LastVisitEntry[]
 }
 
+interface VisitStatsOptions {
+  actingSeventyUid?: string | null
+}
+
 export const STALE_TOP_N = 10
 const COUNT_TYPES: Schedule['type'][] = ['ward_visit']
 // Interviews count toward unit recency (last-contact date) but NOT toward visit counts
@@ -64,6 +68,19 @@ function inRegionScope(
   if (allowedRegionIds && !allowedRegionIds.includes(regionId)) return false
   if (selected !== 'all' && regionId !== selected) return false
   return true
+}
+
+function inScheduleScope(
+  schedule: Schedule,
+  allowedRegionIds: string[] | null,
+  selected: string | 'all',
+  actingSeventyUid?: string | null,
+): boolean {
+  const regionId = getRegionIdByUnit(schedule.unitId)
+  if (selected !== 'all') return regionId === selected
+  if (!allowedRegionIds) return !!regionId
+  if (regionId && allowedRegionIds.includes(regionId)) return true
+  return !!actingSeventyUid && schedule.seventyUid === actingSeventyUid
 }
 
 // Ward recency is keyed by `wardName` (free-text on the Schedule), which must
@@ -134,12 +151,14 @@ export function computeVisitStats(
   filters: StatsFilters,
   allowedRegionIds: string[] | null,
   today: string,
+  options: VisitStatsOptions = {},
 ): VisitStats {
   const start = periodStart(filters.period, today)
+  const actingSeventyUid = options.actingSeventyUid ?? null
 
   const scoped = schedules.filter(s =>
     ACTIVE_STATUS.includes(s.status) &&
-    inRegionScope(getRegionIdByUnit(s.unitId), allowedRegionIds, filters.regionId),
+    inScheduleScope(s, allowedRegionIds, filters.regionId, actingSeventyUid),
   )
 
   const countSet = scoped.filter(s =>
@@ -148,20 +167,26 @@ export function computeVisitStats(
 
   const regionCounts = new Map<string, number>()
   for (const s of countSet) {
-    const r = getRegionIdByUnit(s.unitId)!
+    const r = getRegionIdByUnit(s.unitId)
+    if (!r) continue
     regionCounts.set(r, (regionCounts.get(r) ?? 0) + 1)
   }
   const byRegion: CountEntry[] = REGIONS
     .filter(r =>
-      (!allowedRegionIds || allowedRegionIds.includes(r.id)) &&
-      (filters.regionId === 'all' || r.id === filters.regionId),
+      filters.regionId === 'all'
+        ? (!allowedRegionIds || allowedRegionIds.includes(r.id) || regionCounts.has(r.id))
+        : r.id === filters.regionId,
     )
     .map(r => ({ id: r.id, name: r.name, count: regionCounts.get(r.id) ?? 0 }))
 
   const unitCounts = new Map<string, number>()
   for (const s of countSet) unitCounts.set(s.unitId, (unitCounts.get(s.unitId) ?? 0) + 1)
   const byUnit: CountEntry[] = ALL_UNITS
-    .filter(u => inRegionScope(u.regionId, allowedRegionIds, filters.regionId))
+    .filter(u =>
+      filters.regionId === 'all'
+        ? (!allowedRegionIds || allowedRegionIds.includes(u.regionId) || unitCounts.has(u.id))
+        : u.regionId === filters.regionId,
+    )
     .map(u => ({ id: u.id, name: u.name.ko, count: unitCounts.get(u.id) ?? 0 }))
 
   const monthCounts = new Map<string, number>()

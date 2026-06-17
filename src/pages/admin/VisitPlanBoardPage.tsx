@@ -29,6 +29,7 @@ export function VisitPlanBoardPage() {
   const [plan, setPlan] = useState<VisitPlan | null>(null)
   const [loadingPlan, setLoadingPlan] = useState(true)
   const [publishing, setPublishing] = useState(false)
+  const [savingDraft, setSavingDraft] = useState(false)
   const [savingProject, setSavingProject] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const { pendingIds: deletingPlanIds, scheduleDelete: schedulePlanDelete } = useDeleteWithUndo()
@@ -80,6 +81,19 @@ export function VisitPlanBoardPage() {
     }
   }
 
+  const handleSaveDraft = async () => {
+    if (!plan) return
+    setSavingDraft(true)
+    try {
+      await updateVisitPlanItems(plan.id, plan.items ?? [])
+      toast.success(t('visitPlan.saveSuccess'))
+    } catch {
+      toast.error('저장에 실패했습니다.')
+    } finally {
+      setSavingDraft(false)
+    }
+  }
+
   const handleDeletePlan = () => {
     if (!plan) return
     schedulePlanDelete(plan.id, async () => {
@@ -107,6 +121,7 @@ export function VisitPlanBoardPage() {
           <h2 className={styles.title}>{plan.title}</h2>
           <div className={styles.actions}>
             <Button variant="secondary" size="sm" onClick={() => setShowDeleteConfirm(true)} disabled={deletingPlanIds.has(plan.id)}>{t('common.delete')}</Button>
+            <Button variant="secondary" size="sm" onClick={handleSaveDraft} loading={savingDraft} disabled={savingProject}>{t('common.save')}</Button>
             <Button size="sm" onClick={handlePublish} loading={publishing} disabled={savingProject}>{t('visitPlan.publish')}</Button>
           </div>
         </div>

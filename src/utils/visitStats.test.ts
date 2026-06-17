@@ -110,6 +110,26 @@ describe('computeVisitStats - region scope', () => {
     expect(stats.byRegion.every(r => r.id === regionId)).toBe(true)
     expect(stats.byRegion.find(r => r.id === regionId)?.count).toBe(1)
   })
+
+  it('includes schedules directly assigned to the scoped seventy even when the unit is outside allowed regions', () => {
+    const otherUnit = ALL_UNITS.find(u => u.regionId !== regionId)!
+    const otherRegionId = getRegionIdByUnit(otherUnit.id)!
+    const schedules = [
+      mk({ unitId: otherUnit.id, seventyUid: 's1', date: '2026-05-01' }),
+    ]
+
+    const stats = compute(
+      schedules,
+      { regionId: 'all', period: '3m' },
+      [regionId],
+      TODAY,
+      { actingSeventyUid: 's1' },
+    )
+
+    expect(stats.byRegion.find(r => r.id === otherRegionId)?.count).toBe(1)
+    expect(stats.byUnit.find(u => u.id === otherUnit.id)?.count).toBe(1)
+    expect(stats.monthlyTrend.find(m => m.month === '2026-05')?.count).toBe(1)
+  })
 })
 
 describe('computeVisitStats - unit granularity', () => {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import type { Schedule } from '@/types'
 import {
   currentQuarter, interviewSeverity, meetingSeverity,
-  computeInterviewReminders, computeMeetingReminders,
+  computeInterviewReminders, computeMeetingReminders, selectMeetingReminderSchedules,
 } from './reminders'
 
 function sched(p: Partial<Schedule>): Schedule {
@@ -99,5 +99,30 @@ describe('computeMeetingReminders', () => {
     const visits = [sched({ type: 'ward_visit', date: '2026-05-01' })]
     const r = computeMeetingReminders(visits, [], new Set(), today)
     expect(r).toHaveLength(0)
+  })
+})
+
+describe('selectMeetingReminderSchedules', () => {
+  it('actingSeventyUid가 있으면 같은 unit의 다른 칠십인 일정으로 모임 리마인더를 만족 처리하지 않는다', () => {
+    const schedules = [
+      sched({ id: 'visit-s1', type: 'ward_visit', seventyUid: 's1', unitId: 'seoul-stake', date: '2026-06-20' }),
+      sched({ id: 'meeting-s2', type: 'meeting', seventyUid: 's2', unitId: 'seoul-stake', date: '2026-06-06' }),
+    ]
+    const selected = selectMeetingReminderSchedules(schedules, new Set(['seoul-stake']), 's1')
+
+    expect(selected.wardVisits.map(s => s.id)).toEqual(['visit-s1'])
+    expect(selected.meetings).toHaveLength(0)
+  })
+
+  it('actingSeventyUid가 없으면 unit scope로 모임 리마인더 일정을 고른다', () => {
+    const schedules = [
+      sched({ id: 'visit-in-scope', type: 'ward_visit', seventyUid: 's1', unitId: 'seoul-stake' }),
+      sched({ id: 'meeting-in-scope', type: 'meeting', seventyUid: 's2', unitId: 'seoul-stake' }),
+      sched({ id: 'visit-out-scope', type: 'ward_visit', seventyUid: 's1', unitId: 'busan-stake' }),
+    ]
+    const selected = selectMeetingReminderSchedules(schedules, new Set(['seoul-stake']), null)
+
+    expect(selected.wardVisits.map(s => s.id)).toEqual(['visit-in-scope'])
+    expect(selected.meetings.map(s => s.id)).toEqual(['meeting-in-scope'])
   })
 })

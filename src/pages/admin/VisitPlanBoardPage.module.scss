@@ -8,9 +8,9 @@
     padding-bottom: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px) + #{$space-3});
   }
 }
-.header { display: flex; align-items: center; justify-content: space-between; gap: $space-2; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: $space-2; flex-wrap: wrap; }
 .title { font-size: $font-size-lg; font-weight: $font-weight-bold; color: $color-text; margin: 0; }
-.actions { display: flex; gap: $space-2; }
+.actions { display: flex; gap: $space-2; flex-wrap: wrap; justify-content: flex-end; }
 
 .grid {
   display: grid;

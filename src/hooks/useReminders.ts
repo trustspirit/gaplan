@@ -8,12 +8,12 @@ import { fetchScopedSchedulesInRange, subscribeToSchedules } from '@/services/sc
 import { getDismissedReminders, dismissReminder } from '@/services/userSettingsService'
 import {
   currentQuarter, computeInterviewReminders, computeMeetingReminders,
-  type InterviewReminder, type MeetingReminder,
+  selectMeetingReminderSchedules, type InterviewReminder, type MeetingReminder,
 } from '@/utils/reminders'
 import { ALL_UNITS } from '@/constants/regions'
 import { useEffectiveScope } from '@/hooks/useEffectiveScope'
 import { seventyViewAtom } from '@/store/seventyViewAtom'
-import { SCOPE_ALL } from '@/utils/scope'
+import { resolveAdminViewSeventyUid } from '@/utils/scope'
 import type { Schedule } from '@/types'
 
 export function useReminders() {
@@ -27,15 +27,8 @@ export function useReminders() {
   const scope = useEffectiveScope()
   const viewSeventyUid = useAtomValue(seventyViewAtom)
 
-  // Resolve the seventy uid to scope the CF query for admin users.
-  // viewSeventyUid overrides; SCOPE_ALL = no filter; secondary role provides the default.
   const querySeventyUid = useMemo(() => {
-    if (!user || user.role !== 'admin') return null
-    if (viewSeventyUid === SCOPE_ALL) return null
-    if (viewSeventyUid) return viewSeventyUid
-    if (user.secondaryRole === 'exec_secretary') return user.assignedSeventyUid ?? null
-    if (user.secondaryRole === 'seventy') return user.uid
-    return null
+    return resolveAdminViewSeventyUid(user, viewSeventyUid)
   }, [user, viewSeventyUid])
 
   // Subscribe to schedule changes so the CF-fetched reminder data stays fresh after CRUD.
@@ -102,10 +95,13 @@ export function useReminders() {
 
   const scopeUnitIds = useMemo(() => new Set(scopeUnits.map(u => u.id)), [scopeUnits])
   const meetingReminders: MeetingReminder[] = useMemo(() => {
-    const wardVisits = schedules.filter(s => s.type === 'ward_visit' && scopeUnitIds.has(s.unitId))
-    const meetings = schedules.filter(s => s.type === 'meeting' && scopeUnitIds.has(s.unitId))
+    const { wardVisits, meetings } = selectMeetingReminderSchedules(
+      schedules,
+      scopeUnitIds,
+      scope.actingSeventyUid,
+    )
     return computeMeetingReminders(wardVisits, meetings, new Set(dismissed), today)
-  }, [schedules, scopeUnitIds, dismissed, today])
+  }, [schedules, scopeUnitIds, scope.actingSeventyUid, dismissed, today])
 
   const dismiss = async (key: string) => {
     if (!user) return

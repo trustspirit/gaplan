@@ -1,6 +1,6 @@
 import {
   collection, query, where, onSnapshot, orderBy,
-  doc, updateDoc, addDoc, serverTimestamp,
+  doc, updateDoc, addDoc, serverTimestamp, deleteDoc,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
@@ -43,6 +43,10 @@ export async function completeTask(taskId: string): Promise<void> {
 
 export async function expireTask(taskId: string): Promise<void> {
   await updateDoc(doc(db, 'tasks', taskId), { status: 'expired' })
+}
+
+export async function deleteTask(taskId: string): Promise<void> {
+  await deleteDoc(doc(db, 'tasks', taskId))
 }
 
 export async function updateTaskDetails(

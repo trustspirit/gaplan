@@ -13,6 +13,29 @@ export const SCOPE_ALL = '__all__' as const
 const EMPTY: EffectiveScope = { regionIds: [], actingSeventyUid: null }
 const ALL: EffectiveScope = { regionIds: null, actingSeventyUid: null }
 
+export function resolveAdminViewSeventyUid(
+  user: AppUser | null,
+  viewSeventyUid: string | null,
+): string | null {
+  if (!user || user.role !== 'admin') return null
+  if (viewSeventyUid === SCOPE_ALL) return null
+  if (viewSeventyUid) return viewSeventyUid
+  if (user.secondaryRole === 'exec_secretary') return user.assignedSeventyUid ?? null
+  if (user.secondaryRole === 'seventy') return user.uid
+  return null
+}
+
+export function resolveScopedScheduleSeventyUid(
+  user: AppUser | null,
+  viewSeventyUid: string | null,
+): string | null {
+  if (!user) return null
+  if (user.role === 'admin') return resolveAdminViewSeventyUid(user, viewSeventyUid)
+  if (user.role === 'exec_secretary') return user.assignedSeventyUid ?? null
+  if (user.role === 'seventy') return user.uid
+  return null
+}
+
 function regionIdsOf(uid: string, users: AppUser[]): string[] | null {
   const s = users.find(x => x.uid === uid && x.role === 'seventy')
   if (!s) return null  // 칠십인을 못 찾음(삭제 등)
@@ -47,7 +70,7 @@ export function resolveEffectiveScope(
     // Default scope based on secondaryRole
     const sr = user.secondaryRole
     if (sr === 'exec_secretary') {
-      const activeUid = user.assignedSeventyUid ?? null
+      const activeUid = resolveAdminViewSeventyUid(user, viewSeventyUid)
       if (!activeUid) return ALL
       const regionIds = regionIdsOf(activeUid, users)
       return regionIds !== null ? { regionIds, actingSeventyUid: activeUid } : ALL

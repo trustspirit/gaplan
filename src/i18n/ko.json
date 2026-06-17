@@ -80,6 +80,7 @@
     "publish": "Publish",
     "publishConfirm": "이 계획의 모든 방문을 캘린더에 등록할까요?",
     "publishSuccess": "발행되었습니다",
+    "saveSuccess": "저장되었습니다",
     "addVisit": "방문 추가",
     "wardStaleFirst": "와드 (밀린 순)",
     "date": "날짜",

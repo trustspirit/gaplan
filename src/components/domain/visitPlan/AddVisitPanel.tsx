@@ -35,7 +35,7 @@ export function AddVisitPanel({ staleWards, onAdd }: Props) {
 
       <label className={styles.label}>{t('visitPlan.wardStaleFirst')}</label>
       <div className={styles.wardChips}>
-        {staleWards.slice(0, 30).map(w => (
+        {staleWards.map(w => (
           <button
             key={w.id}
             type="button"

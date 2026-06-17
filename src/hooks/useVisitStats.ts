@@ -6,6 +6,7 @@ import { fetchScopedSchedulesInRange } from '@/services/scheduleService'
 import { computeVisitStats, type StatsFilters, type VisitStats } from '@/utils/visitStats'
 import { useEffectiveScope } from '@/hooks/useEffectiveScope'
 import { seventyViewAtom } from '@/store/seventyViewAtom'
+import { resolveAdminViewSeventyUid } from '@/utils/scope'
 import type { Schedule } from '@/types'
 
 const FETCH_MONTHS = 24
@@ -16,25 +17,29 @@ export function useVisitStats(filters: StatsFilters) {
   const [loading, setLoading] = useState(true)
   const scope = useEffectiveScope()
   const viewSeventyUid = useAtomValue(seventyViewAtom)
+  const querySeventyUid = useMemo(
+    () => resolveAdminViewSeventyUid(user, viewSeventyUid),
+    [user, viewSeventyUid],
+  )
 
   useEffect(() => {
     let active = true
     setLoading(true)
     const start = dayjs().subtract(FETCH_MONTHS, 'month').format('YYYY-MM-DD')
     const end = dayjs().add(12, 'month').format('YYYY-MM-DD')
-    fetchScopedSchedulesInRange(start, end, user?.role === 'admin' ? viewSeventyUid : undefined)
+    fetchScopedSchedulesInRange(start, end, user?.role === 'admin' ? querySeventyUid : undefined)
       .then(data => { if (active) { setSchedules(data); setLoading(false) } })
       .catch(() => { if (active) { setSchedules([]); setLoading(false) } })
     return () => { active = false }
-  }, [viewSeventyUid, user?.role])
+  }, [querySeventyUid, user?.role])
 
   const allowedRegionIds = useMemo<string[] | null>(() => scope.regionIds, [scope])
 
   const today = useMemo(() => dayjs().format('YYYY-MM-DD'), [])
 
   const stats: VisitStats = useMemo(
-    () => computeVisitStats(schedules, filters, allowedRegionIds, today),
-    [schedules, filters, allowedRegionIds, today],
+    () => computeVisitStats(schedules, filters, allowedRegionIds, today, { actingSeventyUid: scope.actingSeventyUid }),
+    [schedules, filters, allowedRegionIds, today, scope.actingSeventyUid],
   )
 
   return { stats, loading }

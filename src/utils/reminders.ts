@@ -119,3 +119,17 @@ export function computeMeetingReminders(
   }
   return result
 }
+
+export function selectMeetingReminderSchedules(
+  schedules: Schedule[],
+  scopeUnitIds: Set<string>,
+  actingSeventyUid: string | null,
+): { wardVisits: Schedule[]; meetings: Schedule[] } {
+  const inScope = (schedule: Schedule) =>
+    actingSeventyUid ? schedule.seventyUid === actingSeventyUid : scopeUnitIds.has(schedule.unitId)
+
+  return {
+    wardVisits: schedules.filter(s => s.type === 'ward_visit' && inScope(s)),
+    meetings: schedules.filter(s => s.type === 'meeting' && inScope(s)),
+  }
+}

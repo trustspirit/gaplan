@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { authUserAtom } from '@/store/authAtom'
+import { seventyViewAtom } from '@/store/seventyViewAtom'
 import { useTasks } from '@/hooks/useTasks'
 import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
@@ -33,6 +34,7 @@ import {
 import type { Schedule } from '@/types'
 import { useWardSubmit } from '@/hooks/useWardSubmit'
 import { REGIONS } from '@/constants/regions'
+import { resolveScopedScheduleSeventyUid } from '@/utils/scope'
 import styles from './DashboardPage.module.scss'
 
 const isActiveSchedule = (schedule: Schedule) => schedule.status === 'confirmed' || schedule.status === 'pending'
@@ -301,7 +303,11 @@ function AdminDashboardContent() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const navigate = useNavigate()
-  const { schedules, loading: schedulesLoading } = useSchedules({})
+  const viewSeventyUid = useAtomValue(seventyViewAtom)
+  const scheduleSeventyUid = resolveScopedScheduleSeventyUid(user, viewSeventyUid)
+  const { schedules, loading: schedulesLoading } = useSchedules(
+    scheduleSeventyUid ? { seventyUid: scheduleSeventyUid } : {},
+  )
   const { interviewReminders, meetingReminders, dismiss, loading: remindersLoading } = useReminders()
   const { getUnitName } = useUnits()
   const { setting: rangeSetting, range, save: saveRange, loading: rangeLoading } = useScheduleDateRange(user.uid)

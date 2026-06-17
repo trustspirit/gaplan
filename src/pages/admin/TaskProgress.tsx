@@ -5,13 +5,14 @@ import dayjs from 'dayjs'
 import { toast } from 'sonner'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle2, Clock, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Pencil, XCircle } from 'lucide-react'
+import { CheckCircle2, Clock, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Pencil, Trash2, XCircle } from 'lucide-react'
 import { authUserAtom } from '@/store/authAtom'
 import { useAllTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
 import { useGeneralSchedules } from '@/hooks/useGeneralSchedules'
+import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { adminConfirmSchedule, adminConfirmWardVisit } from '@/services/scheduleService'
-import { expireTask, updateTaskDetails } from '@/services/taskService'
+import { deleteTask, expireTask, updateTaskDetails } from '@/services/taskService'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Modal } from '@/components/ui'
@@ -264,9 +265,14 @@ function RespondedSlotRow({ slot, taskId, onConfirmed }: { slot: RespondedSlot; 
 
 // ── Single task row ──────────────────────────────────────────────────────────
 
-interface TaskRowProps { task: Task; presidentName: string; unitName: string }
+interface TaskRowProps {
+  task: Task
+  presidentName: string
+  unitName: string
+  onDeleteTask?: (task: Task) => void
+}
 
-function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
+function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -386,6 +392,21 @@ function TaskRow({ task, presidentName, unitName }: TaskRowProps) {
                 <XCircle size={14} />
               </button>
             )}
+
+            {isExpired && onDeleteTask && (
+              <button
+                type="button"
+                className={clsx(styles.actionBtn, styles.actionBtnDanger)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDeleteTask(task)
+                }}
+                title={t('common.delete')}
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -440,9 +461,10 @@ interface RegionGroupProps {
   getUnitName: (uid: string) => string
   generalSchedules?: GeneralSchedule[]
   currentUser?: AppUser
+  onDeleteTask?: (task: Task) => void
 }
 
-function RegionGroup({ regionId, tasks, getUserName, getUnitName, generalSchedules, currentUser }: RegionGroupProps) {
+function RegionGroup({ regionId, tasks, getUserName, getUnitName, generalSchedules, currentUser, onDeleteTask }: RegionGroupProps) {
   const { t } = useTranslation()
   const regionName = REGIONS.find(r => r.id === regionId)?.name ?? regionId
   const responded = tasks.filter(t => t.status === 'responded')
@@ -456,6 +478,7 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName, generalSchedul
       task={t}
       presidentName={getUserName(t.assignedTo)}
       unitName={getUnitName(t.assignedTo)}
+      onDeleteTask={onDeleteTask}
     />
   ))
 
@@ -562,6 +585,8 @@ export function TaskProgress() {
   )
   const { users } = useUsers()
   const { generalSchedules } = useGeneralSchedules()
+  const { pendingIds: pendingDeleteTaskIds, scheduleDelete } = useDeleteWithUndo()
+  const canDeleteTasks = user.role === 'admin' || user.role === 'exec_secretary'
 
   const getUserName = (uid: string) => users.find(u => u.uid === uid)?.name ?? uid
   const getUnitName = (uid: string) => {
@@ -570,18 +595,24 @@ export function TaskProgress() {
     return unit?.name.ko ?? '-'
   }
 
+  const visibleTasks = tasks.filter(t => !pendingDeleteTaskIds.has(t.id))
+
+  const handleDeleteTask = (task: Task) => {
+    scheduleDelete(task.id, () => deleteTask(task.id), t('common.deleted'))
+  }
+
   // Group tasks by regionId
-  const tasksByRegion = tasks.reduce<Record<string, Task[]>>((acc, t) => {
+  const tasksByRegion = visibleTasks.reduce<Record<string, Task[]>>((acc, t) => {
     const key = t.regionId || 'unknown'
     if (!acc[key]) acc[key] = []
     acc[key].push(t)
     return acc
   }, {})
 
-  const totalResponded = tasks.filter(t => t.status === 'responded').length
-  const totalPending = tasks.filter(t => t.status === 'pending').length
-  const totalCompleted = tasks.filter(t => t.status === 'completed').length
-  const totalExpired = tasks.filter(t => t.status === 'expired').length
+  const totalResponded = visibleTasks.filter(t => t.status === 'responded').length
+  const totalPending = visibleTasks.filter(t => t.status === 'pending').length
+  const totalCompleted = visibleTasks.filter(t => t.status === 'completed').length
+  const totalExpired = visibleTasks.filter(t => t.status === 'expired').length
 
   // Order regions by REGIONS constant order, put unknown at end
   const regionIds = [
@@ -624,7 +655,7 @@ export function TaskProgress() {
               {[1,2,3].map(i => <Skeleton key={i} height="56px" className={styles.skeletonRow} />)}
             </CardBody>
           </Card>
-        ) : tasks.length === 0 ? (
+        ) : visibleTasks.length === 0 ? (
           <Card><CardBody><p className={styles.empty}>생성된 Task가 없습니다.</p></CardBody></Card>
         ) : (
           regionIds.map(regionId => (
@@ -636,6 +667,7 @@ export function TaskProgress() {
               getUnitName={getUnitName}
               generalSchedules={generalSchedules}
               currentUser={user}
+              onDeleteTask={canDeleteTasks ? handleDeleteTask : undefined}
             />
           ))
         )}
