@@ -21,16 +21,14 @@ import { deleteScheduleViaCF } from '@/services/scheduleService'
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Skeleton, Button, Modal, BottomSheet } from '@/components/ui'
-import {
-  TaskCard,
-  ScheduleItem,
-  TaskPickerContent,
-  taskPickerTitle,
-  ScheduleDateRangeFilter,
-  ScheduleFormModal,
-  EditScheduleModal,
-  RemindersCard,
-} from '@/components/domain'
+import { TaskCard } from '@/components/domain/TaskCard/TaskCard'
+import { ScheduleItem } from '@/components/domain/ScheduleItem/ScheduleItem'
+import { TaskPickerContent } from '@/components/domain/TaskPickerContent/TaskPickerContent'
+import { taskPickerTitle } from '@/components/domain/TaskPickerContent/taskPickerTitle'
+import { ScheduleDateRangeFilter } from '@/components/domain/ScheduleDateRangeFilter/ScheduleDateRangeFilter'
+import { ScheduleFormModal } from '@/components/domain/ScheduleFormModal/ScheduleFormModal'
+import { EditScheduleModal } from '@/components/domain/EditScheduleModal/EditScheduleModal'
+import { RemindersCard } from '@/components/domain/RemindersCard/RemindersCard'
 import type { Schedule } from '@/types'
 import { useWardSubmit } from '@/hooks/useWardSubmit'
 import { REGIONS } from '@/constants/regions'

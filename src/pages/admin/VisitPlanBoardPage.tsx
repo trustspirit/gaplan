@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAtomValue } from 'jotai'
 import { useTranslation } from 'react-i18next'
@@ -12,7 +12,10 @@ import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { useVisitPlanContext } from '@/hooks/useVisitPlanContext'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Button, Spinner, DeleteConfirmSheet } from '@/components/ui'
-import { AddVisitPanel, PlanItemList, BalancePanel, ProjectPicker } from '@/components/domain'
+import { AddVisitPanel } from '@/components/domain/visitPlan/AddVisitPanel'
+import { PlanItemList } from '@/components/domain/visitPlan/PlanItemList'
+import { BalancePanel } from '@/components/domain/visitPlan/BalancePanel'
+import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
 import type { VisitPlan, VisitPlanItem } from '@/types'
 import styles from './VisitPlanBoardPage.module.scss'
 
@@ -29,9 +32,11 @@ export function VisitPlanBoardPage() {
   const [plan, setPlan] = useState<VisitPlan | null>(null)
   const [loadingPlan, setLoadingPlan] = useState(true)
   const [publishing, setPublishing] = useState(false)
-  const [savingDraft, setSavingDraft] = useState(false)
+  const [itemsSaving, setItemsSaving] = useState(false)
   const [savingProject, setSavingProject] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const latestItemsRef = useRef<VisitPlanItem[]>([])
+  const pendingItemsSaveRef = useRef<Promise<void> | null>(null)
   const { pendingIds: deletingPlanIds, scheduleDelete: schedulePlanDelete } = useDeleteWithUndo()
 
   useEffect(() => {
@@ -39,18 +44,44 @@ export function VisitPlanBoardPage() {
     getVisitPlan(planId).then(p => { setPlan(p); setLoadingPlan(false) })
   }, [planId])
 
-  const items = plan?.items ?? []
+  const items = useMemo(() => plan?.items ?? [], [plan?.items])
   const { loading: ctxLoading, staleWards, lastVisitByWard, balance, generalSchedules } =
     useVisitPlanContext(plan?.seventyUid, items)
 
-  const persist = async (planId: string, nextItems: VisitPlanItem[]) => {
+  useEffect(() => {
+    latestItemsRef.current = items
+  }, [items])
+
+  const saveItems = async (
+    planId: string,
+    nextItems: VisitPlanItem[],
+    options: { successMessage?: string; errorMessage?: string | null } = {},
+  ) => {
+    latestItemsRef.current = nextItems
     setPlan(prev => (prev ? { ...prev, items: nextItems } : prev))
-    await updateVisitPlanItems(planId, nextItems)
+    setItemsSaving(true)
+    const savePromise = updateVisitPlanItems(planId, nextItems)
+    pendingItemsSaveRef.current = savePromise
+    try {
+      await savePromise
+      if (options.successMessage) toast.success(options.successMessage)
+    } catch (e) {
+      if (options.errorMessage !== null) {
+        toast.error(options.errorMessage ?? t('visitPlan.saveFailed'))
+      }
+      throw e
+    } finally {
+      if (pendingItemsSaveRef.current === savePromise) {
+        pendingItemsSaveRef.current = null
+        setItemsSaving(false)
+      }
+    }
   }
 
   const handleAdd = (partial: Omit<VisitPlanItem, 'itemId' | 'scheduleId'>) => {
     if (!plan) return
-    persist(plan.id, [...(plan.items ?? []), { ...partial, itemId: uid() }])
+    const nextItems = [...latestItemsRef.current, { ...partial, itemId: uid() }]
+    void saveItems(plan.id, nextItems).catch(() => {})
   }
 
   const handleRemove = (itemId: string) => {
@@ -61,15 +92,18 @@ export function VisitPlanBoardPage() {
       if (target?.scheduleId) {
         try { await deleteScheduleViaCF(target.scheduleId) } catch { /* already deleted */ }
       }
-      await updateVisitPlanItems(plan.id, filtered)
+      await saveItems(plan.id, filtered, { errorMessage: null })
     }, t('common.deleted'))
   }
 
   const handlePublish = async () => {
     if (!plan) return
+    if (itemsSaving || deletingPlanIds.size > 0) return
     if (!confirm(t('visitPlan.publishConfirm'))) return
     setPublishing(true)
     try {
+      if (pendingItemsSaveRef.current) await pendingItemsSaveRef.current
+      await updateVisitPlanItems(plan.id, latestItemsRef.current)
       await publishVisitPlan(plan.id)
       const fresh = await getVisitPlan(plan.id)
       setPlan(fresh)
@@ -83,14 +117,10 @@ export function VisitPlanBoardPage() {
 
   const handleSaveDraft = async () => {
     if (!plan) return
-    setSavingDraft(true)
     try {
-      await updateVisitPlanItems(plan.id, plan.items ?? [])
-      toast.success(t('visitPlan.saveSuccess'))
+      await saveItems(plan.id, latestItemsRef.current, { successMessage: t('visitPlan.saveSuccess') })
     } catch {
-      toast.error('저장에 실패했습니다.')
-    } finally {
-      setSavingDraft(false)
+      // saveItems already reports the error.
     }
   }
 
@@ -121,8 +151,8 @@ export function VisitPlanBoardPage() {
           <h2 className={styles.title}>{plan.title}</h2>
           <div className={styles.actions}>
             <Button variant="secondary" size="sm" onClick={() => setShowDeleteConfirm(true)} disabled={deletingPlanIds.has(plan.id)}>{t('common.delete')}</Button>
-            <Button variant="secondary" size="sm" onClick={handleSaveDraft} loading={savingDraft} disabled={savingProject}>{t('common.save')}</Button>
-            <Button size="sm" onClick={handlePublish} loading={publishing} disabled={savingProject}>{t('visitPlan.publish')}</Button>
+            <Button variant="secondary" size="sm" onClick={handleSaveDraft} loading={itemsSaving} disabled={savingProject || itemsSaving || deletingPlanIds.size > 0}>{t('common.save')}</Button>
+            <Button size="sm" onClick={handlePublish} loading={publishing} disabled={savingProject || itemsSaving || deletingPlanIds.size > 0}>{t('visitPlan.publish')}</Button>
           </div>
         </div>
 

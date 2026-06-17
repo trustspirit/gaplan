@@ -4,7 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { VisitPlan } from '@/types'
 
 const mocks = vi.hoisted(() => ({
+  getVisitPlan: vi.fn(),
   updateVisitPlanItems: vi.fn(),
+  publishVisitPlan: vi.fn(),
+  addedVisit: {
+    unitId: 'seoul-stake',
+    wardName: '서대문 와드',
+    date: '2026-07-12',
+    startTime: '11:00',
+    endTime: '12:00',
+  },
 }))
 
 vi.mock('react-router-dom', () => ({
@@ -25,19 +34,10 @@ vi.mock('react-i18next', () => ({
 }))
 
 vi.mock('@/services/visitPlanService', () => ({
-  getVisitPlan: vi.fn(async (): Promise<VisitPlan> => ({
-    id: 'plan-1',
-    title: '테스트 계획',
-    seventyUid: 'sev-1',
-    status: 'draft',
-    items: [{ itemId: 'item-1', unitId: 'seoul-stake', wardName: '녹번 와드', date: '2026-07-05', startTime: '10:00', endTime: '13:00' }],
-    createdBy: 'admin-1',
-    createdAt: '2026-06-01',
-    projectId: 'project-1',
-  })),
+  getVisitPlan: mocks.getVisitPlan,
   updateVisitPlanItems: mocks.updateVisitPlanItems,
   deleteVisitPlan: vi.fn(),
-  publishVisitPlan: vi.fn(),
+  publishVisitPlan: mocks.publishVisitPlan,
   updateVisitPlanProject: vi.fn(),
 }))
 
@@ -72,10 +72,18 @@ vi.mock('@/components/ui', () => ({
   Spinner: () => <div>loading</div>,
   DeleteConfirmSheet: () => null,
 }))
-vi.mock('@/components/domain', () => ({
-  AddVisitPanel: () => <div>add visit</div>,
+vi.mock('@/components/domain/visitPlan/AddVisitPanel', () => ({
+  AddVisitPanel: ({ onAdd }: { onAdd: (item: typeof mocks.addedVisit) => void }) => (
+    <button type="button" onClick={() => onAdd(mocks.addedVisit)}>mock-add-visit</button>
+  ),
+}))
+vi.mock('@/components/domain/visitPlan/PlanItemList', () => ({
   PlanItemList: () => <div>items</div>,
+}))
+vi.mock('@/components/domain/visitPlan/BalancePanel', () => ({
   BalancePanel: () => <div>balance</div>,
+}))
+vi.mock('@/components/domain/ProjectPicker/ProjectPicker', () => ({
   ProjectPicker: () => <div data-testid="project-picker" />,
 }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
@@ -85,6 +93,19 @@ import { VisitPlanBoardPage } from './VisitPlanBoardPage'
 describe('VisitPlanBoardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubGlobal('confirm', vi.fn(() => true))
+    mocks.getVisitPlan.mockResolvedValue({
+      id: 'plan-1',
+      title: '테스트 계획',
+      seventyUid: 'sev-1',
+      status: 'draft',
+      items: [{ itemId: 'item-1', unitId: 'seoul-stake', wardName: '녹번 와드', date: '2026-07-05', startTime: '10:00', endTime: '13:00' }],
+      createdBy: 'admin-1',
+      createdAt: '2026-06-01',
+      projectId: 'project-1',
+    } satisfies VisitPlan)
+    mocks.updateVisitPlanItems.mockResolvedValue(undefined)
+    mocks.publishVisitPlan.mockResolvedValue(undefined)
   })
 
   it('보드에서 프로젝트 연결 선택기를 유지한다', async () => {
@@ -107,5 +128,26 @@ describe('VisitPlanBoardPage', () => {
         expect.objectContaining({ itemId: 'item-1', wardName: '녹번 와드' }),
       ])
     })
+  })
+
+  it('방문 추가 저장 중에는 publish를 막는다', async () => {
+    let resolveSave: () => void = () => {}
+    mocks.updateVisitPlanItems.mockImplementation(
+      () => new Promise<void>(resolve => { resolveSave = resolve }),
+    )
+    const user = userEvent.setup()
+    render(<VisitPlanBoardPage />)
+
+    await screen.findByText('테스트 계획')
+    await user.click(screen.getByRole('button', { name: 'mock-add-visit' }))
+
+    const publish = screen.getByRole('button', { name: 'visitPlan.publish' })
+    await waitFor(() => expect(publish).toBeDisabled())
+    await user.click(publish)
+
+    expect(mocks.publishVisitPlan).not.toHaveBeenCalled()
+
+    resolveSave()
+    await waitFor(() => expect(publish).not.toBeDisabled())
   })
 })

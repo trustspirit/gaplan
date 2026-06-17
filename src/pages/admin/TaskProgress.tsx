@@ -16,7 +16,9 @@ import { deleteTask, expireTask, updateTaskDetails } from '@/services/taskServic
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Modal } from '@/components/ui'
-import { MultiDatePicker, ResponseMatrix, ScheduleSuggestions } from '@/components/domain'
+import { MultiDatePicker } from '@/components/domain/MultiDatePicker/MultiDatePicker'
+import { ResponseMatrix } from '@/components/domain/ResponseMatrix/ResponseMatrix'
+import { ScheduleSuggestions } from '@/components/domain/ScheduleSuggestions/ScheduleSuggestions'
 import type { Task, RespondedSlot, GeneralSchedule, AppUser } from '@/types'
 import styles from './TaskProgress.module.scss'
 
@@ -471,6 +473,8 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName, generalSchedul
   const pending = tasks.filter(t => t.status === 'pending')
   const completed = tasks.filter(t => t.status === 'completed')
   const expired = tasks.filter(t => t.status === 'expired')
+  const visitResponded = responded.filter(t => t.type === 'select_visit')
+  const visitCompleted = completed.filter(t => t.type === 'select_visit')
 
   const renderRows = (list: Task[]) => list.map(t => (
     <TaskRow
@@ -539,10 +543,10 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName, generalSchedul
                 )
               })}
 
-              {responded.length > 0 && (
+              {visitResponded.length > 0 && (
                 <div className={styles.statusSection}>
-                  <p className={styles.statusLabel}>확정 대기 ({responded.length})</p>
-                  {renderRows(responded.filter(t => t.type === 'select_visit'))}
+                  <p className={styles.statusLabel}>확정 대기 ({visitResponded.length})</p>
+                  {renderRows(visitResponded)}
                 </div>
               )}
               {pending.length > 0 && (
@@ -551,10 +555,10 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName, generalSchedul
                   {renderRows(pending)}
                 </div>
               )}
-              {completed.length > 0 && (
+              {visitCompleted.length > 0 && (
                 <div className={styles.statusSection}>
-                  <p className={styles.statusLabel}>완료 ({completed.length})</p>
-                  {renderRows(completed.filter(t => t.type === 'select_visit'))}
+                  <p className={styles.statusLabel}>완료 ({visitCompleted.length})</p>
+                  {renderRows(visitCompleted)}
                 </div>
               )}
               {expired.length > 0 && (

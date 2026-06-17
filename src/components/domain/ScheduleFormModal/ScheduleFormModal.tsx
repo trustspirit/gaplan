@@ -125,11 +125,17 @@ export function ScheduleFormModal({
   const selectedSeventy = users.find((u) => u.uid === effectiveSeventyUid)
   const seventyRegionIds =
     selectedSeventy?.regionIds ?? (selectedSeventy?.regionId ? [selectedSeventy.regionId] : [])
+  const waitingForSeventyScope = !!effectiveSeventyUid && !selectedSeventy
   const unitPool =
-    seventyRegionIds.length > 0
+    !effectiveSeventyUid
+      ? ALL_UNITS
+      : waitingForSeventyScope
+        ? []
+        : seventyRegionIds.length > 0
       ? ALL_UNITS.filter((u) => seventyRegionIds.includes(u.regionId ?? ''))
-      : ALL_UNITS
+      : []
   const unitOptions = unitPool.map((u) => ({ value: u.id, label: u.name.ko }))
+  const unitSelectDisabled = waitingForSeventyScope || (!!effectiveSeventyUid && unitOptions.length === 0)
   const wardOptions = unitId
     ? getWardsByUnit(unitId).map((w) => ({ value: w.name.ko, label: w.name.ko }))
     : []
@@ -280,6 +286,7 @@ export function ScheduleFormModal({
               value={unitId}
               onChange={(e) => handleUnitChange(e.target.value)}
               options={unitOptions}
+              disabled={unitSelectDisabled}
             />
 
             {/* Ward — ward_visit only */}

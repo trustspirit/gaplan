@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { AddVisitPanel } from './AddVisitPanel'
 import type { LastVisitEntry } from '@/utils/visitStats'
@@ -29,5 +30,17 @@ describe('AddVisitPanel', () => {
     render(<AddVisitPanel staleWards={staleWards} onAdd={vi.fn()} />)
 
     expect(screen.getByRole('button', { name: /와드 35/ })).toBeInTheDocument()
+  })
+
+  it('와드 후보를 검색해서 좁힐 수 있다', async () => {
+    const user = userEvent.setup()
+    const staleWards = Array.from({ length: 35 }, (_, i) => entry(i + 1))
+
+    render(<AddVisitPanel staleWards={staleWards} onAdd={vi.fn()} />)
+
+    await user.type(screen.getByLabelText('visitPlan.searchWard'), '35')
+
+    expect(screen.getByRole('button', { name: /와드 35/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^와드 1 ·/ })).not.toBeInTheDocument()
   })
 })

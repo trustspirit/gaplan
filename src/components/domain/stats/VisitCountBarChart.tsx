@@ -8,10 +8,10 @@ interface Props {
 
 export function VisitCountBarChart({ data }: Props) {
   const { t } = useTranslation()
-  const sorted = [...data].filter(d => d.count > 0).sort((a, b) => b.count - a.count)
+  const sorted = [...data].sort((a, b) => b.count - a.count)
   const max = Math.max(...sorted.map(d => d.count), 1)
 
-  if (sorted.length === 0) {
+  if (data.length === 0) {
     return <p className={styles.empty}>{t('stats.noData')}</p>
   }
 
@@ -23,7 +23,10 @@ export function VisitCountBarChart({ data }: Props) {
           <div className={styles.track}>
             <div
               className={styles.bar}
-              style={{ width: `${Math.max((d.count / max) * 100, 3)}%` }}
+              style={{
+                width: d.count === 0 ? '0%' : `${Math.max((d.count / max) * 100, 3)}%`,
+                minWidth: d.count === 0 ? 0 : undefined,
+              }}
             />
           </div>
           <span className={styles.count}>{d.count}</span>

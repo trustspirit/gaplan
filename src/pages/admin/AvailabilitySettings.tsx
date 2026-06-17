@@ -8,7 +8,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { saveAvailabilitySlots } from '@/services/availabilityService'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Select, Skeleton } from '@/components/ui'
-import { AvailabilityEditor } from '@/components/domain'
+import { AvailabilityEditor } from '@/components/domain/AvailabilityEditor/AvailabilityEditor'
 import type { AvailabilitySlot } from '@/types'
 import styles from './AvailabilitySettings.module.scss'
 

@@ -5,14 +5,12 @@ import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { useVisitStats } from '@/hooks/useVisitStats'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody } from '@/components/ui'
-import {
-  StatsFilterBar,
-  VisitCountBarChart,
-  MonthlyTrendChart,
-  LastVisitList,
-  StaleWardsCard,
-} from '@/components/domain'
+import { Card, CardHeader, CardBody, Button } from '@/components/ui'
+import { StatsFilterBar } from '@/components/domain/stats/StatsFilterBar'
+import { VisitCountBarChart } from '@/components/domain/stats/VisitCountBarChart'
+import { MonthlyTrendChart } from '@/components/domain/stats/MonthlyTrendChart'
+import { LastVisitList } from '@/components/domain/stats/LastVisitList'
+import { StaleWardsCard } from '@/components/domain/stats/StaleWardsCard'
 import { REGIONS } from '@/constants/regions'
 import { useEffectiveScope } from '@/hooks/useEffectiveScope'
 import type { StatsFilters } from '@/utils/visitStats'
@@ -37,7 +35,7 @@ export function StatsPage() {
     period: '6m',
   })
 
-  const { stats, loading } = useVisitStats(filters)
+  const { stats, loading, error, reload } = useVisitStats(filters)
 
   return (
     <AppShell
@@ -55,6 +53,11 @@ export function StatsPage() {
 
         {loading ? (
           <p className={styles.loading}>{t('stats.loading')}</p>
+        ) : error ? (
+          <div className={styles.errorBanner} role="alert">
+            <span>{t('stats.loadFailed')}</span>
+            <Button variant="secondary" size="sm" onClick={reload}>{t('common.retry')}</Button>
+          </div>
         ) : (
           <>
             <div className={styles.grid}>

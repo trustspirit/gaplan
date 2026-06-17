@@ -7,7 +7,8 @@
  */
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui'
-import { TimeSlotPicker, WardAssigner } from '@/components/domain'
+import { TimeSlotPicker } from '@/components/domain/TimeSlotPicker/TimeSlotPicker'
+import { WardAssigner } from '@/components/domain/WardAssigner/WardAssigner'
 import { getWardsByUnit } from '@/constants/regions'
 import type { Task, TimeSlot, AppUser } from '@/types'
 import styles from './TaskPickerContent.module.scss'

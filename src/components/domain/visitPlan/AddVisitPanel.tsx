@@ -15,11 +15,16 @@ interface Props {
 export function AddVisitPanel({ staleWards, onAdd }: Props) {
   const { t } = useTranslation()
   const [wardName, setWardName] = useState('')
+  const [query, setQuery] = useState('')
   const [date, setDate] = useState('')
   const [startTime, setStartTime] = useState('10:00')
   const [endTime, setEndTime] = useState('13:00')
 
   const selectedWard = WARDS.find(w => w.name.ko === wardName)
+  const normalizedQuery = query.trim().toLocaleLowerCase()
+  const visibleWards = normalizedQuery
+    ? staleWards.filter(w => w.name.toLocaleLowerCase().includes(normalizedQuery))
+    : staleWards
   const canAdd = !!selectedWard && !!date && startTime < endTime
 
   const handleAdd = () => {
@@ -34,12 +39,22 @@ export function AddVisitPanel({ staleWards, onAdd }: Props) {
       <h3 className={styles.title}>{t('visitPlan.addVisit')}</h3>
 
       <label className={styles.label}>{t('visitPlan.wardStaleFirst')}</label>
+      <Input
+        label={t('visitPlan.searchWard')}
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        placeholder={t('visitPlan.searchWardPlaceholder')}
+      />
       <div className={styles.wardChips}>
-        {staleWards.map(w => (
+        {visibleWards.length === 0 && (
+          <p className={styles.empty}>{t('visitPlan.noWardMatches')}</p>
+        )}
+        {visibleWards.map(w => (
           <button
             key={w.id}
             type="button"
             className={clsx(styles.chip, styles[w.severity], wardName === w.name && styles.chipActive)}
+            aria-pressed={wardName === w.name}
             onClick={() => setWardName(w.name)}
           >
             {w.name} · {w.daysSince === null ? t('stats.neverVisited') : t('stats.daysAgo', { count: w.daysSince })}

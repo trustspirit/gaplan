@@ -15,6 +15,8 @@ export function useVisitStats(filters: StatsFilters) {
   const user = useAtomValue(authUserAtom)
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
   const scope = useEffectiveScope()
   const viewSeventyUid = useAtomValue(seventyViewAtom)
   const querySeventyUid = useMemo(
@@ -28,10 +30,10 @@ export function useVisitStats(filters: StatsFilters) {
     const start = dayjs().subtract(FETCH_MONTHS, 'month').format('YYYY-MM-DD')
     const end = dayjs().add(12, 'month').format('YYYY-MM-DD')
     fetchScopedSchedulesInRange(start, end, user?.role === 'admin' ? querySeventyUid : undefined)
-      .then(data => { if (active) { setSchedules(data); setLoading(false) } })
-      .catch(() => { if (active) { setSchedules([]); setLoading(false) } })
+      .then(data => { if (active) { setSchedules(data); setError(null); setLoading(false) } })
+      .catch((e: Error) => { if (active) { setSchedules([]); setError(e); setLoading(false) } })
     return () => { active = false }
-  }, [querySeventyUid, user?.role])
+  }, [querySeventyUid, reloadKey, user?.role])
 
   const allowedRegionIds = useMemo<string[] | null>(() => scope.regionIds, [scope])
 
@@ -42,5 +44,10 @@ export function useVisitStats(filters: StatsFilters) {
     [schedules, filters, allowedRegionIds, today, scope.actingSeventyUid],
   )
 
-  return { stats, loading }
+  return {
+    stats,
+    loading,
+    error,
+    reload: () => setReloadKey(key => key + 1),
+  }
 }

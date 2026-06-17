@@ -22,6 +22,24 @@ const expiredTask: Task = {
   availableDays: [0],
 }
 
+const interviewRespondedTask: Task = {
+  id: 'task-interview',
+  type: 'select_interview',
+  assignedTo: 'president-1',
+  seventyUid: 'seventy-1',
+  regionId: 'region-1',
+  dueDate: '2026-07-01',
+  status: 'responded',
+  createdBy: 'admin-1',
+  createdAt: '2026-06-01',
+  notifiedAt: [],
+  availableDays: [],
+  availableDateSlots: [{ date: '2026-07-05', timeRanges: [{ startTime: '10:00', endTime: '12:00' }] }],
+  respondedSlots: [{ date: '2026-07-05', startTime: '10:00', endTime: '11:00' }],
+}
+
+let mockTasks: Task[] = [expiredTask]
+
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }))
 
 vi.mock('jotai', () => ({
@@ -37,7 +55,7 @@ vi.mock('react-i18next', () => ({
 }))
 
 vi.mock('@/hooks/useTasks', () => ({
-  useAllTasks: () => ({ tasks: [expiredTask], loading: false }),
+  useAllTasks: () => ({ tasks: mockTasks, loading: false }),
 }))
 
 vi.mock('@/hooks/useUsers', () => ({
@@ -96,9 +114,13 @@ vi.mock('@/components/ui', () => ({
   Modal: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
-vi.mock('@/components/domain', () => ({
+vi.mock('@/components/domain/MultiDatePicker/MultiDatePicker', () => ({
   MultiDatePicker: () => <div />,
+}))
+vi.mock('@/components/domain/ResponseMatrix/ResponseMatrix', () => ({
   ResponseMatrix: () => <div />,
+}))
+vi.mock('@/components/domain/ScheduleSuggestions/ScheduleSuggestions', () => ({
   ScheduleSuggestions: () => <div />,
 }))
 
@@ -109,6 +131,7 @@ import { TaskProgress } from './TaskProgress'
 describe('TaskProgress', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockTasks = [expiredTask]
     mocks.deleteTask.mockResolvedValue(undefined)
   })
 
@@ -123,5 +146,14 @@ describe('TaskProgress', () => {
       expect(mocks.scheduleDelete).toHaveBeenCalledWith('task-expired', expect.any(Function), 'common.deleted')
       expect(mocks.deleteTask).toHaveBeenCalledWith('task-expired')
     })
+  })
+
+  it('interview 응답 task는 빈 확정 대기 row 섹션을 만들지 않는다', async () => {
+    mockTasks = [interviewRespondedTask]
+
+    render(<TaskProgress />)
+
+    expect(await screen.findByText(/응답 현황/)).toBeInTheDocument()
+    expect(screen.queryByText('확정 대기 (1)')).not.toBeInTheDocument()
   })
 })

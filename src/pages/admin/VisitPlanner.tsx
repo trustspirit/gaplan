@@ -10,7 +10,8 @@ import { useUsers } from '@/hooks/useUsers'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, Select, Button, Input, Badge, Textarea } from '@/components/ui'
-import { MultiDatePicker, ProjectPicker } from '@/components/domain'
+import { MultiDatePicker } from '@/components/domain/MultiDatePicker/MultiDatePicker'
+import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
 import styles from './VisitPlanner.module.scss'
 
 export function VisitPlanner() {

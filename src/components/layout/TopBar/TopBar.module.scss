@@ -178,24 +178,35 @@
   align-items: center;
   gap: 4px;
   padding: 4px $space-3;
-  border: 1px solid rgba(255,255,255,0.3);
+  border: 1px solid $color-border;
   border-radius: $border-radius-full;
-  background: rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.9);
+  background: $color-surface;
+  color: $color-text;
   font-size: $font-size-xs;
   font-weight: $font-weight-medium;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.12s;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
 
-  &:hover { background: rgba(255,255,255,0.25); }
+  &:hover {
+    border-color: rgba($color-primary, 0.35);
+    background: rgba($color-primary, 0.08);
+    color: $color-primary;
+  }
 
   @include mobile { span { display: none; } }
 }
 
 .scopeToggleAll {
-  background: rgba(255,255,255,0.25);
-  border-color: rgba(255,255,255,0.5);
+  background: $color-primary;
+  border-color: $color-primary;
+  color: $color-surface;
+
+  &:hover {
+    background: $color-primary-hover;
+    border-color: $color-primary-hover;
+    color: $color-surface;
+  }
 }
 
 .helpBtn {

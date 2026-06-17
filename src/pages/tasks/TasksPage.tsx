@@ -8,7 +8,9 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { useWardSubmit } from '@/hooks/useWardSubmit'
 import { AppShell, TopBar } from '@/components/layout'
 import { Card, CardHeader, CardBody, BottomSheet, Skeleton } from '@/components/ui'
-import { TaskCard, TaskPickerContent, taskPickerTitle } from '@/components/domain'
+import { TaskCard } from '@/components/domain/TaskCard/TaskCard'
+import { TaskPickerContent } from '@/components/domain/TaskPickerContent/TaskPickerContent'
+import { taskPickerTitle } from '@/components/domain/TaskPickerContent/taskPickerTitle'
 import styles from './TasksPage.module.scss'
 
 export function TasksPage() {

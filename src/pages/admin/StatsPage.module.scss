@@ -30,3 +30,21 @@
   text-align: center;
   padding: $space-8 0;
 }
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  border: 1px solid rgba(220, 38, 38, 0.24);
+  border-radius: $border-radius-md;
+  background: rgba(254, 242, 242, 0.9);
+  color: #b91c1c;
+  padding: $space-3 $space-4;
+  font-size: $font-size-sm;
+
+  @media (max-width: 480px) {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

@@ -13,11 +13,9 @@ import {
 } from '@/services/generalScheduleService'
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { Card, CardHeader, CardBody, Button } from '@/components/ui'
-import {
-  GeneralEventItem,
-  GeneralScheduleFormModal,
-  GeneralScheduleDetailSheet,
-} from '@/components/domain'
+import { GeneralEventItem } from '@/components/domain/GeneralEventItem/GeneralEventItem'
+import { GeneralScheduleFormModal } from '@/components/domain/GeneralScheduleFormModal/GeneralScheduleFormModal'
+import { GeneralScheduleDetailSheet } from '@/components/domain/GeneralScheduleDetailSheet/GeneralScheduleDetailSheet'
 import type { GeneralSchedule } from '@/types'
 import styles from './GeneralSchedulePage.module.scss'
 

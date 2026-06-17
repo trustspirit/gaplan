@@ -1,6 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
+import type { AppUser } from '@/types/user'
+
+const mocks = vi.hoisted(() => ({
+  currentUser: {
+    uid: 'test-uid',
+    email: 'test@test.com',
+    role: 'seventy',
+    name: '테스트',
+    unitId: 'seoul-stake',
+    createdAt: '2026-01-01',
+  } as AppUser,
+  users: [] as AppUser[],
+}))
 
 // Heavy mocks to isolate the component
 vi.mock('@/firebase', () => ({ db: {}, functions: {}, auth: {} }))
@@ -14,7 +27,7 @@ vi.mock('firebase/firestore', () => ({
 }))
 vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn(() => vi.fn()) }))
 vi.mock('jotai', () => ({
-  useAtomValue: vi.fn().mockReturnValue({ uid: 'test-uid', role: 'seventy', name: '테스트', unitId: 'seoul-stake' }),
+  useAtomValue: vi.fn(() => mocks.currentUser),
   atom: vi.fn(),
 }))
 vi.mock('react-i18next', () => ({
@@ -25,9 +38,12 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: vi.fn() },
 }))
 vi.mock('@/hooks/useUsers', () => ({
-  useUsers: () => ({ users: [] }),
+  useUsers: () => ({ users: mocks.users }),
 }))
 vi.mock('@/hooks/useLeaders')
+vi.mock('@/components/domain/ProjectPicker/ProjectPicker', () => ({
+  ProjectPicker: () => <div data-testid="project-picker" />,
+}))
 vi.mock('react-dom', () => ({
   createPortal: (node: React.ReactNode) => node,
 }))
@@ -39,7 +55,6 @@ import {
 } from './leaderContactNotes'
 import * as useLeadersModule from '@/hooks/useLeaders'
 import type { Leader } from '@/types/leader'
-import type { AppUser } from '@/types/user'
 
 const MOCK_LEADER_BISHOP: Leader = {
   id: '131334',
@@ -81,7 +96,18 @@ const MOCK_PRESIDENT_USER: AppUser = {
 }
 
 describe('ScheduleFormModal 메모 자동 입력', () => {
-  beforeEach(() => { vi.clearAllMocks() })
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.currentUser = {
+      uid: 'test-uid',
+      email: 'test@test.com',
+      role: 'seventy',
+      name: '테스트',
+      unitId: 'seoul-stake',
+      createdAt: '2026-01-01',
+    }
+    mocks.users = []
+  })
 
   it('메모가 비어있을 때 sabbathVisitNotes 자동 입력이 없다', async () => {
     vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
@@ -161,5 +187,32 @@ describe('ScheduleFormModal 연락처 대상', () => {
     })
 
     expect(notes).toBe('스테이크 회장: 홍길동 (010-1111-2222)')
+  })
+})
+
+describe('ScheduleFormModal 담당 칠십인 범위', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.currentUser = {
+      uid: 'admin-1',
+      email: 'admin@test.com',
+      name: '관리자',
+      role: 'admin',
+      secondaryRole: 'exec_secretary',
+      assignedSeventyUid: 'seventy-1',
+      createdAt: '2026-01-01',
+    }
+    mocks.users = []
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: [],
+      loading: false,
+      getLeaderByUnitName: vi.fn().mockReturnValue(undefined),
+    })
+  })
+
+  it('담당 칠십인 지역 정보가 로딩되기 전에는 전체 단위를 열지 않는다', () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    expect(screen.getByLabelText('schedule.stakeLabel')).toBeDisabled()
   })
 })
