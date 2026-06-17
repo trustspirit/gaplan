@@ -126,7 +126,8 @@ export function selectMeetingReminderSchedules(
   actingSeventyUid: string | null,
 ): { wardVisits: Schedule[]; meetings: Schedule[] } {
   const inScope = (schedule: Schedule) =>
-    actingSeventyUid ? schedule.seventyUid === actingSeventyUid : scopeUnitIds.has(schedule.unitId)
+    scopeUnitIds.has(schedule.unitId) &&
+    (actingSeventyUid ? schedule.seventyUid === actingSeventyUid : true)
 
   return {
     wardVisits: schedules.filter(s => s.type === 'ward_visit' && inScope(s)),

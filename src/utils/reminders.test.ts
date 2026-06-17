@@ -125,4 +125,16 @@ describe('selectMeetingReminderSchedules', () => {
     expect(selected.wardVisits.map(s => s.id)).toEqual(['visit-in-scope'])
     expect(selected.meetings.map(s => s.id)).toEqual(['meeting-in-scope'])
   })
+
+  it('actingSeventyUid가 있어도 허용 unit 밖의 일정은 모임 리마인더에서 제외한다', () => {
+    const schedules = [
+      sched({ id: 'visit-in-scope', type: 'ward_visit', seventyUid: 's1', unitId: 'seoul-stake' }),
+      sched({ id: 'visit-out-scope', type: 'ward_visit', seventyUid: 's1', unitId: 'busan-stake' }),
+      sched({ id: 'meeting-out-scope', type: 'meeting', seventyUid: 's1', unitId: 'busan-stake' }),
+    ]
+    const selected = selectMeetingReminderSchedules(schedules, new Set(['seoul-stake']), 's1')
+
+    expect(selected.wardVisits.map(s => s.id)).toEqual(['visit-in-scope'])
+    expect(selected.meetings).toHaveLength(0)
+  })
 })
