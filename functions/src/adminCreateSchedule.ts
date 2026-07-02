@@ -16,6 +16,8 @@ interface AdminCreateScheduleRequest {
   customTitle?: string
   projectId?: string
   presidentAccompanied?: boolean
+  targetKind?: 'stake_president' | 'ward_bishop' | 'other'
+  wardId?: string
 }
 
 export const adminCreateSchedule = functions
@@ -25,7 +27,7 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, customTitle, projectId, presidentAccompanied } = data
+    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, customTitle, projectId, presidentAccompanied, targetKind, wardId } = data
 
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
@@ -44,9 +46,6 @@ export const adminCreateSchedule = functions
       if (!wardName || wardName.trim().length < 1 || wardName.trim().length > 100) {
         throw new functions.https.HttpsError('invalid-argument', 'wardName required (1-100 chars) for ward_visit')
       }
-    }
-    if (type === 'interview' && !unitId) {
-      throw new functions.https.HttpsError('invalid-argument', 'unitId required for interview')
     }
     if (type !== 'ward_visit' && wardName) {
       throw new functions.https.HttpsError('invalid-argument', 'wardName is only allowed for ward_visit type')
@@ -77,6 +76,20 @@ export const adminCreateSchedule = functions
     }
     if (presidentAccompanied !== undefined && typeof presidentAccompanied !== 'boolean') {
       throw new functions.https.HttpsError('invalid-argument', 'presidentAccompanied must be a boolean')
+    }
+    if (targetKind !== undefined) {
+      if (type === 'ward_visit') {
+        throw new functions.https.HttpsError('invalid-argument', 'targetKind is only for interview/meeting')
+      }
+      if (!['stake_president', 'ward_bishop', 'other'].includes(targetKind)) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid targetKind')
+      }
+    }
+    if (wardId !== undefined && (typeof wardId !== 'string' || wardId.length > 100)) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid wardId')
+    }
+    if (targetKind === 'ward_bishop' && !wardId) {
+      throw new functions.https.HttpsError('invalid-argument', 'wardId required when targetKind is ward_bishop')
     }
 
     const db = admin.firestore()
@@ -139,6 +152,8 @@ export const adminCreateSchedule = functions
       customTitle: customTitle?.trim() ?? null,
       projectId: (projectId && projectId.trim()) ? projectId.trim() : null,
       presidentAccompanied: (type === 'ward_visit' && presidentAccompanied === true) ? true : null,
+      targetKind: (type !== 'ward_visit' && targetKind) ? targetKind : null,
+      wardId: wardId ?? null,
       status: 'confirmed',
       createdBy: context.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
