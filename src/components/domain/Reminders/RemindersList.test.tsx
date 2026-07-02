@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sortBySeverity } from './RemindersList'
+import { sortBySeverity } from '@/utils/reminders'
 
 describe('sortBySeverity', () => {
   it('red → amber → green 순으로 정렬', () => {

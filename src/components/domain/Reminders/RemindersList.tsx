@@ -2,14 +2,9 @@ import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { Check } from 'lucide-react'
-import type { InterviewReminder, MeetingReminder, ReminderSeverity } from '@/utils/reminders'
+import type { InterviewReminder, MeetingReminder } from '@/utils/reminders'
+import { sortBySeverity } from '@/utils/reminders'
 import styles from './RemindersList.module.scss'
-
-const SEVERITY_RANK: Record<ReminderSeverity, number> = { red: 0, amber: 1, green: 2 }
-
-export function sortBySeverity<T extends { severity: ReminderSeverity }>(items: T[]): T[] {
-  return [...items].sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity])
-}
 
 interface Props {
   interviewReminders: InterviewReminder[]

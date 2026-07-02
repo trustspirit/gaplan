@@ -51,6 +51,12 @@ export function meetingSeverity(daysUntilMeetingBy: number): ReminderSeverity {
   return 'red'
 }
 
+const SEVERITY_RANK: Record<ReminderSeverity, number> = { red: 0, amber: 1, green: 2 }
+
+export function sortBySeverity<T extends { severity: ReminderSeverity }>(items: T[]): T[] {
+  return [...items].sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity])
+}
+
 export function interviewReminderKey(unitId: string, quarterStart: string) {
   return `interview:${unitId}:${quarterStart}`
 }
