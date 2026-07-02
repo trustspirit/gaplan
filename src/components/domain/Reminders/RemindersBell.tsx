@@ -5,15 +5,16 @@ import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { BottomSheet } from '@/components/ui'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import { remindersAtom, reminderCountAtom, reminderDismissAtom } from '@/store/remindersAtom'
+import { remindersAtom, reminderHasAtom, reminderDismissAtom, reminderLoadAtom } from '@/store/remindersAtom'
 import { RemindersList } from '@/components/domain/Reminders/RemindersList'
 import styles from './RemindersBell.module.scss'
 
 export function RemindersBell() {
   const { t } = useTranslation()
-  const count = useAtomValue(reminderCountAtom)
-  const { interviewReminders, meetingReminders } = useAtomValue(remindersAtom)
+  const hasPending = useAtomValue(reminderHasAtom)
+  const { interviewReminders, meetingReminders, loaded } = useAtomValue(remindersAtom)
   const dismiss = useAtomValue(reminderDismissAtom)
+  const loadFull = useAtomValue(reminderLoadAtom)
   const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -27,14 +28,16 @@ export function RemindersBell() {
     return () => document.removeEventListener('mousedown', close)
   }, [open, isMobile])
 
-  if (count === 0) return null
+  if (!hasPending) return null
 
-  const list = (
+  const list = loaded ? (
     <RemindersList
       interviewReminders={interviewReminders}
       meetingReminders={meetingReminders}
       onDismiss={key => dismiss?.(key)}
     />
+  ) : (
+    <p className={styles.empty}>{t('common.loading')}</p>
   )
 
   return (
@@ -42,11 +45,11 @@ export function RemindersBell() {
       <button
         type="button"
         className={styles.bellBtn}
-        onClick={() => setOpen(v => !v)}
-        aria-label={t('reminder.bellLabel', { count })}
+        onClick={() => { setOpen(v => !v); loadFull?.() }}
+        aria-label={t('reminder.bellLabel')}
       >
         <Bell size={18} />
-        <span className={styles.badge}>{count}</span>
+        <span className={styles.dot} aria-hidden />
       </button>
 
       {open && !isMobile && (

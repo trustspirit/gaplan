@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import React from 'react'
 import type { AppUser } from '@/types/user'
 
@@ -15,6 +15,8 @@ const mocks = vi.hoisted(() => ({
   users: [] as AppUser[],
 }))
 
+const { createSpy } = vi.hoisted(() => ({ createSpy: vi.fn() }))
+
 // Heavy mocks to isolate the component
 vi.mock('@/firebase', () => ({ db: {}, functions: {}, auth: {} }))
 vi.mock('firebase/firestore', () => ({
@@ -25,7 +27,7 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(() => ({ seconds: 0 })),
   Timestamp: { now: vi.fn() },
 }))
-vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn(() => vi.fn()) }))
+vi.mock('firebase/functions', () => ({ httpsCallable: () => createSpy }))
 vi.mock('jotai', () => ({
   useAtomValue: vi.fn(() => mocks.currentUser),
   atom: vi.fn(),
@@ -214,5 +216,108 @@ describe('ScheduleFormModal 담당 칠십인 범위', () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
 
     expect(screen.getByLabelText('schedule.stakeLabel')).toBeDisabled()
+  })
+})
+
+describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
+  const SEVENTY_USER: AppUser = {
+    uid: 'test-uid',
+    email: 'test@test.com',
+    name: '테스트',
+    role: 'seventy',
+    regionId: 'seoul',
+    createdAt: '2026-01-01',
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    createSpy.mockReset()
+    createSpy.mockResolvedValue({ data: {} })
+    mocks.currentUser = {
+      uid: 'test-uid',
+      email: 'test@test.com',
+      role: 'seventy',
+      name: '테스트',
+      unitId: 'seoul-stake',
+      createdAt: '2026-01-01',
+    }
+    mocks.users = [SEVENTY_USER, MOCK_PRESIDENT_USER]
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: [MOCK_STAKE_PRESIDENT, MOCK_LEADER_BISHOP],
+      loading: false,
+      getLeaderByUnitName: vi.fn().mockReturnValue(undefined),
+    })
+  })
+
+  function fillDateTime() {
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-07-10' } })
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
+  }
+
+  it('와드 대상 선택 시 targetKind=ward_bishop, wardId를 payload에 포함한다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('schedule.type.interview'))
+    // stake/district is now optional-labelled even for interview
+    expect(screen.getByLabelText('schedule.stakeLabelOptional')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
+
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'ward:seoul-nokbeon' } })
+
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'interview', targetKind: 'ward_bishop', wardId: 'seoul-nokbeon',
+    }))
+  })
+
+  it('스테이크 대상 선택 시 targetKind=stake_president, presidentUid를 payload에 포함한다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('schedule.type.interview'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
+
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'unit:seoul-stake' } })
+
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'interview', targetKind: 'stake_president', unitId: 'seoul-stake', presidentUid: 'president-uid',
+    }))
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('wardId')
+  })
+
+  it('스테이크/지방부를 선택하지 않아도(옵션널) 대상을 기타로 직접 입력하면 저장할 수 있다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('schedule.type.interview'))
+    // No stake/unit selected — target select should only offer '기타'
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'other' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetFreeTextLabel'), { target: { value: '홍길순' } })
+
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'interview', targetKind: 'other',
+    }))
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('unitId')
+  })
+
+  it('접견에서 대상을 아무것도 선택하지 않으면 저장되지 않는다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('schedule.type.interview'))
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
+    expect(createSpy).not.toHaveBeenCalled()
   })
 })

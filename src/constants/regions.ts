@@ -216,3 +216,9 @@ export const WARDS: WardUnit[] = [
 
 export const getWardsByUnit = (unitId: string): WardUnit[] =>
   WARDS.filter(w => w.unitId === unitId)
+
+export const getWardById = (wardId: string): WardUnit | undefined =>
+  WARDS.find(w => w.id === wardId)
+
+export const getWardIdByName = (wardNameKo: string): string | undefined =>
+  WARDS.find(w => w.name.ko === wardNameKo)?.id

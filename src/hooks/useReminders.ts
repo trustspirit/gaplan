@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
 import { authUserAtom } from '@/store/authAtom'
 import { useUsers } from '@/hooks/useUsers'
-import { fetchScopedSchedulesInRange, subscribeToSchedules } from '@/services/scheduleService'
+import { fetchScopedSchedulesInRange, fetchRemindersPresence } from '@/services/scheduleService'
 import { getDismissedReminders, dismissReminder } from '@/services/userSettingsService'
 import {
   currentQuarter, computeInterviewReminders, computeMeetingReminders,
@@ -21,8 +21,9 @@ export function useReminders() {
   const { users, loading: usersLoading } = useUsers()
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [dismissed, setDismissed] = useState<string[]>([])
-  const [schedulesLoading, setSchedulesLoading] = useState(true)
-  const [scheduleVersion, setScheduleVersion] = useState(0)
+  const [schedulesLoading, setSchedulesLoading] = useState(false)
+  const [hasPending, setHasPending] = useState(false)
+  const [loaded, setLoaded] = useState(false)
   const today = useMemo(() => dayjs().format('YYYY-MM-DD'), [])
   const scope = useEffectiveScope()
   const viewSeventyUid = useAtomValue(seventyViewAtom)
@@ -31,28 +32,20 @@ export function useReminders() {
     return resolveAdminViewSeventyUid(user, viewSeventyUid)
   }, [user, viewSeventyUid])
 
-  // Subscribe to schedule changes so the CF-fetched reminder data stays fresh after CRUD.
-  // Skip the first non-cache fire (initial load) to avoid a double-fetch on mount.
-  const scheduleSubSeenFirst = useRef(false)
-  useEffect(() => {
-    if (!user) return
-    scheduleSubSeenFirst.current = false
-    const opts =
-      user.role === 'president' ? { presidentUid: user.uid }
-      : user.role === 'seventy' ? { seventyUid: user.uid }
-      : user.role === 'exec_secretary' ? { seventyUid: user.assignedSeventyUid || undefined }
-      : querySeventyUid ? { seventyUid: querySeventyUid }
-      : {}
-    return subscribeToSchedules(opts, (_, fromCache) => {
-      if (fromCache) return
-      if (!scheduleSubSeenFirst.current) { scheduleSubSeenFirst.current = true; return }
-      setScheduleVersion(v => v + 1)
-    })
-  }, [user, querySeventyUid])
-
+  // 마운트 시 존재 여부만 저렴하게 확인 — 전체 목록은 loadFull()로 지연 로드한다.
+  // user/조회 대상(querySeventyUid)이 바뀌면 이전 스코프의 캐시를 버려, 다음 loadFull()이 새 스코프로 재조회하게 한다.
   useEffect(() => {
     if (!user) return
     let active = true
+    setLoaded(false); setSchedules([]); setDismissed([])
+    fetchRemindersPresence(user.role === 'admin' ? querySeventyUid : undefined)
+      .then(h => { if (active) setHasPending(h) })
+      .catch(() => {})
+    return () => { active = false }
+  }, [user, querySeventyUid])
+
+  const loadFull = useCallback(async () => {
+    if (!user || loaded) return
     setSchedulesLoading(true)
     const q = currentQuarter(today)
     // 방문 전 준비 모임(감독단 모임 등)은 분기 시작 이전에 잡혀 있을 수 있으므로 60일 여유를 두고 과거까지 조회
@@ -60,19 +53,18 @@ export function useReminders() {
     const start = q.start < lookbackStart ? q.start : lookbackStart
     // 향후 120일까지의 일정만 조회 — 그 이후 방문의 모임 리마인더는 제외(허용 한계)
     const end = dayjs(today).add(120, 'day').format('YYYY-MM-DD')
-    Promise.all([
-      fetchScopedSchedulesInRange(start, end, user.role === 'admin' ? querySeventyUid : undefined),
-      getDismissedReminders(user.uid),
-    ]).then(([sched, dis]) => {
-      if (!active) return
-      setSchedules(sched); setDismissed(dis); setSchedulesLoading(false)
-    }).catch(() => {
-      if (!active) return
-      setSchedules([]); setDismissed([]); setSchedulesLoading(false)
+    try {
+      const [sched, dis] = await Promise.all([
+        fetchScopedSchedulesInRange(start, end, user.role === 'admin' ? querySeventyUid : undefined),
+        getDismissedReminders(user.uid),
+      ])
+      setSchedules(sched); setDismissed(dis); setLoaded(true)
+    } catch {
       toast.error('리마인더 데이터를 불러오지 못했습니다.')
-    })
-    return () => { active = false }
-  }, [user, today, viewSeventyUid, querySeventyUid, scheduleVersion])
+    } finally {
+      setSchedulesLoading(false)
+    }
+  }, [user, loaded, today, querySeventyUid])
 
   const scopeUnits = useMemo(() => {
     if (!user) return [] as { id: string; name: string }[]
@@ -105,6 +97,12 @@ export function useReminders() {
     return computeMeetingReminders(wardVisits, meetings, new Set(dismissed), today)
   }, [schedules, scopeUnitIds, scope.actingSeventyUid, dismissed, today])
 
+  // 전체 목록이 로드된 뒤에는 해제(dismiss) 등을 반영해 실제 잔여 리마인더 유무로 존재 상태를 재계산한다.
+  useEffect(() => {
+    if (!loaded) return
+    setHasPending(interviewReminders.length + meetingReminders.length > 0)
+  }, [loaded, interviewReminders, meetingReminders])
+
   const dismiss = async (key: string) => {
     if (!user) return
     setDismissed(prev => [...prev, key])
@@ -113,5 +111,5 @@ export function useReminders() {
 
   const loading = schedulesLoading || usersLoading
 
-  return { loading, interviewReminders, meetingReminders, dismiss }
+  return { hasPending, loaded, loading, interviewReminders, meetingReminders, loadFull, dismiss }
 }

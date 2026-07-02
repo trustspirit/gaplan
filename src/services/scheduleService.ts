@@ -131,3 +131,9 @@ export async function fetchPublicSchedules(token: string): Promise<{ schedules: 
   const result = await fn({ token })
   return result.data
 }
+
+export async function fetchRemindersPresence(viewSeventyUid?: string | null): Promise<boolean> {
+  const fn = httpsCallable<{ viewSeventyUid?: string }, { hasPending: boolean }>(functions, 'getRemindersPresence')
+  const res = await fn(viewSeventyUid ? { viewSeventyUid } : {})
+  return res.data.hasPending
+}

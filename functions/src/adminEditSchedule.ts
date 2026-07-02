@@ -16,6 +16,8 @@ interface AdminEditScheduleRequest {
     customTitle?: string | null
     projectId?: string | null
     presidentAccompanied?: boolean | null
+    targetKind?: 'stake_president' | 'ward_bishop' | 'other' | null
+    wardId?: string | null
   }
 }
 
@@ -112,6 +114,18 @@ export const adminEditSchedule = functions
         throw new functions.https.HttpsError('invalid-argument', 'Invalid presidentAccompanied')
       }
       allowed.presidentAccompanied = updates.presidentAccompanied === true ? true : null
+    }
+    if (updates.targetKind !== undefined) {
+      if (updates.targetKind !== null && !['stake_president', 'ward_bishop', 'other'].includes(updates.targetKind)) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid targetKind')
+      }
+      allowed.targetKind = updates.targetKind
+    }
+    if (updates.wardId !== undefined) {
+      if (updates.wardId !== null && (typeof updates.wardId !== 'string' || updates.wardId.length > 100)) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid wardId')
+      }
+      allowed.wardId = updates.wardId
     }
 
     if (Object.keys(allowed).length === 0) {
