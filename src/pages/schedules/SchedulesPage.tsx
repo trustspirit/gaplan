@@ -48,7 +48,6 @@ export function SchedulesPage() {
           taskPath="/admin/visit-planner"
           showTaskButton
           formInitialType="ward_visit"
-          showWardInUpcoming
         />
       )}
       {active === 'interviews' && (

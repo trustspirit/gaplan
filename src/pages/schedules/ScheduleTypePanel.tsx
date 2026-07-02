@@ -30,7 +30,6 @@ interface ScheduleTypePanelProps {
   taskPath: string
   showTaskButton?: boolean
   formInitialType?: ScheduleType
-  showWardInUpcoming?: boolean
 }
 
 const TABS: FilterTab[] = ['all', 'upcoming', 'completed']
@@ -193,6 +192,7 @@ export function ScheduleTypePanel({
       {formOpen && (
         <ScheduleFormModal
           initialType={formInitialType}
+          allowedTypes={scheduleTypes.length > 1 ? scheduleTypes : undefined}
           onClose={() => setFormOpen(false)}
           onSaved={() => {
             setFormOpen(false)

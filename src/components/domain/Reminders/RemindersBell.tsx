@@ -29,11 +29,7 @@ export function RemindersBell() {
 
   if (count === 0) return null
 
-  const isEmpty = interviewReminders.length === 0 && meetingReminders.length === 0
-
-  const list = isEmpty ? (
-    <p className={styles.empty}>{t('reminder.empty')}</p>
-  ) : (
+  const list = (
     <RemindersList
       interviewReminders={interviewReminders}
       meetingReminders={meetingReminders}

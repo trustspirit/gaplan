@@ -7,7 +7,6 @@ type FilterTab = 'all' | 'upcoming' | 'completed'
 interface SchedulePageData {
   orderedKeys: string[]
   grouped: Map<string, Schedule[]>
-  upcomingList: Schedule[]
   thisMonthCount: number
   upcomingCount: number
   completedCount: number
@@ -18,7 +17,6 @@ export function useSchedulePageData(
   types: ScheduleType[],
   activeTab: FilterTab,
   dateRange?: { start: string; end: string },
-  upcomingLimit = 5,
 ): SchedulePageData {
   const today = dayjs()
   const thisMonth = today.format('YYYY-M')
@@ -58,11 +56,5 @@ export function useSchedulePageData(
     ...monthKeys.filter(k => k < currentMonthKey),
   ]
 
-  // upcomingList: from unfiltered base so sidebar always shows real next items
-  const upcomingList = allActive
-    .filter(s => !dayjs(s.date).isBefore(today, 'day'))
-    .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0)
-    .slice(0, upcomingLimit)
-
-  return { orderedKeys, grouped, upcomingList, thisMonthCount, upcomingCount, completedCount }
+  return { orderedKeys, grouped, thisMonthCount, upcomingCount, completedCount }
 }

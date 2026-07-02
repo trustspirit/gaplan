@@ -70,7 +70,6 @@
     "meetingBy": "meeting by {{date}}",
     "acknowledge": "Acknowledge",
     "bellLabel": "{{count}} reminders",
-    "empty": "No reminders to review",
     "panelTitle": "Reminders",
     "summaryBanner": "{{count}} reminders to review"
   },
@@ -376,8 +375,7 @@
       "all": "All",
       "upcoming": "Upcoming",
       "completed": "Completed"
-    },
-    "nextVisits": "Next Visits"
+    }
   },
   "interviews": {
     "title": "Interview Schedule",
@@ -394,8 +392,7 @@
       "all": "All",
       "upcoming": "Upcoming",
       "completed": "Completed"
-    },
-    "nextInterviews": "Next Interviews"
+    }
   },
   "schedules": {
     "interviewMeetingTab": "Interviews & Meetings"

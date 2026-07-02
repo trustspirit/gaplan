@@ -24,6 +24,7 @@ const adminCreateScheduleFn = httpsCallable(functions, 'adminCreateSchedule')
 interface ScheduleFormModalProps {
   initialDate?: string
   initialType?: ScheduleType
+  allowedTypes?: ScheduleType[]
   generalSchedules?: GeneralSchedule[]
   currentUser?: AppUser
   onClose: () => void
@@ -33,6 +34,7 @@ interface ScheduleFormModalProps {
 export function ScheduleFormModal({
   initialDate,
   initialType,
+  allowedTypes,
   generalSchedules,
   currentUser,
   onClose,
@@ -43,7 +45,7 @@ export function ScheduleFormModal({
   const { users } = useUsers()
   const { leaders } = useLeaders()
 
-  const [type, setType] = useState<ScheduleType>(initialType ?? 'ward_visit')
+  const [type, setType] = useState<ScheduleType>(initialType ?? allowedTypes?.[0] ?? 'ward_visit')
   const [seventyUid, setSeventyUid] = useState(
     user.role === 'seventy' ? user.uid :
     user.role === 'exec_secretary' ? (user.assignedSeventyUid ?? '') :
@@ -226,6 +228,7 @@ export function ScheduleFormModal({
     { value: 'interview', label: t('schedule.type.interview') },
     { value: 'meeting', label: t('schedule.type.meeting') },
   ]
+  const typeTabs = allowedTypes ? TYPE_TABS.filter(tab => allowedTypes.includes(tab.value)) : TYPE_TABS
 
   return createPortal(
     <div className={styles.overlay} onClick={onClose}>
@@ -250,7 +253,7 @@ export function ScheduleFormModal({
         {/* Type segmented control — hidden when initialType is locked */}
         {!initialType && (
           <div className={styles.segmented}>
-            {TYPE_TABS.map((tab) => (
+            {typeTabs.map((tab) => (
               <button
                 key={tab.value}
                 type="button"

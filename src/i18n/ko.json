@@ -70,7 +70,6 @@
     "meetingBy": "모임 {{date}}까지",
     "acknowledge": "확인함",
     "bellLabel": "리마인더 {{count}}건",
-    "empty": "확인할 리마인더가 없습니다",
     "panelTitle": "리마인더",
     "summaryBanner": "확인할 리마인더 {{count}}건"
   },
@@ -376,8 +375,7 @@
       "all": "전체",
       "upcoming": "예정",
       "completed": "완료"
-    },
-    "nextVisits": "다음 방문 예정"
+    }
   },
   "interviews": {
     "title": "접견 일정",
@@ -394,8 +392,7 @@
       "all": "전체",
       "upcoming": "예정",
       "completed": "완료"
-    },
-    "nextInterviews": "다음 접견 예정"
+    }
   },
   "schedules": {
     "interviewMeetingTab": "접견·모임"
