@@ -1,19 +1,18 @@
 import { describe, it, expect } from 'vitest'
 import { createStore } from 'jotai'
-import { remindersAtom, reminderCountAtom } from './remindersAtom'
+import { remindersAtom, reminderHasAtom } from './remindersAtom'
 
-describe('reminderCountAtom', () => {
-  it('interview + meeting 개수를 합산한다', () => {
+describe('reminderHasAtom', () => {
+  it('reflects hasPending', () => {
     const store = createStore()
+    expect(store.get(reminderHasAtom)).toBe(false)
     store.set(remindersAtom, {
+      hasPending: true,
+      loaded: false,
+      interviewReminders: [],
+      meetingReminders: [],
       loading: false,
-      interviewReminders: [{ key: 'i1' }, { key: 'i2' }] as never,
-      meetingReminders: [{ key: 'm1' }] as never,
     })
-    expect(store.get(reminderCountAtom)).toBe(3)
-  })
-  it('초기값은 0', () => {
-    const store = createStore()
-    expect(store.get(reminderCountAtom)).toBe(0)
+    expect(store.get(reminderHasAtom)).toBe(true)
   })
 })

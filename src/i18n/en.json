@@ -69,7 +69,7 @@
     "noPresident": "No president assigned",
     "meetingBy": "meeting by {{date}}",
     "acknowledge": "Acknowledge",
-    "bellLabel": "{{count}} reminders",
+    "bellLabel": "View reminders",
     "panelTitle": "Reminders",
     "summaryBanner": "{{count}} reminders to review"
   },

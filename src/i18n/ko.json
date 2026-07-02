@@ -69,7 +69,7 @@
     "noPresident": "회장 미배정",
     "meetingBy": "모임 {{date}}까지",
     "acknowledge": "확인함",
-    "bellLabel": "리마인더 {{count}}건",
+    "bellLabel": "리마인더 확인",
     "panelTitle": "리마인더",
     "summaryBanner": "확인할 리마인더 {{count}}건"
   },
