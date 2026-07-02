@@ -68,7 +68,10 @@
     "preVisitMeeting": "Pre-visit bishopric meeting",
     "noPresident": "No president assigned",
     "meetingBy": "meeting by {{date}}",
-    "acknowledge": "Acknowledge"
+    "acknowledge": "Acknowledge",
+    "bellLabel": "{{count}} reminders",
+    "empty": "No reminders to review",
+    "panelTitle": "Reminders"
   },
   "visitPlan": {
     "listTitle": "Visit Plans",

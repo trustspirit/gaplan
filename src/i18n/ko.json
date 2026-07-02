@@ -68,7 +68,10 @@
     "preVisitMeeting": "방문 전 감독단 모임",
     "noPresident": "회장 미배정",
     "meetingBy": "모임 {{date}}까지",
-    "acknowledge": "확인함"
+    "acknowledge": "확인함",
+    "bellLabel": "리마인더 {{count}}건",
+    "empty": "확인할 리마인더가 없습니다",
+    "panelTitle": "리마인더"
   },
   "visitPlan": {
     "listTitle": "방문 계획",
