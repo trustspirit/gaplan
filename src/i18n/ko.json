@@ -71,7 +71,8 @@
     "acknowledge": "확인함",
     "bellLabel": "리마인더 {{count}}건",
     "empty": "확인할 리마인더가 없습니다",
-    "panelTitle": "리마인더"
+    "panelTitle": "리마인더",
+    "summaryBanner": "확인할 리마인더 {{count}}건"
   },
   "visitPlan": {
     "listTitle": "방문 계획",

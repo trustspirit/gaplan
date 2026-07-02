@@ -71,7 +71,8 @@
     "acknowledge": "Acknowledge",
     "bellLabel": "{{count}} reminders",
     "empty": "No reminders to review",
-    "panelTitle": "Reminders"
+    "panelTitle": "Reminders",
+    "summaryBanner": "{{count}} reminders to review"
   },
   "visitPlan": {
     "listTitle": "Visit Plans",

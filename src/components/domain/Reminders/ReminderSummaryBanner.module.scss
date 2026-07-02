@@ -1,0 +1,38 @@
+@use '@/styles/variables' as *;
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  width: 100%;
+  padding: $space-3 $space-4;
+  border-radius: $border-radius-xl;
+  border: 1px solid $color-border;
+  background: $color-bg;
+  cursor: pointer;
+  text-align: left;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.text { flex: 1; }
+.chevron { opacity: .6; }
+
+.red {
+  background: $color-highlight-danger;
+  border-color: rgba($color-danger, .3);
+  color: $color-danger;
+}
+
+.amber {
+  background: $color-highlight-warning;
+  border-color: rgba($color-warning, .3);
+  color: $color-warning;
+}
+
+.green {
+  background: $color-highlight-success;
+  border-color: rgba($color-success, .3);
+  color: $color-success;
+}
