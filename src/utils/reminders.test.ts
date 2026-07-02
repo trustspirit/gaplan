@@ -84,11 +84,11 @@ describe('computeMeetingReminders', () => {
   const today = '2026-06-01'
 
   it('flags an upcoming ward visit with no meeting', () => {
-    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '광진 와드' })]
+    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '녹번 와드' })]
     const r = computeMeetingReminders(visits, [], new Set(), today)
     expect(r).toHaveLength(1)
     expect(r[0].meetingByDate).toBe('2026-06-06')
-    expect(r[0].wardName).toBe('광진 와드')
+    expect(r[0].wardName).toBe('녹번 와드')
   })
   it('omits when a meeting for the unit exists on or before the visit', () => {
     const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', wardId: 'seoul-nokbeon', wardName: '녹번 와드', date: '2026-06-20' })]
@@ -110,14 +110,14 @@ describe('computeMeetingReminders', () => {
     expect(r).toHaveLength(0)
   })
   it('still flags when the only meeting is after the visit (not a prep meeting)', () => {
-    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '광진 와드' })]
-    const meetings = [sched({ type: 'meeting', unitId: 'seoul-stake', date: '2026-06-25' })]
+    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '녹번 와드' })]
+    const meetings = [sched({ type: 'meeting', unitId: 'seoul-stake', targetKind: 'ward_bishop', wardId: 'seoul-nokbeon', date: '2026-06-25' })]
     const r = computeMeetingReminders(visits, meetings, new Set(), today)
     expect(r).toHaveLength(1)
   })
   it('does not count a meeting for a different unit', () => {
-    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '광진 와드' })]
-    const meetings = [sched({ type: 'meeting', unitId: 'busan-stake', date: '2026-06-05' })]
+    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '녹번 와드' })]
+    const meetings = [sched({ type: 'meeting', unitId: 'seoul-stake', targetKind: 'ward_bishop', wardId: 'seoul-sindang', date: '2026-06-05' })]
     const r = computeMeetingReminders(visits, meetings, new Set(), today)
     expect(r).toHaveLength(1)
   })

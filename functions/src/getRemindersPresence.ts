@@ -20,13 +20,17 @@ export const getRemindersPresence = functions
       throw new functions.https.HttpsError('permission-denied', 'Admin, seventy, or exec_secretary only')
     }
 
-    const today = new Date().toISOString().slice(0, 10)
+    // Mirror src/hooks/useReminders.ts, which computes dates via dayjs() in local (Asia/Seoul,
+    // UTC+9, no DST) time. Compute the KST "now" epoch once and derive today/lookback/end from it,
+    // so date comparisons line up with the client instead of drifting by the UTC offset.
+    const kstNow = Date.now() + 9 * 60 * 60 * 1000
+    const today = new Date(kstNow).toISOString().slice(0, 10)
     // Mirror src/hooks/useReminders.ts: look back to min(quarterStart, today-60d) so early-quarter
     // stake interviews are visible even when today is >60d past the quarter start; +120d forward.
-    const lookback = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10)
+    const lookback = new Date(kstNow - 60 * 864e5).toISOString().slice(0, 10)
     const quarterStart = currentQuarter(today).start
     const startDate = quarterStart < lookback ? quarterStart : lookback
-    const endDate = new Date(Date.now() + 120 * 864e5).toISOString().slice(0, 10)
+    const endDate = new Date(kstNow + 120 * 864e5).toISOString().slice(0, 10)
 
     const snap = await db.collection('schedules')
       .where('date', '>=', startDate)

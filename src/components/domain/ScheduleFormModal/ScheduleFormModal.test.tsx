@@ -263,7 +263,7 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
     expect(screen.getByLabelText('schedule.stakeLabelOptional')).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
 
-    fireEvent.change(screen.getByLabelText('대상'), { target: { value: 'ward:seoul-nokbeon' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'ward:seoul-nokbeon' } })
 
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
@@ -280,7 +280,7 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
     fireEvent.click(screen.getByText('schedule.type.interview'))
     fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
 
-    fireEvent.change(screen.getByLabelText('대상'), { target: { value: 'unit:seoul-stake' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'unit:seoul-stake' } })
 
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
@@ -297,8 +297,8 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
 
     fireEvent.click(screen.getByText('schedule.type.interview'))
     // No stake/unit selected — target select should only offer '기타'
-    fireEvent.change(screen.getByLabelText('대상'), { target: { value: 'other' } })
-    fireEvent.change(screen.getByLabelText('대상 (직접 입력)'), { target: { value: '홍길순' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'other' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetFreeTextLabel'), { target: { value: '홍길순' } })
 
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))

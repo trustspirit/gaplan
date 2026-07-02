@@ -10,7 +10,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { useLeaders } from '@/hooks/useLeaders'
 import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
 import { isGeneralScheduleRelevant } from '@/types'
-import type { ScheduleType, GeneralSchedule, AppUser } from '@/types'
+import type { ScheduleType, GeneralSchedule, AppUser, InterviewTargetKind } from '@/types'
 import { Button, Select, Input, Textarea } from '@/components/ui'
 import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
 import {
@@ -147,7 +147,7 @@ export function ScheduleFormModal({
   const selectedContactTarget = contactTargetOptions.find(o => o.label === contactTargetValue)
   const targetOptions = [
     ...contactTargetOptions.map(o => ({ value: o.value, label: o.label })),
-    { value: 'other', label: '기타 (직접 입력)' },
+    { value: 'other', label: t('schedule.targetOptionOther') },
   ]
 
   const handleSave = async (e?: React.FormEvent) => {
@@ -171,7 +171,7 @@ export function ScheduleFormModal({
     }
 
     // 접견/모임 대상 Select에서 targetKind/wardId 도출
-    let targetKind: 'stake_president' | 'ward_bishop' | 'other' | undefined
+    let targetKind: InterviewTargetKind | undefined
     let wardId: string | undefined
     if (type === 'interview' || type === 'meeting') {
       if (targetSelect.startsWith('unit:')) targetKind = 'stake_president'
@@ -183,11 +183,11 @@ export function ScheduleFormModal({
     // interview는 대상 하나는 반드시 지정 (빈 접견 방지)
     if (type === 'interview') {
       if (!targetKind) {
-        setError('접견 대상을 선택하세요.')
+        setError(t('schedule.errorTargetRequired'))
         return
       }
       if (targetKind === 'other' && !contactTargetValue.trim()) {
-        setError('대상 이름을 입력하세요.')
+        setError(t('schedule.errorTargetNameRequired'))
         return
       }
     }
@@ -336,7 +336,7 @@ export function ScheduleFormModal({
             {(type === 'interview' || type === 'meeting') && (
               <>
                 <Select
-                  label="대상"
+                  label={t('schedule.targetLabel')}
                   value={targetSelect}
                   onChange={(e) => {
                     setTargetSelect(e.target.value)
@@ -349,10 +349,10 @@ export function ScheduleFormModal({
                 />
                 {targetSelect === 'other' && (
                   <Input
-                    label="대상 (직접 입력)"
+                    label={t('schedule.targetFreeTextLabel')}
                     value={contactTargetValue}
                     onChange={(e) => setContactTargetValue(e.target.value)}
-                    placeholder="회원 이름 직접 입력"
+                    placeholder={t('schedule.targetFreeTextPlaceholder')}
                   />
                 )}
               </>
