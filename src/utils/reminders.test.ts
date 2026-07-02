@@ -3,6 +3,7 @@ import type { Schedule } from '@/types'
 import {
   currentQuarter, interviewSeverity, meetingSeverity,
   computeInterviewReminders, computeMeetingReminders, selectMeetingReminderSchedules,
+  hasPendingReminders,
 } from './reminders'
 
 function sched(p: Partial<Schedule>): Schedule {
@@ -90,21 +91,21 @@ describe('computeMeetingReminders', () => {
     expect(r[0].wardName).toBe('광진 와드')
   })
   it('omits when a meeting for the unit exists on or before the visit', () => {
-    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '광진 와드' })]
-    const meetings = [sched({ type: 'meeting', unitId: 'seoul-stake', date: '2026-06-05' })]
+    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', wardId: 'seoul-nokbeon', wardName: '녹번 와드', date: '2026-06-20' })]
+    const meetings = [sched({ type: 'meeting', unitId: 'seoul-stake', targetKind: 'ward_bishop', wardId: 'seoul-nokbeon', date: '2026-06-05' })]
     const r = computeMeetingReminders(visits, meetings, new Set(), today)
     expect(r).toHaveLength(0)
   })
   it('omits when an interview (not just a meeting) for the unit exists before the visit', () => {
-    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '광진 와드' })]
-    const contacts = [sched({ type: 'interview', unitId: 'seoul-stake', date: '2026-06-05' })]
+    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', wardId: 'seoul-nokbeon', wardName: '녹번 와드', date: '2026-06-20' })]
+    const contacts = [sched({ type: 'interview', unitId: 'seoul-stake', targetKind: 'ward_bishop', wardId: 'seoul-nokbeon', date: '2026-06-05' })]
     const r = computeMeetingReminders(visits, contacts, new Set(), today)
     expect(r).toHaveLength(0)
   })
   it('omits even when the meeting is well before the 14d mark (existence, not timing)', () => {
     // meeting-by는 2026-06-06이지만 준비 모임을 5.20에 일찍 잡아둔 경우에도 일정이 존재하면 충족
-    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '광진 와드' })]
-    const meetings = [sched({ type: 'meeting', unitId: 'seoul-stake', date: '2026-05-20' })]
+    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', wardId: 'seoul-nokbeon', wardName: '녹번 와드', date: '2026-06-20' })]
+    const meetings = [sched({ type: 'meeting', unitId: 'seoul-stake', targetKind: 'ward_bishop', wardId: 'seoul-nokbeon', date: '2026-05-20' })]
     const r = computeMeetingReminders(visits, meetings, new Set(), today)
     expect(r).toHaveLength(0)
   })
@@ -177,5 +178,61 @@ describe('selectMeetingReminderSchedules', () => {
 
     expect(selected.wardVisits.map(s => s.id)).toEqual(['visit-in-scope'])
     expect(selected.meetings).toHaveLength(0)
+  })
+})
+
+describe('interview reminder — stake_president only', () => {
+  const units = [{ id: 'seoul-stake', name: '서울 스테이크' }]
+  it('ward_bishop interview does NOT satisfy the quarterly stake reminder', () => {
+    const s = [sched({ type: 'interview', unitId: 'seoul-stake', targetKind: 'ward_bishop', wardId: 'seoul-nokbeon', date: '2026-05-01' })]
+    const r = computeInterviewReminders(units, new Map(), s, new Set(), '2026-05-15')
+    expect(r).toHaveLength(1)
+  })
+  it('stake_president interview satisfies it', () => {
+    const s = [sched({ type: 'interview', unitId: 'seoul-stake', targetKind: 'stake_president', date: '2026-05-01' })]
+    const r = computeInterviewReminders(units, new Map(), s, new Set(), '2026-05-15')
+    expect(r).toHaveLength(0)
+  })
+  it('legacy interview without targetKind still satisfies (back-compat)', () => {
+    const s = [sched({ type: 'interview', unitId: 'seoul-stake', date: '2026-05-01' })]
+    const r = computeInterviewReminders(units, new Map(), s, new Set(), '2026-05-15')
+    expect(r).toHaveLength(0)
+  })
+})
+
+describe('meeting reminder — ward-level match', () => {
+  const visit = sched({ type: 'ward_visit', unitId: 'seoul-stake', wardId: 'seoul-nokbeon', wardName: '녹번 와드', date: '2026-06-20' })
+  it('is satisfied by a ward_bishop meeting for the SAME ward', () => {
+    const m = sched({ type: 'meeting', unitId: 'seoul-stake', targetKind: 'ward_bishop', wardId: 'seoul-nokbeon', date: '2026-06-10' })
+    const r = computeMeetingReminders([visit], [m], new Set(), '2026-06-01')
+    expect(r).toHaveLength(0)
+  })
+  it('is NOT satisfied by a ward_bishop meeting for a DIFFERENT ward', () => {
+    const m = sched({ type: 'meeting', unitId: 'seoul-stake', targetKind: 'ward_bishop', wardId: 'seoul-sindang', date: '2026-06-10' })
+    const r = computeMeetingReminders([visit], [m], new Set(), '2026-06-01')
+    expect(r).toHaveLength(1)
+  })
+  it('is NOT satisfied by a stake_president interview', () => {
+    const m = sched({ type: 'interview', unitId: 'seoul-stake', targetKind: 'stake_president', date: '2026-06-10' })
+    const r = computeMeetingReminders([visit], [m], new Set(), '2026-06-01')
+    expect(r).toHaveLength(1)
+  })
+  it('derives visit wardId from wardName when wardId is absent (legacy visit)', () => {
+    const legacyVisit = sched({ type: 'ward_visit', unitId: 'seoul-stake', wardName: '녹번 와드', date: '2026-06-20' })
+    const m = sched({ type: 'meeting', targetKind: 'ward_bishop', wardId: 'seoul-nokbeon', date: '2026-06-10' })
+    const r = computeMeetingReminders([legacyVisit], [m], new Set(), '2026-06-01')
+    expect(r).toHaveLength(0)
+  })
+})
+
+describe('hasPendingReminders', () => {
+  const units = [{ id: 'seoul-stake' }]
+  const scope = new Set(['seoul-stake'])
+  it('true when the quarterly stake interview is missing', () => {
+    expect(hasPendingReminders(units, [], scope, null, new Set(), '2026-05-15')).toBe(true)
+  })
+  it('false when stake_president interview exists and no future visits', () => {
+    const s = [sched({ type: 'interview', unitId: 'seoul-stake', targetKind: 'stake_president', date: '2026-05-01' })]
+    expect(hasPendingReminders(units, s, scope, null, new Set(), '2026-05-15')).toBe(false)
   })
 })

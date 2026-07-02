@@ -1,5 +1,6 @@
 import dayjs from 'dayjs'
 import type { Schedule } from '@/types'
+import { getWardIdByName } from '@/constants/regions'
 
 export type ReminderSeverity = 'green' | 'amber' | 'red'
 
@@ -70,11 +71,15 @@ export function computeInterviewReminders(
 ): InterviewReminder[] {
   const q = currentQuarter(today)
   const sev = interviewSeverity(q.daysLeft)
-  // 접견 리마인더는 접견뿐 아니라 모임이 계획되어 있어도 충족으로 본다 (둘 다 확인)
+  // 분기 접견은 스테이크/지방부 회장과의 접견/모임으로만 충족.
+  // targetKind 없는 레거시(interview/meeting, wardId 없음)는 스테이크장 대상으로 간주(back-compat).
+  const isStakeTarget = (s: Schedule) =>
+    s.targetKind === 'stake_president' || (s.targetKind === undefined && !s.wardId)
   const hasContact = (unitId: string) => schedules.some(s =>
     (s.type === 'interview' || s.type === 'meeting') &&
     s.unitId === unitId &&
     ACTIVE(s) &&
+    isStakeTarget(s) &&
     s.date >= q.start && s.date <= q.end,
   )
   return units
@@ -105,11 +110,12 @@ export function computeMeetingReminders(
     const key = `meeting:${v.id}`
     if (dismissedKeys.has(key)) continue
     const meetingBy = dayjs(v.date).subtract(MEETING_LEAD_DAYS, 'day')
-    // 준비 모임을 "언제 했는지(±N일)"가 아니라 "일정이 존재하는지"로 판단한다.
-    // 해당 유닛에 방문일 이전(당일 포함)의 활성 모임/접견 일정이 하나라도 있으면 충족 — 접견/모임 둘 다 인정.
-    const satisfied = meetings.some(m =>
+    const visitWardId = v.wardId ?? (v.wardName ? getWardIdByName(v.wardName) : undefined)
+    // 방문 와드의 감독/지부회장과의 접견 또는 모임이 방문일 이전(당일 포함) 있으면 충족.
+    const satisfied = !!visitWardId && meetings.some(m =>
       (m.type === 'meeting' || m.type === 'interview') &&
-      m.unitId === v.unitId &&
+      m.targetKind === 'ward_bishop' &&
+      m.wardId === visitWardId &&
       ACTIVE(m) &&
       m.date <= v.date,
     )
@@ -142,4 +148,28 @@ export function selectMeetingReminderSchedules(
     // 모임 리마인더 충족 근거: 모임뿐 아니라 접견도 인정 (둘 다 확인)
     meetings: schedules.filter(s => (s.type === 'meeting' || s.type === 'interview') && inScope(s)),
   }
+}
+
+export function hasPendingReminders(
+  units: { id: string }[],
+  schedules: Schedule[],
+  scopeUnitIds: Set<string>,
+  actingSeventyUid: string | null,
+  dismissedKeys: Set<string>,
+  today: string,
+): boolean {
+  const interviews = computeInterviewReminders(
+    units.map(u => ({ id: u.id, name: '' })),
+    new Map(),
+    schedules,
+    dismissedKeys,
+    today,
+  )
+  if (interviews.length > 0) return true
+  const { wardVisits, meetings } = selectMeetingReminderSchedules(
+    schedules,
+    scopeUnitIds,
+    actingSeventyUid,
+  )
+  return computeMeetingReminders(wardVisits, meetings, dismissedKeys, today).length > 0
 }
