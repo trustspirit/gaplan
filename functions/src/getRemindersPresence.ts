@@ -1,7 +1,7 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { getScopeUnitIds } from './regions'
-import { hasPendingReminders, type PresenceSchedule } from './remindersPresence'
+import { hasPendingReminders, currentQuarter, type PresenceSchedule } from './remindersPresence'
 
 interface Req { viewSeventyUid?: string }
 
@@ -21,7 +21,11 @@ export const getRemindersPresence = functions
     }
 
     const today = new Date().toISOString().slice(0, 10)
-    const startDate = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10)
+    // Mirror src/hooks/useReminders.ts: look back to min(quarterStart, today-60d) so early-quarter
+    // stake interviews are visible even when today is >60d past the quarter start; +120d forward.
+    const lookback = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10)
+    const quarterStart = currentQuarter(today).start
+    const startDate = quarterStart < lookback ? quarterStart : lookback
     const endDate = new Date(Date.now() + 120 * 864e5).toISOString().slice(0, 10)
 
     const snap = await db.collection('schedules')
@@ -60,7 +64,12 @@ export const getRemindersPresence = functions
       scopeUnits = [...new Set(docs.map(s => s.unitId).filter(Boolean))]
     }
 
-    const dismissed = new Set<string>((caller?.dismissedReminders as string[] | undefined) ?? [])
+    // Dismissed reminders live in userSettings/{uid} (see src/services/userSettingsService.ts),
+    // NOT on the users/{uid} doc.
+    const settingsSnap = await db.collection('userSettings').doc(context.auth.uid).get()
+    const dismissed = new Set<string>(
+      (settingsSnap.data()?.dismissedReminders as string[] | undefined) ?? [],
+    )
 
     const hasPending = hasPendingReminders(
       scopeUnits,

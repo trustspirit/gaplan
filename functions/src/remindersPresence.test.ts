@@ -103,4 +103,59 @@ describe('hasPendingReminders', () => {
       hasPendingReminders(['seoul-stake'], s, new Set(['seoul-stake']), 's1', new Set(), '2026-05-15'),
     ).toBe(false)
   })
+
+  // --- Real-data-shape regression cases (post-review) ---
+
+  it('a meeting with targetKind:null, wardId:null does NOT satisfy the quarterly stake reminder', () => {
+    // Real "no target" schedules are written as targetKind: null (adminCreateSchedule.ts).
+    // The client counts only targetKind === undefined (legacy) as stake-target, not null.
+    const s: PresenceSchedule[] = [
+      { id: 'm1', type: 'meeting', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-05-01', status: 'confirmed', targetKind: null, wardId: null },
+    ]
+    expect(
+      hasPendingReminders(['seoul-stake'], s, new Set(['seoul-stake']), null, new Set(), '2026-05-15'),
+    ).toBe(true)
+  })
+
+  it('a legacy interview with targetKind absent (undefined) and no wardId DOES satisfy (back-compat)', () => {
+    const s: PresenceSchedule[] = [
+      { id: 'i1', type: 'interview', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-05-01', status: 'confirmed' },
+    ]
+    expect(
+      hasPendingReminders(['seoul-stake'], s, new Set(['seoul-stake']), null, new Set(), '2026-05-15'),
+    ).toBe(false)
+  })
+
+  it('future ward_visit with only wardName is satisfied by a ward_bishop contact resolved via getWardIdByName', () => {
+    const s: PresenceSchedule[] = [
+      { id: 'i1', type: 'interview', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-05-01', status: 'confirmed', targetKind: 'stake_president' },
+      // Real ward_visit docs carry wardName only, no wardId.
+      { id: 'v1', type: 'ward_visit', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-06-01', status: 'confirmed', wardName: '녹번 와드' },
+      // ward_bishop contact keyed by the ward's actual id.
+      { id: 'm1', type: 'interview', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-05-20', status: 'confirmed', targetKind: 'ward_bishop', wardId: 'seoul-nokbeon' },
+    ]
+    expect(
+      hasPendingReminders(['seoul-stake'], s, new Set(['seoul-stake']), null, new Set(), '2026-05-15'),
+    ).toBe(false)
+  })
+
+  it('future ward_visit with only wardName is pending when no matching ward_bishop contact exists', () => {
+    const s: PresenceSchedule[] = [
+      { id: 'i1', type: 'interview', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-05-01', status: 'confirmed', targetKind: 'stake_president' },
+      { id: 'v1', type: 'ward_visit', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-06-01', status: 'confirmed', wardName: '녹번 와드' },
+    ]
+    expect(
+      hasPendingReminders(['seoul-stake'], s, new Set(['seoul-stake']), null, new Set(), '2026-05-15'),
+    ).toBe(true)
+  })
+
+  it('dismissed meeting key (meeting:{visitId}) is skipped for a wardName-only visit', () => {
+    const s: PresenceSchedule[] = [
+      { id: 'i1', type: 'interview', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-05-01', status: 'confirmed', targetKind: 'stake_president' },
+      { id: 'v1', type: 'ward_visit', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-06-01', status: 'confirmed', wardName: '녹번 와드' },
+    ]
+    expect(
+      hasPendingReminders(['seoul-stake'], s, new Set(['seoul-stake']), null, new Set(['meeting:v1']), '2026-05-15'),
+    ).toBe(false)
+  })
 })

@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { getWardIdByName } from './regions'
 
 // Pure mirror of src/utils/reminders.ts presence logic (see functions/src/regions.ts for the
 // analogous mirroring pattern). Intentional duplication — do not import client code here.
@@ -17,9 +18,9 @@ export interface PresenceSchedule {
 
 const ACTIVE = (s: PresenceSchedule) => s.status === 'confirmed' || s.status === 'pending'
 
-interface QuarterInfo { start: string; end: string }
+export interface QuarterInfo { start: string; end: string }
 
-function currentQuarter(today: string): QuarterInfo {
+export function currentQuarter(today: string): QuarterInfo {
   const t = dayjs(today)
   const q = Math.floor(t.month() / 3) // 0..3
   const start = t.month(q * 3).startOf('month')
@@ -31,7 +32,7 @@ function currentQuarter(today: string): QuarterInfo {
 }
 
 const isStakeTarget = (s: PresenceSchedule) =>
-  s.targetKind === 'stake_president' || (s.targetKind == null && !s.wardId)
+  s.targetKind === 'stake_president' || (s.targetKind === undefined && !s.wardId)
 
 function hasQuarterlyStakeContact(unitId: string, schedules: PresenceSchedule[], q: QuarterInfo): boolean {
   return schedules.some(s =>
@@ -80,7 +81,7 @@ export function hasPendingReminders(
     if (!ACTIVE(v) || v.date <= today) continue
     const key = `meeting:${v.id ?? ''}`
     if (dismissed.has(key)) continue
-    const visitWardId = v.wardId ?? undefined
+    const visitWardId = v.wardId ?? (v.wardName ? getWardIdByName(v.wardName) : undefined)
     const satisfied = !!visitWardId && meetings.some(m =>
       m.targetKind === 'ward_bishop' &&
       m.wardId === visitWardId &&
