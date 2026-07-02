@@ -2,6 +2,7 @@ import { useAtomValue } from 'jotai'
 import { Navigate, Outlet } from 'react-router-dom'
 import { authUserAtom, authLoadingAtom } from '@/store/authAtom'
 import { Spinner } from '@/components/ui'
+import { RemindersSync } from '@/components/domain/Reminders/RemindersSync'
 import styles from './Router.module.scss'
 
 export function ProtectedRoute() {
@@ -14,5 +15,10 @@ export function ProtectedRoute() {
   if (user.role === 'pending' && !user.unitId) return <Navigate to="/onboarding" replace />
   if (user.role === 'pending') return <Navigate to="/pending" replace />
   if (user.role === 'president' && !user.unitId) return <Navigate to="/onboarding" replace />
-  return <Outlet />
+  return (
+    <>
+      <RemindersSync />
+      <Outlet />
+    </>
+  )
 }

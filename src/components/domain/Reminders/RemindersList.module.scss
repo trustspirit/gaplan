@@ -1,6 +1,5 @@
 @use '@/styles/variables' as *;
 
-.skeletonRow { margin-bottom: $space-2; }
 .section { & + & { margin-top: $space-4; } }
 .sectionTitle {
   font-size: $font-size-xs;

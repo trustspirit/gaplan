@@ -12,6 +12,7 @@ import { seventyViewAtom } from '@/store/seventyViewAtom'
 import { SCOPE_ALL } from '@/utils/scope'
 import { LANGUAGES, type SupportedLang } from '@/i18n'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { RemindersBell } from '@/components/domain/Reminders/RemindersBell'
 import styles from './TopBar.module.scss'
 
 interface TopBarProps { name: string; subtext?: string; pendingCount?: number; helpInfoKey?: string }
@@ -97,6 +98,7 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
         {pendingCount > 0 && (
           <Badge variant="warning">{t('task.pendingCount', { count: pendingCount })}</Badge>
         )}
+        <RemindersBell />
         {helpInfoKey && (
           <button
             type="button"

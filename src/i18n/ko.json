@@ -68,7 +68,10 @@
     "preVisitMeeting": "방문 전 감독단 모임",
     "noPresident": "회장 미배정",
     "meetingBy": "모임 {{date}}까지",
-    "acknowledge": "확인함"
+    "acknowledge": "확인함",
+    "bellLabel": "리마인더 {{count}}건",
+    "panelTitle": "리마인더",
+    "summaryBanner": "확인할 리마인더 {{count}}건"
   },
   "visitPlan": {
     "listTitle": "방문 계획",
@@ -372,26 +375,27 @@
       "all": "전체",
       "upcoming": "예정",
       "completed": "완료"
-    },
-    "nextVisits": "다음 방문 예정"
+    }
   },
   "interviews": {
     "title": "접견 일정",
-    "createTask": "태스크 생성",
+    "createTask": "접견 요청 생성",
     "addSchedule": "접견 일정 추가",
-    "thisMonth": "이번 달 접견",
-    "upcoming": "예정 접견",
-    "completed": "완료 접견",
-    "empty": "접견 일정이 없습니다",
-    "noUpcoming": "아직 예정된 접견이 없습니다.",
-    "noCompleted": "완료된 접견이 없습니다.",
-    "noAll": "확정된 접견 일정이 없습니다.",
+    "thisMonth": "이번 달 접견·모임",
+    "upcoming": "예정 접견·모임",
+    "completed": "완료 접견·모임",
+    "empty": "접견·모임 일정이 없습니다",
+    "noUpcoming": "아직 예정된 접견·모임이 없습니다.",
+    "noCompleted": "완료된 접견·모임이 없습니다.",
+    "noAll": "확정된 접견·모임 일정이 없습니다.",
     "tabs": {
       "all": "전체",
       "upcoming": "예정",
       "completed": "완료"
-    },
-    "nextInterviews": "다음 접견 예정"
+    }
+  },
+  "schedules": {
+    "interviewMeetingTab": "접견·모임"
   },
   "user": {
     "invite": "사용자 초대",

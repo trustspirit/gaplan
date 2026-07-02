@@ -68,7 +68,10 @@
     "preVisitMeeting": "Pre-visit bishopric meeting",
     "noPresident": "No president assigned",
     "meetingBy": "meeting by {{date}}",
-    "acknowledge": "Acknowledge"
+    "acknowledge": "Acknowledge",
+    "bellLabel": "{{count}} reminders",
+    "panelTitle": "Reminders",
+    "summaryBanner": "{{count}} reminders to review"
   },
   "visitPlan": {
     "listTitle": "Visit Plans",
@@ -372,26 +375,27 @@
       "all": "All",
       "upcoming": "Upcoming",
       "completed": "Completed"
-    },
-    "nextVisits": "Next Visits"
+    }
   },
   "interviews": {
     "title": "Interview Schedule",
-    "createTask": "Create Task",
+    "createTask": "Create interview request",
     "addSchedule": "Add Interview",
     "thisMonth": "This Month",
     "upcoming": "Upcoming",
     "completed": "Completed",
-    "empty": "No interview schedule",
-    "noUpcoming": "No upcoming interviews.",
-    "noCompleted": "No completed interviews.",
-    "noAll": "No confirmed interview schedule.",
+    "empty": "No interview/meeting schedule",
+    "noUpcoming": "No upcoming interviews or meetings.",
+    "noCompleted": "No completed interviews or meetings.",
+    "noAll": "No confirmed interview/meeting schedule.",
     "tabs": {
       "all": "All",
       "upcoming": "Upcoming",
       "completed": "Completed"
-    },
-    "nextInterviews": "Next Interviews"
+    }
+  },
+  "schedules": {
+    "interviewMeetingTab": "Interviews & Meetings"
   },
   "user": {
     "invite": "Invite User",

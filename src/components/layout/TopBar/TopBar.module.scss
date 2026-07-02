@@ -23,7 +23,8 @@
   color: $color-text;
   @include truncate;
 
-  @include mobile { font-size: $font-size-sm; }
+  // Hide on mobile to make room for the reminders bell/help/avatar cluster
+  @include mobile { display: none; }
 }
 
 .sub {

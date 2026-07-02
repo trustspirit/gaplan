@@ -10,7 +10,7 @@ import styles from './SchedulesPage.module.scss'
 
 const TABS = [
   { key: 'visits', labelKey: 'nav.visits' },
-  { key: 'interviews', labelKey: 'nav.interviews' },
+  { key: 'interviews', labelKey: 'schedules.interviewMeetingTab' },
   { key: 'events', labelKey: 'nav.generalSchedules' },
 ] as const
 
@@ -43,20 +43,20 @@ export function SchedulesPage() {
       {active === 'visits' && (
         <ScheduleTypePanel
           translationPrefix="visits"
-          scheduleType="ward_visit"
+          scheduleTypes={['ward_visit']}
           EmptyIcon={MapPin}
           taskPath="/admin/visit-planner"
-          sideTitleKey="visits.nextVisits"
-          showWardInUpcoming
+          showTaskButton
+          formInitialType="ward_visit"
         />
       )}
       {active === 'interviews' && (
         <ScheduleTypePanel
           translationPrefix="interviews"
-          scheduleType="interview"
+          scheduleTypes={['interview', 'meeting']}
           EmptyIcon={Users}
           taskPath="/admin/tasks"
-          sideTitleKey="interviews.nextInterviews"
+          showTaskButton
         />
       )}
       {active === 'events' && <GeneralSchedulePanel />}

@@ -14,8 +14,6 @@ import { useSchedules } from '@/hooks/useSchedules'
 import { useUnits } from '@/hooks/useUnits'
 import { useTaskConfirm } from '@/hooks/useTaskConfirm'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
-import { useReminders } from '@/hooks/useReminders'
 import { subscribeToSharedCalendar } from '@/services/calendarService'
 import { deleteScheduleViaCF } from '@/services/scheduleService'
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
@@ -25,27 +23,15 @@ import { TaskCard } from '@/components/domain/TaskCard/TaskCard'
 import { ScheduleItem } from '@/components/domain/ScheduleItem/ScheduleItem'
 import { TaskPickerContent } from '@/components/domain/TaskPickerContent/TaskPickerContent'
 import { taskPickerTitle } from '@/components/domain/TaskPickerContent/taskPickerTitle'
-import { ScheduleDateRangeFilter } from '@/components/domain/ScheduleDateRangeFilter/ScheduleDateRangeFilter'
 import { ScheduleFormModal } from '@/components/domain/ScheduleFormModal/ScheduleFormModal'
 import { EditScheduleModal } from '@/components/domain/EditScheduleModal/EditScheduleModal'
-import { RemindersCard } from '@/components/domain/RemindersCard/RemindersCard'
+import { ReminderSummaryBanner } from '@/components/domain/Reminders/ReminderSummaryBanner'
 import type { Schedule } from '@/types'
 import { useWardSubmit } from '@/hooks/useWardSubmit'
 import { REGIONS } from '@/constants/regions'
 import { resolveScopedScheduleSeventyUid } from '@/utils/scope'
+import { selectGlanceSchedules } from '@/utils/glance'
 import styles from './DashboardPage.module.scss'
-
-const isActiveSchedule = (schedule: Schedule) => schedule.status === 'confirmed' || schedule.status === 'pending'
-
-const sortSchedulesByDate = (a: Schedule, b: Schedule) =>
-  a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime)
-
-const getThisMonthScheduleCount = (schedules: Schedule[]) =>
-  schedules.filter(
-    (schedule) =>
-      isActiveSchedule(schedule) &&
-      dayjs(schedule.date).format('YYYY-M') === dayjs().format('YYYY-M'),
-  ).length
 
 function CalendarBanner({ connected }: { connected?: boolean }) {
   const { t } = useTranslation()
@@ -137,7 +123,6 @@ function PresidentDashboard() {
   const { schedules, loading: schedulesLoading } = useSchedules({ presidentUid: user.uid })
   const { getUnitName } = useUnits()
   const isMobile = useIsMobile()
-  const { setting: rangeSetting, range, save: saveRange, loading: rangeLoading } = useScheduleDateRange(user.uid)
   const {
     activeTask,
     selectedSlots,
@@ -152,9 +137,8 @@ function PresidentDashboard() {
 
   const { handleSubmitWards, wardSubmitting } = useWardSubmit(activeTask, closeTask)
 
-  const upcoming = schedules
-    .filter(s => isActiveSchedule(s) && s.date >= range.start && s.date <= range.end)
-    .sort(sortSchedulesByDate)
+  const today = dayjs().format('YYYY-MM-DD')
+  const upcoming = selectGlanceSchedules(schedules, today)
 
   const pickerTitle = taskPickerTitle(activeTask)
 
@@ -203,14 +187,9 @@ function PresidentDashboard() {
             </CardBody>
           </Card>
 
-          <ScheduleDateRangeFilter
-            setting={rangeSetting}
-            currentRange={range}
-            onChange={saveRange}
-          />
           <ScheduleListCard
             schedules={upcoming}
-            loading={schedulesLoading || rangeLoading}
+            loading={schedulesLoading}
             getUnitName={getUnitName}
             showCalendarAdd
           />
@@ -234,18 +213,17 @@ function SeventyDashboard() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { schedules, loading: schedulesLoading } = useSchedules({ seventyUid: user.uid })
-  const { interviewReminders, meetingReminders, dismiss, loading: remindersLoading } = useReminders()
   const { getUnitName } = useUnits()
-  const { setting: rangeSetting, range, save: saveRange, loading: rangeLoading } = useScheduleDateRange(user.uid)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
   const regionIds = user.regionIds ?? (user.regionId ? [user.regionId] : [])
   const regionName = regionIds.map((id) => REGIONS.find((r) => r.id === id)?.name ?? id).join(', ')
 
-  const upcoming = schedules
-    .filter(s => isActiveSchedule(s) && s.date >= range.start && s.date <= range.end && !deletingIds.has(s.id))
-    .sort(sortSchedulesByDate)
-  const thisMonthCount = getThisMonthScheduleCount(schedules)
+  const today = dayjs().format('YYYY-MM-DD')
+  const upcoming = selectGlanceSchedules(
+    schedules.filter(s => !deletingIds.has(s.id)),
+    today,
+  )
 
   return (
     <AppShell
@@ -257,26 +235,11 @@ function SeventyDashboard() {
         <div className={styles.mainCol}>
           <CalendarBanner connected={user.calendarConnected} />
 
-          <RemindersCard
-            interviewReminders={interviewReminders}
-            meetingReminders={meetingReminders}
-            loading={remindersLoading}
-            onDismiss={dismiss}
-          />
+          <ReminderSummaryBanner />
 
-          <ScheduleDateRangeFilter
-            setting={rangeSetting}
-            currentRange={range}
-            onChange={saveRange}
-          />
           <ScheduleListCard
             schedules={upcoming}
-            loading={schedulesLoading || rangeLoading}
-            action={
-              <span className={styles.headerCount}>
-                {t('schedule.thisMonth', { count: thisMonthCount })}
-              </span>
-            }
+            loading={schedulesLoading}
             getUnitName={getUnitName}
             canEdit
             onEdit={setEditTarget}
@@ -306,9 +269,7 @@ function AdminDashboardContent() {
   const { schedules, loading: schedulesLoading } = useSchedules(
     scheduleSeventyUid ? { seventyUid: scheduleSeventyUid } : {},
   )
-  const { interviewReminders, meetingReminders, dismiss, loading: remindersLoading } = useReminders()
   const { getUnitName } = useUnits()
-  const { setting: rangeSetting, range, save: saveRange, loading: rangeLoading } = useScheduleDateRange(user.uid)
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
@@ -341,13 +302,11 @@ function AdminDashboardContent() {
     }
   }
 
-  const thisMonthCount = getThisMonthScheduleCount(schedules)
-  const upcoming = schedules
-    .filter(
-      (schedule) =>
-        isActiveSchedule(schedule) && schedule.date >= range.start && schedule.date <= range.end && !deletingIds.has(schedule.id),
-    )
-    .sort(sortSchedulesByDate)
+  const today = dayjs().format('YYYY-MM-DD')
+  const upcoming = selectGlanceSchedules(
+    schedules.filter(s => !deletingIds.has(s.id)),
+    today,
+  )
 
   return (
     <AppShell
@@ -357,25 +316,12 @@ function AdminDashboardContent() {
     >
       <div className={styles.layout}>
         <div className={styles.mainCol}>
-          <RemindersCard
-            interviewReminders={interviewReminders}
-            meetingReminders={meetingReminders}
-            loading={remindersLoading}
-            onDismiss={dismiss}
-          />
-          <ScheduleDateRangeFilter
-            setting={rangeSetting}
-            currentRange={range}
-            onChange={saveRange}
-          />
+          <ReminderSummaryBanner />
           <ScheduleListCard
             schedules={upcoming}
-            loading={schedulesLoading || rangeLoading}
+            loading={schedulesLoading}
             action={
               <div className={styles.headerActions}>
-                <span className={styles.headerCount}>
-                  {t('schedule.thisMonth', { count: thisMonthCount })}
-                </span>
                 <Button variant="secondary" size="sm" onClick={handlePublicAction} title={schedulePublic ? t('common.copyLink') : t('admin.publicScheduleTitle')}>
                   {publicCopied ? <Check size={14} /> : <Globe size={14} />}
                   &nbsp;{t('common.publicLink')}

@@ -25,11 +25,11 @@ type TranslationPrefix = 'visits' | 'interviews'
 
 interface ScheduleTypePanelProps {
   translationPrefix: TranslationPrefix
-  scheduleType: Extract<ScheduleType, 'ward_visit' | 'interview'>
+  scheduleTypes: ScheduleType[]
   EmptyIcon: ComponentType<{ size?: number; className?: string }>
   taskPath: string
-  sideTitleKey: string
-  showWardInUpcoming?: boolean
+  showTaskButton?: boolean
+  formInitialType?: ScheduleType
 }
 
 const TABS: FilterTab[] = ['all', 'upcoming', 'completed']
@@ -42,11 +42,11 @@ function emptyDescriptionKey(prefix: TranslationPrefix, activeTab: FilterTab) {
 
 export function ScheduleTypePanel({
   translationPrefix,
-  scheduleType,
+  scheduleTypes,
   EmptyIcon,
   taskPath,
-  sideTitleKey,
-  showWardInUpcoming,
+  showTaskButton,
+  formInitialType,
 }: ScheduleTypePanelProps) {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
@@ -80,17 +80,19 @@ export function ScheduleTypePanel({
     : rawSchedules
   ).filter(s => !deletingIds.has(s.id))
 
-  const { orderedKeys, grouped, upcomingList, thisMonthCount, upcomingCount, completedCount } =
-    useSchedulePageData(schedules, scheduleType, activeTab)
+  const { orderedKeys, grouped, thisMonthCount, upcomingCount, completedCount } =
+    useSchedulePageData(schedules, scheduleTypes, activeTab)
 
   return (
     <div className={styles.layout}>
       <div className={styles.mainCol}>
         {canUseAdminTools(user) && (
           <div className={styles.pageHeader}>
-            <Button variant="secondary" size="sm" onClick={() => navigate(taskPath)}>
-              {t(`${translationPrefix}.createTask`)}
-            </Button>
+            {showTaskButton && (
+              <Button variant="secondary" size="sm" onClick={() => navigate(taskPath)}>
+                {t(`${translationPrefix}.createTask`)}
+              </Button>
+            )}
             <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
               + {t(`${translationPrefix}.addSchedule`)}
             </Button>
@@ -172,7 +174,7 @@ export function ScheduleTypePanel({
                       <ScheduleItem
                         key={schedule.id}
                         schedule={schedule}
-                        unitName={getUnitName(schedule.unitId)}
+                        unitName={getUnitName(schedule.unitId) || t('schedule.type.meeting')}
                         showCalendarAdd={user.role === 'president'}
                         canEdit={canUseAdminTools(user) || user.role === 'seventy'}
                         onEdit={() => setEditTarget(schedule)}
@@ -189,7 +191,8 @@ export function ScheduleTypePanel({
 
       {formOpen && (
         <ScheduleFormModal
-          initialType={scheduleType}
+          initialType={formInitialType}
+          allowedTypes={scheduleTypes.length > 1 ? scheduleTypes : undefined}
           onClose={() => setFormOpen(false)}
           onSaved={() => {
             setFormOpen(false)
@@ -207,29 +210,6 @@ export function ScheduleTypePanel({
           }}
           onDelete={() => { scheduleDelete(editTarget.id, () => deleteScheduleViaCF(editTarget.id), t('admin.scheduleCancelSuccess')); setEditTarget(null) }}
         />
-      )}
-
-      {upcomingList.length > 0 && (
-        <div className={styles.sideCol}>
-          <div className={styles.sideCard}>
-            <div className={styles.sideCardHeader}>{t(sideTitleKey)}</div>
-            <div className={styles.sideCardBody}>
-              {upcomingList.map((schedule) => (
-                <div key={schedule.id} className={styles.upcomingItem}>
-                  <span className={styles.upcomingDate}>
-                    {dayjs(schedule.date).format('M/D (ddd)')}
-                  </span>
-                  <span className={styles.upcomingUnit}>
-                    {getUnitName(schedule.unitId)}
-                    {showWardInUpcoming && schedule.wardName && (
-                      <span className={styles.upcomingWard}> · {schedule.wardName}</span>
-                    )}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       )}
     </div>
   )
