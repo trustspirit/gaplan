@@ -57,6 +57,7 @@ export function ScheduleFormModal({
   const [wardName, setWardName] = useState('')
   const [presidentUid, setPresidentUid] = useState('')
   const [contactTargetValue, setContactTargetValue] = useState('')
+  const [targetSelect, setTargetSelect] = useState('')  // '', 'other', 'unit:...', 'ward:...'
   const [date, setDate] = useState(initialDate ?? '')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
@@ -84,6 +85,7 @@ export function ScheduleFormModal({
     setWardName('')
     setPresidentUid('')
     setContactTargetValue('')
+    setTargetSelect('')
     setZoomLink('')
     setCustomTitle('')
     setNotes('')
@@ -95,6 +97,7 @@ export function ScheduleFormModal({
     setWardName('')
     setPresidentUid('')
     setContactTargetValue('')
+    setTargetSelect('')
   }
 
   const handleUnitChange = (nextUnitId: string) => {
@@ -102,13 +105,7 @@ export function ScheduleFormModal({
     setWardName('')
     setPresidentUid('')
     setContactTargetValue('')
-  }
-
-  const handleContactTargetChange = (nextValue: string) => {
-    setContactTargetValue(nextValue)
-    // 자유 입력 텍스트/제안값이므로 label로 매칭 (일반 회원 이름이면 매칭 없음 → president 링크 해제)
-    const option = contactTargetOptions.find(o => o.label === nextValue)
-    setPresidentUid(option?.presidentUid ?? '')
+    setTargetSelect('')
   }
 
   const seventyUsers = users.filter((u) => u.role === 'seventy')
@@ -148,6 +145,10 @@ export function ScheduleFormModal({
   }))
   const contactTargetOptions = getContactTargetOptions({ type, unitId, leaders, users })
   const selectedContactTarget = contactTargetOptions.find(o => o.label === contactTargetValue)
+  const targetOptions = [
+    ...contactTargetOptions.map(o => ({ value: o.value, label: o.label })),
+    { value: 'other', label: '기타 (직접 입력)' },
+  ]
 
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault()
@@ -168,9 +169,27 @@ export function ScheduleFormModal({
       setError(t('schedule.errorStakeWardRequired'))
       return
     }
-    if (type === 'interview' && !unitId) {
-      setError(t('schedule.errorStakeRequired'))
-      return
+
+    // 접견/모임 대상 Select에서 targetKind/wardId 도출
+    let targetKind: 'stake_president' | 'ward_bishop' | 'other' | undefined
+    let wardId: string | undefined
+    if (type === 'interview' || type === 'meeting') {
+      if (targetSelect.startsWith('unit:')) targetKind = 'stake_president'
+      else if (targetSelect.startsWith('ward:')) {
+        targetKind = 'ward_bishop'
+        wardId = targetSelect.slice('ward:'.length)
+      } else if (targetSelect === 'other') targetKind = 'other'
+    }
+    // interview는 대상 하나는 반드시 지정 (빈 접견 방지)
+    if (type === 'interview') {
+      if (!targetKind) {
+        setError('접견 대상을 선택하세요.')
+        return
+      }
+      if (targetKind === 'other' && !contactTargetValue.trim()) {
+        setError('대상 이름을 입력하세요.')
+        return
+      }
     }
 
     // 접견/모임에서 알려진 유닛/리더가 아니라 자유 입력한 일반 회원 이름이면 대상으로 기록
@@ -196,6 +215,8 @@ export function ScheduleFormModal({
         ...(unitId ? { unitId } : {}),
         ...(wardName ? { wardName } : {}),
         ...(presidentUid ? { presidentUid } : {}),
+        ...(targetKind ? { targetKind } : {}),
+        ...(wardId ? { wardId } : {}),
         date,
         startTime,
         endTime,
@@ -289,10 +310,10 @@ export function ScheduleFormModal({
               />
             )}
 
-            {/* Stake/District — required for ward_visit/interview, optional for meeting */}
+            {/* Stake/District — required for ward_visit, optional for interview/meeting */}
             <Select
               label={
-                type === 'meeting' ? t('schedule.stakeLabelOptional') : t('schedule.stakeLabel')
+                type === 'ward_visit' ? t('schedule.stakeLabel') : t('schedule.stakeLabelOptional')
               }
               value={unitId}
               onChange={(e) => handleUnitChange(e.target.value)}
@@ -311,34 +332,30 @@ export function ScheduleFormModal({
               />
             )}
 
-            {/* Contact target — 리더는 제안 목록으로 제공하되, 일반 회원 이름을 직접 입력할 수도 있음 */}
+            {/* Contact target — 구조화된 대상 Select(스테이크/지방부 회장, 와드/지부 감독) + 기타(직접 입력) */}
             {(type === 'interview' || type === 'meeting') && (
-              <datalist id="contactTargetOptions">
-                {contactTargetOptions.map((o) => (
-                  <option key={o.value} value={o.label} />
-                ))}
-              </datalist>
-            )}
-
-            {type === 'interview' && (
-              <Input
-                label="접견 대상"
-                value={contactTargetValue}
-                onChange={(e) => handleContactTargetChange(e.target.value)}
-                list="contactTargetOptions"
-                placeholder="리더 선택 또는 회원 이름 직접 입력"
-                disabled={!unitId}
-              />
-            )}
-
-            {type === 'meeting' && unitId && (
-              <Input
-                label="대상 와드/지부"
-                value={contactTargetValue}
-                onChange={(e) => handleContactTargetChange(e.target.value)}
-                list="contactTargetOptions"
-                placeholder="와드/지부 선택 또는 회원 이름 직접 입력"
-              />
+              <>
+                <Select
+                  label="대상"
+                  value={targetSelect}
+                  onChange={(e) => {
+                    setTargetSelect(e.target.value)
+                    const opt = contactTargetOptions.find(o => o.value === e.target.value)
+                    setPresidentUid(opt?.presidentUid ?? '')
+                    if (e.target.value !== 'other') setContactTargetValue(opt?.label ?? '')
+                    else setContactTargetValue('')
+                  }}
+                  options={targetOptions}
+                />
+                {targetSelect === 'other' && (
+                  <Input
+                    label="대상 (직접 입력)"
+                    value={contactTargetValue}
+                    onChange={(e) => setContactTargetValue(e.target.value)}
+                    placeholder="회원 이름 직접 입력"
+                  />
+                )}
+              </>
             )}
 
             {type === 'ward_visit' && (
