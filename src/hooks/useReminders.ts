@@ -33,9 +33,11 @@ export function useReminders() {
   }, [user, viewSeventyUid])
 
   // 마운트 시 존재 여부만 저렴하게 확인 — 전체 목록은 loadFull()로 지연 로드한다.
+  // user/조회 대상(querySeventyUid)이 바뀌면 이전 스코프의 캐시를 버려, 다음 loadFull()이 새 스코프로 재조회하게 한다.
   useEffect(() => {
     if (!user) return
     let active = true
+    setLoaded(false); setSchedules([]); setDismissed([])
     fetchRemindersPresence(user.role === 'admin' ? querySeventyUid : undefined)
       .then(h => { if (active) setHasPending(h) })
       .catch(() => {})

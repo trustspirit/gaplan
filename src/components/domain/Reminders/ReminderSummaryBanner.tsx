@@ -19,7 +19,7 @@ function topSeverity(sevs: ReminderSeverity[]): ReminderSeverity {
 export function ReminderSummaryBanner() {
   const { t } = useTranslation()
   const hasPending = useAtomValue(reminderHasAtom)
-  const { interviewReminders, meetingReminders, loaded } = useAtomValue(remindersAtom)
+  const { interviewReminders, meetingReminders, loaded, loading } = useAtomValue(remindersAtom)
   const dismiss = useAtomValue(reminderDismissAtom)
   const loadFull = useAtomValue(reminderLoadAtom)
   const isMobile = useIsMobile()
@@ -32,12 +32,24 @@ export function ReminderSummaryBanner() {
 
   if (!hasPending) return null
 
-  if (!loaded) {
+  // 로딩 중일 때만 비활성 스켈레톤을 보여준다.
+  if (loading && !loaded) {
     return (
       <div className={clsx(styles.banner, styles.loading)}>
         <Bell size={16} />
         <span className={styles.text}>{t('common.loading')}</span>
       </div>
+    )
+  }
+
+  // 아직 로드 전이거나 로드 실패(loadFull 예외)한 경우: 다시 시도할 수 있는 탭 가능한 프롬프트.
+  if (!loaded) {
+    return (
+      <button type="button" className={styles.banner} onClick={() => loadFull?.()}>
+        <Bell size={16} />
+        <span className={styles.text}>{t('reminder.bellLabel')}</span>
+        <ChevronRight size={16} className={styles.chevron} />
+      </button>
     )
   }
 
