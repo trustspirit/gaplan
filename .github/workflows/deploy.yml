@@ -77,7 +77,17 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json" >> $GITHUB_ENV
 
       - name: Deploy Hosting
-        run: npx firebase-tools deploy --only hosting --project gaplan-fccfe --force
+        run: |
+          set -o pipefail
+          if npx firebase-tools deploy --only hosting --project gaplan-fccfe --force 2>&1 | tee deploy.log; then
+            exit 0
+          fi
+          if grep -q "is the current active version" deploy.log; then
+            echo "::notice::Hosting content unchanged; version already live. Skipping release."
+            exit 0
+          fi
+          echo "::error::Firebase hosting deploy failed."
+          exit 1
 
   deploy-backend:
     needs: changes
