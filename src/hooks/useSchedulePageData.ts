@@ -15,7 +15,7 @@ interface SchedulePageData {
 
 export function useSchedulePageData(
   schedules: Schedule[],
-  type: ScheduleType,
+  types: ScheduleType[],
   activeTab: FilterTab,
   dateRange?: { start: string; end: string },
   upcomingLimit = 5,
@@ -24,7 +24,9 @@ export function useSchedulePageData(
   const thisMonth = today.format('YYYY-M')
 
   // Base set: type + active statuses — includes both confirmed and pending
-  const allActive = schedules.filter(s => s.type === type && (s.status === 'confirmed' || s.status === 'pending'))
+  const allActive = schedules.filter(
+    s => types.includes(s.type) && (s.status === 'confirmed' || s.status === 'pending'),
+  )
 
   // Range-filtered set: used only for the grouped list view
   const all = dateRange
