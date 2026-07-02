@@ -10,7 +10,7 @@ import styles from './SchedulesPage.module.scss'
 
 const TABS = [
   { key: 'visits', labelKey: 'nav.visits' },
-  { key: 'interviews', labelKey: 'nav.interviews' },
+  { key: 'interviews', labelKey: 'schedules.interviewMeetingTab' },
   { key: 'events', labelKey: 'nav.generalSchedules' },
 ] as const
 
@@ -54,7 +54,7 @@ export function SchedulesPage() {
       {active === 'interviews' && (
         <ScheduleTypePanel
           translationPrefix="interviews"
-          scheduleTypes={['interview']}
+          scheduleTypes={['interview', 'meeting']}
           EmptyIcon={Users}
           taskPath="/admin/tasks"
           showTaskButton

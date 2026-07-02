@@ -397,6 +397,9 @@
     },
     "nextInterviews": "Next Interviews"
   },
+  "schedules": {
+    "interviewMeetingTab": "Interviews & Meetings"
+  },
   "user": {
     "invite": "Invite User",
     "inviteEmail": "Email",

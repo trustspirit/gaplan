@@ -397,6 +397,9 @@
     },
     "nextInterviews": "다음 접견 예정"
   },
+  "schedules": {
+    "interviewMeetingTab": "접견·모임"
+  },
   "user": {
     "invite": "사용자 초대",
     "inviteEmail": "이메일",
