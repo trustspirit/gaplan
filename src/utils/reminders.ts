@@ -24,7 +24,6 @@ export interface MeetingReminder {
 }
 
 export const MEETING_LEAD_DAYS = 14
-export const MEETING_MATCH_WINDOW = 7
 
 const ACTIVE = (s: Schedule) => s.status === 'confirmed' || s.status === 'pending'
 
@@ -100,12 +99,13 @@ export function computeMeetingReminders(
     const key = `meeting:${v.id}`
     if (dismissedKeys.has(key)) continue
     const meetingBy = dayjs(v.date).subtract(MEETING_LEAD_DAYS, 'day')
-    // 모임 리마인더는 모임뿐 아니라 접견이 잡혀 있어도 충족으로 본다 (둘 다 확인)
+    // 준비 모임을 "언제 했는지(±N일)"가 아니라 "일정이 존재하는지"로 판단한다.
+    // 해당 유닛에 방문일 이전(당일 포함)의 활성 모임/접견 일정이 하나라도 있으면 충족 — 접견/모임 둘 다 인정.
     const satisfied = meetings.some(m =>
       (m.type === 'meeting' || m.type === 'interview') &&
       m.unitId === v.unitId &&
       ACTIVE(m) &&
-      Math.abs(dayjs(m.date).diff(meetingBy, 'day')) <= MEETING_MATCH_WINDOW,
+      m.date <= v.date,
     )
     if (satisfied) continue
     const daysUntil = meetingBy.startOf('day').diff(dayjs(today).startOf('day'), 'day')

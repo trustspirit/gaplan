@@ -89,17 +89,36 @@ describe('computeMeetingReminders', () => {
     expect(r[0].meetingByDate).toBe('2026-06-06')
     expect(r[0].wardName).toBe('광진 와드')
   })
-  it('omits when a meeting exists within ±7d of the meeting-by date', () => {
+  it('omits when a meeting for the unit exists on or before the visit', () => {
     const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '광진 와드' })]
     const meetings = [sched({ type: 'meeting', unitId: 'seoul-stake', date: '2026-06-05' })]
     const r = computeMeetingReminders(visits, meetings, new Set(), today)
     expect(r).toHaveLength(0)
   })
-  it('omits when an interview (not just a meeting) exists within ±7d of the meeting-by date', () => {
+  it('omits when an interview (not just a meeting) for the unit exists before the visit', () => {
     const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '광진 와드' })]
     const contacts = [sched({ type: 'interview', unitId: 'seoul-stake', date: '2026-06-05' })]
     const r = computeMeetingReminders(visits, contacts, new Set(), today)
     expect(r).toHaveLength(0)
+  })
+  it('omits even when the meeting is well before the 14d mark (existence, not timing)', () => {
+    // meeting-by는 2026-06-06이지만 준비 모임을 5.20에 일찍 잡아둔 경우에도 일정이 존재하면 충족
+    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '광진 와드' })]
+    const meetings = [sched({ type: 'meeting', unitId: 'seoul-stake', date: '2026-05-20' })]
+    const r = computeMeetingReminders(visits, meetings, new Set(), today)
+    expect(r).toHaveLength(0)
+  })
+  it('still flags when the only meeting is after the visit (not a prep meeting)', () => {
+    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '광진 와드' })]
+    const meetings = [sched({ type: 'meeting', unitId: 'seoul-stake', date: '2026-06-25' })]
+    const r = computeMeetingReminders(visits, meetings, new Set(), today)
+    expect(r).toHaveLength(1)
+  })
+  it('does not count a meeting for a different unit', () => {
+    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '광진 와드' })]
+    const meetings = [sched({ type: 'meeting', unitId: 'busan-stake', date: '2026-06-05' })]
+    const r = computeMeetingReminders(visits, meetings, new Set(), today)
+    expect(r).toHaveLength(1)
   })
   it('omits a dismissed visit', () => {
     const v = sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20' })

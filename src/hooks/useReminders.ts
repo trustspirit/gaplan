@@ -55,7 +55,9 @@ export function useReminders() {
     let active = true
     setSchedulesLoading(true)
     const q = currentQuarter(today)
-    const start = q.start < today ? q.start : today
+    // 방문 전 준비 모임(감독단 모임 등)은 분기 시작 이전에 잡혀 있을 수 있으므로 60일 여유를 두고 과거까지 조회
+    const lookbackStart = dayjs(today).subtract(60, 'day').format('YYYY-MM-DD')
+    const start = q.start < lookbackStart ? q.start : lookbackStart
     // 향후 120일까지의 일정만 조회 — 그 이후 방문의 모임 리마인더는 제외(허용 한계)
     const end = dayjs(today).add(120, 'day').format('YYYY-MM-DD')
     Promise.all([
