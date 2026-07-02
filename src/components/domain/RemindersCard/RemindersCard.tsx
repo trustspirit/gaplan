@@ -1,8 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import clsx from 'clsx'
-import dayjs from 'dayjs'
-import { Check } from 'lucide-react'
 import { Card, CardHeader, CardBody, Skeleton } from '@/components/ui'
+import { RemindersList } from '@/components/domain/Reminders/RemindersList'
 import type { InterviewReminder, MeetingReminder } from '@/utils/reminders'
 import styles from './RemindersCard.module.scss'
 
@@ -32,43 +30,11 @@ export function RemindersCard({ interviewReminders, meetingReminders, loading, o
     <Card>
       <CardHeader title={t('reminder.title')} />
       <CardBody>
-        {interviewReminders.length > 0 && (
-          <div className={styles.section}>
-            <p className={styles.sectionTitle}>{t('reminder.quarterlyInterview')}</p>
-            <ul className={styles.list}>
-              {interviewReminders.map(r => (
-                <li key={r.key} className={styles.row}>
-                  <span className={clsx(styles.dot, styles[r.severity])} />
-                  <span className={styles.text}>
-                    {r.unitName} · {r.presidentName ?? t('reminder.noPresident')}
-                  </span>
-                  <button type="button" className={styles.dismiss} onClick={() => onDismiss(r.key)}>
-                    <Check size={13} /> {t('reminder.acknowledge')}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {meetingReminders.length > 0 && (
-          <div className={styles.section}>
-            <p className={styles.sectionTitle}>{t('reminder.preVisitMeeting')}</p>
-            <ul className={styles.list}>
-              {meetingReminders.map(r => (
-                <li key={r.key} className={styles.row}>
-                  <span className={clsx(styles.dot, styles[r.severity])} />
-                  <span className={styles.text}>
-                    {r.wardName} · {dayjs(r.visitDate).format('M.D')} · {t('reminder.meetingBy', { date: dayjs(r.meetingByDate).format('M.D') })}
-                  </span>
-                  <button type="button" className={styles.dismiss} onClick={() => onDismiss(r.key)}>
-                    <Check size={13} /> {t('reminder.acknowledge')}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <RemindersList
+          interviewReminders={interviewReminders}
+          meetingReminders={meetingReminders}
+          onDismiss={onDismiss}
+        />
       </CardBody>
     </Card>
   )
