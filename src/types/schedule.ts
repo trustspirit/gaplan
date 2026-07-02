@@ -1,5 +1,6 @@
 export type ScheduleType = 'ward_visit' | 'interview' | 'meeting' | 'general_attendance'
 export type ScheduleStatus = 'pending' | 'confirmed' | 'cancelled'
+export type InterviewTargetKind = 'stake_president' | 'ward_bishop' | 'other'
 
 export interface Schedule {
   id: string
@@ -15,6 +16,8 @@ export interface Schedule {
   confirmedAt?: string
   googleCalendarEventId?: string
   wardName?: string   // ward visit: specific ward/branch name
+  wardId?: string             // 대상/방문 와드·지부 id (WARDS.id) — ward_visit 및 ward_bishop 접견/모임
+  targetKind?: InterviewTargetKind  // interview/meeting 대상 유형
   taskId?: string     // ward visit: links schedule back to source task (for re-confirmation cleanup)
   notes?: string
   zoomLink?: string | null
