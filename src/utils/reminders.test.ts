@@ -68,6 +68,11 @@ describe('computeInterviewReminders', () => {
     const r = computeInterviewReminders(units, names, schedules, new Set(), today)
     expect(r).toHaveLength(2)
   })
+  it('omits a unit that has a meeting (not just an interview) in the quarter', () => {
+    const schedules = [sched({ type: 'meeting', unitId: 'seoul-stake', date: '2026-05-10' })]
+    const r = computeInterviewReminders(units, names, schedules, new Set(), today)
+    expect(r.map(x => x.unitId)).toEqual(['gyeonggi-stake'])
+  })
   it('uses null presidentName when unit has no president', () => {
     const r = computeInterviewReminders([{ id: 'x-stake', name: 'X' }], new Map(), [], new Set(), today)
     expect(r[0].presidentName).toBeNull()
@@ -88,6 +93,12 @@ describe('computeMeetingReminders', () => {
     const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '광진 와드' })]
     const meetings = [sched({ type: 'meeting', unitId: 'seoul-stake', date: '2026-06-05' })]
     const r = computeMeetingReminders(visits, meetings, new Set(), today)
+    expect(r).toHaveLength(0)
+  })
+  it('omits when an interview (not just a meeting) exists within ±7d of the meeting-by date', () => {
+    const visits = [sched({ type: 'ward_visit', unitId: 'seoul-stake', date: '2026-06-20', wardName: '광진 와드' })]
+    const contacts = [sched({ type: 'interview', unitId: 'seoul-stake', date: '2026-06-05' })]
+    const r = computeMeetingReminders(visits, contacts, new Set(), today)
     expect(r).toHaveLength(0)
   })
   it('omits a dismissed visit', () => {
@@ -124,6 +135,17 @@ describe('selectMeetingReminderSchedules', () => {
 
     expect(selected.wardVisits.map(s => s.id)).toEqual(['visit-in-scope'])
     expect(selected.meetings.map(s => s.id)).toEqual(['meeting-in-scope'])
+  })
+
+  it('접견도 모임 리마인더 충족 근거(meetings 버킷)에 포함한다', () => {
+    const schedules = [
+      sched({ id: 'visit', type: 'ward_visit', seventyUid: 's1', unitId: 'seoul-stake' }),
+      sched({ id: 'interview', type: 'interview', seventyUid: 's1', unitId: 'seoul-stake' }),
+      sched({ id: 'meeting', type: 'meeting', seventyUid: 's1', unitId: 'seoul-stake' }),
+    ]
+    const selected = selectMeetingReminderSchedules(schedules, new Set(['seoul-stake']), 's1')
+
+    expect(selected.meetings.map(s => s.id).sort()).toEqual(['interview', 'meeting'])
   })
 
   it('actingSeventyUid가 있어도 허용 unit 밖의 일정은 모임 리마인더에서 제외한다', () => {

@@ -65,15 +65,16 @@ export function computeInterviewReminders(
 ): InterviewReminder[] {
   const q = currentQuarter(today)
   const sev = interviewSeverity(q.daysLeft)
-  const hasInterview = (unitId: string) => schedules.some(s =>
-    s.type === 'interview' &&
+  // 접견 리마인더는 접견뿐 아니라 모임이 계획되어 있어도 충족으로 본다 (둘 다 확인)
+  const hasContact = (unitId: string) => schedules.some(s =>
+    (s.type === 'interview' || s.type === 'meeting') &&
     s.unitId === unitId &&
     ACTIVE(s) &&
     s.date >= q.start && s.date <= q.end,
   )
   return units
     .filter(u => {
-      if (hasInterview(u.id)) return false
+      if (hasContact(u.id)) return false
       const key = interviewReminderKey(u.id, q.start)
       if (dismissedKeys.has(key)) return false
       return true
@@ -99,8 +100,9 @@ export function computeMeetingReminders(
     const key = `meeting:${v.id}`
     if (dismissedKeys.has(key)) continue
     const meetingBy = dayjs(v.date).subtract(MEETING_LEAD_DAYS, 'day')
+    // 모임 리마인더는 모임뿐 아니라 접견이 잡혀 있어도 충족으로 본다 (둘 다 확인)
     const satisfied = meetings.some(m =>
-      m.type === 'meeting' &&
+      (m.type === 'meeting' || m.type === 'interview') &&
       m.unitId === v.unitId &&
       ACTIVE(m) &&
       Math.abs(dayjs(m.date).diff(meetingBy, 'day')) <= MEETING_MATCH_WINDOW,
@@ -131,6 +133,7 @@ export function selectMeetingReminderSchedules(
 
   return {
     wardVisits: schedules.filter(s => s.type === 'ward_visit' && inScope(s)),
-    meetings: schedules.filter(s => s.type === 'meeting' && inScope(s)),
+    // 모임 리마인더 충족 근거: 모임뿐 아니라 접견도 인정 (둘 다 확인)
+    meetings: schedules.filter(s => (s.type === 'meeting' || s.type === 'interview') && inScope(s)),
   }
 }

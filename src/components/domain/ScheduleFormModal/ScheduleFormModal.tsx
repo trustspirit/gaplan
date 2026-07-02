@@ -104,7 +104,8 @@ export function ScheduleFormModal({
 
   const handleContactTargetChange = (nextValue: string) => {
     setContactTargetValue(nextValue)
-    const option = contactTargetOptions.find(o => o.value === nextValue)
+    // 자유 입력 텍스트/제안값이므로 label로 매칭 (일반 회원 이름이면 매칭 없음 → president 링크 해제)
+    const option = contactTargetOptions.find(o => o.label === nextValue)
     setPresidentUid(option?.presidentUid ?? '')
   }
 
@@ -144,7 +145,7 @@ export function ScheduleFormModal({
     label: u.preRegistered ? u.name : `${u.name} ✓`,
   }))
   const contactTargetOptions = getContactTargetOptions({ type, unitId, leaders, users })
-  const selectedContactTarget = contactTargetOptions.find(o => o.value === contactTargetValue)
+  const selectedContactTarget = contactTargetOptions.find(o => o.label === contactTargetValue)
 
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault()
@@ -170,13 +171,20 @@ export function ScheduleFormModal({
       return
     }
 
-    const finalNotes = buildNotesWithLeaderContact({
-      type,
-      unitId,
-      contactTargetUnitName: selectedContactTarget?.unitNameKo ?? '',
-      notes,
-      leaders,
-    })
+    // 접견/모임에서 알려진 유닛/리더가 아니라 자유 입력한 일반 회원 이름이면 대상으로 기록
+    const isFreeTextTarget =
+      (type === 'interview' || type === 'meeting') &&
+      contactTargetValue.trim() !== '' &&
+      !selectedContactTarget
+    const finalNotes = isFreeTextTarget
+      ? (notes.trim() ? `대상: ${contactTargetValue.trim()}\n${notes}` : `대상: ${contactTargetValue.trim()}`)
+      : buildNotesWithLeaderContact({
+          type,
+          unitId,
+          contactTargetUnitName: selectedContactTarget?.unitNameKo ?? '',
+          notes,
+          leaders,
+        })
 
     setSaving(true)
     try {
@@ -300,23 +308,33 @@ export function ScheduleFormModal({
               />
             )}
 
-            {/* Contact target — interview: stake/district or ward/branch */}
+            {/* Contact target — 리더는 제안 목록으로 제공하되, 일반 회원 이름을 직접 입력할 수도 있음 */}
+            {(type === 'interview' || type === 'meeting') && (
+              <datalist id="contactTargetOptions">
+                {contactTargetOptions.map((o) => (
+                  <option key={o.value} value={o.label} />
+                ))}
+              </datalist>
+            )}
+
             {type === 'interview' && (
-              <Select
+              <Input
                 label="접견 대상"
                 value={contactTargetValue}
                 onChange={(e) => handleContactTargetChange(e.target.value)}
-                options={contactTargetOptions}
+                list="contactTargetOptions"
+                placeholder="리더 선택 또는 회원 이름 직접 입력"
                 disabled={!unitId}
               />
             )}
 
             {type === 'meeting' && unitId && (
-              <Select
+              <Input
                 label="대상 와드/지부"
                 value={contactTargetValue}
                 onChange={(e) => handleContactTargetChange(e.target.value)}
-                options={contactTargetOptions}
+                list="contactTargetOptions"
+                placeholder="와드/지부 선택 또는 회원 이름 직접 입력"
               />
             )}
 

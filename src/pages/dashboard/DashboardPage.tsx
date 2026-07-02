@@ -348,7 +348,6 @@ function AdminDashboardContent() {
         isActiveSchedule(schedule) && schedule.date >= range.start && schedule.date <= range.end && !deletingIds.has(schedule.id),
     )
     .sort(sortSchedulesByDate)
-    .slice(0, 8)
 
   return (
     <AppShell
