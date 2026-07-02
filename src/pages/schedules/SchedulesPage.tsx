@@ -43,20 +43,21 @@ export function SchedulesPage() {
       {active === 'visits' && (
         <ScheduleTypePanel
           translationPrefix="visits"
-          scheduleType="ward_visit"
+          scheduleTypes={['ward_visit']}
           EmptyIcon={MapPin}
           taskPath="/admin/visit-planner"
-          sideTitleKey="visits.nextVisits"
+          showTaskButton
+          formInitialType="ward_visit"
           showWardInUpcoming
         />
       )}
       {active === 'interviews' && (
         <ScheduleTypePanel
           translationPrefix="interviews"
-          scheduleType="interview"
+          scheduleTypes={['interview']}
           EmptyIcon={Users}
           taskPath="/admin/tasks"
-          sideTitleKey="interviews.nextInterviews"
+          showTaskButton
         />
       )}
       {active === 'events' && <GeneralSchedulePanel />}
