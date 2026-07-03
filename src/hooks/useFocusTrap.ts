@@ -20,7 +20,10 @@ export function useFocusTrap(
     if (!active) return
     const container = containerRef.current
     const previouslyFocused = document.activeElement as HTMLElement | null
-    container?.focus()
+    // preventScroll: the container may still be mid entrance-transition (e.g. a
+    // bottom sheet animating up from translateY(100%)); the default focus scroll
+    // would chase it and yank the fixed overlay around on mobile.
+    container?.focus({ preventScroll: true })
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -49,7 +52,7 @@ export function useFocusTrap(
     window.addEventListener('keydown', onKey)
     return () => {
       window.removeEventListener('keydown', onKey)
-      previouslyFocused?.focus?.()
+      previouslyFocused?.focus?.({ preventScroll: true })
     }
   }, [active, containerRef])
 }
