@@ -159,7 +159,8 @@
     "helpButton": "Help",
     "deleted": "Deleted.",
     "deleteFailed": "Failed to delete.",
-    "undo": "Undo"
+    "undo": "Undo",
+    "selectPlaceholder": "Select..."
   },
   "scope": {
     "myAssigned": "My Assigned",
