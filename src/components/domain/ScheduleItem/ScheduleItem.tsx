@@ -81,7 +81,7 @@ export function ScheduleItem({
       window.removeEventListener('scroll', close, true)
       window.removeEventListener('resize', close)
     }
-  }, [menuOpen])
+  }, [menuOpen, isMobile])
 
   const isVisit = schedule.type === 'ward_visit'
   const isMeeting = schedule.type === 'meeting'

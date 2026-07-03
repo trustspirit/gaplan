@@ -179,7 +179,7 @@ describe('TaskProgress', () => {
 
     render(<TaskProgress />)
 
-    expect(await screen.findByText(/응답 현황/)).toBeInTheDocument()
-    expect(screen.queryByText('확정 대기 (1)')).not.toBeInTheDocument()
+    expect(await screen.findByText(/taskProgress\.responseStatus/)).toBeInTheDocument()
+    expect(screen.queryByText('taskProgress.awaitingConfirm:1')).not.toBeInTheDocument()
   })
 })

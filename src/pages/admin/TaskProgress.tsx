@@ -52,30 +52,31 @@ function TaskDetailModal({
   presidentName: string
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   return (
-    <Modal open onClose={onClose} title="태스크 상세">
+    <Modal open onClose={onClose} title={t('taskProgress.detailTitle')}>
       <div className={styles.modalBody}>
         <div className={styles.detailRow}>
-          <span className={styles.detailLabel}>상태</span>
+          <span className={styles.detailLabel}>{t('taskProgress.statusLabel')}</span>
           <StatusBadge status={task.status} />
         </div>
         <div className={styles.detailRow}>
-          <span className={styles.detailLabel}>담당자</span>
+          <span className={styles.detailLabel}>{t('taskProgress.assigneeLabel')}</span>
           <span className={styles.detailValue}>{presidentName}</span>
         </div>
         <div className={styles.detailRow}>
-          <span className={styles.detailLabel}>마감일</span>
+          <span className={styles.detailLabel}>{t('taskProgress.dueDateLabel')}</span>
           <span className={styles.detailValue}>{task.dueDate}</span>
         </div>
         {task.note && (
           <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>메모</span>
+            <span className={styles.detailLabel}>{t('taskProgress.memoLabel')}</span>
             <span className={styles.detailValue}>{task.note}</span>
           </div>
         )}
         {task.respondedSlots && task.respondedSlots.length > 0 && (
           <div className={styles.detailSection}>
-            <div className={styles.detailSectionTitle}>응답한 시간</div>
+            <div className={styles.detailSectionTitle}>{t('taskProgress.respondedTimes')}</div>
             {task.respondedSlots.map((slot, i) => (
               <div key={i} className={styles.detailSlotRow}>
                 {slot.date} {slot.startTime}–{slot.endTime}
@@ -85,7 +86,7 @@ function TaskDetailModal({
         )}
         {task.wardAssignments && task.wardAssignments.length > 0 && (
           <div className={styles.detailSection}>
-            <div className={styles.detailSectionTitle}>와드 배정</div>
+            <div className={styles.detailSectionTitle}>{t('taskProgress.wardAssignments')}</div>
             {task.wardAssignments.map((wa, i) => (
               <div key={i} className={styles.detailSlotRow}>
                 {wa.wardName}: {wa.date}
@@ -149,11 +150,11 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isVisit && availableDates.length === 0) {
-      toast.error('가능 일요일을 하나 이상 선택해주세요.')
+      toast.error(t('taskProgress.errorSelectSunday'))
       return
     }
     if (!isVisit && availableDateSlots.length === 0) {
-      toast.error('가능 날짜를 하나 이상 선택해주세요.')
+      toast.error(t('taskProgress.errorSelectDate'))
       return
     }
     setSaving(true)
@@ -297,6 +298,7 @@ function RespondedSlotRow({
   taskId: string
   onConfirmed: () => void
 }) {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
 
   const handleConfirm = async () => {
@@ -304,11 +306,11 @@ function RespondedSlotRow({
     try {
       const result = await adminConfirmSchedule({ taskId, slot })
       if (result.success) {
-        toast.success('일정이 확정되었습니다!')
+        toast.success(t('taskProgress.confirmSuccess'))
         onConfirmed()
-      } else toast.error(result.error ?? '확정에 실패했습니다.')
+      } else toast.error(result.error ?? t('common.confirmFailed'))
     } catch {
-      toast.error('오류가 발생했습니다.')
+      toast.error(t('taskProgress.genericError'))
     } finally {
       setLoading(false)
     }
@@ -321,7 +323,7 @@ function RespondedSlotRow({
         {slot.startTime} ~ {slot.endTime}
       </span>
       <Button size="sm" onClick={handleConfirm} loading={loading}>
-        이 시간으로 확정
+        {t('taskProgress.confirmThisTime')}
       </Button>
     </div>
   )
@@ -410,7 +412,7 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
             <div className={styles.taskInfo}>
               <span className={styles.taskPresident}>{presidentName}</span>
               <span className={styles.taskMeta}>
-                {unitName} · {typeLabel} · 마감 {dayjs(task.dueDate).format('M/D')}
+                {unitName} · {typeLabel} · {t('taskProgress.dueShort', { date: dayjs(task.dueDate).format('M/D') })}
                 {task.status === 'pending' && (
                   <span className={clsx(styles.dDay, isOverdue && styles.dDayOverdue)}>
                     {isOverdue ? ` (D+${Math.abs(daysLeft)})` : ` (D-${daysLeft})`}
@@ -466,7 +468,7 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
                 type="button"
                 className={styles.actionBtn}
                 onClick={() => setEditing(true)}
-                title="수정"
+                title={t('common.edit')}
               >
                 <Pencil size={14} />
               </button>
@@ -478,7 +480,7 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
                 className={clsx(styles.actionBtn, styles.actionBtnDanger)}
                 onClick={handleExpire}
                 disabled={expiring}
-                title="만료"
+                title={t('taskProgress.expire')}
               >
                 <XCircle size={14} />
               </button>
@@ -504,7 +506,7 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
         {/* Interview/meeting: time slot rows */}
         {expanded && task.respondedSlots && !isVisitTask && (
           <div className={styles.slotsPanel}>
-            <p className={styles.slotsPanelTitle}>회장이 제출한 가능 시간</p>
+            <p className={styles.slotsPanelTitle}>{t('taskProgress.presidentSubmittedTimes')}</p>
             {task.respondedSlots.map((slot) => (
               <RespondedSlotRow
                 key={`${slot.date}-${slot.startTime}`}
@@ -519,7 +521,7 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
         {/* Ward visit: ward assignment list + confirm button */}
         {expanded && isVisitTask && task.wardAssignments && (
           <div className={styles.slotsPanel}>
-            <p className={styles.slotsPanelTitle}>회장이 제출한 와드 배정</p>
+            <p className={styles.slotsPanelTitle}>{t('taskProgress.presidentSubmittedWards')}</p>
             {task.wardAssignments.map((a, i) => (
               <div key={i} className={styles.slotRow}>
                 <span className={styles.slotDate}>{dayjs(a.date).format('M/D (ddd)')}</span>
@@ -529,7 +531,7 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
             {task.status === 'responded' && (
               <div className={styles.wardConfirmRow}>
                 <Button onClick={handleConfirmWardVisit} loading={confirming} size="sm">
-                  전체 배정 확정 ({task.wardAssignments.length}개 일정 생성)
+                  {t('taskProgress.confirmAllAssignments', { count: task.wardAssignments.length })}
                 </Button>
               </div>
             )}
@@ -608,15 +610,15 @@ function RegionGroup({
         title={regionName}
         action={
           <div className={styles.regionSummary}>
-            {responded.length > 0 && <Badge variant="default">응답 {responded.length}</Badge>}
-            {pending.length > 0 && <Badge variant="warning">미응답 {pending.length}</Badge>}
-            {completed.length > 0 && <Badge variant="success">완료 {completed.length}</Badge>}
+            {responded.length > 0 && <Badge variant="default">{t('taskProgress.respondedBadge', { count: responded.length })}</Badge>}
+            {pending.length > 0 && <Badge variant="warning">{t('taskProgress.pendingBadge', { count: pending.length })}</Badge>}
+            {completed.length > 0 && <Badge variant="success">{t('taskProgress.completedBadge', { count: completed.length })}</Badge>}
           </div>
         }
       />
       <CardBody>
         {tasks.length === 0 ? (
-          <p className={styles.empty}>해당 지역 Task 없음</p>
+          <p className={styles.empty}>{t('taskProgress.emptyRegion')}</p>
         ) : (
           <>
             {/* Response Matrix + Schedule Suggestions for interview batches */}
@@ -629,12 +631,13 @@ function RegionGroup({
               return (
                 <div key={ref.batchId ?? ref.id} className={styles.statusSection}>
                   <p className={styles.statusLabel}>
-                    {title} 응답 현황 (
-                    {
-                      batch.filter((t) => t.status === 'responded' || t.status === 'completed')
-                        .length
-                    }
-                    /{batch.length})
+                    {t('taskProgress.responseStatus', {
+                      title,
+                      responded: batch.filter(
+                        (b) => b.status === 'responded' || b.status === 'completed',
+                      ).length,
+                      total: batch.length,
+                    })}
                   </p>
                   <ResponseMatrix tasks={batch} getPresidentName={getUserName} />
                   {hasResponded && (
@@ -653,26 +656,26 @@ function RegionGroup({
 
             {visitResponded.length > 0 && (
               <div className={styles.statusSection}>
-                <p className={styles.statusLabel}>확정 대기 ({visitResponded.length})</p>
+                <p className={styles.statusLabel}>{t('taskProgress.awaitingConfirm', { count: visitResponded.length })}</p>
                 {renderRows(visitResponded)}
               </div>
             )}
             {pending.length > 0 && (
               <div className={styles.statusSection}>
-                <p className={styles.statusLabel}>미응답 ({pending.length})</p>
+                <p className={styles.statusLabel}>{t('taskProgress.noResponse', { count: pending.length })}</p>
                 {renderRows(pending)}
               </div>
             )}
             {visitCompleted.length > 0 && (
               <div className={styles.statusSection}>
-                <p className={styles.statusLabel}>완료 ({visitCompleted.length})</p>
+                <p className={styles.statusLabel}>{t('taskProgress.completedCount', { count: visitCompleted.length })}</p>
                 {renderRows(visitCompleted)}
               </div>
             )}
             {expired.length > 0 && (
               <div className={styles.statusSection}>
                 <p className={clsx(styles.statusLabel, styles.statusLabelExpired)}>
-                  만료 ({expired.length})
+                  {t('taskProgress.expiredCount', { count: expired.length })}
                 </p>
                 {renderRows(expired)}
               </div>
@@ -750,19 +753,19 @@ export function TaskProgress() {
           <span className={clsx(styles.summaryNum, styles.summaryNumResponded)}>
             {totalResponded}
           </span>
-          <span className={styles.summaryLabel}>확정 대기</span>
+          <span className={styles.summaryLabel}>{t('taskProgress.summaryAwaiting')}</span>
         </div>
         <div className={styles.summaryItem}>
           <span className={styles.summaryNum}>{totalPending}</span>
-          <span className={styles.summaryLabel}>미응답</span>
+          <span className={styles.summaryLabel}>{t('taskProgress.summaryPending')}</span>
         </div>
         <div className={styles.summaryItem}>
           <span className={clsx(styles.summaryNum, styles.summaryNumDone)}>{totalCompleted}</span>
-          <span className={styles.summaryLabel}>완료</span>
+          <span className={styles.summaryLabel}>{t('common.complete')}</span>
         </div>
         <div className={styles.summaryItem}>
           <span className={clsx(styles.summaryNum, styles.summaryNumExpired)}>{totalExpired}</span>
-          <span className={styles.summaryLabel}>만료</span>
+          <span className={styles.summaryLabel}>{t('taskProgress.expire')}</span>
         </div>
       </div>
 
@@ -777,7 +780,7 @@ export function TaskProgress() {
       ) : visibleTasks.length === 0 ? (
         <Card>
           <CardBody>
-            <p className={styles.empty}>생성된 Task가 없습니다.</p>
+            <p className={styles.empty}>{t('taskProgress.emptyTasks')}</p>
           </CardBody>
         </Card>
       ) : (
