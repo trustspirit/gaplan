@@ -367,7 +367,9 @@
     "schedulePublicOn": "Public access on",
     "schedulePublicOff": "Private (default)",
     "perUnitPublicTitle": "Per-Unit Public Schedule",
-    "perUnitPublicDesc": "Manage public access and share links per unit or CC."
+    "perUnitPublicDesc": "Manage public access and share links per unit or CC.",
+    "selectSeventyLabel": "Select Area Seventy",
+    "slotsLoadFailed": "Failed to load slots. Please try again."
   },
   "visits": {
     "title": "Ward Visit Schedule",
@@ -464,7 +466,18 @@
     "syncCardTitle": "Manual Calendar Sync",
     "syncCardDesc": "Re-sync confirmed schedules that failed to sync to Google Calendar.",
     "moreEvents": "Show {{count}} more events",
-    "monthTitleFormat": "MMMM YYYY"
+    "monthTitleFormat": "MMMM YYYY",
+    "addSchedule": "Add schedule",
+    "exportCsv": "Export CSV",
+    "csv": {
+      "date": "Date",
+      "dow": "Day",
+      "type": "Type",
+      "title": "Title",
+      "status": "Status",
+      "confirmed": "Confirmed",
+      "fileName": "schedules_{{start}}_{{end}}.csv"
+    }
   },
   "availability": {
     "selectDays": "Select Available Days",
@@ -543,7 +556,10 @@
     "targetHint": "(none selected = all)",
     "public": "Public",
     "private": "Private",
-    "dateFormat": "MMM D, YYYY (ddd)"
+    "dateFormat": "MMM D, YYYY (ddd)",
+    "attendFailed": "Failed to register attendance.",
+    "cancelFailed": "Failed to cancel attendance.",
+    "visibilityFailed": "Failed to change visibility."
   },
   "leaders": {
     "searchPlaceholder": "Search by name or unit",
@@ -598,5 +614,24 @@
       "title": "User Management",
       "body": "Invite and manage app users.\n• Invite new users by email\n• Edit roles and assigned regions\n• Pre-register to assign roles without an invitation\n• Deleting a user removes their access"
     }
+  },
+  "respond": {
+    "title": "Schedule Response",
+    "subtitle": "You can respond without signing in",
+    "loading": "Loading...",
+    "invalidLink": "This link is invalid.",
+    "loadFailed": "Couldn't load the request.",
+    "notFound": "Task not found.",
+    "taskFallbackTitle": "Schedule request",
+    "submitErrorFallback": "An error occurred while submitting.",
+    "successTitle": "Response submitted",
+    "successSub": "Your response has been delivered to the organizer.",
+    "selectTimesTitle": "Select the times that work for you",
+    "selectWardDatesTitle": "Select a visit date for each ward",
+    "dateSelect": "Select date",
+    "submitting": "Submitting...",
+    "submit": "Submit response",
+    "selectedCount": "{{count}} selected",
+    "dateFormat": "MMM D (ddd)"
   }
 }

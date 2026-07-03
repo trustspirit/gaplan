@@ -77,7 +77,7 @@ export function CalendarPage() {
       await registerAttendance(gsId)
       toast.success(t('generalSchedule.attendSuccess'))
     } catch (e: unknown) {
-      toast.error((e as { message?: string })?.message ?? '참석 등록에 실패했습니다.')
+      toast.error((e as { message?: string })?.message ?? t('generalSchedule.attendFailed'))
     }
   }
 
@@ -86,7 +86,7 @@ export function CalendarPage() {
       await cancelAttendance(scheduleId)
       toast.success(t('generalSchedule.cancelSuccess'))
     } catch (e: unknown) {
-      toast.error((e as { message?: string })?.message ?? '참석 취소에 실패했습니다.')
+      toast.error((e as { message?: string })?.message ?? t('generalSchedule.cancelFailed'))
     }
   }
 
@@ -94,35 +94,32 @@ export function CalendarPage() {
     try {
       await updateGeneralSchedule(gs.id, { isPublic: !gs.isPublic })
     } catch {
-      toast.error('공개 설정 변경에 실패했습니다.')
+      toast.error(t('generalSchedule.visibilityFailed'))
     }
   }
 
   const exportCsv = () => {
-    const DOW = ['일', '월', '화', '수', '목', '금', '토']
-    const TYPE_LABEL: Record<string, string> = {
-      ward_visit: '와드방문', interview: '접견', meeting: '모임', general_attendance: '행사참석',
-    }
-    const CAT_LABEL: Record<string, string> = {
-      conference: '대회/행사', fasting: '금식', other: '기타',
-    }
+    const confirmedLabel = t('calendar.csv.confirmed')
 
     const scheduleRows = schedules
       .filter(s => s.date >= range.start && s.date <= range.end && s.status === 'confirmed')
       .map(s => {
         const d = dayjs(s.date)
         const title = s.customTitle ?? (s.wardName ? `${getUnitName(s.unitId)} ${getWardName(s.wardName)}` : getUnitName(s.unitId))
-        return [s.date, DOW[d.day()], TYPE_LABEL[s.type] ?? s.type, title, s.startTime, s.endTime, '확정']
+        return [s.date, d.format('ddd'), t(`schedule.type.${s.type}`), title, s.startTime, s.endTime, confirmedLabel]
       })
 
     const generalRows = generalSchedules
       .filter(gs => gs.date >= range.start && gs.date <= range.end)
       .map(gs => {
         const d = dayjs(gs.date)
-        return [gs.date, DOW[d.day()], CAT_LABEL[gs.category] ?? gs.category, gs.title, gs.startTime ?? '', gs.endTime ?? '', '확정']
+        return [gs.date, d.format('ddd'), t(`generalSchedule.category.${gs.category}`), gs.title, gs.startTime ?? '', gs.endTime ?? '', confirmedLabel]
       })
 
-    const header = ['날짜', '요일', '유형', '제목', '시작시간', '종료시간', '상태']
+    const header = [
+      t('calendar.csv.date'), t('calendar.csv.dow'), t('calendar.csv.type'),
+      t('calendar.csv.title'), t('common.startTime'), t('common.endTime'), t('calendar.csv.status'),
+    ]
     const sorted = [...scheduleRows, ...generalRows].sort((a, b) => (a[0] as string).localeCompare(b[0] as string))
     const csv = [header, ...sorted]
       .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
@@ -132,7 +129,7 @@ export function CalendarPage() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `일정_${range.start}_${range.end}.csv`
+    a.download = t('calendar.csv.fileName', { start: range.start, end: range.end })
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -192,11 +189,11 @@ export function CalendarPage() {
                     <div className={styles.headerActions}>
                       {user.role === 'admin' && (
                         <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
-                          + 일정 추가
+                          + {t('calendar.addSchedule')}
                         </Button>
                       )}
                       {(user.role === 'admin' || user.role === 'seventy') && (
-                        <Button variant="ghost" size="sm" onClick={exportCsv} title="CSV 내보내기">
+                        <Button variant="ghost" size="sm" onClick={exportCsv} title={t('calendar.exportCsv')}>
                           <Download size={14} />
                         </Button>
                       )}

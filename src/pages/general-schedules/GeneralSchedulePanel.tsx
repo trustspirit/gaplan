@@ -85,7 +85,7 @@ export function GeneralSchedulePanel() {
             }
           />
           <CardBody>
-            {loading && <p className={styles.empty}>불러오는 중…</p>}
+            {loading && <p className={styles.empty}>{t('common.loading')}</p>}
             {!loading && visibleSchedules.length === 0 && (
               <p className={styles.empty}>{t('generalSchedule.empty')}</p>
             )}

@@ -22,10 +22,15 @@ export interface PublicTaskInfo {
   wardAssignments: Array<{ wardName: string; date: string }>
 }
 
+// 'invalid-link' | 'load-failed' are sentinel codes the page translates;
+// any other string is a raw server message shown as-is.
+export type PublicTaskError = 'invalid-link' | 'load-failed' | string
+
 interface UsePublicTaskResult {
   task: PublicTaskInfo | null
   loading: boolean
-  error: string | null
+  error: PublicTaskError | null
+  retry: () => void
 }
 
 let getPublicTaskInfoFn: HttpsCallable<
@@ -49,20 +54,23 @@ export function usePublicTask(
 ): UsePublicTaskResult {
   const [task, setTask] = useState<PublicTaskInfo | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<PublicTaskError | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     if (!taskId || !token) {
-      setError('잘못된 링크입니다.')
+      setError('invalid-link')
       setLoading(false)
       return
     }
 
+    setLoading(true)
+    setError(null)
     getPublicTaskInfoCallable()({ taskId, token })
       .then((res) => setTask(res.data))
-      .catch((err) => setError(err.message ?? '정보를 불러올 수 없습니다.'))
+      .catch((err) => setError(err.message ?? 'load-failed'))
       .finally(() => setLoading(false))
-  }, [taskId, token])
+  }, [taskId, token, reloadKey])
 
-  return { task, loading, error }
+  return { task, loading, error, retry: () => setReloadKey(k => k + 1) }
 }

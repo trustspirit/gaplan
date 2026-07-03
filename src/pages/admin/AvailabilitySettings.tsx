@@ -46,14 +46,14 @@ export function AvailabilitySettings() {
           <CardHeader title={t('admin.availabilityTitle')} />
           <CardBody>
             <Select
-              label="지역 칠십인 선택"
+              label={t('admin.selectSeventyLabel')}
               value={targetUid}
               onChange={e => setTargetUid(e.target.value)}
               options={seventyOptions}
             />
             {targetUid && loading && <Skeleton height="160px" className={styles.skeleton} />}
             {targetUid && error && (
-              <p className={styles.error}>슬롯 로딩에 실패했습니다. 다시 시도해주세요.</p>
+              <p className={styles.error}>{t('admin.slotsLoadFailed')}</p>
             )}
             {targetUid && !loading && !error && (
               <AvailabilityEditor key={targetUid} slots={slots} onSave={handleSave} loading={saving} />

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
@@ -14,6 +15,7 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
+  const { t } = useTranslation()
   const sheetRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
   useFocusTrap(sheetRef, open, onClose)
@@ -42,7 +44,7 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
         {title && (
           <div className={styles.header}>
             <h2 id={titleId} className={styles.title}>{title}</h2>
-            <button onClick={onClose} className={styles.close} aria-label="닫기"><X size={18} /></button>
+            <button onClick={onClose} className={styles.close} aria-label={t('common.close')}><X size={18} /></button>
           </div>
         )}
         <div className={styles.body}>{children}</div>

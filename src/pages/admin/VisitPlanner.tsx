@@ -157,7 +157,7 @@ export function VisitPlanner() {
                 <div className={styles.regionFilter}>
                   <button type="button"
                     className={clsx(styles.regionBtn, !filterRegion && styles.regionBtnActive)}
-                    onClick={() => setFilterRegion('')}>전체</button>
+                    onClick={() => setFilterRegion('')}>{t('common.all')}</button>
                   {REGIONS.map(r => (
                     <button key={r.id} type="button"
                       className={clsx(styles.regionBtn, filterRegion === r.id && styles.regionBtnActive)}

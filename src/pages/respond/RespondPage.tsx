@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import type { HttpsCallable } from 'firebase/functions'
 import { publicCallable } from '@/services/publicFunctions'
 import { usePublicTask } from './usePublicTask'
@@ -42,17 +43,33 @@ function getSubmitWardAssignmentsAnonFn() {
 }
 
 export default function RespondPage() {
+  const { t, i18n } = useTranslation()
   const { taskId } = useParams<{ taskId: string }>()
   const [search] = useSearchParams()
   const token = search.get('t')
 
-  const { task, loading, error } = usePublicTask(taskId, token)
+  const { task, loading, error, retry } = usePublicTask(taskId, token)
 
   const [selectedSlots, setSelectedSlots] = useState<SelectedSlot[]>([])
   const [wardDateMap, setWardDateMap] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  // External respondents keep their own language preference (same key as the
+  // public schedule page)
+  useEffect(() => {
+    const saved = localStorage.getItem('publicLang')
+    if (saved && saved !== i18n.language) {
+      i18n.changeLanguage(saved)
+    }
+  }, [i18n])
+
+  const toggleLang = () => {
+    const next = i18n.language === 'ko' ? 'en' : 'ko'
+    i18n.changeLanguage(next)
+    localStorage.setItem('publicLang', next)
+  }
 
   const handleToggleSlot = (slot: SelectedSlot) => {
     const key = `${slot.date}_${slot.startTime}_${slot.endTime}`
@@ -77,21 +94,31 @@ export default function RespondPage() {
       }
       setSuccess(true)
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : '제출 중 오류가 발생했습니다.')
+      setSubmitError(e instanceof Error ? e.message : t('respond.submitErrorFallback'))
     } finally {
       setSubmitting(false)
     }
   }
 
   if (loading) {
-    return <div className={styles.loadingBox}>불러오는 중...</div>
+    return <div className={styles.loadingBox}>{t('respond.loading')}</div>
   }
 
   if (error || !task) {
+    const errorText =
+      error === 'invalid-link' ? t('respond.invalidLink')
+      : error === 'load-failed' ? t('respond.loadFailed')
+      : error ?? t('respond.notFound')
+    const canRetry = error !== 'invalid-link'
     return (
       <div className={styles.page}>
         <div className={styles.content}>
-          <div className={styles.errorBanner}>{error ?? '태스크를 찾을 수 없습니다.'}</div>
+          <div className={styles.errorBanner}>{errorText}</div>
+          {canRetry && (
+            <button type="button" className={styles.retryBtn} onClick={retry}>
+              {t('common.retry')}
+            </button>
+          )}
         </div>
       </div>
     )
@@ -102,8 +129,8 @@ export default function RespondPage() {
       <div className={styles.page}>
         <div className={styles.successBox}>
           <div className={styles.successIcon}>✅</div>
-          <div className={styles.successTitle}>응답이 제출되었습니다</div>
-          <div className={styles.successSub}>담당자에게 응답이 전달되었습니다.</div>
+          <div className={styles.successTitle}>{t('respond.successTitle')}</div>
+          <div className={styles.successSub}>{t('respond.successSub')}</div>
         </div>
       </div>
     )
@@ -117,13 +144,16 @@ export default function RespondPage() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <div className={styles.headerTitle}>일정 응답</div>
-        <div className={styles.headerSub}>로그인 없이 응답할 수 있습니다</div>
+        <button type="button" className={styles.langToggle} onClick={toggleLang}>
+          {i18n.language === 'ko' ? 'EN' : '한'}
+        </button>
+        <div className={styles.headerTitle}>{t('respond.title')}</div>
+        <div className={styles.headerSub}>{t('respond.subtitle')}</div>
       </div>
 
       <div className={styles.content}>
         <div className={styles.taskCard}>
-          <div className={styles.taskTitle}>{task.title || '일정 요청'}</div>
+          <div className={styles.taskTitle}>{task.title || t('respond.taskFallbackTitle')}</div>
           {task.note && <div className={styles.taskNote}>{task.note}</div>}
         </div>
 
@@ -131,7 +161,14 @@ export default function RespondPage() {
 
         {isInterview ? (
           <>
-            <div className={styles.sectionTitle}>가능한 시간을 선택하세요</div>
+            <div className={styles.sectionTitle}>
+              {t('respond.selectTimesTitle')}
+              {selectedSlots.length > 0 && (
+                <span className={styles.selectedCount}>
+                  {t('respond.selectedCount', { count: selectedSlots.length })}
+                </span>
+              )}
+            </div>
             <SlotSelectionGrid
               availableDateSlots={task.availableDateSlots}
               selectedSlots={selectedSlots}
@@ -140,7 +177,7 @@ export default function RespondPage() {
           </>
         ) : (
           <>
-            <div className={styles.sectionTitle}>각 와드의 방문 날짜를 선택하세요</div>
+            <div className={styles.sectionTitle}>{t('respond.selectWardDatesTitle')}</div>
             <div className={styles.wardList}>
               {task.wardAssignments.map(({ wardName }) => (
                 <div key={wardName} className={styles.wardItem}>
@@ -150,7 +187,7 @@ export default function RespondPage() {
                     value={wardDateMap[wardName] ?? ''}
                     onChange={e => setWardDateMap(prev => ({ ...prev, [wardName]: e.target.value }))}
                   >
-                    <option value="">날짜 선택</option>
+                    <option value="">{t('respond.dateSelect')}</option>
                     {task.availableDates.map(date => (
                       <option key={date} value={date}>{date}</option>
                     ))}
@@ -168,7 +205,7 @@ export default function RespondPage() {
             disabled={!canSubmit || submitting}
             onClick={handleSubmit}
           >
-            {submitting ? '제출 중...' : '응답 제출'}
+            {submitting ? t('respond.submitting') : t('respond.submit')}
           </button>
         </div>
       </div>
