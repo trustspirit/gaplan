@@ -166,9 +166,15 @@
   width: 4px;
   flex-shrink: 0;
 
-  &[data-type='visit']     { background: $color-primary; }
-  &[data-type='interview'] { background: $color-warning; }
-  &[data-type='meeting']   { background: $color-success; }
+  &[data-type='visit'] {
+    background: $color-primary;
+  }
+  &[data-type='interview'] {
+    background: $color-warning;
+  }
+  &[data-type='meeting'] {
+    background: $color-success;
+  }
 }
 
 .dateCol {
@@ -180,9 +186,15 @@
   min-width: 44px;
   flex-shrink: 0;
 
-  &[data-type='visit']     { background: rgba($color-primary, 0.06); }
-  &[data-type='interview'] { background: rgba($color-warning, 0.06); }
-  &[data-type='meeting']   { background: rgba($color-success, 0.06); }
+  &[data-type='visit'] {
+    background: rgba($color-primary, 0.06);
+  }
+  &[data-type='interview'] {
+    background: rgba($color-warning, 0.06);
+  }
+  &[data-type='meeting'] {
+    background: rgba($color-success, 0.06);
+  }
 }
 
 .date {
@@ -248,7 +260,9 @@
   text-decoration: none;
   margin-top: 2px;
 
-  &:hover { text-decoration: underline; }
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .presidentBadge {
@@ -330,18 +344,30 @@
 
 // ─── General Schedule Category Colors ─────────────────────────────────────
 .general_conference {
-  &.colorBar { background: #f59e0b; }
-  &.dateCol { background: #fef3c7; }
+  &.colorBar {
+    background: #f59e0b;
+  }
+  &.dateCol {
+    background: #fef3c7;
+  }
 }
 
 .general_fasting {
-  &.colorBar { background: #7c3aed; }
-  &.dateCol { background: #ede9fe; }
+  &.colorBar {
+    background: #7c3aed;
+  }
+  &.dateCol {
+    background: #ede9fe;
+  }
 }
 
 .general_other {
-  &.colorBar { background: #6b7280; }
-  &.dateCol { background: #f3f4f6; }
+  &.colorBar {
+    background: #6b7280;
+  }
+  &.dateCol {
+    background: #f3f4f6;
+  }
 }
 
 // ─── Subscribe FAB ────────────────────────────────────────────────────────
@@ -374,7 +400,10 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  transition:
+    background 0.15s,
+    transform 0.15s,
+    box-shadow 0.15s;
   flex-shrink: 0;
 
   &:hover {
@@ -427,7 +456,9 @@
   padding: 3px $space-3;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
   flex-shrink: 0;
 
   &:hover {
@@ -442,7 +473,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .spinning {
@@ -452,17 +485,16 @@
 // ─── Skeleton Loading ─────────────────────────────────────────────────────
 
 @keyframes shimmer {
-  0%   { background-position: -600px 0; }
-  100% { background-position: 600px 0; }
+  0% {
+    background-position: -600px 0;
+  }
+  100% {
+    background-position: 600px 0;
+  }
 }
 
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    $color-border 25%,
-    $color-bg     50%,
-    $color-border 75%
-  );
+  background: linear-gradient(90deg, $color-border 25%, $color-bg 50%, $color-border 75%);
   background-size: 1200px 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: $border-radius-sm;

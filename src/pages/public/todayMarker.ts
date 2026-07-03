@@ -16,11 +16,14 @@ export interface TodayMarkerScrollParams {
   thresholdRatio?: number
 }
 
-export function getTodayMarkerPlacement(groups: DatedGroup[], today: string): TodayMarkerPlacement | null {
+export function getTodayMarkerPlacement(
+  groups: DatedGroup[],
+  today: string,
+): TodayMarkerPlacement | null {
   if (groups.length === 0) return null
 
   for (const group of groups) {
-    const index = group.dates.findIndex(date => date >= today)
+    const index = group.dates.findIndex((date) => date >= today)
     if (index >= 0) return { groupKey: group.groupKey, itemIndex: index }
   }
 

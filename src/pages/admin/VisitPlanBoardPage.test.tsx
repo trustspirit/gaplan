@@ -22,6 +22,7 @@ vi.mock('react-router-dom', () => ({
 }))
 
 vi.mock('jotai', () => ({
+  useSetAtom: () => vi.fn(),
   useAtomValue: () => ({ uid: 'admin-1', role: 'admin', name: '관리자' }),
   atom: vi.fn(),
 }))
@@ -62,7 +63,13 @@ vi.mock('@/components/ui', () => ({
   Card: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
   CardHeader: ({ title }: { title: string }) => <h3>{title}</h3>,
   CardBody: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  Button: (props: React.ButtonHTMLAttributes<HTMLButtonElement> & { loading?: boolean; variant?: string; size?: string }) => {
+  Button: (
+    props: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+      loading?: boolean
+      variant?: string
+      size?: string
+    },
+  ) => {
     const { children, loading, variant, size, ...buttonProps } = props
     void loading
     void variant
@@ -74,7 +81,9 @@ vi.mock('@/components/ui', () => ({
 }))
 vi.mock('@/components/domain/visitPlan/AddVisitPanel', () => ({
   AddVisitPanel: ({ onAdd }: { onAdd: (item: typeof mocks.addedVisit) => void }) => (
-    <button type="button" onClick={() => onAdd(mocks.addedVisit)}>mock-add-visit</button>
+    <button type="button" onClick={() => onAdd(mocks.addedVisit)}>
+      mock-add-visit
+    </button>
   ),
 }))
 vi.mock('@/components/domain/visitPlan/PlanItemList', () => ({
@@ -93,13 +102,25 @@ import { VisitPlanBoardPage } from './VisitPlanBoardPage'
 describe('VisitPlanBoardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.stubGlobal('confirm', vi.fn(() => true))
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => true),
+    )
     mocks.getVisitPlan.mockResolvedValue({
       id: 'plan-1',
       title: '테스트 계획',
       seventyUid: 'sev-1',
       status: 'draft',
-      items: [{ itemId: 'item-1', unitId: 'seoul-stake', wardName: '녹번 와드', date: '2026-07-05', startTime: '10:00', endTime: '13:00' }],
+      items: [
+        {
+          itemId: 'item-1',
+          unitId: 'seoul-stake',
+          wardName: '녹번 와드',
+          date: '2026-07-05',
+          startTime: '10:00',
+          endTime: '13:00',
+        },
+      ],
       createdBy: 'admin-1',
       createdAt: '2026-06-01',
       projectId: 'project-1',
@@ -133,7 +154,10 @@ describe('VisitPlanBoardPage', () => {
   it('방문 추가 저장 중에는 publish를 막는다', async () => {
     let resolveSave: () => void = () => {}
     mocks.updateVisitPlanItems.mockImplementation(
-      () => new Promise<void>(resolve => { resolveSave = resolve }),
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve
+        }),
     )
     const user = userEvent.setup()
     render(<VisitPlanBoardPage />)

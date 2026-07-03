@@ -37,7 +37,11 @@
   }
 }
 
-.form { display: flex; flex-direction: column; gap: $space-3; }
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
 
 .userRow {
   display: flex;
@@ -45,13 +49,31 @@
   gap: $space-3;
   padding: $space-3 0;
   border-bottom: 1px solid $color-border;
-  &:last-child { border-bottom: none; }
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
-.userInfo { flex: 1; min-width: 0; }
-.userName { font-size: $font-size-sm; font-weight: $font-weight-medium; color: $color-text; display: flex; align-items: center; gap: $space-1; }
-.userEmail { font-size: $font-size-xs; color: $color-text-muted; @include truncate; }
-.skeletonRow { margin-bottom: $space-2; }
+.userInfo {
+  flex: 1;
+  min-width: 0;
+}
+.userName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+}
+.userEmail {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  @include truncate;
+}
+.skeletonRow {
+  margin-bottom: $space-2;
+}
 
 .userActions {
   display: flex;
@@ -71,12 +93,20 @@
   border-radius: $border-radius-md;
   cursor: pointer;
   color: $color-text-muted;
-  transition: background 0.12s, color 0.12s;
-  &:hover { background: $color-bg; color: $color-text; }
+  transition:
+    background 0.12s,
+    color 0.12s;
+  &:hover {
+    background: $color-bg;
+    color: $color-text;
+  }
 }
 
 .iconBtnDanger {
-  &:hover { background: $color-highlight-danger; color: $color-danger; }
+  &:hover {
+    background: $color-highlight-danger;
+    color: $color-danger;
+  }
 }
 
 .editForm {
@@ -121,8 +151,12 @@
   cursor: pointer;
   border-bottom: 1px solid $color-border;
   transition: background 0.1s;
-  &:last-child { border-bottom: none; }
-  &:hover { background: $color-bg; }
+  &:last-child {
+    border-bottom: none;
+  }
+  &:hover {
+    background: $color-bg;
+  }
 }
 
 .regionCheckbox {

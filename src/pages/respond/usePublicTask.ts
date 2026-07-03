@@ -33,17 +33,14 @@ interface UsePublicTaskResult {
   retry: () => void
 }
 
-let getPublicTaskInfoFn: HttpsCallable<
-  { taskId: string; token: string },
-  PublicTaskInfo
-> | null = null
+let getPublicTaskInfoFn: HttpsCallable<{ taskId: string; token: string }, PublicTaskInfo> | null =
+  null
 
 function getPublicTaskInfoCallable() {
   if (!getPublicTaskInfoFn) {
-    getPublicTaskInfoFn = publicCallable<
-      { taskId: string; token: string },
-      PublicTaskInfo
-    >('getPublicTaskInfo')
+    getPublicTaskInfoFn = publicCallable<{ taskId: string; token: string }, PublicTaskInfo>(
+      'getPublicTaskInfo',
+    )
   }
   return getPublicTaskInfoFn
 }
@@ -72,5 +69,5 @@ export function usePublicTask(
       .finally(() => setLoading(false))
   }, [taskId, token, reloadKey])
 
-  return { task, loading, error, retry: () => setReloadKey(k => k + 1) }
+  return { task, loading, error, retry: () => setReloadKey((k) => k + 1) }
 }

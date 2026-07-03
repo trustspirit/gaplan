@@ -24,7 +24,9 @@
   @include truncate;
 
   // Hide on mobile to make room for the reminders bell/help/avatar cluster
-  @include mobile { display: none; }
+  @include mobile {
+    display: none;
+  }
 }
 
 .sub {
@@ -45,7 +47,9 @@
   position: relative;
 
   // On desktop the sidebar already has avatar/logout
-  @include desktop { display: none; }
+  @include desktop {
+    display: none;
+  }
 }
 
 .avatarBtn {
@@ -99,7 +103,9 @@
   font-size: $font-size-sm;
   color: $color-text-muted;
   text-align: left;
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 
   &:hover {
     background: $color-bg;
@@ -124,7 +130,9 @@
   color: $color-text;
   background: $color-surface;
   outline: none;
-  &:focus { border-color: $color-primary; }
+  &:focus {
+    border-color: $color-primary;
+  }
 }
 
 .editNameSave {
@@ -137,7 +145,10 @@
   font-size: $font-size-xs;
   font-weight: $font-weight-medium;
   cursor: pointer;
-  &:disabled { opacity: 0.6; cursor: not-allowed; }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 .dropdownLangRow {
@@ -147,7 +158,10 @@
   padding: $space-2 $space-3;
 }
 
-.dropdownLangIcon { color: $color-text-muted; flex-shrink: 0; }
+.dropdownLangIcon {
+  color: $color-text-muted;
+  flex-shrink: 0;
+}
 
 .dropdownLangBtns {
   display: flex;
@@ -163,15 +177,24 @@
   font-weight: $font-weight-medium;
   color: $color-text-muted;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
-  &:hover { background: $color-bg; color: $color-text; }
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
+  &:hover {
+    background: $color-bg;
+    color: $color-text;
+  }
 }
 
 .langBtnActive {
   background: $color-primary;
   border-color: $color-primary;
   color: #fff;
-  &:hover { background: $color-primary; color: #fff; }
+  &:hover {
+    background: $color-primary;
+    color: #fff;
+  }
 }
 
 .scopeToggle {
@@ -187,7 +210,10 @@
   font-weight: $font-weight-medium;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
 
   &:hover {
     border-color: rgba($color-primary, 0.35);
@@ -195,7 +221,11 @@
     color: $color-primary;
   }
 
-  @include mobile { span { display: none; } }
+  @include mobile {
+    span {
+      display: none;
+    }
+  }
 }
 
 .scopeToggleAll {
@@ -221,8 +251,13 @@
   border-radius: $border-radius-md;
   cursor: pointer;
   color: $color-text-muted;
-  transition: background 0.12s, color 0.12s;
-  &:hover { background: rgba(255,255,255,0.15); color: $color-text-light; }
+  transition:
+    background 0.12s,
+    color 0.12s;
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: $color-text-light;
+  }
 }
 
 .helpBody {

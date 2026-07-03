@@ -36,9 +36,7 @@ export function SlotSelectionGrid({ availableDateSlots, selectedSlots, onToggle 
     <div className={styles.container}>
       {availableDateSlots.map(({ date, timeRanges }) => (
         <div key={date} className={styles.dateGroup}>
-          <div className={styles.dateHeader}>
-            {dayjs(date).format(t('respond.dateFormat'))}
-          </div>
+          <div className={styles.dateHeader}>{dayjs(date).format(t('respond.dateFormat'))}</div>
           <div className={styles.slotList}>
             {timeRanges.map(({ startTime, endTime }) => {
               const slot = { date, startTime, endTime }

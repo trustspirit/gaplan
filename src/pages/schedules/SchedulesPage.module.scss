@@ -30,7 +30,9 @@
   border-radius: 0;
   transition: color 0.15s;
 
-  &:hover { color: $color-text; }
+  &:hover {
+    color: $color-text;
+  }
 
   &[data-active='true'] {
     color: $color-primary;
@@ -48,5 +50,9 @@
     }
   }
 
-  @include mobile { padding: $space-2 $space-4; flex: 1; text-align: center; }
+  @include mobile {
+    padding: $space-2 $space-4;
+    flex: 1;
+    text-align: center;
+  }
 }

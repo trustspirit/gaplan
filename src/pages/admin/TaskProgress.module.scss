@@ -30,7 +30,9 @@
   display: flex;
   gap: $space-3;
 
-  @include mobile { gap: $space-2; }
+  @include mobile {
+    gap: $space-2;
+  }
 }
 
 .summaryItem {
@@ -52,9 +54,15 @@
   line-height: 1;
 }
 
-.summaryNumResponded { color: $color-primary; }
-.summaryNumDone { color: $color-success; }
-.summaryNumExpired { color: $color-text-muted; }
+.summaryNumResponded {
+  color: $color-primary;
+}
+.summaryNumDone {
+  color: $color-success;
+}
+.summaryNumExpired {
+  color: $color-text-muted;
+}
 
 .summaryLabel {
   font-size: $font-size-xs;
@@ -72,7 +80,11 @@
 // ── Status sections within a region ──────────────────────────────────────────
 
 .statusSection {
-  & + & { border-top: 1px solid $color-border; margin-top: $space-3; padding-top: $space-3; }
+  & + & {
+    border-top: 1px solid $color-border;
+    margin-top: $space-3;
+    padding-top: $space-3;
+  }
 }
 
 .statusLabel {
@@ -84,20 +96,26 @@
   margin-bottom: $space-2;
 }
 
-.statusLabelExpired { color: $color-text-light; }
+.statusLabelExpired {
+  color: $color-text-light;
+}
 
 // ── Task row ─────────────────────────────────────────────────────────────────
 
 .taskRow {
   border-bottom: 1px solid $color-border;
-  &:last-child { border-bottom: none; }
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
 .taskRowResponded {
-  background: color-mix(in srgb, var(--color-primary, #177C9C) 4%, white);
+  background: color-mix(in srgb, var(--color-primary, #177c9c) 4%, white);
 }
 
-.taskRowExpired { opacity: 0.5; }
+.taskRowExpired {
+  opacity: 0.5;
+}
 
 .taskRowMain {
   display: flex;
@@ -106,7 +124,10 @@
   gap: $space-3;
   padding: $space-3 0;
 
-  @include mobile { flex-wrap: wrap; gap: $space-2; }
+  @include mobile {
+    flex-wrap: wrap;
+    gap: $space-2;
+  }
 }
 
 .taskRowLeft {
@@ -117,11 +138,22 @@
   min-width: 0;
 }
 
-.taskIcon { flex-shrink: 0; display: flex; }
-.iconDone { color: $color-success; }
-.iconResponded { color: $color-primary; }
-.iconPending { color: $color-text-muted; }
-.iconExpired { color: $color-text-light; }
+.taskIcon {
+  flex-shrink: 0;
+  display: flex;
+}
+.iconDone {
+  color: $color-success;
+}
+.iconResponded {
+  color: $color-primary;
+}
+.iconPending {
+  color: $color-text-muted;
+}
+.iconExpired {
+  color: $color-text-light;
+}
 
 .taskInfo {
   display: flex;
@@ -142,9 +174,15 @@
   @include truncate;
 }
 
-.dDay { color: $color-warning; }
-.dDayOverdue { color: $color-danger; }
-.respondedAt { color: $color-primary; }
+.dDay {
+  color: $color-warning;
+}
+.dDayOverdue {
+  color: $color-danger;
+}
+.respondedAt {
+  color: $color-primary;
+}
 
 .taskRowRight {
   display: flex;
@@ -167,7 +205,9 @@
   border-radius: $border-radius-md;
   transition: background 0.12s;
   white-space: nowrap;
-  &:hover { background: color-mix(in srgb, var(--color-primary, #177C9C) 10%, white); }
+  &:hover {
+    background: color-mix(in srgb, var(--color-primary, #177c9c) 10%, white);
+  }
 }
 
 .actionBtn {
@@ -181,13 +221,24 @@
   border-radius: $border-radius-md;
   cursor: pointer;
   color: $color-text-muted;
-  transition: background 0.12s, color 0.12s;
-  &:hover { background: $color-bg; color: $color-text; }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  transition:
+    background 0.12s,
+    color 0.12s;
+  &:hover {
+    background: $color-bg;
+    color: $color-text;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .actionBtnDanger {
-  &:hover { background: $color-highlight-danger; color: $color-danger; }
+  &:hover {
+    background: $color-highlight-danger;
+    color: $color-danger;
+  }
 }
 
 // ── Responded slots panel ─────────────────────────────────────────────────────
@@ -196,7 +247,9 @@
   padding: $space-3 0 $space-3 $space-6;
   border-top: 1px dashed $color-border;
 
-  @include mobile { padding: $space-3 0; }
+  @include mobile {
+    padding: $space-3 0;
+  }
 }
 
 .slotsPanelTitle {
@@ -211,9 +264,14 @@
   gap: $space-3;
   padding: $space-2 0;
   border-bottom: 1px solid $color-border;
-  &:last-child { border-bottom: none; }
+  &:last-child {
+    border-bottom: none;
+  }
 
-  @include mobile { flex-wrap: wrap; gap: $space-2; }
+  @include mobile {
+    flex-wrap: wrap;
+    gap: $space-2;
+  }
 }
 
 .slotDate {
@@ -251,7 +309,11 @@
   margin-top: $space-2;
 }
 
-.dateSlotItem { display: flex; flex-direction: column; gap: $space-1; }
+.dateSlotItem {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
 
 .dateSlotDate {
   font-size: $font-size-xs;
@@ -278,7 +340,10 @@
   font-size: $font-size-base;
   color: $color-text;
   background: $color-surface;
-  &:focus { outline: 2px solid var(--color-primary, #177C9C); outline-offset: 1px; }
+  &:focus {
+    outline: 2px solid var(--color-primary, #177c9c);
+    outline-offset: 1px;
+  }
 }
 
 // ── Edit modal ────────────────────────────────────────────────────────────────
@@ -375,7 +440,9 @@
 
 // ── Misc ──────────────────────────────────────────────────────────────────────
 
-.skeletonRow { margin-bottom: $space-2; }
+.skeletonRow {
+  margin-bottom: $space-2;
+}
 
 .empty {
   font-size: $font-size-sm;

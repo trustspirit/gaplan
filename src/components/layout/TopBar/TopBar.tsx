@@ -15,7 +15,12 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { RemindersBell } from '@/components/domain/Reminders/RemindersBell'
 import styles from './TopBar.module.scss'
 
-interface TopBarProps { name: string; subtext?: string; pendingCount?: number; helpInfoKey?: string }
+interface TopBarProps {
+  name: string
+  subtext?: string
+  pendingCount?: number
+  helpInfoKey?: string
+}
 
 function EditNameRow({ onDone }: { onDone: () => void }) {
   const [user, setUser] = useAtom(authUserAtom)
@@ -43,8 +48,10 @@ function EditNameRow({ onDone }: { onDone: () => void }) {
       <input
         className={styles.editNameInput}
         value={value}
-        onChange={e => setValue(e.target.value)}
-        onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') handleSave()
+        }}
         autoFocus
         maxLength={30}
       />
@@ -65,13 +72,18 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
   const user = useAtomValue(authUserAtom)
   const [viewSeventyUid, setViewSeventyUid] = useAtom(seventyViewAtom)
 
-  const isAdminExecSec = user?.role === 'admin' && (user.secondaryRole === 'exec_secretary' || user.secondaryRole === 'seventy')
+  const isAdminExecSec =
+    user?.role === 'admin' &&
+    (user.secondaryRole === 'exec_secretary' || user.secondaryRole === 'seventy')
   const isShowingAll = viewSeventyUid === SCOPE_ALL || (!viewSeventyUid && !user?.secondaryRole)
 
   useEffect(() => {
     if (!open) return
     function close(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setEditingName(false) }
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+        setEditingName(false)
+      }
     }
     document.addEventListener('mousedown', close)
     return () => document.removeEventListener('mousedown', close)
@@ -114,7 +126,10 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
           <button
             type="button"
             className={styles.avatarBtn}
-            onClick={() => { setOpen(v => !v); setEditingName(false) }}
+            onClick={() => {
+              setOpen((v) => !v)
+              setEditingName(false)
+            }}
             aria-label={t('auth.accountMenu')}
           >
             <Avatar name={name} size="sm" />
@@ -125,9 +140,18 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
                 <span className={styles.dropdownName}>{name}</span>
               </div>
               {editingName ? (
-                <EditNameRow onDone={() => { setEditingName(false); setOpen(false) }} />
+                <EditNameRow
+                  onDone={() => {
+                    setEditingName(false)
+                    setOpen(false)
+                  }}
+                />
               ) : (
-                <button type="button" className={styles.dropdownItem} onClick={() => setEditingName(true)}>
+                <button
+                  type="button"
+                  className={styles.dropdownItem}
+                  onClick={() => setEditingName(true)}
+                >
                   <Pencil size={14} />
                   {t('auth.changeName')}
                 </button>
@@ -136,11 +160,14 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
               <div className={styles.dropdownLangRow}>
                 <Languages size={14} className={styles.dropdownLangIcon} />
                 <div className={styles.dropdownLangBtns}>
-                  {LANGUAGES.map(lang => (
+                  {LANGUAGES.map((lang) => (
                     <button
                       key={lang.code}
                       type="button"
-                      className={clsx(styles.langBtn, i18n.language === lang.code && styles.langBtnActive)}
+                      className={clsx(
+                        styles.langBtn,
+                        i18n.language === lang.code && styles.langBtnActive,
+                      )}
                       onClick={() => i18n.changeLanguage(lang.code as SupportedLang)}
                     >
                       {lang.label}
@@ -152,7 +179,10 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
               <button
                 type="button"
                 className={styles.dropdownItem}
-                onClick={() => { setOpen(false); signOut() }}
+                onClick={() => {
+                  setOpen(false)
+                  signOut()
+                }}
               >
                 <LogOut size={14} />
                 {t('auth.logout')}
@@ -161,17 +191,25 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
           )}
         </div>
       </div>
-      {helpInfoKey && helpOpen && (
-        isMobile ? (
-          <BottomSheet open={helpOpen} onClose={() => setHelpOpen(false)} title={t(`${helpInfoKey}.title`)}>
+      {helpInfoKey &&
+        helpOpen &&
+        (isMobile ? (
+          <BottomSheet
+            open={helpOpen}
+            onClose={() => setHelpOpen(false)}
+            title={t(`${helpInfoKey}.title`)}
+          >
             <p className={styles.helpBody}>{t(`${helpInfoKey}.body`)}</p>
           </BottomSheet>
         ) : (
-          <Modal open={helpOpen} onClose={() => setHelpOpen(false)} title={t(`${helpInfoKey}.title`)}>
+          <Modal
+            open={helpOpen}
+            onClose={() => setHelpOpen(false)}
+            title={t(`${helpInfoKey}.title`)}
+          >
             <p className={styles.helpBody}>{t(`${helpInfoKey}.body`)}</p>
           </Modal>
-        )
-      )}
+        ))}
     </header>
   )
 }

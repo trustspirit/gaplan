@@ -41,7 +41,9 @@
   border-radius: $border-radius-md;
   @include flex-center;
   color: rgba(255, 255, 255, 0.45);
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 
   &:hover {
     background: rgba(255, 255, 255, 0.08);
@@ -138,7 +140,9 @@
   color: rgba(255, 255, 255, 0.5);
   font-size: $font-size-xs;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 
   &:hover {
     background: rgba(255, 255, 255, 0.08);
@@ -163,7 +167,9 @@
   cursor: pointer;
   font-size: $font-size-sm;
   color: rgba(255, 255, 255, 0.6);
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   text-align: left;
 
   &:hover {
@@ -220,5 +226,7 @@
   text-decoration: none;
   border-bottom: 1px solid $color-border;
 
-  &.active { color: $color-primary; }
+  &.active {
+    color: $color-primary;
+  }
 }

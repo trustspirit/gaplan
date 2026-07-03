@@ -34,7 +34,9 @@ const interviewRespondedTask: Task = {
   createdAt: '2026-06-01',
   notifiedAt: [],
   availableDays: [],
-  availableDateSlots: [{ date: '2026-07-05', timeRanges: [{ startTime: '10:00', endTime: '12:00' }] }],
+  availableDateSlots: [
+    { date: '2026-07-05', timeRanges: [{ startTime: '10:00', endTime: '12:00' }] },
+  ],
   respondedSlots: [{ date: '2026-07-05', startTime: '10:00', endTime: '11:00' }],
 }
 
@@ -43,6 +45,7 @@ let mockTasks: Task[] = [expiredTask]
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }))
 
 vi.mock('jotai', () => ({
+  useSetAtom: () => vi.fn(),
   useAtomValue: () => ({ uid: 'admin-1', role: 'admin', name: '관리자' }),
   atom: vi.fn(),
 }))
@@ -69,7 +72,10 @@ vi.mock('@/hooks/useGeneralSchedules', () => ({
 }))
 
 vi.mock('@/hooks/useDeleteWithUndo', () => ({
-  useDeleteWithUndo: () => ({ pendingIds: new Set<string>(), scheduleDelete: mocks.scheduleDelete }),
+  useDeleteWithUndo: () => ({
+    pendingIds: new Set<string>(),
+    scheduleDelete: mocks.scheduleDelete,
+  }),
 }))
 
 vi.mock('@/services/taskService', () => ({
@@ -98,7 +104,13 @@ vi.mock('@/components/ui', () => ({
   ),
   CardBody: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Badge: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
-  Button: (props: React.ButtonHTMLAttributes<HTMLButtonElement> & { loading?: boolean; variant?: string; size?: string }) => {
+  Button: (
+    props: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+      loading?: boolean
+      variant?: string
+      size?: string
+    },
+  ) => {
     const { children, loading, variant, size, ...buttonProps } = props
     void loading
     void variant
@@ -106,10 +118,20 @@ vi.mock('@/components/ui', () => ({
     return <button {...buttonProps}>{children}</button>
   },
   Skeleton: () => <div>loading</div>,
-  Input: (props: React.InputHTMLAttributes<HTMLInputElement> & { label?: string; wrapperClassName?: string }) => {
+  Input: (
+    props: React.InputHTMLAttributes<HTMLInputElement> & {
+      label?: string
+      wrapperClassName?: string
+    },
+  ) => {
     const { label, wrapperClassName, ...inputProps } = props
     void wrapperClassName
-    return <label>{label}<input {...inputProps} /></label>
+    return (
+      <label>
+        {label}
+        <input {...inputProps} />
+      </label>
+    )
   },
   Modal: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
@@ -143,7 +165,11 @@ describe('TaskProgress', () => {
     await user.click(deleteButton)
 
     await waitFor(() => {
-      expect(mocks.scheduleDelete).toHaveBeenCalledWith('task-expired', expect.any(Function), 'common.deleted')
+      expect(mocks.scheduleDelete).toHaveBeenCalledWith(
+        'task-expired',
+        expect.any(Function),
+        'common.deleted',
+      )
       expect(mocks.deleteTask).toHaveBeenCalledWith('task-expired')
     })
   })

@@ -26,18 +26,23 @@ interface SubmitWardAssignmentsAnonRequest {
 }
 
 let submitAvailabilityAnonFn: HttpsCallable<SubmitAvailabilityAnonRequest, unknown> | null = null
-let submitWardAssignmentsAnonFn: HttpsCallable<SubmitWardAssignmentsAnonRequest, unknown> | null = null
+let submitWardAssignmentsAnonFn: HttpsCallable<SubmitWardAssignmentsAnonRequest, unknown> | null =
+  null
 
 function getSubmitAvailabilityAnonFn() {
   if (!submitAvailabilityAnonFn) {
-    submitAvailabilityAnonFn = publicCallable<SubmitAvailabilityAnonRequest, unknown>('submitAvailabilityAnon')
+    submitAvailabilityAnonFn = publicCallable<SubmitAvailabilityAnonRequest, unknown>(
+      'submitAvailabilityAnon',
+    )
   }
   return submitAvailabilityAnonFn
 }
 
 function getSubmitWardAssignmentsAnonFn() {
   if (!submitWardAssignmentsAnonFn) {
-    submitWardAssignmentsAnonFn = publicCallable<SubmitWardAssignmentsAnonRequest, unknown>('submitWardAssignmentsAnon')
+    submitWardAssignmentsAnonFn = publicCallable<SubmitWardAssignmentsAnonRequest, unknown>(
+      'submitWardAssignmentsAnon',
+    )
   }
   return submitWardAssignmentsAnonFn
 }
@@ -73,9 +78,11 @@ export default function RespondPage() {
 
   const handleToggleSlot = (slot: SelectedSlot) => {
     const key = `${slot.date}_${slot.startTime}_${slot.endTime}`
-    setSelectedSlots(prev => {
-      const exists = prev.some(s => `${s.date}_${s.startTime}_${s.endTime}` === key)
-      return exists ? prev.filter(s => `${s.date}_${s.startTime}_${s.endTime}` !== key) : [...prev, slot]
+    setSelectedSlots((prev) => {
+      const exists = prev.some((s) => `${s.date}_${s.startTime}_${s.endTime}` === key)
+      return exists
+        ? prev.filter((s) => `${s.date}_${s.startTime}_${s.endTime}` !== key)
+        : [...prev, slot]
     })
   }
 
@@ -106,9 +113,11 @@ export default function RespondPage() {
 
   if (error || !task) {
     const errorText =
-      error === 'invalid-link' ? t('respond.invalidLink')
-      : error === 'load-failed' ? t('respond.loadFailed')
-      : error ?? t('respond.notFound')
+      error === 'invalid-link'
+        ? t('respond.invalidLink')
+        : error === 'load-failed'
+          ? t('respond.loadFailed')
+          : (error ?? t('respond.notFound'))
     const canRetry = error !== 'invalid-link'
     return (
       <div className={styles.page}>
@@ -139,7 +148,7 @@ export default function RespondPage() {
   const isInterview = task.type === 'select_interview'
   const canSubmit = isInterview
     ? selectedSlots.length > 0
-    : Object.values(wardDateMap).some(d => d)
+    : Object.values(wardDateMap).some((d) => d)
 
   return (
     <div className={styles.page}>
@@ -185,11 +194,15 @@ export default function RespondPage() {
                   <select
                     className={styles.wardDateSelect}
                     value={wardDateMap[wardName] ?? ''}
-                    onChange={e => setWardDateMap(prev => ({ ...prev, [wardName]: e.target.value }))}
+                    onChange={(e) =>
+                      setWardDateMap((prev) => ({ ...prev, [wardName]: e.target.value }))
+                    }
                   >
                     <option value="">{t('respond.dateSelect')}</option>
-                    {task.availableDates.map(date => (
-                      <option key={date} value={date}>{date}</option>
+                    {task.availableDates.map((date) => (
+                      <option key={date} value={date}>
+                        {date}
+                      </option>
                     ))}
                   </select>
                 </div>
