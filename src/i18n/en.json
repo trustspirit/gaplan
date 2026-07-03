@@ -160,7 +160,8 @@
     "deleted": "Deleted.",
     "deleteFailed": "Failed to delete.",
     "undo": "Undo",
-    "selectPlaceholder": "Select..."
+    "selectPlaceholder": "Select...",
+    "discardChanges": "You have unsaved changes. Discard them?"
   },
   "scope": {
     "myAssigned": "My Assigned",
@@ -531,7 +532,11 @@
     "savedSuccess": "Event saved.",
     "deletedSuccess": "Event deleted.",
     "showToPublic": "Show on public page",
-    "hideFromPublic": "Hide from public page"
+    "hideFromPublic": "Hide from public page",
+    "errorTitleDateRequired": "Title and date are required.",
+    "targetRegionLabel": "Target regions",
+    "targetUnitLabel": "Target stakes/districts",
+    "targetHint": "(none selected = all)"
   },
   "leaders": {
     "searchPlaceholder": "Search by name or unit",

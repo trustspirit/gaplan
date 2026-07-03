@@ -9,6 +9,8 @@ import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
 import type { Schedule } from '@/types'
 import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
 import { DeleteConfirmSheet, Input, Textarea } from '@/components/ui'
+import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import styles from './EditScheduleModal.module.scss'
 
 const adminEditScheduleFn = httpsCallable(functions, 'adminEditSchedule')
@@ -46,11 +48,31 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
     setPresidentUid('')
   }, [unitId])
 
+  // Guard against losing edits to a stray backdrop tap / Escape
+  const isDirty =
+    date !== schedule.date ||
+    startTime !== schedule.startTime ||
+    endTime !== schedule.endTime ||
+    unitId !== (schedule.unitId ?? '') ||
+    wardName !== (schedule.wardName ?? '') ||
+    presidentUid !== (schedule.presidentUid ?? '') ||
+    note !== (schedule.notes ?? '') ||
+    zoomLink !== (schedule.zoomLink ?? '') ||
+    customTitle !== (schedule.customTitle ?? '') ||
+    projectId !== (schedule.projectId ?? '') ||
+    presidentAccompanied !== (schedule.presidentAccompanied ?? false)
+  const requestClose = () => {
+    if (isDirty && !window.confirm(t('common.discardChanges'))) return
+    onClose()
+  }
+
+  const sheetRef = useRef<HTMLDivElement>(null)
+  // pause the trap while the delete confirm sheet is stacked on top
+  useFocusTrap(sheetRef, !showDeleteConfirm, requestClose)
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
+    acquireScrollLock()
+    return releaseScrollLock
+  }, [])
 
   const isVisit = schedule.type === 'ward_visit'
   const isInterview = schedule.type === 'interview'
@@ -103,11 +125,18 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
   return (
     <>
       {createPortal(
-        <div className={styles.overlay} onClick={onClose}>
-          <div className={styles.sheet} onClick={e => e.stopPropagation()}>
+        <div className={styles.overlay} onClick={requestClose}>
+          <div
+            ref={sheetRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            className={styles.sheet}
+            onClick={e => e.stopPropagation()}
+          >
             <div className={styles.header}>
               <h3 className={styles.title}>{t('schedule.editTitle')}</h3>
-              <button type="button" onClick={onClose} className={styles.closeBtn} aria-label={t('common.close')}>
+              <button type="button" onClick={requestClose} className={styles.closeBtn} aria-label={t('common.close')}>
                 <X size={18} />
               </button>
             </div>

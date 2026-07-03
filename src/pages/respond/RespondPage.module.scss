@@ -95,8 +95,13 @@
 }
 
 .submitSection {
+  // keep the submit button reachable while long slot grids scroll
+  position: sticky;
+  bottom: 0;
   margin-top: 24px;
-  padding-bottom: env(safe-area-inset-bottom, 16px);
+  padding-top: 12px;
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+  background: #f9fafb;
 }
 
 .submitBtn {
