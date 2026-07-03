@@ -16,6 +16,11 @@
 .navBtn {
   width: 32px;
   height: 32px;
+
+  @media (pointer: coarse) {
+    width: 44px;
+    height: 44px;
+  }
   display: flex;
   align-items: center;
   justify-content: center;
