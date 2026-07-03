@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
@@ -13,15 +13,14 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
   const user = useAtomValue(authUserAtom)
   const authLoading = useAtomValue(authLoadingAtom)
-  const navigate = useNavigate()
 
   if (!authLoading && user) {
     let dest = '/dashboard'
     if (user.role === 'pending' && !user.unitId) dest = '/onboarding'
     else if (user.role === 'pending') dest = '/pending'
     else if (user.role === 'president' && !user.unitId) dest = '/onboarding'
-    navigate(dest, { replace: true })
-    return null
+    // declarative redirect — calling navigate() during render is a React error
+    return <Navigate to={dest} replace />
   }
 
   const handleSignIn = async () => {
