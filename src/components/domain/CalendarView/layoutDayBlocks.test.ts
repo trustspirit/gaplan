@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { layoutDayBlocks } from './CalendarView'
+import { layoutDayBlocks } from './layoutDayBlocks'
 import type { Schedule } from '@/types'
 
 const s = (id: string, startTime: string, endTime: string): Schedule =>
