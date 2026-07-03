@@ -460,7 +460,9 @@
     "legendAvailable": "Visit available",
     "syncManual": "Sync Now",
     "syncCardTitle": "Manual Calendar Sync",
-    "syncCardDesc": "Re-sync confirmed schedules that failed to sync to Google Calendar."
+    "syncCardDesc": "Re-sync confirmed schedules that failed to sync to Google Calendar.",
+    "moreEvents": "Show {{count}} more events",
+    "monthTitleFormat": "MMMM YYYY"
   },
   "availability": {
     "selectDays": "Select Available Days",

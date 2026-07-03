@@ -460,7 +460,9 @@
     "legendAvailable": "방문 가능",
     "syncManual": "지금 동기화",
     "syncCardTitle": "수동 캘린더 동기화",
-    "syncCardDesc": "캘린더 등록이 실패한 확정 일정들을 Google Calendar에 다시 동기화합니다."
+    "syncCardDesc": "캘린더 등록이 실패한 확정 일정들을 Google Calendar에 다시 동기화합니다.",
+    "moreEvents": "일정 {{count}}개 더 보기",
+    "monthTitleFormat": "YYYY년 M월"
   },
   "availability": {
     "selectDays": "가능 요일 선택",
