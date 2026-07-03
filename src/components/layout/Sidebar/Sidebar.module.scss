@@ -56,6 +56,49 @@
   }
 }
 
+// icon-only rail below 1280px; labeled sidebar on wide desktops
+.navLabel {
+  display: none;
+}
+
+@media (min-width: #{$breakpoint-sidebar-labels}) {
+  .sidebar {
+    width: $sidebar-width-wide;
+    align-items: stretch;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .logo {
+    justify-content: flex-start;
+    padding-left: 4px;
+  }
+
+  .nav {
+    align-items: stretch;
+  }
+
+  .navItem {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 0 10px;
+  }
+
+  .navLabel {
+    display: inline;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .footer {
+    padding-left: 4px;
+  }
+}
+
 .footer {
   padding-top: 8px;
   position: relative;

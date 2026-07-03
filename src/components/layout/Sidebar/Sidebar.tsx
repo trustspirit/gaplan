@@ -177,6 +177,8 @@ export function Sidebar({ role, name, mobile }: SidebarProps) {
             className={({ isActive }) => clsx(styles.navItem, isActive && styles.active)}
           >
             {item.icon}
+            {/* visible on wide desktop only; the rail keeps the title tooltip */}
+            <span className={styles.navLabel}>{t(item.labelKey)}</span>
           </NavLink>
         ))}
       </nav>
@@ -184,7 +186,7 @@ export function Sidebar({ role, name, mobile }: SidebarProps) {
         <button
           className={styles.avatarButton}
           onClick={() => setDropdownOpen((prev) => !prev)}
-          title="계정 메뉴"
+          title={t('nav.accountMenu')}
           type="button"
         >
           <Avatar name={name} size="sm" />
