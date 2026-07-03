@@ -41,7 +41,9 @@
   border-radius: $border-radius-md;
   @include flex-center;
   color: rgba(255, 255, 255, 0.45);
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 
   &:hover {
     background: rgba(255, 255, 255, 0.08);
@@ -51,6 +53,49 @@
   &.active {
     background: rgba($color-primary, 0.25);
     color: #fff;
+  }
+}
+
+// icon-only rail below 1280px; labeled sidebar on wide desktops
+.navLabel {
+  display: none;
+}
+
+@media (min-width: #{$breakpoint-sidebar-labels}) {
+  .sidebar {
+    width: $sidebar-width-wide;
+    align-items: stretch;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .logo {
+    justify-content: flex-start;
+    padding-left: 4px;
+  }
+
+  .nav {
+    align-items: stretch;
+  }
+
+  .navItem {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 0 10px;
+  }
+
+  .navLabel {
+    display: inline;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .footer {
+    padding-left: 4px;
   }
 }
 
@@ -138,7 +183,9 @@
   color: rgba(255, 255, 255, 0.5);
   font-size: $font-size-xs;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 
   &:hover {
     background: rgba(255, 255, 255, 0.08);
@@ -163,7 +210,9 @@
   cursor: pointer;
   font-size: $font-size-sm;
   color: rgba(255, 255, 255, 0.6);
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   text-align: left;
 
   &:hover {
@@ -220,5 +269,7 @@
   text-decoration: none;
   border-bottom: 1px solid $color-border;
 
-  &.active { color: $color-primary; }
+  &.active {
+    color: $color-primary;
+  }
 }

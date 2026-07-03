@@ -158,6 +158,13 @@
   color: $color-text-muted;
   padding-left: 4px;
   line-height: 1.4;
+  border: none;
+  background: none;
+  cursor: pointer;
+
+  &:hover {
+    color: $color-text;
+  }
 
   @include mobile {
     display: inline-flex;
@@ -168,6 +175,11 @@
     border-radius: 3px;
     background: $color-bg;
   }
+}
+
+// swipe left/right changes period; pan-y keeps vertical scroll native
+.swipeViewport {
+  touch-action: pan-y;
 }
 
 // ── Week grid ─────────────────────────────────────────────────────────────────
@@ -417,8 +429,7 @@
 
 .scheduleBlock {
   position: absolute;
-  left: 2px;
-  right: 4px;
+  // left/width come from inline styles (overlap sub-column layout)
   border-radius: 4px;
   padding: 2px 5px 2px 4px;
   overflow: hidden;

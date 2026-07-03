@@ -1,9 +1,7 @@
-import { useAtomValue } from 'jotai'
 import { Link } from 'react-router-dom'
 import { Users, CalendarCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { authUserAtom } from '@/store/authAtom'
-import { AppShell, TopBar } from '@/components/layout'
+import { useTopBar } from '@/hooks/useTopBar'
 import { Button } from '@/components/ui'
 import styles from './AdminDashboard.module.scss'
 
@@ -19,34 +17,28 @@ const ACTION_CARD_DEFS = [
 
 export function AdminDashboard() {
   const { t } = useTranslation()
-  const user = useAtomValue(authUserAtom)!
+  useTopBar({ subtext: t('admin.dashboard'), helpInfoKey: 'pageHelp.admin' })
 
   return (
-    <AppShell
-      role={user.role}
-      name={user.name}
-      topBar={<TopBar name={user.name} subtext={t('admin.dashboard')} helpInfoKey="pageHelp.admin" />}
-    >
-      <div className={styles.page}>
-        <div className={styles.cardGrid}>
-          {ACTION_CARD_DEFS.map(({ icon: Icon, titleKey, descKey, link }) => (
-            <div key={link} className={styles.actionCard}>
-              <div className={styles.cardIcon}>
-                <Icon size={28} />
-              </div>
-              <div className={styles.cardContent}>
-                <h3 className={styles.cardTitle}>{t(titleKey)}</h3>
-                <p className={styles.cardDesc}>{t(descKey)}</p>
-              </div>
-              <Link to={link} className={styles.cardAction}>
-                <Button variant="secondary" fullWidth>
-                  {t('common.goTo')}
-                </Button>
-              </Link>
+    <div className={styles.page}>
+      <div className={styles.cardGrid}>
+        {ACTION_CARD_DEFS.map(({ icon: Icon, titleKey, descKey, link }) => (
+          <div key={link} className={styles.actionCard}>
+            <div className={styles.cardIcon}>
+              <Icon size={28} />
             </div>
-          ))}
-        </div>
+            <div className={styles.cardContent}>
+              <h3 className={styles.cardTitle}>{t(titleKey)}</h3>
+              <p className={styles.cardDesc}>{t(descKey)}</p>
+            </div>
+            <Link to={link} className={styles.cardAction}>
+              <Button variant="secondary" fullWidth>
+                {t('common.goTo')}
+              </Button>
+            </Link>
+          </div>
+        ))}
       </div>
-    </AppShell>
+    </div>
   )
 }

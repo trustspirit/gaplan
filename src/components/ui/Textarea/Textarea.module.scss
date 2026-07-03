@@ -36,6 +36,9 @@
     outline: none;
     border-color: $color-primary;
   }
+  &:focus-visible {
+    box-shadow: 0 0 0 3px rgba($color-primary, 0.25);
+  }
 
   &::placeholder {
     color: $color-text-light;

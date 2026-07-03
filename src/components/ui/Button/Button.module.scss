@@ -64,6 +64,11 @@
   padding: $space-1 $space-3;
   font-size: $font-size-sm;
   min-height: 36px;
+
+  // 44px touch minimum on touch-primary devices
+  @media (pointer: coarse) {
+    min-height: 44px;
+  }
 }
 .md {
   padding: $space-2 $space-4;

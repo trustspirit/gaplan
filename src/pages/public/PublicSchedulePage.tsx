@@ -3,22 +3,25 @@ import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
-import { Video, CalendarDays, Building2, MoonStar, RefreshCw, CalendarPlus, FileText, ChevronUp, UserCheck } from 'lucide-react'
+import {
+  Video,
+  CalendarDays,
+  Building2,
+  MoonStar,
+  RefreshCw,
+  CalendarPlus,
+  FileText,
+  ChevronUp,
+  UserCheck,
+} from 'lucide-react'
 import { ALL_UNITS, WARDS } from '@/constants/regions'
 import {
   fetchPublicSchedulePageData,
   type PublicGeneralScheduleItem,
   type PublicScheduleItem,
 } from '@/services/publicScheduleService'
-import {
-  loadScheduleCache,
-  saveScheduleCache,
-  clearScheduleCache,
-} from '@/utils/scheduleCache'
-import {
-  getTodayMarkerPlacement,
-  getTodayMarkerScrollTop,
-} from './todayMarker'
+import { loadScheduleCache, saveScheduleCache, clearScheduleCache } from '@/utils/scheduleCache'
+import { getTodayMarkerPlacement, getTodayMarkerScrollTop } from './todayMarker'
 import styles from './PublicSchedulePage.module.scss'
 
 const DOW_KO = ['일', '월', '화', '수', '목', '금', '토']
@@ -61,7 +64,15 @@ function SkeletonCards() {
   )
 }
 
-function NotesText({ text, linkClass, textClass }: { text: string; linkClass: string; textClass: string }) {
+function NotesText({
+  text,
+  linkClass,
+  textClass,
+}: {
+  text: string
+  linkClass: string
+  textClass: string
+}) {
   const urlRegex = /https?:\/\/[^\s)>\]"']+/g
   const parts: React.ReactNode[] = []
   let lastIndex = 0
@@ -69,7 +80,17 @@ function NotesText({ text, linkClass, textClass }: { text: string; linkClass: st
   while ((match = urlRegex.exec(text)) !== null) {
     if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
     const url = match[0]
-    parts.push(<a key={match.index} href={url} target="_blank" rel="noopener noreferrer" className={linkClass}>{url}</a>)
+    parts.push(
+      <a
+        key={match.index}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={linkClass}
+      >
+        {url}
+      </a>,
+    )
     lastIndex = match.index + url.length
   }
   if (lastIndex < text.length) parts.push(text.slice(lastIndex))
@@ -101,9 +122,10 @@ export default function PublicSchedulePage() {
   const autoScrolledToTodayRef = useRef(false)
 
   const toggleNotes = (id: string) => {
-    setOpenNotes(prev => {
+    setOpenNotes((prev) => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id); else next.add(id)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }
@@ -142,13 +164,16 @@ export default function PublicSchedulePage() {
         setScopeDisplayName(name)
         setGeneralSchedules(generals)
         setFetchError(false)
-        saveScheduleCache(token, { schedules: s, generalSchedules: generals, scopeDisplayName: name })
+        saveScheduleCache(token, {
+          schedules: s,
+          generalSchedules: generals,
+          scopeDisplayName: name,
+        })
       })
       .catch((e) => {
         if (cancelled) return
         const isPermission =
-          e?.code === 'functions/permission-denied' ||
-          e?.message?.includes('permission-denied')
+          e?.code === 'functions/permission-denied' || e?.message?.includes('permission-denied')
         if (isPermission) {
           setIsPrivate(true)
         } else if (!cached) {
@@ -164,7 +189,9 @@ export default function PublicSchedulePage() {
         setRefreshing(false)
       })
 
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [token, refreshKey])
 
   useEffect(() => {
@@ -180,7 +207,7 @@ export default function PublicSchedulePage() {
   const handleRefresh = () => {
     if (token) clearScheduleCache(token)
     autoScrolledToTodayRef.current = false
-    setRefreshKey(k => k + 1)
+    setRefreshKey((k) => k + 1)
   }
 
   const lang = i18n.language
@@ -216,9 +243,9 @@ export default function PublicSchedulePage() {
   const monthKeys = [...mergedMap.keys()].sort()
   const today = dayjs().format('YYYY-MM-DD')
   const todayMarkerPlacement = getTodayMarkerPlacement(
-    monthKeys.map(monthKey => ({
+    monthKeys.map((monthKey) => ({
       groupKey: monthKey,
-      dates: mergedMap.get(monthKey)!.map(entry => entry.data.date),
+      dates: mergedMap.get(monthKey)!.map((entry) => entry.data.date),
     })),
     today,
   )
@@ -251,17 +278,13 @@ export default function PublicSchedulePage() {
   }, [isInitialLoading, todayMarkerPlacement])
 
   const renderTodayMarker = (monthKey: string, itemIndex: number) => {
-    if (
-      todayMarkerPlacement?.groupKey !== monthKey ||
-      todayMarkerPlacement.itemIndex !== itemIndex
-    ) return null
+    if (todayMarkerPlacement?.groupKey !== monthKey || todayMarkerPlacement.itemIndex !== itemIndex)
+      return null
 
     return (
       <div ref={todayMarkerRef} className={styles.todayMarker}>
         <span className={styles.todayMarkerLine} />
-        <span className={styles.todayMarkerLabel}>
-          {t('public.todayMarker')}
-        </span>
+        <span className={styles.todayMarkerLabel}>{t('public.todayMarker')}</span>
         <span className={styles.todayMarkerDate}>{dayjs(today).format('M.D')}</span>
         <span className={styles.todayMarkerLine} />
       </div>
@@ -279,7 +302,17 @@ export default function PublicSchedulePage() {
   if (fetchError) {
     return (
       <div className={styles.page}>
-        <div className={styles.errorBox}>{t('public.fetchError')}</div>
+        <div className={styles.errorBox}>
+          <span>{t('public.fetchError')}</span>
+          <button
+            type="button"
+            className={styles.errorRetryBtn}
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            {refreshing ? t('common.loading') : t('common.retry')}
+          </button>
+        </div>
       </div>
     )
   }
@@ -311,9 +344,10 @@ export default function PublicSchedulePage() {
           <div className={styles.empty}>{t('public.empty')}</div>
         ) : (
           monthKeys.map((monthKey) => {
-            const monthLabel = lang === 'ko'
-              ? dayjs(monthKey).format('YYYY년 M월')
-              : dayjs(monthKey).format('MMMM YYYY')
+            const monthLabel =
+              lang === 'ko'
+                ? dayjs(monthKey).format('YYYY년 M월')
+                : dayjs(monthKey).format('MMMM YYYY')
             return (
               <section key={monthKey} className={styles.monthGroup}>
                 <h2 className={styles.monthLabel}>{monthLabel}</h2>
@@ -321,33 +355,55 @@ export default function PublicSchedulePage() {
                   {mergedMap.get(monthKey)!.map((entry, entryIndex) => {
                     if (entry.kind === 'general') {
                       const gs = entry.data
-                      const ICONS = { conference: Building2, fasting: MoonStar, other: CalendarDays } as const
+                      const ICONS = {
+                        conference: Building2,
+                        fasting: MoonStar,
+                        other: CalendarDays,
+                      } as const
                       const GIcon = ICONS[gs.category]
                       const gDate = dayjs(gs.date)
-                      const catLabel = gs.category === 'conference'
-                        ? (lang === 'ko' ? '대회/행사' : 'Conference')
-                        : gs.category === 'fasting'
-                          ? (lang === 'ko' ? '금식' : 'Fasting')
-                          : (lang === 'ko' ? '기타' : 'Other')
+                      const catLabel =
+                        gs.category === 'conference'
+                          ? lang === 'ko'
+                            ? '대회/행사'
+                            : 'Conference'
+                          : gs.category === 'fasting'
+                            ? lang === 'ko'
+                              ? '금식'
+                              : 'Fasting'
+                            : lang === 'ko'
+                              ? '기타'
+                              : 'Other'
                       return (
                         <Fragment key={`gs-${gs.id}`}>
                           {renderTodayMarker(monthKey, entryIndex)}
                           <div className={styles.scheduleRow}>
-                          <div className={clsx(styles.colorBar, styles[`general_${gs.category}`])} />
-                          <div className={clsx(styles.dateCol, styles[`general_${gs.category}`])}>
-                            <span className={styles.date}>{gDate.format('M.D')}</span>
-                            <span className={styles.dow}>{dowLabels[gDate.day()]}</span>
-                          </div>
-                          <div className={styles.itemBody}>
-                            <span className={styles.typeBadge}>
-                              <GIcon size={11} style={{ display: 'inline', marginRight: 3, verticalAlign: 'middle' }} />
-                              {catLabel}
-                            </span>
-                            <p className={styles.title}>{gs.title}</p>
-                            {gs.startTime && gs.endTime && (
-                              <p className={styles.time}>{gs.startTime} – {gs.endTime}</p>
-                            )}
-                          </div>
+                            <div
+                              className={clsx(styles.colorBar, styles[`general_${gs.category}`])}
+                            />
+                            <div className={clsx(styles.dateCol, styles[`general_${gs.category}`])}>
+                              <span className={styles.date}>{gDate.format('M.D')}</span>
+                              <span className={styles.dow}>{dowLabels[gDate.day()]}</span>
+                            </div>
+                            <div className={styles.itemBody}>
+                              <span className={styles.typeBadge}>
+                                <GIcon
+                                  size={11}
+                                  style={{
+                                    display: 'inline',
+                                    marginRight: 3,
+                                    verticalAlign: 'middle',
+                                  }}
+                                />
+                                {catLabel}
+                              </span>
+                              <p className={styles.title}>{gs.title}</p>
+                              {gs.startTime && gs.endTime && (
+                                <p className={styles.time}>
+                                  {gs.startTime} – {gs.endTime}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </Fragment>
                       )
@@ -360,9 +416,11 @@ export default function PublicSchedulePage() {
                     const isVisit = s.type === 'ward_visit'
                     const isMeeting = s.type === 'meeting'
                     const unitName = getUnitName(s.unitId, lang)
-                    const displayTitle = s.customTitle
-                      ?? (unitName + (s.wardName ? ` · ${getWardName(s.wardName, lang)}` : ''))
-                    const safeZoom = s.zoomLink && /^https?:\/\//i.test(s.zoomLink) ? s.zoomLink : null
+                    const displayTitle =
+                      s.customTitle ??
+                      unitName + (s.wardName ? ` · ${getWardName(s.wardName, lang)}` : '')
+                    const safeZoom =
+                      s.zoomLink && /^https?:\/\//i.test(s.zoomLink) ? s.zoomLink : null
                     const hasNotes = !!s.notes?.trim()
                     const notesOpen = openNotes.has(s.id)
 
@@ -370,64 +428,68 @@ export default function PublicSchedulePage() {
                       <Fragment key={s.id}>
                         {renderTodayMarker(monthKey, entryIndex)}
                         <div className={styles.scheduleRow} data-past={isPast}>
-                        <div className={styles.scheduleRowMain}>
-                          <div
-                            className={styles.colorBar}
-                            data-type={isVisit ? 'visit' : isMeeting ? 'meeting' : 'interview'}
-                          />
-                          <div
-                            className={styles.dateCol}
-                            data-type={isVisit ? 'visit' : isMeeting ? 'meeting' : 'interview'}
-                          >
-                            <span className={styles.date}>{date.format('M.D')}</span>
-                            <span className={styles.dow}>{dow}</span>
-                          </div>
-                          <div className={styles.itemBody}>
-                            <div className={styles.topRow}>
-                              <span className={styles.typeBadge}>{typeLabel(s.type)}</span>
-                              {s.presidentAccompanied && (
-                                <span className={styles.presidentBadge}>
-                                  <UserCheck size={10} />
-                                  <span>{t('schedule.presidentAccompanied')}</span>
-                                </span>
+                          <div className={styles.scheduleRowMain}>
+                            <div
+                              className={styles.colorBar}
+                              data-type={isVisit ? 'visit' : isMeeting ? 'meeting' : 'interview'}
+                            />
+                            <div
+                              className={styles.dateCol}
+                              data-type={isVisit ? 'visit' : isMeeting ? 'meeting' : 'interview'}
+                            >
+                              <span className={styles.date}>{date.format('M.D')}</span>
+                              <span className={styles.dow}>{dow}</span>
+                            </div>
+                            <div className={styles.itemBody}>
+                              <div className={styles.topRow}>
+                                <span className={styles.typeBadge}>{typeLabel(s.type)}</span>
+                                {s.presidentAccompanied && (
+                                  <span className={styles.presidentBadge}>
+                                    <UserCheck size={10} />
+                                    <span>{t('schedule.presidentAccompanied')}</span>
+                                  </span>
+                                )}
+                              </div>
+                              <p className={styles.title}>{displayTitle}</p>
+                              <p className={styles.time}>
+                                {s.startTime} – {s.endTime}
+                              </p>
+                              {safeZoom && (
+                                <a
+                                  href={safeZoom}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={styles.zoomLink}
+                                >
+                                  <Video size={11} />
+                                  <span>Zoom</span>
+                                </a>
                               )}
                             </div>
-                            <p className={styles.title}>{displayTitle}</p>
-                            <p className={styles.time}>{s.startTime} – {s.endTime}</p>
-                            {safeZoom && (
-                              <a
-                                href={safeZoom}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={styles.zoomLink}
+                            {isPast && (
+                              <span className={styles.pastBadge}>{t('public.pastBadge')}</span>
+                            )}
+                            {hasNotes && (
+                              <button
+                                type="button"
+                                className={clsx(styles.notesBtn, notesOpen && styles.notesBtnOpen)}
+                                onClick={() => toggleNotes(s.id)}
+                                title="메모 보기"
+                                aria-expanded={notesOpen}
                               >
-                                <Video size={11} />
-                                <span>Zoom</span>
-                              </a>
+                                {notesOpen ? <ChevronUp size={14} /> : <FileText size={14} />}
+                              </button>
                             )}
                           </div>
-                          {isPast && <span className={styles.pastBadge}>{t('public.pastBadge')}</span>}
-                          {hasNotes && (
-                            <button
-                              type="button"
-                              className={clsx(styles.notesBtn, notesOpen && styles.notesBtnOpen)}
-                              onClick={() => toggleNotes(s.id)}
-                              title="메모 보기"
-                              aria-expanded={notesOpen}
-                            >
-                              {notesOpen ? <ChevronUp size={14} /> : <FileText size={14} />}
-                            </button>
+                          {notesOpen && hasNotes && (
+                            <div className={styles.notesPanel}>
+                              <NotesText
+                                text={s.notes!}
+                                linkClass={styles.notesLink}
+                                textClass={styles.notesText}
+                              />
+                            </div>
                           )}
-                        </div>
-                        {notesOpen && hasNotes && (
-                          <div className={styles.notesPanel}>
-                            <NotesText
-                              text={s.notes!}
-                              linkClass={styles.notesLink}
-                              textClass={styles.notesText}
-                            />
-                          </div>
-                        )}
                         </div>
                       </Fragment>
                     )
@@ -468,7 +530,7 @@ export default function PublicSchedulePage() {
         )}
         <button
           className={styles.fab}
-          onClick={() => setShowSubscribeMenu(v => !v)}
+          onClick={() => setShowSubscribeMenu((v) => !v)}
           aria-label={t('public.subscribeLabel')}
           aria-expanded={showSubscribeMenu}
         >

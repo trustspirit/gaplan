@@ -20,7 +20,7 @@ export function OnboardingPage() {
   const setUser = useSetAtom(authUserAtom)
   const navigate = useNavigate()
 
-  const unitOptions = ALL_UNITS.map(u => ({ value: u.id, label: u.name.ko }))
+  const unitOptions = ALL_UNITS.map((u) => ({ value: u.id, label: u.name.ko }))
 
   // Invited president → saves as president, pending user → saves as pending
   const isPending = currentUser?.role === 'pending'
@@ -40,7 +40,7 @@ export function OnboardingPage() {
     setLoading(true)
     try {
       const role: UserRole = isPending ? 'pending' : 'president'
-      const regionId = ALL_UNITS.find(u => u.id === unitId)?.regionId
+      const regionId = ALL_UNITS.find((u) => u.id === unitId)?.regionId
       const newUser = {
         email: firebaseUser.email ?? '',
         name: name.trim(),
@@ -72,10 +72,26 @@ export function OnboardingPage() {
           {isPending ? t('onboarding.desc') : t('onboarding.descPresident')}
         </p>
         <form className={styles.form} onSubmit={handleSubmit}>
-          <Input label={t('onboarding.nameLabel')} value={name} onChange={e => setName(e.target.value)} placeholder="홍길동" required />
-          <Select label={t('onboarding.unitLabel')} value={unitId} onChange={e => setUnitId(e.target.value)} options={unitOptions} required />
+          <Input
+            label={t('onboarding.nameLabel')}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="홍길동"
+            required
+          />
+          <Select
+            label={t('onboarding.unitLabel')}
+            value={unitId}
+            onChange={(e) => setUnitId(e.target.value)}
+            options={unitOptions}
+            required
+          />
           <Button type="submit" loading={loading} fullWidth size="lg">
-            {loading ? t('onboarding.submitting') : isPending ? t('onboarding.submit') : t('onboarding.submitPresident')}
+            {loading
+              ? t('onboarding.submitting')
+              : isPending
+                ? t('onboarding.submit')
+                : t('onboarding.submitPresident')}
           </Button>
         </form>
       </div>

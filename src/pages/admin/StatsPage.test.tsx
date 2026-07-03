@@ -12,6 +12,7 @@ const emptyStats: VisitStats = {
 
 vi.mock('jotai', () => ({
   useAtomValue: () => ({ uid: 'admin-1', role: 'admin', name: '관리자' }),
+  useSetAtom: () => vi.fn(),
   atom: vi.fn(),
 }))
 
@@ -45,7 +46,9 @@ vi.mock('@/components/ui', () => ({
   Card: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
   CardHeader: ({ title }: { title: string }) => <h3>{title}</h3>,
   CardBody: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  Button: (props: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string; size?: string }) => {
+  Button: (
+    props: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string; size?: string },
+  ) => {
     const { children, variant, size, ...buttonProps } = props
     void variant
     void size

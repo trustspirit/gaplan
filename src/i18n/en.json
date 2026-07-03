@@ -13,7 +13,8 @@
     "projects": "Projects",
     "schedules": "Schedules",
     "more": "More",
-    "leaders": "Directory"
+    "leaders": "Directory",
+    "accountMenu": "Account menu"
   },
   "stats": {
     "pageTitle": "Visit Statistics",
@@ -159,7 +160,11 @@
     "helpButton": "Help",
     "deleted": "Deleted.",
     "deleteFailed": "Failed to delete.",
-    "undo": "Undo"
+    "undo": "Undo",
+    "selectPlaceholder": "Select...",
+    "discardChanges": "You have unsaved changes. Discard them?",
+    "loadFailed": "Failed to load.",
+    "me": "me"
   },
   "scope": {
     "myAssigned": "My Assigned",
@@ -363,7 +368,9 @@
     "schedulePublicOn": "Public access on",
     "schedulePublicOff": "Private (default)",
     "perUnitPublicTitle": "Per-Unit Public Schedule",
-    "perUnitPublicDesc": "Manage public access and share links per unit or CC."
+    "perUnitPublicDesc": "Manage public access and share links per unit or CC.",
+    "selectSeventyLabel": "Select Area Seventy",
+    "slotsLoadFailed": "Failed to load slots. Please try again."
   },
   "visits": {
     "title": "Ward Visit Schedule",
@@ -458,7 +465,20 @@
     "legendAvailable": "Visit available",
     "syncManual": "Sync Now",
     "syncCardTitle": "Manual Calendar Sync",
-    "syncCardDesc": "Re-sync confirmed schedules that failed to sync to Google Calendar."
+    "syncCardDesc": "Re-sync confirmed schedules that failed to sync to Google Calendar.",
+    "moreEvents": "Show {{count}} more events",
+    "monthTitleFormat": "MMMM YYYY",
+    "addSchedule": "Add schedule",
+    "exportCsv": "Export CSV",
+    "csv": {
+      "date": "Date",
+      "dow": "Day",
+      "type": "Type",
+      "title": "Title",
+      "status": "Status",
+      "confirmed": "Confirmed",
+      "fileName": "schedules_{{start}}_{{end}}.csv"
+    }
   },
   "availability": {
     "selectDays": "Select Available Days",
@@ -530,7 +550,17 @@
     "savedSuccess": "Event saved.",
     "deletedSuccess": "Event deleted.",
     "showToPublic": "Show on public page",
-    "hideFromPublic": "Hide from public page"
+    "hideFromPublic": "Hide from public page",
+    "errorTitleDateRequired": "Title and date are required.",
+    "targetRegionLabel": "Target regions",
+    "targetUnitLabel": "Target stakes/districts",
+    "targetHint": "(none selected = all)",
+    "public": "Public",
+    "private": "Private",
+    "dateFormat": "MMM D, YYYY (ddd)",
+    "attendFailed": "Failed to register attendance.",
+    "cancelFailed": "Failed to cancel attendance.",
+    "visibilityFailed": "Failed to change visibility."
   },
   "leaders": {
     "searchPlaceholder": "Search by name or unit",
@@ -585,5 +615,55 @@
       "title": "User Management",
       "body": "Invite and manage app users.\n• Invite new users by email\n• Edit roles and assigned regions\n• Pre-register to assign roles without an invitation\n• Deleting a user removes their access"
     }
+  },
+  "respond": {
+    "title": "Schedule Response",
+    "subtitle": "You can respond without signing in",
+    "loading": "Loading...",
+    "invalidLink": "This link is invalid.",
+    "loadFailed": "Couldn't load the request.",
+    "notFound": "Task not found.",
+    "taskFallbackTitle": "Schedule request",
+    "submitErrorFallback": "An error occurred while submitting.",
+    "successTitle": "Response submitted",
+    "successSub": "Your response has been delivered to the organizer.",
+    "selectTimesTitle": "Select the times that work for you",
+    "selectWardDatesTitle": "Select a visit date for each ward",
+    "dateSelect": "Select date",
+    "submitting": "Submitting...",
+    "submit": "Submit response",
+    "selectedCount": "{{count}} selected",
+    "dateFormat": "MMM D (ddd)"
+  },
+  "taskProgress": {
+    "detailTitle": "Task detail",
+    "statusLabel": "Status",
+    "assigneeLabel": "Assignee",
+    "dueDateLabel": "Due date",
+    "memoLabel": "Note",
+    "respondedTimes": "Submitted times",
+    "wardAssignments": "Ward assignments",
+    "errorSelectSunday": "Select at least one available Sunday.",
+    "errorSelectDate": "Select at least one available date.",
+    "confirmSuccess": "Schedule confirmed!",
+    "genericError": "An error occurred.",
+    "confirmThisTime": "Confirm this time",
+    "expire": "Expire",
+    "presidentSubmittedTimes": "Times submitted by the president",
+    "presidentSubmittedWards": "Ward assignments submitted by the president",
+    "confirmAllAssignments": "Confirm all assignments (creates {{count}} schedules)",
+    "respondedBadge": "Responded {{count}}",
+    "pendingBadge": "No response {{count}}",
+    "completedBadge": "Completed {{count}}",
+    "emptyRegion": "No tasks for this region",
+    "responseStatus": "{{title}} responses ({{responded}}/{{total}})",
+    "awaitingConfirm": "Awaiting confirmation ({{count}})",
+    "noResponse": "No response ({{count}})",
+    "completedCount": "Completed ({{count}})",
+    "expiredCount": "Expired ({{count}})",
+    "summaryAwaiting": "Awaiting confirmation",
+    "summaryPending": "No response",
+    "emptyTasks": "No tasks created yet.",
+    "dueShort": "Due {{date}}"
   }
 }

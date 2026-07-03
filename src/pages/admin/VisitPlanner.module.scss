@@ -8,7 +8,9 @@
   gap: $space-4;
   max-width: 680px;
 
-  @media (min-width: 1200px) { padding: $space-6 $space-8; }
+  @media (min-width: 1200px) {
+    padding: $space-6 $space-8;
+  }
 
   @include mobile {
     padding: $space-3;
@@ -23,10 +25,22 @@
   margin-bottom: $space-2;
 }
 
-.form { display: flex; flex-direction: column; gap: $space-4; }
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
 
-.textareaField { display: flex; flex-direction: column; gap: $space-1; }
-.textareaLabel { font-size: $font-size-sm; font-weight: $font-weight-medium; color: $color-text; }
+.textareaField {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+.textareaLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
 .textarea {
   width: 100%;
   padding: $space-2 $space-3;
@@ -39,13 +53,28 @@
   resize: vertical;
   outline: none;
   line-height: $line-height-loose;
-  &:focus { border-color: $color-primary; }
-  &::placeholder { color: $color-text-muted; }
+  &:focus {
+    border-color: $color-primary;
+  }
+  &::placeholder {
+    color: $color-text-muted;
+  }
 }
 
-.section { display: flex; flex-direction: column; gap: $space-2; }
-.sectionLabel { font-size: $font-size-sm; font-weight: $font-weight-medium; color: $color-text; }
-.sectionHint { font-size: $font-size-xs; color: $color-text-muted; }
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+.sectionLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+.sectionHint {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
 
 .selectedSundays {
   display: flex;
@@ -66,7 +95,11 @@
   font-weight: $font-weight-medium;
 }
 
-.presidentSection { display: flex; flex-direction: column; gap: $space-2; }
+.presidentSection {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
 
 .presidentHeader {
   display: flex;
@@ -88,7 +121,9 @@
   border: none;
   cursor: pointer;
   padding: 0;
-  &:hover { text-decoration: underline; }
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .regionFilter {
@@ -106,15 +141,24 @@
   font-weight: $font-weight-medium;
   color: $color-text-muted;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
-  &:hover { background: $color-bg; color: $color-text; }
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
+  &:hover {
+    background: $color-bg;
+    color: $color-text;
+  }
 }
 
 .regionBtnActive {
   background: $color-sidebar;
   border-color: $color-sidebar;
   color: #fff;
-  &:hover { background: $color-sidebar; color: #fff; }
+  &:hover {
+    background: $color-sidebar;
+    color: #fff;
+  }
 }
 
 .presidentList {
@@ -133,8 +177,12 @@
   cursor: pointer;
   border-bottom: 1px solid $color-border;
   transition: background 0.12s;
-  &:last-child { border-bottom: none; }
-  &:hover { background: $color-bg; }
+  &:last-child {
+    border-bottom: none;
+  }
+  &:hover {
+    background: $color-bg;
+  }
 }
 
 .checkbox {

@@ -62,7 +62,9 @@ $shadow-overlaid: 0 8px 16px 0 rgba(0, 0, 0, 0.14);
 $shadow-popped:   0 16px 32px 0 rgba(0, 0, 0, 0.16);
 
 // Layout
-$sidebar-width:     56px;
+$sidebar-width:      56px;
+$sidebar-width-wide: 200px; // labeled sidebar at >= $breakpoint-sidebar-labels
+$breakpoint-sidebar-labels: 1280px;
 $topbar-height:     52px;
 $bottom-tab-height: 60px;
 

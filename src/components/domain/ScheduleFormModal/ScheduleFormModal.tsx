@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { httpsCallable } from 'firebase/functions'
 import { useAtomValue } from 'jotai'
@@ -13,6 +13,8 @@ import { isGeneralScheduleRelevant } from '@/types'
 import type { ScheduleType, GeneralSchedule, AppUser, InterviewTargetKind } from '@/types'
 import { Button, Select, Input, Textarea } from '@/components/ui'
 import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
+import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import {
   buildNotesWithLeaderContact,
   getContactTargetOptions,
@@ -70,14 +72,23 @@ export function ScheduleFormModal({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Close on Escape key
+  // Guard against losing a filled form to a stray backdrop tap / Escape
+  const isDirty =
+    date !== (initialDate ?? '') ||
+    startTime !== '' || endTime !== '' || notes !== '' || zoomLink !== '' ||
+    customTitle !== '' || projectId !== '' || unitId !== '' || wardName !== '' ||
+    contactTargetValue !== '' || targetSelect !== '' || isSabbath || presidentAccompanied
+  const requestClose = () => {
+    if (isDirty && !window.confirm(t('common.discardChanges'))) return
+    onClose()
+  }
+
+  const sheetRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(sheetRef, true, requestClose)
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleKey)
-    return () => document.removeEventListener('keydown', handleKey)
-  }, [onClose])
+    acquireScrollLock()
+    return releaseScrollLock
+  }, [])
 
   const handleTypeChange = (nextType: ScheduleType) => {
     setType(nextType)
@@ -252,8 +263,10 @@ export function ScheduleFormModal({
   const typeTabs = allowedTypes ? TYPE_TABS.filter(tab => allowedTypes.includes(tab.value)) : TYPE_TABS
 
   return createPortal(
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={requestClose}>
       <div
+        ref={sheetRef}
+        tabIndex={-1}
         className={styles.sheet}
         role="dialog"
         aria-modal="true"
@@ -263,7 +276,7 @@ export function ScheduleFormModal({
           <h3 className={styles.title}>{t('schedule.newTitle')}</h3>
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             className={styles.closeBtn}
             aria-label={t('common.close')}
           >
@@ -446,7 +459,7 @@ export function ScheduleFormModal({
           </div>
 
           <div className={styles.footer}>
-            <Button variant="ghost" onClick={onClose} disabled={saving}>
+            <Button variant="ghost" onClick={requestClose} disabled={saving}>
               {t('common.cancel')}
             </Button>
             <Button type="submit" loading={saving}>

@@ -10,10 +10,14 @@ import { useUnits } from '@/hooks/useUnits'
 import { useScheduleDateRange } from '@/hooks/useScheduleDateRange'
 import { useGeneralSchedules } from '@/hooks/useGeneralSchedules'
 import { manualCalendarSync, deleteScheduleViaCF } from '@/services/scheduleService'
-import { registerAttendance, cancelAttendance, updateGeneralSchedule } from '@/services/generalScheduleService'
+import {
+  registerAttendance,
+  cancelAttendance,
+  updateGeneralSchedule,
+} from '@/services/generalScheduleService'
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
-import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Button } from '@/components/ui'
+import { useTopBar } from '@/hooks/useTopBar'
+import { Card, CardHeader, CardBody, Button, Skeleton } from '@/components/ui'
 import type { Schedule, GeneralSchedule } from '@/types'
 import { CalendarView } from '@/components/domain/CalendarView/CalendarView'
 import { ScheduleItem } from '@/components/domain/ScheduleItem/ScheduleItem'
@@ -26,6 +30,7 @@ import styles from './CalendarPage.module.scss'
 
 export function CalendarPage() {
   const { t } = useTranslation()
+  useTopBar({ subtext: t('calendar.subtext'), helpInfoKey: 'pageHelp.calendar' })
   const user = useAtomValue(authUserAtom)!
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
@@ -47,29 +52,38 @@ export function CalendarPage() {
     }
   }
   const { getUnitName, getWardName } = useUnits()
-  const filters = user.role === 'president'
-    ? { presidentUid: user.uid }
-    : user.role === 'seventy'
-      ? { seventyUid: user.uid }
-      : user.role === 'exec_secretary'
-        ? { seventyUid: user.assignedSeventyUid ?? '' }
-        : {}
-  const { schedules } = useSchedules(filters)
+  const filters =
+    user.role === 'president'
+      ? { presidentUid: user.uid }
+      : user.role === 'seventy'
+        ? { seventyUid: user.uid }
+        : user.role === 'exec_secretary'
+          ? { seventyUid: user.assignedSeventyUid ?? '' }
+          : {}
+  const { schedules, loading: schedulesLoading } = useSchedules(filters)
   const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
 
   // Toggle: clicking the same date again deselects it
   const handleDateClick = (date: string) => {
-    setSelectedDate(prev => prev === date ? null : date)
+    setSelectedDate((prev) => (prev === date ? null : date))
   }
 
   const daySchedules = selectedDate
-    ? schedules.filter(s => s.status === 'confirmed' && s.date === selectedDate && !deletingIds.has(s.id))
+    ? schedules.filter(
+        (s) => s.status === 'confirmed' && s.date === selectedDate && !deletingIds.has(s.id),
+      )
     : schedules
-        .filter(s => s.status === 'confirmed' && s.date >= range.start && s.date <= range.end && !deletingIds.has(s.id))
+        .filter(
+          (s) =>
+            s.status === 'confirmed' &&
+            s.date >= range.start &&
+            s.date <= range.end &&
+            !deletingIds.has(s.id),
+        )
         .sort((a, b) => a.date.localeCompare(b.date))
 
   const myAttendances = schedules.filter(
-    s => s.type === 'general_attendance' && s.seventyUid === user.uid,
+    (s) => s.type === 'general_attendance' && s.seventyUid === user.uid,
   )
 
   const handleAttend = async (gsId: string) => {
@@ -77,7 +91,7 @@ export function CalendarPage() {
       await registerAttendance(gsId)
       toast.success(t('generalSchedule.attendSuccess'))
     } catch (e: unknown) {
-      toast.error((e as { message?: string })?.message ?? '참석 등록에 실패했습니다.')
+      toast.error((e as { message?: string })?.message ?? t('generalSchedule.attendFailed'))
     }
   }
 
@@ -86,7 +100,7 @@ export function CalendarPage() {
       await cancelAttendance(scheduleId)
       toast.success(t('generalSchedule.cancelSuccess'))
     } catch (e: unknown) {
-      toast.error((e as { message?: string })?.message ?? '참석 취소에 실패했습니다.')
+      toast.error((e as { message?: string })?.message ?? t('generalSchedule.cancelFailed'))
     }
   }
 
@@ -94,45 +108,69 @@ export function CalendarPage() {
     try {
       await updateGeneralSchedule(gs.id, { isPublic: !gs.isPublic })
     } catch {
-      toast.error('공개 설정 변경에 실패했습니다.')
+      toast.error(t('generalSchedule.visibilityFailed'))
     }
   }
 
   const exportCsv = () => {
-    const DOW = ['일', '월', '화', '수', '목', '금', '토']
-    const TYPE_LABEL: Record<string, string> = {
-      ward_visit: '와드방문', interview: '접견', meeting: '모임', general_attendance: '행사참석',
-    }
-    const CAT_LABEL: Record<string, string> = {
-      conference: '대회/행사', fasting: '금식', other: '기타',
-    }
+    const confirmedLabel = t('calendar.csv.confirmed')
 
     const scheduleRows = schedules
-      .filter(s => s.date >= range.start && s.date <= range.end && s.status === 'confirmed')
-      .map(s => {
+      .filter((s) => s.date >= range.start && s.date <= range.end && s.status === 'confirmed')
+      .map((s) => {
         const d = dayjs(s.date)
-        const title = s.customTitle ?? (s.wardName ? `${getUnitName(s.unitId)} ${getWardName(s.wardName)}` : getUnitName(s.unitId))
-        return [s.date, DOW[d.day()], TYPE_LABEL[s.type] ?? s.type, title, s.startTime, s.endTime, '확정']
+        const title =
+          s.customTitle ??
+          (s.wardName
+            ? `${getUnitName(s.unitId)} ${getWardName(s.wardName)}`
+            : getUnitName(s.unitId))
+        return [
+          s.date,
+          d.format('ddd'),
+          t(`schedule.type.${s.type}`),
+          title,
+          s.startTime,
+          s.endTime,
+          confirmedLabel,
+        ]
       })
 
     const generalRows = generalSchedules
-      .filter(gs => gs.date >= range.start && gs.date <= range.end)
-      .map(gs => {
+      .filter((gs) => gs.date >= range.start && gs.date <= range.end)
+      .map((gs) => {
         const d = dayjs(gs.date)
-        return [gs.date, DOW[d.day()], CAT_LABEL[gs.category] ?? gs.category, gs.title, gs.startTime ?? '', gs.endTime ?? '', '확정']
+        return [
+          gs.date,
+          d.format('ddd'),
+          t(`generalSchedule.category.${gs.category}`),
+          gs.title,
+          gs.startTime ?? '',
+          gs.endTime ?? '',
+          confirmedLabel,
+        ]
       })
 
-    const header = ['날짜', '요일', '유형', '제목', '시작시간', '종료시간', '상태']
-    const sorted = [...scheduleRows, ...generalRows].sort((a, b) => (a[0] as string).localeCompare(b[0] as string))
+    const header = [
+      t('calendar.csv.date'),
+      t('calendar.csv.dow'),
+      t('calendar.csv.type'),
+      t('calendar.csv.title'),
+      t('common.startTime'),
+      t('common.endTime'),
+      t('calendar.csv.status'),
+    ]
+    const sorted = [...scheduleRows, ...generalRows].sort((a, b) =>
+      (a[0] as string).localeCompare(b[0] as string),
+    )
     const csv = [header, ...sorted]
-      .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
       .join('\n')
 
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `일정_${range.start}_${range.end}.csv`
+    a.download = t('calendar.csv.fileName', { start: range.start, end: range.end })
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -144,10 +182,7 @@ export function CalendarPage() {
     : t('calendar.upcomingTitle')
 
   return (
-    <AppShell
-      role={user.role} name={user.name}
-      topBar={<TopBar name={user.name} subtext={t('calendar.subtext')} helpInfoKey="pageHelp.calendar" />}
-    >
+    <>
       <div className={styles.page}>
         <div className={styles.layout}>
           <div className={styles.calendarCol}>
@@ -182,21 +217,30 @@ export function CalendarPage() {
           </div>
           <div className={styles.listCol}>
             {!selectedDate && (
-              <ScheduleDateRangeFilter setting={rangeSetting} currentRange={range} onChange={saveRange} />
+              <ScheduleDateRangeFilter
+                setting={rangeSetting}
+                currentRange={range}
+                onChange={saveRange}
+              />
             )}
             <Card>
               <CardHeader
                 title={listTitle}
                 action={
-                  (user.role === 'admin' || user.role === 'seventy' || selectedDate) ? (
+                  user.role === 'admin' || user.role === 'seventy' || selectedDate ? (
                     <div className={styles.headerActions}>
                       {user.role === 'admin' && (
                         <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
-                          + 일정 추가
+                          + {t('calendar.addSchedule')}
                         </Button>
                       )}
                       {(user.role === 'admin' || user.role === 'seventy') && (
-                        <Button variant="ghost" size="sm" onClick={exportCsv} title="CSV 내보내기">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={exportCsv}
+                          title={t('calendar.exportCsv')}
+                        >
                           <Download size={14} />
                         </Button>
                       )}
@@ -216,8 +260,15 @@ export function CalendarPage() {
               />
               <CardBody>
                 {(() => {
-                  const generalInRange = generalSchedules.filter(gs =>
-                    selectedDate ? gs.date === selectedDate : (gs.date >= range.start && gs.date <= range.end)
+                  if (schedulesLoading) {
+                    return [1, 2, 3].map((i) => (
+                      <Skeleton key={i} height="56px" className={styles.listSkeleton} />
+                    ))
+                  }
+                  const generalInRange = generalSchedules.filter((gs) =>
+                    selectedDate
+                      ? gs.date === selectedDate
+                      : gs.date >= range.start && gs.date <= range.end,
                   )
 
                   type ListItem =
@@ -225,16 +276,27 @@ export function CalendarPage() {
                     | { date: string; time: string; kind: 'general'; data: GeneralSchedule }
 
                   const items: ListItem[] = [
-                    ...daySchedules.map(s => ({ date: s.date, time: s.startTime, kind: 'schedule' as const, data: s })),
-                    ...generalInRange.map(gs => ({ date: gs.date, time: gs.startTime ?? '00:00', kind: 'general' as const, data: gs })),
+                    ...daySchedules.map((s) => ({
+                      date: s.date,
+                      time: s.startTime,
+                      kind: 'schedule' as const,
+                      data: s,
+                    })),
+                    ...generalInRange.map((gs) => ({
+                      date: gs.date,
+                      time: gs.startTime ?? '00:00',
+                      kind: 'general' as const,
+                      data: gs,
+                    })),
                   ].sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
 
-                  if (items.length === 0) return <p className={styles.empty}>{t('calendar.noSchedule')}</p>
+                  if (items.length === 0)
+                    return <p className={styles.empty}>{t('calendar.noSchedule')}</p>
 
-                  return items.map(item => {
+                  return items.map((item) => {
                     if (item.kind === 'general') {
                       const gs = item.data
-                      const attendance = myAttendances.find(a => a.generalScheduleId === gs.id)
+                      const attendance = myAttendances.find((a) => a.generalScheduleId === gs.id)
                       return (
                         <GeneralEventItem
                           key={`gs-${gs.id}`}
@@ -258,7 +320,13 @@ export function CalendarPage() {
                         showCalendarAdd={user.role === 'president'}
                         canEdit={user.role === 'admin' || user.role === 'seventy'}
                         onEdit={() => setEditTarget(s)}
-                        onDelete={() => scheduleDelete(s.id, () => deleteScheduleViaCF(s.id), t('admin.scheduleCancelSuccess'))}
+                        onDelete={() =>
+                          scheduleDelete(
+                            s.id,
+                            () => deleteScheduleViaCF(s.id),
+                            t('admin.scheduleCancelSuccess'),
+                          )
+                        }
                       />
                     )
                   })
@@ -274,38 +342,57 @@ export function CalendarPage() {
           generalSchedules={generalSchedules}
           currentUser={user}
           onClose={() => setFormOpen(false)}
-          onSaved={() => { setFormOpen(false); toast.success(t('schedule.savedSuccess')) }}
+          onSaved={() => {
+            setFormOpen(false)
+            toast.success(t('schedule.savedSuccess'))
+          }}
         />
       )}
       {editTarget && (
         <EditScheduleModal
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
-          onSaved={() => { setEditTarget(null); toast.success(t('admin.scheduleEditSuccess')) }}
-          onDelete={() => { scheduleDelete(editTarget.id, () => deleteScheduleViaCF(editTarget.id), t('admin.scheduleCancelSuccess')); setEditTarget(null) }}
+          onSaved={() => {
+            setEditTarget(null)
+            toast.success(t('admin.scheduleEditSuccess'))
+          }}
+          onDelete={() => {
+            scheduleDelete(
+              editTarget.id,
+              () => deleteScheduleViaCF(editTarget.id),
+              t('admin.scheduleCancelSuccess'),
+            )
+            setEditTarget(null)
+          }}
         />
       )}
       <GeneralScheduleDetailSheet
         event={detailTarget}
         attendances={
           detailTarget
-            ? schedules.filter(s => s.type === 'general_attendance' && s.generalScheduleId === detailTarget.id)
+            ? schedules.filter(
+                (s) => s.type === 'general_attendance' && s.generalScheduleId === detailTarget.id,
+              )
             : []
         }
         currentUid={user.uid}
         currentRole={user.role}
         onClose={() => setDetailTarget(null)}
-        onAttend={async () => { if (detailTarget) await handleAttend(detailTarget.id) }}
+        onAttend={async () => {
+          if (detailTarget) await handleAttend(detailTarget.id)
+        }}
         onCancelAttend={async () => {
-          const a = myAttendances.find(x => x.generalScheduleId === detailTarget?.id)
+          const a = myAttendances.find((x) => x.generalScheduleId === detailTarget?.id)
           if (a) await handleCancelAttend(a.id)
         }}
-        onEdit={() => { setDetailTarget(null) }}
+        onEdit={() => {
+          setDetailTarget(null)
+        }}
         onDelete={async () => {
           setDetailTarget(null)
           toast.info('행사 일정 페이지에서 삭제할 수 있습니다.')
         }}
       />
-    </AppShell>
+    </>
   )
 }

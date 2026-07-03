@@ -17,7 +17,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { subscribeToSharedCalendar } from '@/services/calendarService'
 import { deleteScheduleViaCF } from '@/services/scheduleService'
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
-import { AppShell, TopBar } from '@/components/layout'
+import { useTopBar } from '@/hooks/useTopBar'
 import { Card, CardHeader, CardBody, Skeleton, Button, Modal, BottomSheet } from '@/components/ui'
 import { TaskCard } from '@/components/domain/TaskCard/TaskCard'
 import { ScheduleItem } from '@/components/domain/ScheduleItem/ScheduleItem'
@@ -120,6 +120,11 @@ function PresidentDashboard() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { tasks, loading: tasksLoading } = useTasks(user.uid)
+  useTopBar({
+    subtext: dayjs().format(t('calendar.monthTitleFormat')),
+    pendingCount: tasks.length,
+    helpInfoKey: 'pageHelp.dashboardPresident',
+  })
   const { schedules, loading: schedulesLoading } = useSchedules({ presidentUid: user.uid })
   const { getUnitName } = useUnits()
   const isMobile = useIsMobile()
@@ -158,18 +163,7 @@ function PresidentDashboard() {
   ) : null
 
   return (
-    <AppShell
-      role={user.role}
-      name={user.name}
-      topBar={
-        <TopBar
-          name={user.name}
-          subtext={dayjs().format('YYYY년 M월')}
-          pendingCount={tasks.length}
-          helpInfoKey="pageHelp.dashboardPresident"
-        />
-      }
-    >
+    <>
       <div className={styles.layout}>
         <div className={styles.mainCol}>
           <Card>
@@ -205,7 +199,7 @@ function PresidentDashboard() {
           {pickerContent}
         </Modal>
       )}
-    </AppShell>
+    </>
   )
 }
 
@@ -218,19 +212,16 @@ function SeventyDashboard() {
   const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
   const regionIds = user.regionIds ?? (user.regionId ? [user.regionId] : [])
   const regionName = regionIds.map((id) => REGIONS.find((r) => r.id === id)?.name ?? id).join(', ')
+  useTopBar({ subtext: regionName, helpInfoKey: 'pageHelp.dashboardSeventy' })
 
   const today = dayjs().format('YYYY-MM-DD')
   const upcoming = selectGlanceSchedules(
-    schedules.filter(s => !deletingIds.has(s.id)),
+    schedules.filter((s) => !deletingIds.has(s.id)),
     today,
   )
 
   return (
-    <AppShell
-      role={user.role}
-      name={user.name}
-      topBar={<TopBar name={user.name} subtext={regionName} helpInfoKey="pageHelp.dashboardSeventy" />}
-    >
+    <>
       <div className={styles.layout}>
         <div className={styles.mainCol}>
           <CalendarBanner connected={user.calendarConnected} />
@@ -243,7 +234,13 @@ function SeventyDashboard() {
             getUnitName={getUnitName}
             canEdit
             onEdit={setEditTarget}
-            onDelete={s => scheduleDelete(s.id, () => deleteScheduleViaCF(s.id), t('admin.scheduleCancelSuccess'))}
+            onDelete={(s) =>
+              scheduleDelete(
+                s.id,
+                () => deleteScheduleViaCF(s.id),
+                t('admin.scheduleCancelSuccess'),
+              )
+            }
           />
         </div>
       </div>
@@ -253,10 +250,17 @@ function SeventyDashboard() {
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
           onSaved={() => toast.success(t('admin.scheduleEditSuccess'))}
-          onDelete={() => { scheduleDelete(editTarget.id, () => deleteScheduleViaCF(editTarget.id), t('admin.scheduleCancelSuccess')); setEditTarget(null) }}
+          onDelete={() => {
+            scheduleDelete(
+              editTarget.id,
+              () => deleteScheduleViaCF(editTarget.id),
+              t('admin.scheduleCancelSuccess'),
+            )
+            setEditTarget(null)
+          }}
         />
       )}
-    </AppShell>
+    </>
   )
 }
 
@@ -266,6 +270,7 @@ function AdminDashboardContent() {
   const navigate = useNavigate()
   const viewSeventyUid = useAtomValue(seventyViewAtom)
   const scheduleSeventyUid = resolveScopedScheduleSeventyUid(user, viewSeventyUid)
+  useTopBar({ subtext: t('admin.dashboard'), helpInfoKey: 'pageHelp.dashboardAdmin' })
   const { schedules, loading: schedulesLoading } = useSchedules(
     scheduleSeventyUid ? { seventyUid: scheduleSeventyUid } : {},
   )
@@ -304,16 +309,12 @@ function AdminDashboardContent() {
 
   const today = dayjs().format('YYYY-MM-DD')
   const upcoming = selectGlanceSchedules(
-    schedules.filter(s => !deletingIds.has(s.id)),
+    schedules.filter((s) => !deletingIds.has(s.id)),
     today,
   )
 
   return (
-    <AppShell
-      role={user.role}
-      name={user.name}
-      topBar={<TopBar name={user.name} subtext={t('admin.dashboard')} helpInfoKey="pageHelp.dashboardAdmin" />}
-    >
+    <>
       <div className={styles.layout}>
         <div className={styles.mainCol}>
           <ReminderSummaryBanner />
@@ -322,7 +323,12 @@ function AdminDashboardContent() {
             loading={schedulesLoading}
             action={
               <div className={styles.headerActions}>
-                <Button variant="secondary" size="sm" onClick={handlePublicAction} title={schedulePublic ? t('common.copyLink') : t('admin.publicScheduleTitle')}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handlePublicAction}
+                  title={schedulePublic ? t('common.copyLink') : t('admin.publicScheduleTitle')}
+                >
                   {publicCopied ? <Check size={14} /> : <Globe size={14} />}
                   &nbsp;{t('common.publicLink')}
                 </Button>
@@ -334,7 +340,13 @@ function AdminDashboardContent() {
             getUnitName={getUnitName}
             canEdit
             onEdit={setEditTarget}
-            onDelete={s => scheduleDelete(s.id, () => deleteScheduleViaCF(s.id), t('admin.scheduleCancelSuccess'))}
+            onDelete={(s) =>
+              scheduleDelete(
+                s.id,
+                () => deleteScheduleViaCF(s.id),
+                t('admin.scheduleCancelSuccess'),
+              )
+            }
           />
         </div>
       </div>
@@ -353,10 +365,17 @@ function AdminDashboardContent() {
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
           onSaved={() => toast.success(t('admin.scheduleEditSuccess'))}
-          onDelete={() => { scheduleDelete(editTarget.id, () => deleteScheduleViaCF(editTarget.id), t('admin.scheduleCancelSuccess')); setEditTarget(null) }}
+          onDelete={() => {
+            scheduleDelete(
+              editTarget.id,
+              () => deleteScheduleViaCF(editTarget.id),
+              t('admin.scheduleCancelSuccess'),
+            )
+            setEditTarget(null)
+          }}
         />
       )}
-    </AppShell>
+    </>
   )
 }
 

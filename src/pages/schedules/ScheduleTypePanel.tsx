@@ -11,7 +11,7 @@ import { useSchedulePageData } from '@/hooks/useSchedulePageData'
 import { useEffectiveScope } from '@/hooks/useEffectiveScope'
 import { deleteScheduleViaCF } from '@/services/scheduleService'
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
-import { Button } from '@/components/ui'
+import { Button, Skeleton } from '@/components/ui'
 import { EditScheduleModal } from '@/components/domain/EditScheduleModal/EditScheduleModal'
 import { ScheduleFormModal } from '@/components/domain/ScheduleFormModal/ScheduleFormModal'
 import { ScheduleItem } from '@/components/domain/ScheduleItem/ScheduleItem'
@@ -59,9 +59,8 @@ export function ScheduleTypePanel({
 
   const scope = useEffectiveScope()
 
-  const allowedRegions = scope.regionIds != null
-    ? REGIONS.filter(r => scope.regionIds!.includes(r.id))
-    : []
+  const allowedRegions =
+    scope.regionIds != null ? REGIONS.filter((r) => scope.regionIds!.includes(r.id)) : []
 
   const filters =
     user.role === 'president'
@@ -72,13 +71,16 @@ export function ScheduleTypePanel({
           ? { seventyUid: user.assignedSeventyUid ?? '' }
           : {}
 
-  const { schedules: rawSchedules } = useSchedules(filters)
+  const { schedules: rawSchedules, loading: schedulesLoading } = useSchedules(filters)
   const { getUnitName } = useUnits()
 
-  const schedules = (filterRegion != null
-    ? rawSchedules.filter(s => ALL_UNITS.find(u => u.id === s.unitId)?.regionId === filterRegion)
-    : rawSchedules
-  ).filter(s => !deletingIds.has(s.id))
+  const schedules = (
+    filterRegion != null
+      ? rawSchedules.filter(
+          (s) => ALL_UNITS.find((u) => u.id === s.unitId)?.regionId === filterRegion,
+        )
+      : rawSchedules
+  ).filter((s) => !deletingIds.has(s.id))
 
   const { orderedKeys, grouped, thisMonthCount, upcomingCount, completedCount } =
     useSchedulePageData(schedules, scheduleTypes, activeTab)
@@ -109,7 +111,7 @@ export function ScheduleTypePanel({
             >
               {t('common.all')}
             </button>
-            {allowedRegions.map(r => (
+            {allowedRegions.map((r) => (
               <button
                 key={r.id}
                 type="button"
@@ -125,17 +127,17 @@ export function ScheduleTypePanel({
 
         <div className={styles.stats}>
           <div className={styles.statCard}>
-            <span className={styles.statValue}>{thisMonthCount}</span>
+            <span className={styles.statValue}>{schedulesLoading ? '–' : thisMonthCount}</span>
             <span className={styles.statLabel}>{t(`${translationPrefix}.thisMonth`)}</span>
           </div>
           <div className={styles.statDivider} />
           <div className={styles.statCard}>
-            <span className={styles.statValue}>{upcomingCount}</span>
+            <span className={styles.statValue}>{schedulesLoading ? '–' : upcomingCount}</span>
             <span className={styles.statLabel}>{t(`${translationPrefix}.upcoming`)}</span>
           </div>
           <div className={styles.statDivider} />
           <div className={styles.statCard}>
-            <span className={styles.statValue}>{completedCount}</span>
+            <span className={styles.statValue}>{schedulesLoading ? '–' : completedCount}</span>
             <span className={styles.statLabel}>{t(`${translationPrefix}.completed`)}</span>
           </div>
         </div>
@@ -155,7 +157,13 @@ export function ScheduleTypePanel({
         </div>
 
         <div className={styles.content}>
-          {orderedKeys.length === 0 ? (
+          {schedulesLoading ? (
+            <div className={styles.itemList}>
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} height="64px" />
+              ))}
+            </div>
+          ) : orderedKeys.length === 0 ? (
             <div className={styles.empty}>
               <EmptyIcon size={32} className={styles.emptyIcon} />
               <p className={styles.emptyTitle}>{t(`${translationPrefix}.empty`)}</p>
@@ -168,7 +176,9 @@ export function ScheduleTypePanel({
               const items = grouped.get(monthKey)!
               return (
                 <div key={monthKey} className={styles.monthGroup}>
-                  <h3 className={styles.monthLabel}>{dayjs(monthKey).format('YYYY년 M월')}</h3>
+                  <h3 className={styles.monthLabel}>
+                    {dayjs(monthKey).format(t('calendar.monthTitleFormat'))}
+                  </h3>
                   <div className={styles.itemList}>
                     {items.map((schedule) => (
                       <ScheduleItem
@@ -178,7 +188,13 @@ export function ScheduleTypePanel({
                         showCalendarAdd={user.role === 'president'}
                         canEdit={canUseAdminTools(user) || user.role === 'seventy'}
                         onEdit={() => setEditTarget(schedule)}
-                        onDelete={() => scheduleDelete(schedule.id, () => deleteScheduleViaCF(schedule.id), t('admin.scheduleCancelSuccess'))}
+                        onDelete={() =>
+                          scheduleDelete(
+                            schedule.id,
+                            () => deleteScheduleViaCF(schedule.id),
+                            t('admin.scheduleCancelSuccess'),
+                          )
+                        }
                       />
                     ))}
                   </div>
@@ -208,7 +224,14 @@ export function ScheduleTypePanel({
             setEditTarget(null)
             toast.success(t('admin.scheduleEditSuccess'))
           }}
-          onDelete={() => { scheduleDelete(editTarget.id, () => deleteScheduleViaCF(editTarget.id), t('admin.scheduleCancelSuccess')); setEditTarget(null) }}
+          onDelete={() => {
+            scheduleDelete(
+              editTarget.id,
+              () => deleteScheduleViaCF(editTarget.id),
+              t('admin.scheduleCancelSuccess'),
+            )
+            setEditTarget(null)
+          }}
         />
       )}
     </div>

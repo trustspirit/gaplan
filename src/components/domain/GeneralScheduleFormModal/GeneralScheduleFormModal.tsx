@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -12,13 +12,9 @@ import {
 import { Button, Input, Select, Textarea } from '@/components/ui'
 import type { GeneralSchedule, GeneralScheduleCategory } from '@/types'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
+import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import styles from './GeneralScheduleFormModal.module.scss'
-
-const CATEGORY_OPTIONS = [
-  { value: 'conference', label: '대회/행사' },
-  { value: 'fasting',    label: '금식' },
-  { value: 'other',      label: '기타' },
-]
 
 interface Props {
   initialData?: GeneralSchedule
@@ -47,17 +43,40 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
     initialData?.targetUnitIds ?? []
   )
 
+  const CATEGORY_OPTIONS = [
+    { value: 'conference', label: t('generalSchedule.category.conference') },
+    { value: 'fasting',    label: t('generalSchedule.category.fasting') },
+    { value: 'other',      label: t('generalSchedule.category.other') },
+  ]
+
+  // Guard against losing a filled form to a stray backdrop tap / Escape
+  const isDirty =
+    title !== (initialData?.title ?? '') ||
+    date !== (initialData?.date ?? initialDate ?? '') ||
+    category !== (initialData?.category ?? 'conference') ||
+    startTime !== (initialData?.startTime ?? '') ||
+    endTime !== (initialData?.endTime ?? '') ||
+    description !== (initialData?.description ?? '') ||
+    isPublic !== (initialData?.isPublic ?? false) ||
+    JSON.stringify(targetRegionIds) !== JSON.stringify(initialData?.targetRegionIds ?? []) ||
+    JSON.stringify(targetUnitIds) !== JSON.stringify(initialData?.targetUnitIds ?? [])
+  const requestClose = () => {
+    if (isDirty && !window.confirm(t('common.discardChanges'))) return
+    onClose()
+  }
+
+  const modalRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(modalRef, true, requestClose)
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+    acquireScrollLock()
+    return releaseScrollLock
+  }, [])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim() || !date) { setError('제목과 날짜는 필수입니다.'); return }
+    if (!title.trim() || !date) { setError(t('generalSchedule.errorTitleDateRequired')); return }
     if (startTime && endTime && startTime >= endTime) {
-      setError('종료 시간은 시작 시간보다 늦어야 합니다.')
+      setError(t('admin.scheduleTimeError'))
       return
     }
     setSaving(true)
@@ -83,20 +102,27 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
       toast.success(t('generalSchedule.savedSuccess'))
       onSaved()
     } catch (err: unknown) {
-      setError((err as { message?: string })?.message ?? '저장에 실패했습니다.')
+      setError((err as { message?: string })?.message ?? t('common.saveFailed'))
     } finally {
       setSaving(false)
     }
   }
 
   return createPortal(
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()}>
+    <div className={styles.overlay} onClick={requestClose}>
+      <div
+        ref={modalRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        className={styles.modal}
+        onClick={e => e.stopPropagation()}
+      >
         <div className={styles.header}>
           <h2 className={styles.title}>
             {initialData ? t('generalSchedule.editTitle') : t('generalSchedule.newTitle')}
           </h2>
-          <button type="button" className={styles.closeBtn} onClick={onClose}><X size={18} /></button>
+          <button type="button" className={styles.closeBtn} onClick={requestClose} aria-label={t('common.close')}><X size={18} /></button>
         </div>
 
         <form className={styles.form} onSubmit={handleSave}>
@@ -155,7 +181,7 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
           {user.role === 'admin' && (
             <div className={styles.targetSection}>
               <p className={styles.targetLabel}>
-                대상 지역 <span className={styles.targetHint}>(미선택 = 전체)</span>
+                {t('generalSchedule.targetRegionLabel')} <span className={styles.targetHint}>{t('generalSchedule.targetHint')}</span>
               </p>
               <div className={styles.checkGroup}>
                 {REGIONS.map(r => (
@@ -177,7 +203,7 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
           {/* 스테이크/지방부 타겟 */}
           <div className={styles.targetSection}>
             <p className={styles.targetLabel}>
-              대상 스테이크/지방부 <span className={styles.targetHint}>(미선택 = 전체)</span>
+              {t('generalSchedule.targetUnitLabel')} <span className={styles.targetHint}>{t('generalSchedule.targetHint')}</span>
             </p>
             <div className={styles.checkGroup}>
               {ALL_UNITS
@@ -203,7 +229,7 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
 
           {error && <p className={styles.error}>{error}</p>}
           <div className={styles.footer}>
-            <Button type="button" variant="secondary" onClick={onClose}>{t('common.cancel')}</Button>
+            <Button type="button" variant="secondary" onClick={requestClose}>{t('common.cancel')}</Button>
             <Button type="submit" loading={saving}>{t('generalSchedule.saveBtn')}</Button>
           </div>
         </form>

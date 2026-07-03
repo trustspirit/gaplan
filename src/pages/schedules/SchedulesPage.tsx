@@ -1,9 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { useAtomValue } from 'jotai'
 import { useTranslation } from 'react-i18next'
 import { MapPin, Users } from 'lucide-react'
-import { authUserAtom } from '@/store/authAtom'
-import { AppShell, TopBar } from '@/components/layout'
+import { useTopBar } from '@/hooks/useTopBar'
 import { ScheduleTypePanel } from './ScheduleTypePanel'
 import { GeneralSchedulePanel } from '@/pages/general-schedules/GeneralSchedulePanel'
 import styles from './SchedulesPage.module.scss'
@@ -18,16 +16,16 @@ type TabKey = (typeof TABS)[number]['key']
 
 export function SchedulesPage() {
   const { t } = useTranslation()
+  useTopBar({ subtext: t('nav.schedules'), helpInfoKey: 'pageHelp.schedules' })
   const navigate = useNavigate()
   const { tab } = useParams<{ tab: string }>()
-  const user = useAtomValue(authUserAtom)!
 
-  const active: TabKey = TABS.some(x => x.key === tab) ? (tab as TabKey) : 'visits'
+  const active: TabKey = TABS.some((x) => x.key === tab) ? (tab as TabKey) : 'visits'
 
   return (
-    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('nav.schedules')} helpInfoKey="pageHelp.schedules" />}>
+    <>
       <div className={styles.tabBar}>
-        {TABS.map(x => (
+        {TABS.map((x) => (
           <button
             key={x.key}
             type="button"
@@ -60,6 +58,6 @@ export function SchedulesPage() {
         />
       )}
       {active === 'events' && <GeneralSchedulePanel />}
-    </AppShell>
+    </>
   )
 }

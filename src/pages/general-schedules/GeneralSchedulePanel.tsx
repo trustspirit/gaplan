@@ -26,8 +26,8 @@ export function GeneralSchedulePanel() {
   const visibleSchedules = user.role === 'admin' ? allGeneralSchedules : generalSchedules
   const { schedules } = useSchedules({})
 
-  const [formOpen, setFormOpen]         = useState(false)
-  const [editTarget, setEditTarget]     = useState<GeneralSchedule | null>(null)
+  const [formOpen, setFormOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<GeneralSchedule | null>(null)
   const [detailTarget, setDetailTarget] = useState<GeneralSchedule | null>(null)
   const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
 
@@ -63,11 +63,13 @@ export function GeneralSchedulePanel() {
   }
 
   const myAttendances = schedules.filter(
-    s => s.type === 'general_attendance' && s.seventyUid === user.uid,
+    (s) => s.type === 'general_attendance' && s.seventyUid === user.uid,
   )
 
   const detailAttendances = detailTarget
-    ? schedules.filter(s => s.type === 'general_attendance' && s.generalScheduleId === detailTarget.id)
+    ? schedules.filter(
+        (s) => s.type === 'general_attendance' && s.generalScheduleId === detailTarget.id,
+      )
     : []
 
   return (
@@ -85,26 +87,28 @@ export function GeneralSchedulePanel() {
             }
           />
           <CardBody>
-            {loading && <p className={styles.empty}>불러오는 중…</p>}
+            {loading && <p className={styles.empty}>{t('common.loading')}</p>}
             {!loading && visibleSchedules.length === 0 && (
               <p className={styles.empty}>{t('generalSchedule.empty')}</p>
             )}
-            {visibleSchedules.filter(gs => !deletingIds.has(gs.id)).map(gs => {
-              const attendance = myAttendances.find(a => a.generalScheduleId === gs.id)
-              return (
-                <GeneralEventItem
-                  key={gs.id}
-                  event={gs}
-                  isAttending={!!attendance}
-                  canAttend={user.role === 'admin' || user.role === 'seventy'}
-                  canToggleVisibility={user.role === 'admin'}
-                  onAttend={() => handleAttend(gs.id)}
-                  onCancelAttend={() => attendance && handleCancelAttend(attendance.id)}
-                  onToggleVisibility={() => handleToggleVisibility(gs)}
-                  onClick={() => setDetailTarget(gs)}
-                />
-              )
-            })}
+            {visibleSchedules
+              .filter((gs) => !deletingIds.has(gs.id))
+              .map((gs) => {
+                const attendance = myAttendances.find((a) => a.generalScheduleId === gs.id)
+                return (
+                  <GeneralEventItem
+                    key={gs.id}
+                    event={gs}
+                    isAttending={!!attendance}
+                    canAttend={user.role === 'admin' || user.role === 'seventy'}
+                    canToggleVisibility={user.role === 'admin'}
+                    onAttend={() => handleAttend(gs.id)}
+                    onCancelAttend={() => attendance && handleCancelAttend(attendance.id)}
+                    onToggleVisibility={() => handleToggleVisibility(gs)}
+                    onClick={() => setDetailTarget(gs)}
+                  />
+                )
+              })}
           </CardBody>
         </Card>
       </div>
@@ -135,10 +139,13 @@ export function GeneralSchedulePanel() {
           await handleAttend(detailTarget.id)
         }}
         onCancelAttend={async () => {
-          const a = myAttendances.find(x => x.generalScheduleId === detailTarget?.id)
+          const a = myAttendances.find((x) => x.generalScheduleId === detailTarget?.id)
           if (a) await handleCancelAttend(a.id)
         }}
-        onEdit={() => { setEditTarget(detailTarget); setDetailTarget(null) }}
+        onEdit={() => {
+          setEditTarget(detailTarget)
+          setDetailTarget(null)
+        }}
         onDelete={() => detailTarget && handleDelete(detailTarget)}
       />
     </>

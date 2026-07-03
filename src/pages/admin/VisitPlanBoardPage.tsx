@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAtomValue } from 'jotai'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { authUserAtom } from '@/store/authAtom'
 import {
-  getVisitPlan, updateVisitPlanItems, deleteVisitPlan, publishVisitPlan, updateVisitPlanProject,
+  getVisitPlan,
+  updateVisitPlanItems,
+  deleteVisitPlan,
+  publishVisitPlan,
+  updateVisitPlanProject,
 } from '@/services/visitPlanService'
 import { deleteScheduleViaCF } from '@/services/scheduleService'
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { useVisitPlanContext } from '@/hooks/useVisitPlanContext'
-import { AppShell, TopBar } from '@/components/layout'
+import { useTopBar } from '@/hooks/useTopBar'
 import { Card, CardHeader, CardBody, Button, Spinner, DeleteConfirmSheet } from '@/components/ui'
 import { AddVisitPanel } from '@/components/domain/visitPlan/AddVisitPanel'
 import { PlanItemList } from '@/components/domain/visitPlan/PlanItemList'
@@ -27,10 +29,12 @@ export function VisitPlanBoardPage() {
   const { t } = useTranslation()
   const { planId } = useParams<{ planId: string }>()
   const navigate = useNavigate()
-  const user = useAtomValue(authUserAtom)!
 
   const [plan, setPlan] = useState<VisitPlan | null>(null)
+  useTopBar({ subtext: plan?.title })
   const [loadingPlan, setLoadingPlan] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
   const [publishing, setPublishing] = useState(false)
   const [itemsSaving, setItemsSaving] = useState(false)
   const [savingProject, setSavingProject] = useState(false)
@@ -41,12 +45,27 @@ export function VisitPlanBoardPage() {
 
   useEffect(() => {
     if (!planId) return
-    getVisitPlan(planId).then(p => { setPlan(p); setLoadingPlan(false) })
-  }, [planId])
+    setLoadingPlan(true)
+    setLoadError(false)
+    getVisitPlan(planId)
+      .then((p) => {
+        setPlan(p)
+        setLoadingPlan(false)
+      })
+      .catch(() => {
+        setLoadError(true)
+        setLoadingPlan(false)
+      })
+  }, [planId, reloadKey])
 
   const items = useMemo(() => plan?.items ?? [], [plan?.items])
-  const { loading: ctxLoading, staleWards, lastVisitByWard, balance, generalSchedules } =
-    useVisitPlanContext(plan?.seventyUid, items)
+  const {
+    loading: ctxLoading,
+    staleWards,
+    lastVisitByWard,
+    balance,
+    generalSchedules,
+  } = useVisitPlanContext(plan?.seventyUid, items)
 
   useEffect(() => {
     latestItemsRef.current = items
@@ -58,7 +77,7 @@ export function VisitPlanBoardPage() {
     options: { successMessage?: string; errorMessage?: string | null } = {},
   ) => {
     latestItemsRef.current = nextItems
-    setPlan(prev => (prev ? { ...prev, items: nextItems } : prev))
+    setPlan((prev) => (prev ? { ...prev, items: nextItems } : prev))
     setItemsSaving(true)
     const savePromise = updateVisitPlanItems(planId, nextItems)
     pendingItemsSaveRef.current = savePromise
@@ -86,14 +105,22 @@ export function VisitPlanBoardPage() {
 
   const handleRemove = (itemId: string) => {
     if (!plan) return
-    const target = (plan.items ?? []).find(i => i.itemId === itemId)
-    const filtered = (plan.items ?? []).filter(i => i.itemId !== itemId)
-    schedulePlanDelete(itemId, async () => {
-      if (target?.scheduleId) {
-        try { await deleteScheduleViaCF(target.scheduleId) } catch { /* already deleted */ }
-      }
-      await saveItems(plan.id, filtered, { errorMessage: null })
-    }, t('common.deleted'))
+    const target = (plan.items ?? []).find((i) => i.itemId === itemId)
+    const filtered = (plan.items ?? []).filter((i) => i.itemId !== itemId)
+    schedulePlanDelete(
+      itemId,
+      async () => {
+        if (target?.scheduleId) {
+          try {
+            await deleteScheduleViaCF(target.scheduleId)
+          } catch {
+            /* already deleted */
+          }
+        }
+        await saveItems(plan.id, filtered, { errorMessage: null })
+      },
+      t('common.deleted'),
+    )
   }
 
   const handlePublish = async () => {
@@ -118,7 +145,9 @@ export function VisitPlanBoardPage() {
   const handleSaveDraft = async () => {
     if (!plan) return
     try {
-      await saveItems(plan.id, latestItemsRef.current, { successMessage: t('visitPlan.saveSuccess') })
+      await saveItems(plan.id, latestItemsRef.current, {
+        successMessage: t('visitPlan.saveSuccess'),
+      })
     } catch {
       // saveItems already reports the error.
     }
@@ -126,42 +155,90 @@ export function VisitPlanBoardPage() {
 
   const handleDeletePlan = () => {
     if (!plan) return
-    schedulePlanDelete(plan.id, async () => {
-      for (const it of plan.items) {
-        if (it.scheduleId) {
-          try { await deleteScheduleViaCF(it.scheduleId) } catch { /* already deleted */ }
+    schedulePlanDelete(
+      plan.id,
+      async () => {
+        for (const it of plan.items) {
+          if (it.scheduleId) {
+            try {
+              await deleteScheduleViaCF(it.scheduleId)
+            } catch {
+              /* already deleted */
+            }
+          }
         }
-      }
-      await deleteVisitPlan(plan.id)
-      navigate('/admin/visit-plans')
-    }, t('common.deleted'))
+        await deleteVisitPlan(plan.id)
+        navigate('/admin/visit-plans')
+      },
+      t('common.deleted'),
+    )
   }
 
   if (loadingPlan) {
-    return <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} />}><div className={styles.center}><Spinner /></div></AppShell>
+    return (
+      <div className={styles.center}>
+        <Spinner />
+      </div>
+    )
+  }
+  if (loadError) {
+    return (
+      <div className={styles.center}>
+        <p>{t('common.loadFailed')}</p>
+        <Button size="sm" onClick={() => setReloadKey((k) => k + 1)}>
+          {t('common.retry')}
+        </Button>
+      </div>
+    )
   }
   if (!plan) {
-    return <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} />}><div className={styles.center}>{t('visitPlan.empty')}</div></AppShell>
+    return <div className={styles.center}>{t('visitPlan.empty')}</div>
   }
 
   return (
-    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={plan.title} />}>
+    <>
       <div className={styles.page}>
         <div className={styles.header}>
           <h2 className={styles.title}>{plan.title}</h2>
           <div className={styles.actions}>
-            <Button variant="secondary" size="sm" onClick={() => setShowDeleteConfirm(true)} disabled={deletingPlanIds.has(plan.id)}>{t('common.delete')}</Button>
-            <Button variant="secondary" size="sm" onClick={handleSaveDraft} loading={itemsSaving} disabled={savingProject || itemsSaving || deletingPlanIds.size > 0}>{t('common.save')}</Button>
-            <Button size="sm" onClick={handlePublish} loading={publishing} disabled={savingProject || itemsSaving || deletingPlanIds.size > 0}>{t('visitPlan.publish')}</Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={deletingPlanIds.has(plan.id)}
+            >
+              {t('common.delete')}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleSaveDraft}
+              loading={itemsSaving}
+              disabled={savingProject || itemsSaving || deletingPlanIds.size > 0}
+            >
+              {t('common.save')}
+            </Button>
+            <Button
+              size="sm"
+              onClick={handlePublish}
+              loading={publishing}
+              disabled={savingProject || itemsSaving || deletingPlanIds.size > 0}
+            >
+              {t('visitPlan.publish')}
+            </Button>
           </div>
         </div>
 
         <ProjectPicker
           value={plan.projectId ?? ''}
-          onChange={async pid => {
-            setPlan(prev => (prev ? { ...prev, projectId: pid } : prev))
+          onChange={async (pid) => {
+            setPlan((prev) => (prev ? { ...prev, projectId: pid } : prev))
             setSavingProject(true)
-            try { await updateVisitPlanProject(plan.id, pid) } finally { setSavingProject(false) }
+            try {
+              await updateVisitPlanProject(plan.id, pid)
+            } finally {
+              setSavingProject(false)
+            }
           }}
         />
 
@@ -182,13 +259,19 @@ export function VisitPlanBoardPage() {
           <div className={styles.side}>
             <Card>
               <CardBody>
-                {ctxLoading
-                  ? <div className={styles.center}><Spinner /></div>
-                  : <AddVisitPanel staleWards={staleWards} onAdd={handleAdd} />}
+                {ctxLoading ? (
+                  <div className={styles.center}>
+                    <Spinner />
+                  </div>
+                ) : (
+                  <AddVisitPanel staleWards={staleWards} onAdd={handleAdd} />
+                )}
               </CardBody>
             </Card>
             <Card>
-              <CardBody><BalancePanel balance={balance} /></CardBody>
+              <CardBody>
+                <BalancePanel balance={balance} />
+              </CardBody>
             </Card>
           </div>
         </div>
@@ -196,9 +279,12 @@ export function VisitPlanBoardPage() {
       <DeleteConfirmSheet
         open={showDeleteConfirm}
         description={plan.title}
-        onConfirm={() => { setShowDeleteConfirm(false); handleDeletePlan() }}
+        onConfirm={() => {
+          setShowDeleteConfirm(false)
+          handleDeletePlan()
+        }}
         onCancel={() => setShowDeleteConfirm(false)}
       />
-    </AppShell>
+    </>
   )
 }

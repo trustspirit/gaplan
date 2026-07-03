@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 import type { Schedule, GeneralSchedule } from '@/types'
 import { isFastSunday } from '@/utils/fastSunday'
+import { layoutDayBlocks } from './layoutDayBlocks'
 import { Button } from '@/components/ui'
 import styles from './CalendarView.module.scss'
 
@@ -96,6 +97,24 @@ export function CalendarView({
     setWeekOffset(0)
   }
 
+  // Horizontal swipe on touch advances the period (vertical scroll untouched
+  // via touch-action: pan-y on the viewport)
+  const swipeStart = useRef<{ x: number; y: number } | null>(null)
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType === 'mouse') return
+    swipeStart.current = { x: e.clientX, y: e.clientY }
+  }
+  const handlePointerUp = (e: React.PointerEvent) => {
+    const start = swipeStart.current
+    swipeStart.current = null
+    if (!start) return
+    const dx = e.clientX - start.x
+    const dy = e.clientY - start.y
+    if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      movePeriod(dx < 0 ? 1 : -1)
+    }
+  }
+
   // ── Month view ─────────────────────────────────────────────────────────────
   const renderMonthView = () => {
     const start = current.startOf('month').startOf('week')
@@ -117,12 +136,15 @@ export function CalendarView({
         {days.map((d) => {
           const dateStr = d.format('YYYY-MM-DD')
           const daySchedules = getSchedulesForDate(dateStr)
+          const dayGenerals = getGeneralEventsForDate(dateStr)
           const isToday = d.isSame(dayjs(), 'day')
           const isCurrentMonth = d.month() === current.month()
           const isBlocked = isFastSunday(d)
           const isSelected = selectedDate === dateStr
-          const visible = daySchedules.slice(0, MAX_CHIPS)
-          const extra = daySchedules.length - MAX_CHIPS
+          // general events share the chip budget so busy days can't blow out the cell
+          const visibleGenerals = dayGenerals.slice(0, MAX_CHIPS)
+          const visible = daySchedules.slice(0, MAX_CHIPS - visibleGenerals.length)
+          const extra = dayGenerals.length + daySchedules.length - visibleGenerals.length - visible.length
 
           return (
             <div
@@ -137,7 +159,7 @@ export function CalendarView({
               onClick={() => onDateClick?.(dateStr)}
             >
               <span className={styles.cellDay}>{d.date()}</span>
-              {getGeneralEventsForDate(dateStr).map(gs => {
+              {visibleGenerals.map(gs => {
                 const c = GENERAL_CATEGORY_COLORS[gs.category] ?? GENERAL_CATEGORY_COLORS.other
                 return (
                   <span
@@ -150,12 +172,24 @@ export function CalendarView({
                   </span>
                 )
               })}
-              {daySchedules.length > 0 && (
+              {(visible.length > 0 || extra > 0) && (
                 <div className={styles.chips}>
                   {visible.map((s) => (
                     <ScheduleChip key={s.id} schedule={s} getUnitName={getUnitName} />
                   ))}
-                  {extra > 0 && <span className={styles.chipMore}>+{extra}</span>}
+                  {extra > 0 && (
+                    <button
+                      type="button"
+                      className={styles.chipMore}
+                      aria-label={t('calendar.moreEvents', { count: extra })}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDateClick?.(dateStr)
+                      }}
+                    >
+                      +{extra}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -279,8 +313,8 @@ export function CalendarView({
                       />
                     ))}
 
-                    {/* Schedule blocks */}
-                    {daySchedules.map((s) => {
+                    {/* Schedule blocks — overlapping ones split into sub-columns */}
+                    {layoutDayBlocks(daySchedules).map(({ s, col, cols }) => {
                       const top = timeToOffset(s.startTime)
                       const height = Math.max(timeToDuration(s.startTime, s.endTime), 20)
                       const color = scheduleTypeColor(s.type)
@@ -291,11 +325,17 @@ export function CalendarView({
                           style={{
                             top,
                             height,
+                            left: `calc(${(col / cols) * 100}% + 2px)`,
+                            width: `calc(${100 / cols}% - 6px)`,
                             background: color.bg,
                             color: color.text,
                             borderColor: color.border,
                           }}
-                          onClick={(e) => e.stopPropagation()}
+                          title={`${chipLabel(s, getUnitName)} ${s.startTime}–${s.endTime}`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (!isBlocked) onDateClick?.(dateStr)
+                          }}
                         >
                           <span className={styles.scheduleBlockLabel}>
                             {chipLabel(s, getUnitName)}
@@ -324,7 +364,7 @@ export function CalendarView({
         </Button>
         <span className={styles.period}>
           {view === 'month'
-            ? current.format('YYYY년 M월')
+            ? current.format(t('calendar.monthTitleFormat'))
             : `${current.startOf('week').format('M/D')} – ${current.endOf('week').format('M/D')}`}
         </span>
         <Button variant="ghost" size="sm" onClick={() => movePeriod(1)}>
@@ -348,7 +388,14 @@ export function CalendarView({
         </div>
       </div>
 
-      {view === 'month' ? renderMonthView() : renderWeekView()}
+      <div
+        className={styles.swipeViewport}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={() => { swipeStart.current = null }}
+      >
+        {view === 'month' ? renderMonthView() : renderWeekView()}
+      </div>
 
       <div className={styles.legend}>
         {(['ward_visit', 'interview', 'meeting'] as const)

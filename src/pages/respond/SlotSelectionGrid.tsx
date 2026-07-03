@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { useTranslation } from 'react-i18next'
 import styles from './SlotSelectionGrid.module.scss'
 
 interface TimeRange {
@@ -28,15 +29,14 @@ function slotKey(slot: { date: string; startTime: string; endTime: string }): st
 }
 
 export function SlotSelectionGrid({ availableDateSlots, selectedSlots, onToggle }: Props) {
+  const { t } = useTranslation()
   const selectedKeys = new Set(selectedSlots.map(slotKey))
 
   return (
     <div className={styles.container}>
       {availableDateSlots.map(({ date, timeRanges }) => (
         <div key={date} className={styles.dateGroup}>
-          <div className={styles.dateHeader}>
-            {dayjs(date).format('M월 D일 (ddd)')}
-          </div>
+          <div className={styles.dateHeader}>{dayjs(date).format(t('respond.dateFormat'))}</div>
           <div className={styles.slotList}>
             {timeRanges.map(({ startTime, endTime }) => {
               const slot = { date, startTime, endTime }

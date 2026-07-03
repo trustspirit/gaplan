@@ -16,7 +16,9 @@ export function AppShell({ children, role, name, topBar }: AppShellProps) {
       </div>
       <div className={styles.main}>
         <div className={styles.topbar}>{topBar}</div>
-        <main className={styles.content}>{children}</main>
+        <main className={styles.content} data-scroll-container>
+          {children}
+        </main>
       </div>
       <div className={styles.bottomTab}>
         <Sidebar role={role} name={name} mobile />

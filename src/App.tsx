@@ -34,6 +34,7 @@ export default function App() {
       <Toaster
         position="top-right"
         richColors
+        closeButton
         style={{
           '--offset-top': 'max(env(safe-area-inset-top, 0px), 60px)',
           '--mobile-offset-top': 'max(env(safe-area-inset-top, 0px), 60px)',

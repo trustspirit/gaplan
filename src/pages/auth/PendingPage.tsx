@@ -27,7 +27,8 @@ export function PendingPage() {
         </div>
         <h1 className={styles.title}>{t('auth.pendingTitle')}</h1>
         <p className={styles.desc}>
-          {user?.name ? `${user.name}님, ` : ''}{t('auth.pendingDesc')}
+          {user?.name ? `${user.name}님, ` : ''}
+          {t('auth.pendingDesc')}
           <br />
           {t('auth.pendingHint')}
         </p>

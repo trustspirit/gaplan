@@ -6,7 +6,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { useTaskConfirm } from '@/hooks/useTaskConfirm'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useWardSubmit } from '@/hooks/useWardSubmit'
-import { AppShell, TopBar } from '@/components/layout'
+import { useTopBar } from '@/hooks/useTopBar'
 import { Card, CardHeader, CardBody, BottomSheet, Skeleton } from '@/components/ui'
 import { TaskCard } from '@/components/domain/TaskCard/TaskCard'
 import { TaskPickerContent } from '@/components/domain/TaskPickerContent/TaskPickerContent'
@@ -21,15 +21,22 @@ export function TasksPage() {
 
   const {
     activeTask,
-    selectedSlots, toggleSlot, isSlotSelected,
-    submitting: slotSubmitting, availableSlots, isVisit,
-    openTask, closeTask, handleSubmitAvailability,
+    selectedSlots,
+    toggleSlot,
+    isSlotSelected,
+    submitting: slotSubmitting,
+    availableSlots,
+    isVisit,
+    openTask,
+    closeTask,
+    handleSubmitAvailability,
   } = useTaskConfirm(user.uid, user.unitId)
 
   const { handleSubmitWards, wardSubmitting } = useWardSubmit(activeTask, closeTask)
 
-  const pendingTasks = tasks.filter(t => t.status === 'pending')
-  const respondedTasks = tasks.filter(t => t.status === 'responded')
+  const pendingTasks = tasks.filter((t) => t.status === 'pending')
+  useTopBar({ pendingCount: pendingTasks.length, helpInfoKey: 'pageHelp.tasks' })
+  const respondedTasks = tasks.filter((t) => t.status === 'responded')
   const pickerTitle = taskPickerTitle(activeTask)
 
   const pickerContent = activeTask ? (
@@ -48,22 +55,22 @@ export function TasksPage() {
   ) : null
 
   return (
-    <AppShell
-      role={user.role} name={user.name}
-      topBar={<TopBar name={user.name} pendingCount={pendingTasks.length} helpInfoKey="pageHelp.tasks" />}
-    >
+    <>
       <div className={styles.layout}>
         {/* ── Main column ── */}
         <div className={styles.mainCol}>
           <Card>
             <CardHeader title={t('task.needsAction')} />
             <CardBody>
-              {tasksLoading
-                ? [1, 2].map(i => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
-                : pendingTasks.length === 0
-                  ? <p className={styles.empty}>{t('task.noTasks')}</p>
-                  : pendingTasks.map(t => <TaskCard key={t.id} task={t} onAction={openTask} />)
-              }
+              {tasksLoading ? (
+                [1, 2].map((i) => (
+                  <Skeleton key={i} height="44px" className={styles.skeletonItem} />
+                ))
+              ) : pendingTasks.length === 0 ? (
+                <p className={styles.empty}>{t('task.noTasks')}</p>
+              ) : (
+                pendingTasks.map((t) => <TaskCard key={t.id} task={t} onAction={openTask} />)
+              )}
             </CardBody>
           </Card>
 
@@ -71,7 +78,7 @@ export function TasksPage() {
             <Card>
               <CardHeader title={t('task.responded')} />
               <CardBody>
-                {respondedTasks.map(t => (
+                {respondedTasks.map((t) => (
                   <TaskCard
                     key={t.id}
                     task={t}
@@ -107,9 +114,7 @@ export function TasksPage() {
                 <div className={styles.sidePickerBody}>{pickerContent}</div>
               </div>
             ) : (
-              <div className={styles.sidePlaceholder}>
-                {t('task.selectTask')}
-              </div>
+              <div className={styles.sidePlaceholder}>{t('task.selectTask')}</div>
             )}
           </div>
         )}
@@ -121,6 +126,6 @@ export function TasksPage() {
           {pickerContent}
         </BottomSheet>
       )}
-    </AppShell>
+    </>
   )
 }

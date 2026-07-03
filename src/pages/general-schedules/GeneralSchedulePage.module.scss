@@ -5,7 +5,9 @@
   margin: 0 auto;
   padding: $space-6;
 
-  @media (max-width: 600px) { padding: $space-4; }
+  @media (max-width: 600px) {
+    padding: $space-4;
+  }
 }
 
 .empty {

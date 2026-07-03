@@ -93,7 +93,13 @@
   display: flex;
   justify-content: flex-end;
   gap: $space-3;
-  padding-top: $space-2;
+  // stick to the sheet bottom while the long target checklists scroll
+  position: sticky;
+  bottom: 0;
+  background: $color-surface;
+  border-top: 1px solid $color-border;
+  margin: 0 calc(-1 * $space-6) calc(-1 * $space-6);
+  padding: $space-3 $space-6 calc($space-4 + env(safe-area-inset-bottom, 0px));
 }
 
 .targetSection {

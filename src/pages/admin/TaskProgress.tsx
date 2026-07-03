@@ -5,7 +5,17 @@ import dayjs from 'dayjs'
 import { toast } from 'sonner'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle2, Clock, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Pencil, Trash2, XCircle } from 'lucide-react'
+import {
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  Pencil,
+  Trash2,
+  XCircle,
+} from 'lucide-react'
 import { authUserAtom } from '@/store/authAtom'
 import { useAllTasks } from '@/hooks/useTasks'
 import { useUsers } from '@/hooks/useUsers'
@@ -14,7 +24,7 @@ import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { adminConfirmSchedule, adminConfirmWardVisit } from '@/services/scheduleService'
 import { deleteTask, expireTask, updateTaskDetails } from '@/services/taskService'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
-import { AppShell, TopBar } from '@/components/layout'
+import { useTopBar } from '@/hooks/useTopBar'
 import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Modal } from '@/components/ui'
 import { MultiDatePicker } from '@/components/domain/MultiDatePicker/MultiDatePicker'
 import { ResponseMatrix } from '@/components/domain/ResponseMatrix/ResponseMatrix'
@@ -25,7 +35,8 @@ import styles from './TaskProgress.module.scss'
 function StatusBadge({ status }: { status: Task['status'] }) {
   const { t } = useTranslation()
   if (status === 'completed') return <Badge variant="success">{t('task.status.completed')}</Badge>
-  if (status === 'responded') return <Badge variant="default">{t('task.statusBadge.responded')}</Badge>
+  if (status === 'responded')
+    return <Badge variant="default">{t('task.statusBadge.responded')}</Badge>
   if (status === 'expired') return <Badge variant="danger">{t('task.status.expired')}</Badge>
   return <Badge variant="warning">{t('task.status.pending')}</Badge>
 }
@@ -41,30 +52,31 @@ function TaskDetailModal({
   presidentName: string
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   return (
-    <Modal open onClose={onClose} title="태스크 상세">
+    <Modal open onClose={onClose} title={t('taskProgress.detailTitle')}>
       <div className={styles.modalBody}>
         <div className={styles.detailRow}>
-          <span className={styles.detailLabel}>상태</span>
+          <span className={styles.detailLabel}>{t('taskProgress.statusLabel')}</span>
           <StatusBadge status={task.status} />
         </div>
         <div className={styles.detailRow}>
-          <span className={styles.detailLabel}>담당자</span>
+          <span className={styles.detailLabel}>{t('taskProgress.assigneeLabel')}</span>
           <span className={styles.detailValue}>{presidentName}</span>
         </div>
         <div className={styles.detailRow}>
-          <span className={styles.detailLabel}>마감일</span>
+          <span className={styles.detailLabel}>{t('taskProgress.dueDateLabel')}</span>
           <span className={styles.detailValue}>{task.dueDate}</span>
         </div>
         {task.note && (
           <div className={styles.detailRow}>
-            <span className={styles.detailLabel}>메모</span>
+            <span className={styles.detailLabel}>{t('taskProgress.memoLabel')}</span>
             <span className={styles.detailValue}>{task.note}</span>
           </div>
         )}
         {task.respondedSlots && task.respondedSlots.length > 0 && (
           <div className={styles.detailSection}>
-            <div className={styles.detailSectionTitle}>응답한 시간</div>
+            <div className={styles.detailSectionTitle}>{t('taskProgress.respondedTimes')}</div>
             {task.respondedSlots.map((slot, i) => (
               <div key={i} className={styles.detailSlotRow}>
                 {slot.date} {slot.startTime}–{slot.endTime}
@@ -74,7 +86,7 @@ function TaskDetailModal({
         )}
         {task.wardAssignments && task.wardAssignments.length > 0 && (
           <div className={styles.detailSection}>
-            <div className={styles.detailSectionTitle}>와드 배정</div>
+            <div className={styles.detailSectionTitle}>{t('taskProgress.wardAssignments')}</div>
             {task.wardAssignments.map((wa, i) => (
               <div key={i} className={styles.detailSlotRow}>
                 {wa.wardName}: {wa.date}
@@ -102,40 +114,47 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
   const [availableDates, setAvailableDates] = useState<string[]>(task.availableDates ?? [])
   // For interview/sacrament: per-date time ranges
   const [selectedDates, setSelectedDates] = useState<string[]>(
-    (task.availableDateSlots ?? []).map(s => s.date)
+    (task.availableDateSlots ?? []).map((s) => s.date),
   )
-  const [dateRanges, setDateRanges] = useState<Record<string, { startTime: string; endTime: string }[]>>(
+  const [dateRanges, setDateRanges] = useState<
+    Record<string, { startTime: string; endTime: string }[]>
+  >(
     Object.fromEntries(
-      (task.availableDateSlots ?? []).map(s => [
+      (task.availableDateSlots ?? []).map((s) => [
         s.date,
-        s.timeRanges?.length ? s.timeRanges : [{ startTime: '09:00', endTime: '18:00' }]
-      ])
-    )
+        s.timeRanges?.length ? s.timeRanges : [{ startTime: '09:00', endTime: '18:00' }],
+      ]),
+    ),
   )
   const [slotDuration, setSlotDuration] = useState(String(task.slotDurationMinutes ?? 60))
   const [saving, setSaving] = useState(false)
 
   function handleDatesChange(dates: string[]) {
     setSelectedDates(dates)
-    setDateRanges(prev => {
+    setDateRanges((prev) => {
       const next: typeof prev = {}
-      dates.forEach(d => { next[d] = prev[d] ?? [{ startTime: '09:00', endTime: '18:00' }] })
+      dates.forEach((d) => {
+        next[d] = prev[d] ?? [{ startTime: '09:00', endTime: '18:00' }]
+      })
       return next
     })
   }
 
   const availableDateSlots = selectedDates
-    .map(d => ({ date: d, timeRanges: dateRanges[d] ?? [{ startTime: '09:00', endTime: '18:00' }] }))
+    .map((d) => ({
+      date: d,
+      timeRanges: dateRanges[d] ?? [{ startTime: '09:00', endTime: '18:00' }],
+    }))
     .sort((a, b) => a.date.localeCompare(b.date))
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isVisit && availableDates.length === 0) {
-      toast.error('가능 일요일을 하나 이상 선택해주세요.')
+      toast.error(t('taskProgress.errorSelectSunday'))
       return
     }
     if (!isVisit && availableDateSlots.length === 0) {
-      toast.error('가능 날짜를 하나 이상 선택해주세요.')
+      toast.error(t('taskProgress.errorSelectDate'))
       return
     }
     setSaving(true)
@@ -144,7 +163,9 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
         task.id,
         {
           dueDate,
-          ...(isVisit ? { availableDates } : { availableDateSlots, slotDurationMinutes: parseInt(slotDuration) }),
+          ...(isVisit
+            ? { availableDates }
+            : { availableDateSlots, slotDurationMinutes: parseInt(slotDuration) }),
         },
         task.status === 'responded',
       )
@@ -162,40 +183,56 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
       <form className={styles.editForm} onSubmit={handleSave}>
         {isVisit ? (
           <div className={styles.editSection}>
-            <p className={styles.editLabel}>{t('task.selectSundays', { defaultValue: '가능 방문 일요일 선택' })}</p>
+            <p className={styles.editLabel}>
+              {t('task.selectSundays', { defaultValue: '가능 방문 일요일 선택' })}
+            </p>
             <MultiDatePicker selected={availableDates} onChange={setAvailableDates} sundayOnly />
           </div>
         ) : (
           <>
             <div className={styles.editSection}>
-              <p className={styles.editLabel}>{t('task.selectDates', { defaultValue: '가능 날짜 (캘린더에서 선택)' })}</p>
+              <p className={styles.editLabel}>
+                {t('task.selectDates', { defaultValue: '가능 날짜 (캘린더에서 선택)' })}
+              </p>
               <MultiDatePicker selected={selectedDates} onChange={handleDatesChange} />
               {availableDateSlots.length > 0 && (
                 <div className={styles.dateSlotList}>
-                  {availableDateSlots.map(s => (
+                  {availableDateSlots.map((s) => (
                     <div key={s.date} className={styles.dateSlotItem}>
-                      <div className={styles.dateSlotDate}>
-                        {dayjs(s.date).format('M/D (ddd)')}
-                      </div>
+                      <div className={styles.dateSlotDate}>{dayjs(s.date).format('M/D (ddd)')}</div>
                       {(dateRanges[s.date] ?? []).map((r, idx) => (
                         <div key={idx} className={styles.timeRangeRow}>
-                          <Input type="time" value={r.startTime}
+                          <Input
+                            type="time"
+                            value={r.startTime}
                             className={styles.timeInput}
                             wrapperClassName={styles.timeField}
                             aria-label={`${dayjs(s.date).format('M/D')} ${t('common.startTime')}`}
-                            onChange={e => setDateRanges(prev => ({
-                              ...prev,
-                              [s.date]: prev[s.date].map((x, i) => i === idx ? { ...x, startTime: e.target.value } : x)
-                            }))} />
+                            onChange={(e) =>
+                              setDateRanges((prev) => ({
+                                ...prev,
+                                [s.date]: prev[s.date].map((x, i) =>
+                                  i === idx ? { ...x, startTime: e.target.value } : x,
+                                ),
+                              }))
+                            }
+                          />
                           <span>~</span>
-                          <Input type="time" value={r.endTime}
+                          <Input
+                            type="time"
+                            value={r.endTime}
                             className={styles.timeInput}
                             wrapperClassName={styles.timeField}
                             aria-label={`${dayjs(s.date).format('M/D')} ${t('common.endTime')}`}
-                            onChange={e => setDateRanges(prev => ({
-                              ...prev,
-                              [s.date]: prev[s.date].map((x, i) => i === idx ? { ...x, endTime: e.target.value } : x)
-                            }))} />
+                            onChange={(e) =>
+                              setDateRanges((prev) => ({
+                                ...prev,
+                                [s.date]: prev[s.date].map((x, i) =>
+                                  i === idx ? { ...x, endTime: e.target.value } : x,
+                                ),
+                              }))
+                            }
+                          />
                         </div>
                       ))}
                     </div>
@@ -210,11 +247,16 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
               max="480"
               step="5"
               value={slotDuration}
-              onChange={e => setSlotDuration(e.target.value)}
+              onChange={(e) => setSlotDuration(e.target.value)}
             />
           </>
         )}
-        <Input label={t('task.dueDate')} type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+        <Input
+          label={t('task.dueDate')}
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+        />
         {task.status === 'responded' && (
           <p className={styles.resetNote}>
             <AlertTriangle size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />
@@ -222,8 +264,12 @@ function EditTaskModal({ task, onClose }: EditTaskModalProps) {
           </p>
         )}
         <div className={styles.modalActions}>
-          <Button variant="ghost" type="button" onClick={onClose}>{t('common.cancel')}</Button>
-          <Button type="submit" loading={saving}>{t('task.editAndResend')}</Button>
+          <Button variant="ghost" type="button" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" loading={saving}>
+            {t('task.editAndResend')}
+          </Button>
         </div>
       </form>
     </Modal>
@@ -243,24 +289,42 @@ function formatRespondedAt(respondedAt: unknown): string {
 
 // ── Responded slot row ───────────────────────────────────────────────────────
 
-function RespondedSlotRow({ slot, taskId, onConfirmed }: { slot: RespondedSlot; taskId: string; onConfirmed: () => void }) {
+function RespondedSlotRow({
+  slot,
+  taskId,
+  onConfirmed,
+}: {
+  slot: RespondedSlot
+  taskId: string
+  onConfirmed: () => void
+}) {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
 
   const handleConfirm = async () => {
     setLoading(true)
     try {
       const result = await adminConfirmSchedule({ taskId, slot })
-      if (result.success) { toast.success('일정이 확정되었습니다!'); onConfirmed() }
-      else toast.error(result.error ?? '확정에 실패했습니다.')
-    } catch { toast.error('오류가 발생했습니다.') }
-    finally { setLoading(false) }
+      if (result.success) {
+        toast.success(t('taskProgress.confirmSuccess'))
+        onConfirmed()
+      } else toast.error(result.error ?? t('common.confirmFailed'))
+    } catch {
+      toast.error(t('taskProgress.genericError'))
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className={styles.slotRow}>
       <span className={styles.slotDate}>{dayjs(slot.date).format('M/D (ddd)')}</span>
-      <span className={styles.slotTime}>{slot.startTime} ~ {slot.endTime}</span>
-      <Button size="sm" onClick={handleConfirm} loading={loading}>이 시간으로 확정</Button>
+      <span className={styles.slotTime}>
+        {slot.startTime} ~ {slot.endTime}
+      </span>
+      <Button size="sm" onClick={handleConfirm} loading={loading}>
+        {t('taskProgress.confirmThisTime')}
+      </Button>
     </div>
   )
 }
@@ -296,8 +360,11 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
     try {
       await expireTask(task.id)
       toast.success(t('task.expireSuccess'))
-    } catch { toast.error(t('task.expireFailed')) }
-    finally { setExpiring(false) }
+    } catch {
+      toast.error(t('task.expireFailed'))
+    } finally {
+      setExpiring(false)
+    }
   }
 
   const handleConfirmWardVisit = async () => {
@@ -325,24 +392,27 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
           isExpired && styles.taskRowExpired,
           task.status === 'completed' && styles.clickable,
         )}
-        onClick={() => { if (task.status === 'completed') setDetailOpen(true) }}
+        onClick={() => {
+          if (task.status === 'completed') setDetailOpen(true)
+        }}
       >
         <div className={styles.taskRowMain}>
           <div className={styles.taskRowLeft}>
             <div className={styles.taskIcon}>
-              {task.status === 'completed'
-                ? <CheckCircle2 size={16} className={styles.iconDone} />
-                : task.status === 'responded'
-                  ? <Clock size={16} className={styles.iconResponded} />
-                  : isExpired
-                    ? <XCircle size={16} className={styles.iconExpired} />
-                    : <AlertCircle size={16} className={styles.iconPending} />
-              }
+              {task.status === 'completed' ? (
+                <CheckCircle2 size={16} className={styles.iconDone} />
+              ) : task.status === 'responded' ? (
+                <Clock size={16} className={styles.iconResponded} />
+              ) : isExpired ? (
+                <XCircle size={16} className={styles.iconExpired} />
+              ) : (
+                <AlertCircle size={16} className={styles.iconPending} />
+              )}
             </div>
             <div className={styles.taskInfo}>
               <span className={styles.taskPresident}>{presidentName}</span>
               <span className={styles.taskMeta}>
-                {unitName} · {typeLabel} · 마감 {dayjs(task.dueDate).format('M/D')}
+                {unitName} · {typeLabel} · {t('taskProgress.dueShort', { date: dayjs(task.dueDate).format('M/D') })}
                 {task.status === 'pending' && (
                   <span className={clsx(styles.dDay, isOverdue && styles.dDayOverdue)}>
                     {isOverdue ? ` (D+${Math.abs(daysLeft)})` : ` (D-${daysLeft})`}
@@ -350,7 +420,9 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
                 )}
                 {task.status === 'responded' && task.respondedAt && (
                   <span className={styles.respondedAt}>
-                    {' '}· {formatRespondedAt(task.respondedAt)} {t('task.submitted', { defaultValue: '제출' })}
+                    {' '}
+                    · {formatRespondedAt(task.respondedAt)}{' '}
+                    {t('task.submitted', { defaultValue: '제출' })}
                   </span>
                 )}
               </span>
@@ -361,24 +433,43 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
             <StatusBadge status={task.status} />
 
             {task.status === 'responded' && hasSlots && !isVisitTask && (
-              <button type="button" className={styles.expandBtn} onClick={() => setExpanded(v => !v)}>
+              <button
+                type="button"
+                className={styles.expandBtn}
+                onClick={() => setExpanded((v) => !v)}
+              >
                 {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 {expanded
                   ? t('common.close')
-                  : t('task.slotsCount', { count: task.respondedSlots!.length, defaultValue: `${task.respondedSlots!.length}개 확인` })}
+                  : t('task.slotsCount', {
+                      count: task.respondedSlots!.length,
+                      defaultValue: `${task.respondedSlots!.length}개 확인`,
+                    })}
               </button>
             )}
             {task.status === 'responded' && isVisitTask && hasWardAssignments && (
-              <button type="button" className={styles.expandBtn} onClick={() => setExpanded(v => !v)}>
+              <button
+                type="button"
+                className={styles.expandBtn}
+                onClick={() => setExpanded((v) => !v)}
+              >
                 {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 {expanded
                   ? t('common.close')
-                  : t('task.wardCount', { count: task.wardAssignments!.length, defaultValue: `${task.wardAssignments!.length}개 배정 확인` })}
+                  : t('task.wardCount', {
+                      count: task.wardAssignments!.length,
+                      defaultValue: `${task.wardAssignments!.length}개 배정 확인`,
+                    })}
               </button>
             )}
 
             {canEdit && (
-              <button type="button" className={styles.actionBtn} onClick={() => setEditing(true)} title="수정">
+              <button
+                type="button"
+                className={styles.actionBtn}
+                onClick={() => setEditing(true)}
+                title={t('common.edit')}
+              >
                 <Pencil size={14} />
               </button>
             )}
@@ -389,7 +480,7 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
                 className={clsx(styles.actionBtn, styles.actionBtnDanger)}
                 onClick={handleExpire}
                 disabled={expiring}
-                title="만료"
+                title={t('taskProgress.expire')}
               >
                 <XCircle size={14} />
               </button>
@@ -415,8 +506,8 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
         {/* Interview/meeting: time slot rows */}
         {expanded && task.respondedSlots && !isVisitTask && (
           <div className={styles.slotsPanel}>
-            <p className={styles.slotsPanelTitle}>회장이 제출한 가능 시간</p>
-            {task.respondedSlots.map(slot => (
+            <p className={styles.slotsPanelTitle}>{t('taskProgress.presidentSubmittedTimes')}</p>
+            {task.respondedSlots.map((slot) => (
               <RespondedSlotRow
                 key={`${slot.date}-${slot.startTime}`}
                 slot={slot}
@@ -430,7 +521,7 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
         {/* Ward visit: ward assignment list + confirm button */}
         {expanded && isVisitTask && task.wardAssignments && (
           <div className={styles.slotsPanel}>
-            <p className={styles.slotsPanelTitle}>회장이 제출한 와드 배정</p>
+            <p className={styles.slotsPanelTitle}>{t('taskProgress.presidentSubmittedWards')}</p>
             {task.wardAssignments.map((a, i) => (
               <div key={i} className={styles.slotRow}>
                 <span className={styles.slotDate}>{dayjs(a.date).format('M/D (ddd)')}</span>
@@ -440,7 +531,7 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
             {task.status === 'responded' && (
               <div className={styles.wardConfirmRow}>
                 <Button onClick={handleConfirmWardVisit} loading={confirming} size="sm">
-                  전체 배정 확정 ({task.wardAssignments.length}개 일정 생성)
+                  {t('taskProgress.confirmAllAssignments', { count: task.wardAssignments.length })}
                 </Button>
               </div>
             )}
@@ -449,7 +540,13 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
       </div>
 
       {editing && <EditTaskModal task={task} onClose={() => setEditing(false)} />}
-      {detailOpen && <TaskDetailModal task={task} presidentName={presidentName} onClose={() => setDetailOpen(false)} />}
+      {detailOpen && (
+        <TaskDetailModal
+          task={task}
+          presidentName={presidentName}
+          onClose={() => setDetailOpen(false)}
+        />
+      )}
     </>
   )
 }
@@ -466,36 +563,45 @@ interface RegionGroupProps {
   onDeleteTask?: (task: Task) => void
 }
 
-function RegionGroup({ regionId, tasks, getUserName, getUnitName, generalSchedules, currentUser, onDeleteTask }: RegionGroupProps) {
+function RegionGroup({
+  regionId,
+  tasks,
+  getUserName,
+  getUnitName,
+  generalSchedules,
+  currentUser,
+  onDeleteTask,
+}: RegionGroupProps) {
   const { t } = useTranslation()
-  const regionName = REGIONS.find(r => r.id === regionId)?.name ?? regionId
-  const responded = tasks.filter(t => t.status === 'responded')
-  const pending = tasks.filter(t => t.status === 'pending')
-  const completed = tasks.filter(t => t.status === 'completed')
-  const expired = tasks.filter(t => t.status === 'expired')
-  const visitResponded = responded.filter(t => t.type === 'select_visit')
-  const visitCompleted = completed.filter(t => t.type === 'select_visit')
+  const regionName = REGIONS.find((r) => r.id === regionId)?.name ?? regionId
+  const responded = tasks.filter((t) => t.status === 'responded')
+  const pending = tasks.filter((t) => t.status === 'pending')
+  const completed = tasks.filter((t) => t.status === 'completed')
+  const expired = tasks.filter((t) => t.status === 'expired')
+  const visitResponded = responded.filter((t) => t.type === 'select_visit')
+  const visitCompleted = completed.filter((t) => t.type === 'select_visit')
 
-  const renderRows = (list: Task[]) => list.map(t => (
-    <TaskRow
-      key={t.id}
-      task={t}
-      presidentName={getUserName(t.assignedTo)}
-      unitName={getUnitName(t.assignedTo)}
-      onDeleteTask={onDeleteTask}
-    />
-  ))
+  const renderRows = (list: Task[]) =>
+    list.map((t) => (
+      <TaskRow
+        key={t.id}
+        task={t}
+        presidentName={getUserName(t.assignedTo)}
+        unitName={getUnitName(t.assignedTo)}
+        onDeleteTask={onDeleteTask}
+      />
+    ))
 
   // Group interview/sacrament tasks by batchId for the ResponseMatrix
   const batchGroups: Record<string, Task[]> = {}
-  const timeTasks = tasks.filter(t => t.type === 'select_interview')
+  const timeTasks = tasks.filter((t) => t.type === 'select_interview')
   for (const t of timeTasks) {
     const key = t.batchId ?? t.id
     if (!batchGroups[key]) batchGroups[key] = []
     batchGroups[key].push(t)
   }
-  const matrixBatches = Object.values(batchGroups).filter(
-    batch => batch.some(t => t.status === 'responded' || t.status === 'completed')
+  const matrixBatches = Object.values(batchGroups).filter((batch) =>
+    batch.some((t) => t.status === 'responded' || t.status === 'completed'),
   )
 
   return (
@@ -504,72 +610,78 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName, generalSchedul
         title={regionName}
         action={
           <div className={styles.regionSummary}>
-            {responded.length > 0 && <Badge variant="default">응답 {responded.length}</Badge>}
-            {pending.length > 0 && <Badge variant="warning">미응답 {pending.length}</Badge>}
-            {completed.length > 0 && <Badge variant="success">완료 {completed.length}</Badge>}
+            {responded.length > 0 && <Badge variant="default">{t('taskProgress.respondedBadge', { count: responded.length })}</Badge>}
+            {pending.length > 0 && <Badge variant="warning">{t('taskProgress.pendingBadge', { count: pending.length })}</Badge>}
+            {completed.length > 0 && <Badge variant="success">{t('taskProgress.completedBadge', { count: completed.length })}</Badge>}
           </div>
         }
       />
       <CardBody>
-        {tasks.length === 0
-          ? <p className={styles.empty}>해당 지역 Task 없음</p>
-          : (
-            <>
-              {/* Response Matrix + Schedule Suggestions for interview batches */}
-              {matrixBatches.map(batch => {
-                const ref = batch[0]
-                const title = ref.title ?? t(`task.type.${ref.type}`, { defaultValue: ref.type })
-                const hasResponded = batch.some(t => t.status === 'responded' || t.status === 'completed')
-                return (
-                  <div key={ref.batchId ?? ref.id} className={styles.statusSection}>
-                    <p className={styles.statusLabel}>
-                      {title} 응답 현황 ({batch.filter(t => t.status === 'responded' || t.status === 'completed').length}/{batch.length})
-                    </p>
-                    <ResponseMatrix
-                      tasks={batch}
-                      getPresidentName={getUserName}
-                    />
-                    {hasResponded && (
-                      <div className={styles.suggestionsWrap}>
-                        <ScheduleSuggestions
-                          tasks={batch}
-                          getPresidentName={getUserName}
-                          generalSchedules={generalSchedules}
-                          currentUser={currentUser}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+        {tasks.length === 0 ? (
+          <p className={styles.empty}>{t('taskProgress.emptyRegion')}</p>
+        ) : (
+          <>
+            {/* Response Matrix + Schedule Suggestions for interview batches */}
+            {matrixBatches.map((batch) => {
+              const ref = batch[0]
+              const title = ref.title ?? t(`task.type.${ref.type}`, { defaultValue: ref.type })
+              const hasResponded = batch.some(
+                (t) => t.status === 'responded' || t.status === 'completed',
+              )
+              return (
+                <div key={ref.batchId ?? ref.id} className={styles.statusSection}>
+                  <p className={styles.statusLabel}>
+                    {t('taskProgress.responseStatus', {
+                      title,
+                      responded: batch.filter(
+                        (b) => b.status === 'responded' || b.status === 'completed',
+                      ).length,
+                      total: batch.length,
+                    })}
+                  </p>
+                  <ResponseMatrix tasks={batch} getPresidentName={getUserName} />
+                  {hasResponded && (
+                    <div className={styles.suggestionsWrap}>
+                      <ScheduleSuggestions
+                        tasks={batch}
+                        getPresidentName={getUserName}
+                        generalSchedules={generalSchedules}
+                        currentUser={currentUser}
+                      />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
 
-              {visitResponded.length > 0 && (
-                <div className={styles.statusSection}>
-                  <p className={styles.statusLabel}>확정 대기 ({visitResponded.length})</p>
-                  {renderRows(visitResponded)}
-                </div>
-              )}
-              {pending.length > 0 && (
-                <div className={styles.statusSection}>
-                  <p className={styles.statusLabel}>미응답 ({pending.length})</p>
-                  {renderRows(pending)}
-                </div>
-              )}
-              {visitCompleted.length > 0 && (
-                <div className={styles.statusSection}>
-                  <p className={styles.statusLabel}>완료 ({visitCompleted.length})</p>
-                  {renderRows(visitCompleted)}
-                </div>
-              )}
-              {expired.length > 0 && (
-                <div className={styles.statusSection}>
-                  <p className={clsx(styles.statusLabel, styles.statusLabelExpired)}>만료 ({expired.length})</p>
-                  {renderRows(expired)}
-                </div>
-              )}
-            </>
-          )
-        }
+            {visitResponded.length > 0 && (
+              <div className={styles.statusSection}>
+                <p className={styles.statusLabel}>{t('taskProgress.awaitingConfirm', { count: visitResponded.length })}</p>
+                {renderRows(visitResponded)}
+              </div>
+            )}
+            {pending.length > 0 && (
+              <div className={styles.statusSection}>
+                <p className={styles.statusLabel}>{t('taskProgress.noResponse', { count: pending.length })}</p>
+                {renderRows(pending)}
+              </div>
+            )}
+            {visitCompleted.length > 0 && (
+              <div className={styles.statusSection}>
+                <p className={styles.statusLabel}>{t('taskProgress.completedCount', { count: visitCompleted.length })}</p>
+                {renderRows(visitCompleted)}
+              </div>
+            )}
+            {expired.length > 0 && (
+              <div className={styles.statusSection}>
+                <p className={clsx(styles.statusLabel, styles.statusLabelExpired)}>
+                  {t('taskProgress.expiredCount', { count: expired.length })}
+                </p>
+                {renderRows(expired)}
+              </div>
+            )}
+          </>
+        )}
       </CardBody>
     </Card>
   )
@@ -579,27 +691,30 @@ function RegionGroup({ regionId, tasks, getUserName, getUnitName, generalSchedul
 
 export function TaskProgress() {
   const { t } = useTranslation()
+  useTopBar({ subtext: t('admin.taskProgress'), helpInfoKey: 'pageHelp.taskProgress' })
   const navigate = useNavigate()
   const user = useAtomValue(authUserAtom)!
   // Seventy: only their assigned tasks. exec_secretary: their assigned seventy's tasks. Admin: all tasks.
   const { tasks, loading } = useAllTasks(
-    user.role === 'seventy' ? user.uid :
-    user.role === 'exec_secretary' ? (user.assignedSeventyUid ?? undefined) :
-    undefined
+    user.role === 'seventy'
+      ? user.uid
+      : user.role === 'exec_secretary'
+        ? (user.assignedSeventyUid ?? undefined)
+        : undefined,
   )
   const { users } = useUsers()
   const { generalSchedules } = useGeneralSchedules()
   const { pendingIds: pendingDeleteTaskIds, scheduleDelete } = useDeleteWithUndo()
   const canDeleteTasks = user.role === 'admin' || user.role === 'exec_secretary'
 
-  const getUserName = (uid: string) => users.find(u => u.uid === uid)?.name ?? uid
+  const getUserName = (uid: string) => users.find((u) => u.uid === uid)?.name ?? uid
   const getUnitName = (uid: string) => {
-    const president = users.find(u => u.uid === uid)
-    const unit = ALL_UNITS.find(u => u.id === president?.unitId)
+    const president = users.find((u) => u.uid === uid)
+    const unit = ALL_UNITS.find((u) => u.id === president?.unitId)
     return unit?.name.ko ?? '-'
   }
 
-  const visibleTasks = tasks.filter(t => !pendingDeleteTaskIds.has(t.id))
+  const visibleTasks = tasks.filter((t) => !pendingDeleteTaskIds.has(t.id))
 
   const handleDeleteTask = (task: Task) => {
     scheduleDelete(task.id, () => deleteTask(task.id), t('common.deleted'))
@@ -613,69 +728,75 @@ export function TaskProgress() {
     return acc
   }, {})
 
-  const totalResponded = visibleTasks.filter(t => t.status === 'responded').length
-  const totalPending = visibleTasks.filter(t => t.status === 'pending').length
-  const totalCompleted = visibleTasks.filter(t => t.status === 'completed').length
-  const totalExpired = visibleTasks.filter(t => t.status === 'expired').length
+  const totalResponded = visibleTasks.filter((t) => t.status === 'responded').length
+  const totalPending = visibleTasks.filter((t) => t.status === 'pending').length
+  const totalCompleted = visibleTasks.filter((t) => t.status === 'completed').length
+  const totalExpired = visibleTasks.filter((t) => t.status === 'expired').length
 
   // Order regions by REGIONS constant order, put unknown at end
   const regionIds = [
-    ...REGIONS.map(r => r.id).filter(id => tasksByRegion[id]),
-    ...Object.keys(tasksByRegion).filter(id => !REGIONS.find(r => r.id === id)),
+    ...REGIONS.map((r) => r.id).filter((id) => tasksByRegion[id]),
+    ...Object.keys(tasksByRegion).filter((id) => !REGIONS.find((r) => r.id === id)),
   ]
 
   return (
-    <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} subtext={t('admin.taskProgress')} helpInfoKey="pageHelp.taskProgress" />}>
-      <div className={styles.page}>
-        {(user.role === 'admin' || user.role === 'exec_secretary') && (
-          <div className={styles.pageActions}>
-            <Button variant="primary" size="sm" onClick={() => navigate('/admin/visit-planner')}>
-              + {t('task.createNew')}
-            </Button>
-          </div>
-        )}
-        <div className={styles.summary}>
-          <div className={styles.summaryItem}>
-            <span className={clsx(styles.summaryNum, styles.summaryNumResponded)}>{totalResponded}</span>
-            <span className={styles.summaryLabel}>확정 대기</span>
-          </div>
-          <div className={styles.summaryItem}>
-            <span className={styles.summaryNum}>{totalPending}</span>
-            <span className={styles.summaryLabel}>미응답</span>
-          </div>
-          <div className={styles.summaryItem}>
-            <span className={clsx(styles.summaryNum, styles.summaryNumDone)}>{totalCompleted}</span>
-            <span className={styles.summaryLabel}>완료</span>
-          </div>
-          <div className={styles.summaryItem}>
-            <span className={clsx(styles.summaryNum, styles.summaryNumExpired)}>{totalExpired}</span>
-            <span className={styles.summaryLabel}>만료</span>
-          </div>
+    <div className={styles.page}>
+      {(user.role === 'admin' || user.role === 'exec_secretary') && (
+        <div className={styles.pageActions}>
+          <Button variant="primary" size="sm" onClick={() => navigate('/admin/visit-planner')}>
+            + {t('task.createNew')}
+          </Button>
         </div>
-
-        {loading ? (
-          <Card>
-            <CardBody>
-              {[1,2,3].map(i => <Skeleton key={i} height="56px" className={styles.skeletonRow} />)}
-            </CardBody>
-          </Card>
-        ) : visibleTasks.length === 0 ? (
-          <Card><CardBody><p className={styles.empty}>생성된 Task가 없습니다.</p></CardBody></Card>
-        ) : (
-          regionIds.map(regionId => (
-            <RegionGroup
-              key={regionId}
-              regionId={regionId}
-              tasks={tasksByRegion[regionId]}
-              getUserName={getUserName}
-              getUnitName={getUnitName}
-              generalSchedules={generalSchedules}
-              currentUser={user}
-              onDeleteTask={canDeleteTasks ? handleDeleteTask : undefined}
-            />
-          ))
-        )}
+      )}
+      <div className={styles.summary}>
+        <div className={styles.summaryItem}>
+          <span className={clsx(styles.summaryNum, styles.summaryNumResponded)}>
+            {totalResponded}
+          </span>
+          <span className={styles.summaryLabel}>{t('taskProgress.summaryAwaiting')}</span>
+        </div>
+        <div className={styles.summaryItem}>
+          <span className={styles.summaryNum}>{totalPending}</span>
+          <span className={styles.summaryLabel}>{t('taskProgress.summaryPending')}</span>
+        </div>
+        <div className={styles.summaryItem}>
+          <span className={clsx(styles.summaryNum, styles.summaryNumDone)}>{totalCompleted}</span>
+          <span className={styles.summaryLabel}>{t('common.complete')}</span>
+        </div>
+        <div className={styles.summaryItem}>
+          <span className={clsx(styles.summaryNum, styles.summaryNumExpired)}>{totalExpired}</span>
+          <span className={styles.summaryLabel}>{t('taskProgress.expire')}</span>
+        </div>
       </div>
-    </AppShell>
+
+      {loading ? (
+        <Card>
+          <CardBody>
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} height="56px" className={styles.skeletonRow} />
+            ))}
+          </CardBody>
+        </Card>
+      ) : visibleTasks.length === 0 ? (
+        <Card>
+          <CardBody>
+            <p className={styles.empty}>{t('taskProgress.emptyTasks')}</p>
+          </CardBody>
+        </Card>
+      ) : (
+        regionIds.map((regionId) => (
+          <RegionGroup
+            key={regionId}
+            regionId={regionId}
+            tasks={tasksByRegion[regionId]}
+            getUserName={getUserName}
+            getUnitName={getUnitName}
+            generalSchedules={generalSchedules}
+            currentUser={user}
+            onDeleteTask={canDeleteTasks ? handleDeleteTask : undefined}
+          />
+        ))
+      )}
+    </div>
   )
 }
