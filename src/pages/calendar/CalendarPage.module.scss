@@ -48,6 +48,10 @@
   text-align: center;
 }
 
+.listSkeleton {
+  margin-bottom: $space-2;
+}
+
 .headerActions {
   display: flex;
   gap: $space-2;

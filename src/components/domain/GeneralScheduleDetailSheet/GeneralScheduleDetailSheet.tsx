@@ -10,7 +10,6 @@ import { Button, DeleteConfirmSheet } from '@/components/ui'
 import type { GeneralSchedule, Schedule } from '@/types'
 import styles from './GeneralScheduleDetailSheet.module.scss'
 
-const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토']
 const CATEGORY_ICONS = {
   conference: Building2,
   fasting: MoonStar,
@@ -23,8 +22,8 @@ interface GeneralScheduleDetailSheetProps {
   currentUid: string
   currentRole: string
   onClose: () => void
-  onAttend: () => void
-  onCancelAttend: () => void
+  onAttend: () => void | Promise<void>
+  onCancelAttend: () => void | Promise<void>
   onEdit: () => void
   onDelete: () => void
 }
@@ -43,6 +42,7 @@ export function GeneralScheduleDetailSheet({
   const { t } = useTranslation()
   const isMobile = useIsMobile()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [attendPending, setAttendPending] = useState(false)
 
   if (!event) return null
 
@@ -61,10 +61,10 @@ export function GeneralScheduleDetailSheet({
         </div>
         {canManage && (
           <div className={styles.actions}>
-            <button type="button" className={styles.actionBtn} onClick={onEdit} aria-label="편집">
+            <button type="button" className={styles.actionBtn} onClick={onEdit} aria-label={t('common.edit')}>
               <Pencil size={15} />
             </button>
-            <button type="button" className={clsx(styles.actionBtn, styles.deleteBtn)} onClick={() => setShowDeleteConfirm(true)} aria-label="삭제">
+            <button type="button" className={clsx(styles.actionBtn, styles.deleteBtn)} onClick={() => setShowDeleteConfirm(true)} aria-label={t('common.delete')}>
               <Trash2 size={15} />
             </button>
           </div>
@@ -76,14 +76,14 @@ export function GeneralScheduleDetailSheet({
           {t(`generalSchedule.category.${event.category}`)}
         </span>
         {event.isPublic
-          ? <span className={styles.publicBadge}><Globe size={11} /> 공개</span>
-          : <span className={styles.privateBadge}><GlobeLock size={11} /> 비공개</span>
+          ? <span className={styles.publicBadge}><Globe size={11} /> {t('generalSchedule.public')}</span>
+          : <span className={styles.privateBadge}><GlobeLock size={11} /> {t('generalSchedule.private')}</span>
         }
       </div>
 
       <div className={styles.infoRow}>
         <CalendarDays size={14} className={styles.infoIcon} />
-        <span>{date.format('YYYY년 M월 D일')} ({DOW_LABELS[date.day()]})</span>
+        <span>{date.format(t('generalSchedule.dateFormat'))}</span>
       </div>
       {event.startTime && event.endTime && (
         <div className={styles.infoRow}>
@@ -105,7 +105,7 @@ export function GeneralScheduleDetailSheet({
           <div className={styles.attendeesList}>
             {attendances.map(a => (
               <span key={a.id} className={styles.attendeeChip}>
-                {a.seventyUid === currentUid ? `${a.customTitle ?? a.seventyUid} (나)` : (a.customTitle ?? a.seventyUid)}
+                {a.seventyUid === currentUid ? `${a.customTitle ?? a.seventyUid} (${t('common.me')})` : (a.customTitle ?? a.seventyUid)}
               </span>
             ))}
           </div>
@@ -116,7 +116,16 @@ export function GeneralScheduleDetailSheet({
         <div className={styles.attendRow}>
           <Button
             variant={isAttending ? 'secondary' : 'primary'}
-            onClick={isAttending ? onCancelAttend : onAttend}
+            loading={attendPending}
+            onClick={async () => {
+              // block double-taps while the mutation is in flight
+              setAttendPending(true)
+              try {
+                await (isAttending ? onCancelAttend() : onAttend())
+              } finally {
+                setAttendPending(false)
+              }
+            }}
           >
             {isAttending ? (
               <><Check size={14} /> {t('generalSchedule.attending')} · {t('generalSchedule.cancelAttend')}</>

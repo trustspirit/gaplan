@@ -10,7 +10,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { createVisitPlan } from '@/services/visitPlanService'
 import { ROLE } from '@/constants/roles'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Button, Input, Select, Badge } from '@/components/ui'
+import { Card, CardHeader, CardBody, Button, Input, Select, Badge, Skeleton } from '@/components/ui'
 import styles from './VisitPlanListPage.module.scss'
 
 export function VisitPlanListPage() {
@@ -62,7 +62,7 @@ export function VisitPlanListPage() {
         <Card>
           <CardHeader title={t('visitPlan.listTitle')} />
           <CardBody>
-            {loading && <p className={styles.empty}>…</p>}
+            {loading && [1, 2, 3].map(i => <Skeleton key={i} height="52px" />)}
             {!loading && plans.length === 0 && <p className={styles.empty}>{t('visitPlan.empty')}</p>}
             {plans.map(p => {
               const seventy = seventies.find(s => s.uid === p.seventyUid)

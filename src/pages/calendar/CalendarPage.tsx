@@ -13,7 +13,7 @@ import { manualCalendarSync, deleteScheduleViaCF } from '@/services/scheduleServ
 import { registerAttendance, cancelAttendance, updateGeneralSchedule } from '@/services/generalScheduleService'
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Button } from '@/components/ui'
+import { Card, CardHeader, CardBody, Button, Skeleton } from '@/components/ui'
 import type { Schedule, GeneralSchedule } from '@/types'
 import { CalendarView } from '@/components/domain/CalendarView/CalendarView'
 import { ScheduleItem } from '@/components/domain/ScheduleItem/ScheduleItem'
@@ -54,7 +54,7 @@ export function CalendarPage() {
       : user.role === 'exec_secretary'
         ? { seventyUid: user.assignedSeventyUid ?? '' }
         : {}
-  const { schedules } = useSchedules(filters)
+  const { schedules, loading: schedulesLoading } = useSchedules(filters)
   const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
 
   // Toggle: clicking the same date again deselects it
@@ -216,6 +216,11 @@ export function CalendarPage() {
               />
               <CardBody>
                 {(() => {
+                  if (schedulesLoading) {
+                    return [1, 2, 3].map(i => (
+                      <Skeleton key={i} height="56px" className={styles.listSkeleton} />
+                    ))
+                  }
                   const generalInRange = generalSchedules.filter(gs =>
                     selectedDate ? gs.date === selectedDate : (gs.date >= range.start && gs.date <= range.end)
                   )

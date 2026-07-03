@@ -279,7 +279,12 @@ export default function PublicSchedulePage() {
   if (fetchError) {
     return (
       <div className={styles.page}>
-        <div className={styles.errorBox}>{t('public.fetchError')}</div>
+        <div className={styles.errorBox}>
+          <span>{t('public.fetchError')}</span>
+          <button type="button" className={styles.errorRetryBtn} onClick={handleRefresh} disabled={refreshing}>
+            {refreshing ? t('common.loading') : t('common.retry')}
+          </button>
+        </div>
       </div>
     )
   }

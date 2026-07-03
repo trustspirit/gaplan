@@ -161,7 +161,9 @@
     "deleteFailed": "Failed to delete.",
     "undo": "Undo",
     "selectPlaceholder": "Select...",
-    "discardChanges": "You have unsaved changes. Discard them?"
+    "discardChanges": "You have unsaved changes. Discard them?",
+    "loadFailed": "Failed to load.",
+    "me": "me"
   },
   "scope": {
     "myAssigned": "My Assigned",
@@ -538,7 +540,10 @@
     "errorTitleDateRequired": "Title and date are required.",
     "targetRegionLabel": "Target regions",
     "targetUnitLabel": "Target stakes/districts",
-    "targetHint": "(none selected = all)"
+    "targetHint": "(none selected = all)",
+    "public": "Public",
+    "private": "Private",
+    "dateFormat": "MMM D, YYYY (ddd)"
   },
   "leaders": {
     "searchPlaceholder": "Search by name or unit",

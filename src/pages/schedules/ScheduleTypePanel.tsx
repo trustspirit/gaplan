@@ -11,7 +11,7 @@ import { useSchedulePageData } from '@/hooks/useSchedulePageData'
 import { useEffectiveScope } from '@/hooks/useEffectiveScope'
 import { deleteScheduleViaCF } from '@/services/scheduleService'
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
-import { Button } from '@/components/ui'
+import { Button, Skeleton } from '@/components/ui'
 import { EditScheduleModal } from '@/components/domain/EditScheduleModal/EditScheduleModal'
 import { ScheduleFormModal } from '@/components/domain/ScheduleFormModal/ScheduleFormModal'
 import { ScheduleItem } from '@/components/domain/ScheduleItem/ScheduleItem'
@@ -72,7 +72,7 @@ export function ScheduleTypePanel({
           ? { seventyUid: user.assignedSeventyUid ?? '' }
           : {}
 
-  const { schedules: rawSchedules } = useSchedules(filters)
+  const { schedules: rawSchedules, loading: schedulesLoading } = useSchedules(filters)
   const { getUnitName } = useUnits()
 
   const schedules = (filterRegion != null
@@ -125,17 +125,17 @@ export function ScheduleTypePanel({
 
         <div className={styles.stats}>
           <div className={styles.statCard}>
-            <span className={styles.statValue}>{thisMonthCount}</span>
+            <span className={styles.statValue}>{schedulesLoading ? '–' : thisMonthCount}</span>
             <span className={styles.statLabel}>{t(`${translationPrefix}.thisMonth`)}</span>
           </div>
           <div className={styles.statDivider} />
           <div className={styles.statCard}>
-            <span className={styles.statValue}>{upcomingCount}</span>
+            <span className={styles.statValue}>{schedulesLoading ? '–' : upcomingCount}</span>
             <span className={styles.statLabel}>{t(`${translationPrefix}.upcoming`)}</span>
           </div>
           <div className={styles.statDivider} />
           <div className={styles.statCard}>
-            <span className={styles.statValue}>{completedCount}</span>
+            <span className={styles.statValue}>{schedulesLoading ? '–' : completedCount}</span>
             <span className={styles.statLabel}>{t(`${translationPrefix}.completed`)}</span>
           </div>
         </div>
@@ -155,7 +155,11 @@ export function ScheduleTypePanel({
         </div>
 
         <div className={styles.content}>
-          {orderedKeys.length === 0 ? (
+          {schedulesLoading ? (
+            <div className={styles.itemList}>
+              {[1, 2, 3].map(i => <Skeleton key={i} height="64px" />)}
+            </div>
+          ) : orderedKeys.length === 0 ? (
             <div className={styles.empty}>
               <EmptyIcon size={32} className={styles.emptyIcon} />
               <p className={styles.emptyTitle}>{t(`${translationPrefix}.empty`)}</p>
@@ -168,7 +172,7 @@ export function ScheduleTypePanel({
               const items = grouped.get(monthKey)!
               return (
                 <div key={monthKey} className={styles.monthGroup}>
-                  <h3 className={styles.monthLabel}>{dayjs(monthKey).format('YYYY년 M월')}</h3>
+                  <h3 className={styles.monthLabel}>{dayjs(monthKey).format(t('calendar.monthTitleFormat'))}</h3>
                   <div className={styles.itemList}>
                     {items.map((schedule) => (
                       <ScheduleItem

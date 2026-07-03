@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { useVisitStats } from '@/hooks/useVisitStats'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Button } from '@/components/ui'
+import { Card, CardHeader, CardBody, Button, Skeleton } from '@/components/ui'
 import { StatsFilterBar } from '@/components/domain/stats/StatsFilterBar'
 import { VisitCountBarChart } from '@/components/domain/stats/VisitCountBarChart'
 import { MonthlyTrendChart } from '@/components/domain/stats/MonthlyTrendChart'
@@ -52,7 +52,14 @@ export function StatsPage() {
         />
 
         {loading ? (
-          <p className={styles.loading}>{t('stats.loading')}</p>
+          // skeletons match the chart grid so content doesn't jump on load
+          <div className={styles.grid}>
+            {[1, 2, 3, 4].map(i => (
+              <Card key={i}>
+                <CardBody><Skeleton height="280px" /></CardBody>
+              </Card>
+            ))}
+          </div>
         ) : error ? (
           <div className={styles.errorBanner} role="alert">
             <span>{t('stats.loadFailed')}</span>

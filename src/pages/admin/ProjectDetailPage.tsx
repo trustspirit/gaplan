@@ -23,6 +23,8 @@ export function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null)
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
   const [title, setTitle] = useState('')
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState<ProjectStatus>('active')
@@ -30,6 +32,8 @@ export function ProjectDetailPage() {
 
   useEffect(() => {
     if (!id) return
+    setLoading(true)
+    setLoadError(false)
     Promise.all([
       getProject(id),
       getDocs(query(collection(db, 'schedules'), where('projectId', '==', id))),
@@ -38,8 +42,11 @@ export function ProjectDetailPage() {
       if (p) { setTitle(p.title); setNotes(p.notes ?? ''); setStatus(p.status) }
       setSchedules(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Schedule))
       setLoading(false)
+    }).catch(() => {
+      setLoadError(true)
+      setLoading(false)
     })
-  }, [id])
+  }, [id, reloadKey])
 
   const handleSave = async () => {
     if (!project) return
@@ -47,7 +54,7 @@ export function ProjectDetailPage() {
       await updateProject(project.id, { title: title.trim(), notes: notes.trim(), status })
       toast.success(t('project.save'))
     } catch {
-      toast.error('저장에 실패했습니다.')
+      toast.error(t('common.saveFailed'))
     }
   }
 
@@ -61,6 +68,16 @@ export function ProjectDetailPage() {
 
   if (loading) {
     return <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} />}><div className={styles.center}><Spinner /></div></AppShell>
+  }
+  if (loadError) {
+    return (
+      <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} />}>
+        <div className={styles.center}>
+          <p>{t('common.loadFailed')}</p>
+          <Button size="sm" onClick={() => setReloadKey(k => k + 1)}>{t('common.retry')}</Button>
+        </div>
+      </AppShell>
+    )
   }
   if (!project) {
     return <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} />}><div className={styles.center}>{t('project.empty')}</div></AppShell>

@@ -31,6 +31,8 @@ export function VisitPlanBoardPage() {
 
   const [plan, setPlan] = useState<VisitPlan | null>(null)
   const [loadingPlan, setLoadingPlan] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
   const [publishing, setPublishing] = useState(false)
   const [itemsSaving, setItemsSaving] = useState(false)
   const [savingProject, setSavingProject] = useState(false)
@@ -41,8 +43,12 @@ export function VisitPlanBoardPage() {
 
   useEffect(() => {
     if (!planId) return
-    getVisitPlan(planId).then(p => { setPlan(p); setLoadingPlan(false) })
-  }, [planId])
+    setLoadingPlan(true)
+    setLoadError(false)
+    getVisitPlan(planId)
+      .then(p => { setPlan(p); setLoadingPlan(false) })
+      .catch(() => { setLoadError(true); setLoadingPlan(false) })
+  }, [planId, reloadKey])
 
   const items = useMemo(() => plan?.items ?? [], [plan?.items])
   const { loading: ctxLoading, staleWards, lastVisitByWard, balance, generalSchedules } =
@@ -139,6 +145,16 @@ export function VisitPlanBoardPage() {
 
   if (loadingPlan) {
     return <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} />}><div className={styles.center}><Spinner /></div></AppShell>
+  }
+  if (loadError) {
+    return (
+      <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} />}>
+        <div className={styles.center}>
+          <p>{t('common.loadFailed')}</p>
+          <Button size="sm" onClick={() => setReloadKey(k => k + 1)}>{t('common.retry')}</Button>
+        </div>
+      </AppShell>
+    )
   }
   if (!plan) {
     return <AppShell role={user.role} name={user.name} topBar={<TopBar name={user.name} />}><div className={styles.center}>{t('visitPlan.empty')}</div></AppShell>

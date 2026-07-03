@@ -7,7 +7,7 @@ import { authUserAtom } from '@/store/authAtom'
 import { useProjects } from '@/hooks/useProjects'
 import { createProject, updateProject } from '@/services/projectService'
 import { AppShell, TopBar } from '@/components/layout'
-import { Card, CardHeader, CardBody, Button, Input, Badge } from '@/components/ui'
+import { Card, CardHeader, CardBody, Button, Input, Badge, Skeleton } from '@/components/ui'
 import type { ProjectStatus } from '@/types'
 import styles from './ProjectListPage.module.scss'
 
@@ -61,7 +61,7 @@ export function ProjectListPage() {
         <Card>
           <CardHeader title={t('project.listTitle')} />
           <CardBody>
-            {loading && <p className={styles.empty}>…</p>}
+            {loading && [1, 2, 3].map(i => <Skeleton key={i} height="52px" />)}
             {!loading && projects.length === 0 && <p className={styles.empty}>{t('project.empty')}</p>}
             {projects.map(p => (
               <div key={p.id} className={styles.row}>

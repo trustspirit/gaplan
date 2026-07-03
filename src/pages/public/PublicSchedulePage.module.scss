@@ -25,7 +25,26 @@
 }
 
 .errorBox {
+  flex-direction: column;
+  gap: $space-3;
   color: $color-danger;
+}
+
+.errorRetryBtn {
+  min-height: 44px;
+  padding: $space-2 $space-5;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
 }
 
 // ─── Header ────────────────────────────────────────────────────────────────
