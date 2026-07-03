@@ -5,7 +5,8 @@ import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
 import type { Schedule } from '@/types'
 import { useUnits } from '@/hooks/useUnits'
-import { DeleteConfirmSheet } from '@/components/ui'
+import { useIsMobile } from '@/hooks/useIsMobile'
+import { DeleteConfirmSheet, BottomSheet } from '@/components/ui'
 import { DOW_LABELS } from '@/utils/date'
 import styles from './ScheduleItem.module.scss'
 
@@ -62,14 +63,17 @@ export function ScheduleItem({
 }: ScheduleItemProps) {
   const { t } = useTranslation()
   const { getWardName } = useUnits()
+  const isMobile = useIsMobile()
   const [menuOpen, setMenuOpen] = useState(false)
+  // lazy-mount flag so closed rows don't each carry a hidden portal
+  const [sheetEverOpen, setSheetEverOpen] = useState(false)
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null)
   const [notesOpen, setNotesOpen] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
-    if (!menuOpen) return
+    if (!menuOpen || isMobile) return
     const close = () => setMenuOpen(false)
     window.addEventListener('scroll', close, true)
     window.addEventListener('resize', close)
@@ -180,26 +184,46 @@ export function ScheduleItem({
               className={styles.kebabBtn}
               onClick={e => {
                 e.stopPropagation()
+                if (isMobile) {
+                  setSheetEverOpen(true)
+                  setMenuOpen(prev => !prev)
+                  return
+                }
                 if (!menuOpen && btnRef.current) {
                   const rect = btnRef.current.getBoundingClientRect()
                   setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
                 }
                 setMenuOpen(prev => !prev)
               }}
-              aria-label="더보기"
+              aria-label={t('common.more')}
             >
               <MoreVertical size={16} />
             </button>
-            {menuOpen && menuPos && (
+            {!isMobile && menuOpen && menuPos && (
               <>
                 <div className={styles.menuOverlay} onClick={() => setMenuOpen(false)} />
                 <div className={styles.menu} style={{ top: menuPos.top, right: menuPos.right }}>
-                  <button type="button" onClick={() => { setMenuOpen(false); onEdit?.() }}>편집</button>
+                  <button type="button" onClick={() => { setMenuOpen(false); onEdit?.() }}>{t('common.edit')}</button>
                   {onDelete && (
-                    <button type="button" className={styles.deleteMenuItem} onClick={() => { setMenuOpen(false); setShowDeleteConfirm(true) }}>삭제</button>
+                    <button type="button" className={styles.deleteMenuItem} onClick={() => { setMenuOpen(false); setShowDeleteConfirm(true) }}>{t('common.delete')}</button>
                   )}
                 </div>
               </>
+            )}
+            {isMobile && (sheetEverOpen || menuOpen) && (
+              // mobile: actions in a bottom sheet instead of a scroll-fragile popover
+              <BottomSheet open={menuOpen} onClose={() => setMenuOpen(false)} title={deleteDescription}>
+                <div className={styles.sheetActions}>
+                  <button type="button" className={styles.sheetActionBtn} onClick={() => { setMenuOpen(false); onEdit?.() }}>
+                    {t('common.edit')}
+                  </button>
+                  {onDelete && (
+                    <button type="button" className={clsx(styles.sheetActionBtn, styles.sheetActionDanger)} onClick={() => { setMenuOpen(false); setShowDeleteConfirm(true) }}>
+                      {t('common.delete')}
+                    </button>
+                  )}
+                </div>
+              </BottomSheet>
             )}
           </div>
         )}

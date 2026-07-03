@@ -431,3 +431,27 @@
     text-decoration: underline;
   }
 }
+
+// mobile kebab actions rendered inside a BottomSheet
+.sheetActions {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.sheetActionBtn {
+  min-height: 48px;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+}
+
+.sheetActionDanger {
+  color: $color-danger;
+  border-color: $color-highlight-danger;
+  background: $color-highlight-danger;
+}
