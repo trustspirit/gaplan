@@ -191,8 +191,9 @@ export function ScheduleFormModal({
         wardId = targetSelect.slice('ward:'.length)
       } else if (targetSelect === 'other') targetKind = 'other'
     }
-    // interview는 대상 하나는 반드시 지정 (빈 접견 방지)
-    if (type === 'interview') {
+    // 접견/모임은 대상 하나는 반드시 지정 (빈 접견 방지 + 방문 전 모임 리마인더가
+    // targetKind/wardId로 매칭되므로 모임도 구조화 대상을 필수로 받는다)
+    if (type === 'interview' || type === 'meeting') {
       if (!targetKind) {
         setError(t('schedule.errorTargetRequired'))
         return
