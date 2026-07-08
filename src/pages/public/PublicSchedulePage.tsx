@@ -12,7 +12,9 @@ import {
   CalendarPlus,
   FileText,
   ChevronUp,
+  ChevronDown,
   UserCheck,
+  User,
 } from 'lucide-react'
 import { ALL_UNITS, WARDS } from '@/constants/regions'
 import {
@@ -97,12 +99,25 @@ function NotesText({
   return <p className={textClass}>{parts}</p>
 }
 
-function buildSubscribeUrls(token: string) {
+// Outlook's "add calendar from web" endpoint expects a plain https ICS URL
+// (not the webcal:// scheme). The host differs by account type:
+// personal accounts (Hotmail/Live/Outlook.com) → outlook.live.com,
+// work/school Microsoft 365 accounts → outlook.office.com. The user picks which
+// via the subscribe menu, so this just assembles the deep link for a given host.
+function buildOutlookUrl(host: string, icsHttps: string, name: string): string {
+  const url = encodeURIComponent(icsHttps)
+  const label = encodeURIComponent(name)
+  return `https://${host}/calendar/0/addfromweb?url=${url}&name=${label}`
+}
+
+function buildSubscribeUrls(token: string, outlookName: string) {
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string
   const icsHttps = `https://asia-northeast3-${projectId}.cloudfunctions.net/publicScheduleIcs?token=${token}`
   const icsWebcal = icsHttps.replace('https://', 'webcal://')
   const googleUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(icsWebcal)}`
-  return { icsWebcal, googleUrl }
+  const outlookPersonalUrl = buildOutlookUrl('outlook.live.com', icsHttps, outlookName)
+  const outlookWorkUrl = buildOutlookUrl('outlook.office.com', icsHttps, outlookName)
+  return { icsWebcal, googleUrl, outlookPersonalUrl, outlookWorkUrl }
 }
 
 export default function PublicSchedulePage() {
@@ -117,6 +132,7 @@ export default function PublicSchedulePage() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
   const [showSubscribeMenu, setShowSubscribeMenu] = useState(false)
+  const [showOutlookChoice, setShowOutlookChoice] = useState(false)
   const [openNotes, setOpenNotes] = useState<Set<string>>(new Set())
   const todayMarkerRef = useRef<HTMLDivElement | null>(null)
   const autoScrolledToTodayRef = useRef(false)
@@ -249,7 +265,7 @@ export default function PublicSchedulePage() {
     })),
     today,
   )
-  const { icsWebcal, googleUrl } = buildSubscribeUrls(token ?? '')
+  const { icsWebcal, googleUrl, outlookPersonalUrl, outlookWorkUrl } = buildSubscribeUrls(token ?? '', title)
 
   const typeLabel = (type: string) => {
     if (type === 'ward_visit') return t('public.typeVisit')
@@ -503,7 +519,7 @@ export default function PublicSchedulePage() {
       </main>
 
       {showSubscribeMenu && (
-        <div className={styles.fabBackdrop} onClick={() => setShowSubscribeMenu(false)} />
+        <div className={styles.fabBackdrop} onClick={() => { setShowSubscribeMenu(false); setShowOutlookChoice(false) }} />
       )}
       <div className={styles.fabArea}>
         {showSubscribeMenu && (
@@ -526,11 +542,50 @@ export default function PublicSchedulePage() {
               <CalendarDays size={15} />
               {t('public.googleCalendar')}
             </a>
+            <button
+              type="button"
+              className={styles.subscribeOption}
+              onClick={() => setShowOutlookChoice(v => !v)}
+              aria-expanded={showOutlookChoice}
+            >
+              <CalendarDays size={15} />
+              {t('public.outlookCalendar')}
+              {showOutlookChoice
+                ? <ChevronUp size={14} style={{ marginLeft: 'auto' }} />
+                : <ChevronDown size={14} style={{ marginLeft: 'auto' }} />}
+            </button>
+            {showOutlookChoice && (
+              <>
+                <a
+                  href={outlookPersonalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.subscribeSubOption}
+                  onClick={() => setShowSubscribeMenu(false)}
+                >
+                  <User size={14} />
+                  {t('public.outlookPersonal')}
+                </a>
+                <a
+                  href={outlookWorkUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.subscribeSubOption}
+                  onClick={() => setShowSubscribeMenu(false)}
+                >
+                  <Building2 size={14} />
+                  {t('public.outlookWork')}
+                </a>
+              </>
+            )}
           </div>
         )}
         <button
           className={styles.fab}
-          onClick={() => setShowSubscribeMenu((v) => !v)}
+          onClick={() => {
+            setShowSubscribeMenu((v) => !v)
+            setShowOutlookChoice(false)
+          }}
           aria-label={t('public.subscribeLabel')}
           aria-expanded={showSubscribeMenu}
         >
