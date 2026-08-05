@@ -32,6 +32,7 @@ async function main() {
     .filter(d =>
       (d.type === 'meeting' || d.type === 'interview') &&
       d.targetKind === 'ward_bishop' &&
+      d.status !== 'cancelled' &&
       !d.relatedVisitId,
     )
     .map(d => ({
@@ -59,12 +60,18 @@ async function main() {
     return
   }
 
-  const batch = db.batch()
-  for (const { meetingId, visitId } of matched) {
-    batch.update(db.collection('schedules').doc(meetingId), { relatedVisitId: visitId })
+  const BATCH_SIZE = 500
+  for (let i = 0; i < matched.length; i += BATCH_SIZE) {
+    const chunk = matched.slice(i, i + BATCH_SIZE)
+    const batch = db.batch()
+    for (const { meetingId, visitId } of chunk) {
+      batch.update(db.collection('schedules').doc(meetingId), { relatedVisitId: visitId })
+    }
+    await batch.commit()
   }
-  await batch.commit()
   console.log(`\n${matched.length}건 기록 완료.`)
 }
 
-main().catch(e => { console.error(e); process.exit(1) })
+if (require.main === module) {
+  main().catch(e => { console.error(e); process.exit(1) })
+}
