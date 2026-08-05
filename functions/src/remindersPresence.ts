@@ -50,8 +50,9 @@ function interviewReminderKey(unitId: string, quarterStart: string): string {
 
 /**
  * True if any unit lacks its quarterly stake-president interview/meeting (and it isn't
- * dismissed), OR any future ward_visit in scope lacks a satisfying ward_bishop
- * interview/meeting (and it isn't dismissed).
+ * dismissed), OR any future ward_visit in scope lacks an active interview/meeting that
+ * explicitly links to it via relatedVisitId on or before the visit date (and it isn't
+ * dismissed).
  */
 export function hasPendingReminders(
   units: string[],
