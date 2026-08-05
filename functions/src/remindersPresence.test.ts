@@ -63,11 +63,11 @@ describe('hasPendingReminders', () => {
     ).toBe(true)
   })
 
-  it('false when the future ward_visit has a satisfying ward_bishop meeting', () => {
+  it('false when the future ward_visit has a satisfying linked meeting', () => {
     const s: PresenceSchedule[] = [
       { id: 'i1', type: 'interview', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-05-01', status: 'confirmed', targetKind: 'stake_president' },
       { id: 'v1', type: 'ward_visit', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-06-01', status: 'confirmed', wardId: 'gangnam-ward', wardName: '강남와드' },
-      { id: 'm1', type: 'meeting', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-05-20', status: 'confirmed', targetKind: 'ward_bishop', wardId: 'gangnam-ward' },
+      { id: 'm1', type: 'meeting', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-05-20', status: 'confirmed', targetKind: 'ward_bishop', wardId: 'gangnam-ward', relatedVisitId: 'v1' },
     ]
     expect(
       hasPendingReminders(['seoul-stake'], s, new Set(['seoul-stake']), null, new Set(), '2026-05-15'),
@@ -126,13 +126,13 @@ describe('hasPendingReminders', () => {
     ).toBe(false)
   })
 
-  it('future ward_visit with only wardName is satisfied by a ward_bishop contact resolved via getWardIdByName', () => {
+  it('future ward_visit with only wardName is satisfied by a contact linked via relatedVisitId', () => {
     const s: PresenceSchedule[] = [
       { id: 'i1', type: 'interview', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-05-01', status: 'confirmed', targetKind: 'stake_president' },
       // Real ward_visit docs carry wardName only, no wardId.
       { id: 'v1', type: 'ward_visit', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-06-01', status: 'confirmed', wardName: '녹번 와드' },
-      // ward_bishop contact keyed by the ward's actual id.
-      { id: 'm1', type: 'interview', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-05-20', status: 'confirmed', targetKind: 'ward_bishop', wardId: 'seoul-nokbeon' },
+      // ward_bishop contact linked to the visit by id, not resolved by ward name.
+      { id: 'm1', type: 'interview', unitId: 'seoul-stake', seventyUid: 's1', date: '2026-05-20', status: 'confirmed', targetKind: 'ward_bishop', wardId: 'seoul-nokbeon', relatedVisitId: 'v1' },
     ]
     expect(
       hasPendingReminders(['seoul-stake'], s, new Set(['seoul-stake']), null, new Set(), '2026-05-15'),
@@ -156,6 +156,68 @@ describe('hasPendingReminders', () => {
     ]
     expect(
       hasPendingReminders(['seoul-stake'], s, new Set(['seoul-stake']), null, new Set(['meeting:v1']), '2026-05-15'),
+    ).toBe(false)
+  })
+})
+
+describe('pre-visit meeting — relatedVisitId match', () => {
+  const visit: PresenceSchedule = {
+    id: 'v1', type: 'ward_visit', unitId: 'seoul-east-stake', seventyUid: 's1',
+    date: '2026-06-01', status: 'confirmed', wardName: '교문 와드',
+  }
+  const stakeOk: PresenceSchedule = {
+    id: 'i1', type: 'interview', unitId: 'seoul-east-stake', seventyUid: 's1',
+    date: '2026-05-02', status: 'confirmed', targetKind: 'stake_president',
+  }
+  const scope = new Set(['seoul-east-stake'])
+
+  it('false when a linked meeting exists before the visit', () => {
+    const m: PresenceSchedule = {
+      id: 'm1', type: 'meeting', unitId: 'seoul-east-stake', seventyUid: 's1',
+      date: '2026-05-10', status: 'confirmed', relatedVisitId: 'v1',
+    }
+    expect(
+      hasPendingReminders(['seoul-east-stake'], [visit, stakeOk, m], scope, 's1', new Set(), '2026-05-01'),
+    ).toBe(false)
+  })
+
+  it('true when the meeting is linked to a different visit', () => {
+    const m: PresenceSchedule = {
+      id: 'm1', type: 'meeting', unitId: 'seoul-east-stake', seventyUid: 's1',
+      date: '2026-05-10', status: 'confirmed', relatedVisitId: 'v2',
+    }
+    expect(
+      hasPendingReminders(['seoul-east-stake'], [visit, stakeOk, m], scope, 's1', new Set(), '2026-05-01'),
+    ).toBe(true)
+  })
+
+  it('true when an unlinked ward_bishop meeting for the same ward exists', () => {
+    const m: PresenceSchedule = {
+      id: 'm1', type: 'meeting', unitId: 'seoul-east-stake', seventyUid: 's1',
+      date: '2026-05-10', status: 'confirmed', targetKind: 'ward_bishop', wardId: 'seoul-east-gyomun',
+    }
+    expect(
+      hasPendingReminders(['seoul-east-stake'], [visit, stakeOk, m], scope, 's1', new Set(), '2026-05-01'),
+    ).toBe(true)
+  })
+
+  it('true when the linked meeting is cancelled', () => {
+    const m: PresenceSchedule = {
+      id: 'm1', type: 'meeting', unitId: 'seoul-east-stake', seventyUid: 's1',
+      date: '2026-05-10', status: 'cancelled', relatedVisitId: 'v1',
+    }
+    expect(
+      hasPendingReminders(['seoul-east-stake'], [visit, stakeOk, m], scope, 's1', new Set(), '2026-05-01'),
+    ).toBe(true)
+  })
+
+  it('false when the linked meeting sits outside the visit unit scope', () => {
+    const m: PresenceSchedule = {
+      id: 'm1', type: 'meeting', unitId: 'busan-stake', seventyUid: 's1',
+      date: '2026-05-10', status: 'confirmed', relatedVisitId: 'v1',
+    }
+    expect(
+      hasPendingReminders(['seoul-east-stake'], [visit, stakeOk, m], scope, 's1', new Set(), '2026-05-01'),
     ).toBe(false)
   })
 })
