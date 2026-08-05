@@ -167,6 +167,33 @@ describe('EditScheduleModal 사전 모임 연결', () => {
     }))
   })
 
+  // 재리뷰 Finding: touched 가드가 stale 정리 분기까지 같이 막아서, Select를 한 번
+  // 건드린 뒤 같은 세션에서 날짜를 방문 이후로 바꾸면 더 이상 유효하지 않은 id가
+  // 지워지지 않고 그대로 저장 payload에 남던 버그의 회귀 테스트.
+  it('Select를 직접 건드린 뒤 같은 세션에서 날짜를 방문 이후로 바꾸면 stale id가 지워진다', async () => {
+    render(
+      <EditScheduleModal
+        schedule={MEETING_SCHEDULE}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+
+    // Select를 직접 조작해 touched 플래그를 세운다 (같은 값을 다시 골라도 사용자의
+    // 명시적 선택으로 취급된다)
+    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), { target: { value: 'v1' } })
+    // 방문일(2026-08-09) 이후로 옮기면 v1이 목록에서 사라진다 — 원래 날짜로 되돌리지
+    // 않고 그대로 저장한다
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-08-10' } })
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(editSpy).toHaveBeenCalledWith(expect.objectContaining({
+      scheduleId: 'sched-1',
+      updates: expect.objectContaining({ relatedVisitId: null }),
+    }))
+  })
+
   it('접견/모임이 아닌 일정(구역 방문)에는 relatedVisitId를 payload에 넣지 않는다', async () => {
     const visitSchedule: Schedule = {
       ...MEETING_SCHEDULE,

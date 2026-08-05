@@ -86,26 +86,31 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
     date || schedule.date,
   )
 
-  // relatedVisitId Select를 사용자가 직접 조작했는지(연결 해제 포함) 추적한다. 한번
-  // 직접 건드리면 그 뒤로는 아래 자동 정리/복구 effect가 절대 개입하지 않는다 —
-  // 안 그러면 사용자의 명시적 선택이 날짜를 만졌다 되돌리는 것만으로 초기값으로
-  // 되살아나는 새 버그가 생긴다.
+  // relatedVisitId Select를 사용자가 직접 조작했는지(연결 해제 포함) 추적한다. 아래
+  // "날짜가 원래 값으로 돌아오면 복구" 분기는 사용자 의도를 덮어쓰면 안 되므로 한번
+  // 직접 건드리면 그 뒤로는 개입하지 않는다. 반면 "목록에 없는 stale id 정리" 분기는
+  // 서버로 무효한 id가 넘어가는 걸 막는 안전망이라 touched 여부와 무관하게 항상 돈다 —
+  // Select를 건드렸다는 사실이 "그 값이 여전히 유효하다"는 보장이 되지는 않는다.
   const relatedVisitTouchedRef = useRef(false)
 
   // 날짜를 바꾸면(방문 이후로 옮기는 등) 이미 골라둔 relatedVisitId가 새 조회 결과에서
-  // 사라질 수 있다 — 그 stale id를 그대로 서버에 보내면 불투명한 에러가 난다.
-  // 단, 이 모달은 생성 모달과 달리 기존 일정에 저장된 relatedVisitId가 초기값으로
+  // 사라질 수 있다 — 그 stale id를 그대로 서버에 보내면 불투명한 에러가 난다. 이 정리는
+  // touched 여부와 무관하게 항상 적용한다.
+  //
+  // 반대로 이 모달은 생성 모달과 달리 기존 일정에 저장된 relatedVisitId가 초기값으로
   // 들어온다. 날짜를 안 건드렸는데 그 초기값이 목록에 없다고(취소된 방문, 조회
   // 범위 밖, 백필 시점 이슈 등) 사용자 의도 없이 지워버리면 이미 지난 방문에
   // 연결된 과거 모임 편집 같은 정상적인 케이스까지 끊어버리게 된다. 그래서 날짜가
   // 원래 값(schedule.date)과 같은 동안은 자동으로 지우지 않을 뿐 아니라, 날짜를
   // 바꿨다가 다시 원래 값으로 되돌리면(오타 수정 등) 그 사이 자동으로 지워졌던
-  // relatedVisitId도 원래 저장값으로 복구한다 — 그렇지 않으면 "바꿨다 되돌림"만으로
-  // 사용자가 건드린 적 없는 유효한 연결이 조용히 끊긴 채 저장될 수 있다.
+  // relatedVisitId도 원래 저장값으로 복구한다 — 단, 사용자가 Select를 직접 건드린
+  // 적이 없을 때만. 사용자가 직접 골랐다면(연결 해제 포함) 그 선택이 최종 의사이므로
+  // 날짜 왕복으로 되살리지 않는다.
   useEffect(() => {
-    if (relatedVisitTouchedRef.current) return
     if (date === schedule.date) {
-      setRelatedVisitId(schedule.relatedVisitId ?? '')
+      if (!relatedVisitTouchedRef.current) {
+        setRelatedVisitId(schedule.relatedVisitId ?? '')
+      }
       return
     }
     if (!relatedVisitId || upcomingVisitsLoading) return
