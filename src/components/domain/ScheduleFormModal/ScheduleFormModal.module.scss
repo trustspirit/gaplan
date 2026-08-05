@@ -332,6 +332,12 @@ form :global(textarea) {
   }
 }
 
+.hint {
+  margin: -4px 0 0;
+  font-size: 12px;
+  color: var(--color-text-secondary, #6b7280);
+}
+
 .conflictWarning {
   padding: $space-2 $space-3;
   background: #fef3c7;

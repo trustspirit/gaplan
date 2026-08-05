@@ -1,6 +1,5 @@
 import dayjs from 'dayjs'
 import type { Schedule } from '@/types'
-import { getWardIdByName } from '@/constants/regions'
 
 export type ReminderSeverity = 'green' | 'amber' | 'red'
 
@@ -110,12 +109,9 @@ export function computeMeetingReminders(
     const key = `meeting:${v.id}`
     if (dismissedKeys.has(key)) continue
     const meetingBy = dayjs(v.date).subtract(MEETING_LEAD_DAYS, 'day')
-    const visitWardId = v.wardId ?? (v.wardName ? getWardIdByName(v.wardName) : undefined)
-    // 방문 와드의 감독/지부회장과의 접견 또는 모임이 방문일 이전(당일 포함) 있으면 충족.
-    const satisfied = !!visitWardId && meetings.some(m =>
-      (m.type === 'meeting' || m.type === 'interview') &&
-      m.targetKind === 'ward_bishop' &&
-      m.wardId === visitWardId &&
+    // 사전 모임은 사용자가 relatedVisitId로 명시한다. 추론하지 않는다.
+    const satisfied = meetings.some(m =>
+      m.relatedVisitId === v.id &&
       ACTIVE(m) &&
       m.date <= v.date,
     )
@@ -139,14 +135,18 @@ export function selectMeetingReminderSchedules(
   scopeUnitIds: Set<string>,
   actingSeventyUid: string | null,
 ): { wardVisits: Schedule[]; meetings: Schedule[] } {
-  const inScope = (schedule: Schedule) =>
-    scopeUnitIds.has(schedule.unitId) &&
-    (actingSeventyUid ? schedule.seventyUid === actingSeventyUid : true)
+  const bySeventy = (schedule: Schedule) =>
+    actingSeventyUid ? schedule.seventyUid === actingSeventyUid : true
 
   return {
-    wardVisits: schedules.filter(s => s.type === 'ward_visit' && inScope(s)),
-    // 모임 리마인더 충족 근거: 모임뿐 아니라 접견도 인정 (둘 다 확인)
-    meetings: schedules.filter(s => (s.type === 'meeting' || s.type === 'interview') && inScope(s)),
+    wardVisits: schedules.filter(s =>
+      s.type === 'ward_visit' && scopeUnitIds.has(s.unitId) && bySeventy(s),
+    ),
+    // 모임/접견은 relatedVisitId가 대상 방문을 특정하므로 unit scope로 거르지 않는다.
+    // (모임을 방문과 다른 스테이크로 잡아도 충족되어야 한다)
+    meetings: schedules.filter(s =>
+      (s.type === 'meeting' || s.type === 'interview') && bySeventy(s),
+    ),
   }
 }
 

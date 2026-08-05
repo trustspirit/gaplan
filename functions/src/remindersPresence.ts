@@ -1,5 +1,4 @@
 import dayjs from 'dayjs'
-import { getWardIdByName } from './regions'
 
 // Pure mirror of src/utils/reminders.ts presence logic (see functions/src/regions.ts for the
 // analogous mirroring pattern). Intentional duplication — do not import client code here.
@@ -14,6 +13,7 @@ export interface PresenceSchedule {
   wardName?: string | null
   wardId?: string | null
   targetKind?: string | null
+  relatedVisitId?: string | null
 }
 
 const ACTIVE = (s: PresenceSchedule) => s.status === 'confirmed' || s.status === 'pending'
@@ -50,8 +50,9 @@ function interviewReminderKey(unitId: string, quarterStart: string): string {
 
 /**
  * True if any unit lacks its quarterly stake-president interview/meeting (and it isn't
- * dismissed), OR any future ward_visit in scope lacks a satisfying ward_bishop
- * interview/meeting (and it isn't dismissed).
+ * dismissed), OR any future ward_visit in scope lacks an active interview/meeting that
+ * explicitly links to it via relatedVisitId on or before the visit date (and it isn't
+ * dismissed).
  */
 export function hasPendingReminders(
   units: string[],
@@ -75,16 +76,19 @@ export function hasPendingReminders(
     (actingSeventyUid ? s.seventyUid === actingSeventyUid : true)
 
   const wardVisits = schedules.filter(s => s.type === 'ward_visit' && inScope(s))
-  const meetings = schedules.filter(s => (s.type === 'meeting' || s.type === 'interview') && inScope(s))
+  // 모임/접견은 relatedVisitId가 대상 방문을 특정하므로 unit scope로 거르지 않는다.
+  const meetings = schedules.filter(s =>
+    (s.type === 'meeting' || s.type === 'interview') &&
+    (actingSeventyUid ? s.seventyUid === actingSeventyUid : true),
+  )
 
   for (const v of wardVisits) {
     if (!ACTIVE(v) || v.date <= today) continue
     const key = `meeting:${v.id ?? ''}`
     if (dismissed.has(key)) continue
-    const visitWardId = v.wardId ?? (v.wardName ? getWardIdByName(v.wardName) : undefined)
-    const satisfied = !!visitWardId && meetings.some(m =>
-      m.targetKind === 'ward_bishop' &&
-      m.wardId === visitWardId &&
+    // 사전 모임은 사용자가 relatedVisitId로 명시한다. 추론하지 않는다.
+    const satisfied = meetings.some(m =>
+      m.relatedVisitId === v.id &&
       ACTIVE(m) &&
       m.date <= v.date,
     )

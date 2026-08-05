@@ -2,13 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { httpsCallable } from 'firebase/functions'
 import { useAtomValue } from 'jotai'
+import dayjs from 'dayjs'
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { functions } from '@/firebase'
 import { useUsers } from '@/hooks/useUsers'
 import { useLeaders } from '@/hooks/useLeaders'
-import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
+import { useUpcomingVisits } from '@/hooks/useUpcomingVisits'
+import { ALL_UNITS, getWardsByUnit, getWardIdByName } from '@/constants/regions'
 import { isGeneralScheduleRelevant } from '@/types'
 import type { ScheduleType, GeneralSchedule, AppUser, InterviewTargetKind } from '@/types'
 import { Button, Select, Input, Textarea } from '@/components/ui'
@@ -60,6 +62,8 @@ export function ScheduleFormModal({
   const [presidentUid, setPresidentUid] = useState('')
   const [contactTargetValue, setContactTargetValue] = useState('')
   const [targetSelect, setTargetSelect] = useState('')  // '', 'other', 'unit:...', 'ward:...'
+  const [purpose, setPurpose] = useState<'general' | 'pre_visit'>('general')
+  const [relatedVisitId, setRelatedVisitId] = useState('')
   const [date, setDate] = useState(initialDate ?? '')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
@@ -100,6 +104,8 @@ export function ScheduleFormModal({
     setZoomLink('')
     setCustomTitle('')
     setNotes('')
+    setPurpose('general')
+    setRelatedVisitId('')
   }
 
   const handleSeventyChange = (nextSeventyUid: string) => {
@@ -109,6 +115,7 @@ export function ScheduleFormModal({
     setPresidentUid('')
     setContactTargetValue('')
     setTargetSelect('')
+    setRelatedVisitId('')
   }
 
   const handleUnitChange = (nextUnitId: string) => {
@@ -125,6 +132,21 @@ export function ScheduleFormModal({
       ? seventyUsers[0].uid
       : ''
   const effectiveSeventyUid = seventyUid || autoSeventyUid
+
+  const { visits: upcomingVisits, loading: upcomingVisitsLoading } = useUpcomingVisits(
+    type === 'interview' || type === 'meeting' ? effectiveSeventyUid : '',
+    date || dayjs().format('YYYY-MM-DD'),
+  )
+  const relatedVisit = upcomingVisits.find(v => v.id === relatedVisitId)
+
+  // 고른 대상 방문이 목록에서 사라지면(날짜를 방문 이후로 변경, 담당 칠십인 변경 등) stale id를
+  // 그대로 서버로 보내지 않도록 지운다. 목록 로딩 중에는 아직 판단할 수 없으니 건드리지 않는다.
+  useEffect(() => {
+    if (!relatedVisitId || upcomingVisitsLoading) return
+    if (!upcomingVisits.some(v => v.id === relatedVisitId)) {
+      setRelatedVisitId('')
+    }
+  }, [relatedVisitId, upcomingVisitsLoading, upcomingVisits])
 
   const handleSabbathToggle = (checked: boolean) => {
     setIsSabbath(checked)
@@ -191,8 +213,9 @@ export function ScheduleFormModal({
         wardId = targetSelect.slice('ward:'.length)
       } else if (targetSelect === 'other') targetKind = 'other'
     }
-    // 접견/모임은 대상 하나는 반드시 지정 (빈 접견 방지 + 방문 전 모임 리마인더가
-    // targetKind/wardId로 매칭되므로 모임도 구조화 대상을 필수로 받는다)
+    // 접견/모임은 대상 하나는 반드시 지정 (빈 접견 방지 + 대상에 따라 연락처를 노트에
+    // 자동으로 채워주고, 분기 접견(스테이크 회장) 충족 여부를 targetKind로 판정하므로
+    // 구조화된 대상이 필요하다)
     if (type === 'interview' || type === 'meeting') {
       if (!targetKind) {
         setError(t('schedule.errorTargetRequired'))
@@ -202,6 +225,10 @@ export function ScheduleFormModal({
         setError(t('schedule.errorTargetNameRequired'))
         return
       }
+    }
+    if ((type === 'interview' || type === 'meeting') && purpose === 'pre_visit' && !relatedVisitId) {
+      setError(t('schedule.errorRelatedVisitRequired'))
+      return
     }
 
     // 접견/모임에서 알려진 유닛/리더가 아니라 자유 입력한 일반 회원 이름이면 대상으로 기록
@@ -229,6 +256,9 @@ export function ScheduleFormModal({
         ...(presidentUid ? { presidentUid } : {}),
         ...(targetKind ? { targetKind } : {}),
         ...(wardId ? { wardId } : {}),
+        ...((type === 'interview' || type === 'meeting') && purpose === 'pre_visit' && relatedVisitId
+          ? { relatedVisitId }
+          : {}),
         date,
         startTime,
         endTime,
@@ -349,6 +379,65 @@ export function ScheduleFormModal({
             {/* Contact target — 구조화된 대상 Select(스테이크/지방부 회장, 와드/지부 감독) + 기타(직접 입력) */}
             {(type === 'interview' || type === 'meeting') && (
               <>
+                <Select
+                  label={t('schedule.purposeLabel')}
+                  value={purpose === 'general' ? '' : purpose}
+                  placeholder={t('schedule.purposeGeneral')}
+                  onChange={(e) => {
+                    const next = (e.target.value || 'general') as 'general' | 'pre_visit'
+                    setPurpose(next)
+                    if (next === 'general') setRelatedVisitId('')
+                  }}
+                  options={[
+                    { value: 'pre_visit', label: t('schedule.purposePreVisit') },
+                  ]}
+                />
+                {purpose === 'pre_visit' && (
+                  <>
+                    <Select
+                      label={t('schedule.relatedVisitLabel')}
+                      value={relatedVisitId}
+                      placeholder={
+                        upcomingVisits.length === 0
+                          ? t('schedule.relatedVisitNone')
+                          : t('schedule.relatedVisitPlaceholder')
+                      }
+                      onChange={(e) => {
+                        const id = e.target.value
+                        setRelatedVisitId(id)
+                        const v = upcomingVisits.find(x => x.id === id)
+                        if (v) {
+                          setUnitId(v.unitId)
+                          const wid = v.wardId ?? getWardIdByName(v.wardName)
+                          if (wid) {
+                            setTargetSelect(`ward:${wid}`)
+                            // 수동 대상 선택 경로와 동일하게 contactTargetValue/presidentUid를
+                            // 함께 채워야 노트에 (스테이크 회장이 아니라) 와드 감독 연락처가 붙는다.
+                            const options = getContactTargetOptions({ type, unitId: v.unitId, leaders, users })
+                            const opt = options.find(o => o.value === `ward:${wid}`)
+                            setPresidentUid(opt?.presidentUid ?? '')
+                            setContactTargetValue(opt?.label ?? v.wardName)
+                          }
+                        }
+                      }}
+                      options={upcomingVisits.map(v => ({
+                        value: v.id,
+                        label: t('schedule.relatedVisitOption', {
+                          date: dayjs(v.date).format('M/D(ddd)'),
+                          ward: v.wardName,
+                        }),
+                      }))}
+                      disabled={upcomingVisits.length === 0}
+                    />
+                    {relatedVisit && (
+                      <p className={styles.hint}>
+                        {t('schedule.relatedVisitRecommendedBy', {
+                          date: dayjs(relatedVisit.date).subtract(14, 'day').format('M/D'),
+                        })}
+                      </p>
+                    )}
+                  </>
+                )}
                 <Select
                   label={t('schedule.targetLabel')}
                   value={targetSelect}
