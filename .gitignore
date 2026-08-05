@@ -29,3 +29,6 @@ dist-ssr
 src/**/*.test.js
 src/**/*.test.js.map
 .superpowers/
+
+# Firebase deploy cache
+.firebase/
