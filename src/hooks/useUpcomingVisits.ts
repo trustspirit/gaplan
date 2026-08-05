@@ -40,7 +40,7 @@ export function useUpcomingVisits(seventyUid: string, fromDate: string) {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!seventyUid || !fromDate) { setVisits([]); return }
+    if (!seventyUid || !fromDate) { setVisits([]); setLoading(false); return }
     let active = true
     setLoading(true)
     const end = dayjs(fromDate).add(365, 'day').format('YYYY-MM-DD')
