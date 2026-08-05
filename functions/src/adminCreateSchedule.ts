@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { DATE_RE, TIME_RE, isValidUrl } from './validators'
+import { validateRelatedVisit } from './relatedVisit'
 
 interface AdminCreateScheduleRequest {
   type: 'ward_visit' | 'interview' | 'meeting'
@@ -18,6 +19,7 @@ interface AdminCreateScheduleRequest {
   presidentAccompanied?: boolean
   targetKind?: 'stake_president' | 'ward_bishop' | 'other'
   wardId?: string
+  relatedVisitId?: string
 }
 
 export const adminCreateSchedule = functions
@@ -27,7 +29,7 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, customTitle, projectId, presidentAccompanied, targetKind, wardId } = data
+    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId } = data
 
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
@@ -91,6 +93,9 @@ export const adminCreateSchedule = functions
     if (targetKind === 'ward_bishop' && !wardId) {
       throw new functions.https.HttpsError('invalid-argument', 'wardId required when targetKind is ward_bishop')
     }
+    if (relatedVisitId !== undefined && (typeof relatedVisitId !== 'string' || relatedVisitId.length > 200)) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid relatedVisitId')
+    }
 
     const db = admin.firestore()
     const [callerSnap, seventySnap] = await Promise.all([
@@ -127,6 +132,19 @@ export const adminCreateSchedule = functions
       }
     }
 
+    if (relatedVisitId) {
+      const visitSnap = await db.collection('schedules').doc(relatedVisitId).get()
+      const problem = validateRelatedVisit({
+        scheduleType: type,
+        scheduleSeventyUid: seventyUid,
+        scheduleDate: date,
+        visit: visitSnap.exists ? (visitSnap.data() as { type?: string; seventyUid?: string; date?: string }) : null,
+      })
+      if (problem) {
+        throw new functions.https.HttpsError('invalid-argument', problem)
+      }
+    }
+
     const existing = await db.collection('schedules')
       .where('seventyUid', '==', seventyUid)
       .where('date', '==', date)
@@ -154,6 +172,7 @@ export const adminCreateSchedule = functions
       presidentAccompanied: (type === 'ward_visit' && presidentAccompanied === true) ? true : null,
       targetKind: (type !== 'ward_visit' && targetKind) ? targetKind : null,
       wardId: wardId ?? null,
+      relatedVisitId: relatedVisitId ?? null,
       status: 'confirmed',
       createdBy: context.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
