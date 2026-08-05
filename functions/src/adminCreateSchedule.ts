@@ -132,8 +132,9 @@ export const adminCreateSchedule = functions
       }
     }
 
-    if (relatedVisitId) {
-      const visitSnap = await db.collection('schedules').doc(relatedVisitId).get()
+    if (relatedVisitId && relatedVisitId.trim()) {
+      const trimmedRelatedVisitId = relatedVisitId.trim()
+      const visitSnap = await db.collection('schedules').doc(trimmedRelatedVisitId).get()
       const problem = validateRelatedVisit({
         scheduleType: type,
         scheduleSeventyUid: seventyUid,
@@ -172,7 +173,7 @@ export const adminCreateSchedule = functions
       presidentAccompanied: (type === 'ward_visit' && presidentAccompanied === true) ? true : null,
       targetKind: (type !== 'ward_visit' && targetKind) ? targetKind : null,
       wardId: wardId ?? null,
-      relatedVisitId: relatedVisitId ?? null,
+      relatedVisitId: (relatedVisitId && relatedVisitId.trim()) ? relatedVisitId.trim() : null,
       status: 'confirmed',
       createdBy: context.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
