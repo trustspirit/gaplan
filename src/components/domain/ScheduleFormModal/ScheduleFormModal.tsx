@@ -104,6 +104,8 @@ export function ScheduleFormModal({
     setZoomLink('')
     setCustomTitle('')
     setNotes('')
+    setPurpose('general')
+    setRelatedVisitId('')
   }
 
   const handleSeventyChange = (nextSeventyUid: string) => {
@@ -113,6 +115,7 @@ export function ScheduleFormModal({
     setPresidentUid('')
     setContactTargetValue('')
     setTargetSelect('')
+    setRelatedVisitId('')
   }
 
   const handleUnitChange = (nextUnitId: string) => {
@@ -130,11 +133,20 @@ export function ScheduleFormModal({
       : ''
   const effectiveSeventyUid = seventyUid || autoSeventyUid
 
-  const { visits: upcomingVisits } = useUpcomingVisits(
+  const { visits: upcomingVisits, loading: upcomingVisitsLoading } = useUpcomingVisits(
     effectiveSeventyUid,
     date || dayjs().format('YYYY-MM-DD'),
   )
   const relatedVisit = upcomingVisits.find(v => v.id === relatedVisitId)
+
+  // 고른 대상 방문이 목록에서 사라지면(날짜를 방문 이후로 변경, 담당 칠십인 변경 등) stale id를
+  // 그대로 서버로 보내지 않도록 지운다. 목록 로딩 중에는 아직 판단할 수 없으니 건드리지 않는다.
+  useEffect(() => {
+    if (!relatedVisitId || upcomingVisitsLoading) return
+    if (!upcomingVisits.some(v => v.id === relatedVisitId)) {
+      setRelatedVisitId('')
+    }
+  }, [relatedVisitId, upcomingVisitsLoading, upcomingVisits])
 
   const handleSabbathToggle = (checked: boolean) => {
     setIsSabbath(checked)
@@ -243,7 +255,9 @@ export function ScheduleFormModal({
         ...(presidentUid ? { presidentUid } : {}),
         ...(targetKind ? { targetKind } : {}),
         ...(wardId ? { wardId } : {}),
-        ...(purpose === 'pre_visit' && relatedVisitId ? { relatedVisitId } : {}),
+        ...((type === 'interview' || type === 'meeting') && purpose === 'pre_visit' && relatedVisitId
+          ? { relatedVisitId }
+          : {}),
         date,
         startTime,
         endTime,
@@ -395,7 +409,15 @@ export function ScheduleFormModal({
                         if (v) {
                           setUnitId(v.unitId)
                           const wid = v.wardId ?? getWardIdByName(v.wardName)
-                          if (wid) setTargetSelect(`ward:${wid}`)
+                          if (wid) {
+                            setTargetSelect(`ward:${wid}`)
+                            // 수동 대상 선택 경로와 동일하게 contactTargetValue/presidentUid를
+                            // 함께 채워야 노트에 (스테이크 회장이 아니라) 와드 감독 연락처가 붙는다.
+                            const options = getContactTargetOptions({ type, unitId: v.unitId, leaders, users })
+                            const opt = options.find(o => o.value === `ward:${wid}`)
+                            setPresidentUid(opt?.presidentUid ?? '')
+                            setContactTargetValue(opt?.label ?? v.wardName)
+                          }
                         }
                       }}
                       options={upcomingVisits.map(v => ({

@@ -44,10 +44,12 @@ vi.mock('@/hooks/useUsers', () => ({
 }))
 vi.mock('@/hooks/useLeaders')
 vi.mock('@/hooks/useUpcomingVisits', () => ({
-  useUpcomingVisits: () => ({
-    visits: [
-      { id: 'v1', date: '2026-08-09', wardName: '교문 와드', unitId: 'seoul-east-stake' },
-    ],
+  // 실제 훅처럼 fromDate 이후의 방문만 돌려준다 — 모임 날짜를 방문 이후로 옮기면
+  // 목록에서 사라지는 상황(Finding 2 회귀 테스트)을 재현하기 위해 인자에 반응해야 한다.
+  useUpcomingVisits: (_seventyUid: string, fromDate: string) => ({
+    visits: fromDate && fromDate <= '2026-08-09'
+      ? [{ id: 'v1', date: '2026-08-09', wardName: '교문 와드', unitId: 'seoul-east-stake' }]
+      : [],
     loading: false,
   }),
 }))
@@ -74,6 +76,16 @@ const MOCK_LEADER_BISHOP: Leader = {
   role: '감독',
   name: '조해준',
   phone: '010-9635-1193',
+}
+
+const MOCK_GYOMUN_BISHOP: Leader = {
+  id: 'gyomun-bishop',
+  externalUnitId: 999,
+  unitNameKo: '교문 와드',
+  unitNameEn: 'Gyomun Ward',
+  role: '감독',
+  name: '김교문',
+  phone: '010-2222-3333',
 }
 
 const MOCK_STAKE_PRESIDENT: Leader = {
@@ -399,5 +411,82 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
 
     await waitFor(() => expect(createSpy).toHaveBeenCalled())
     expect(createSpy.mock.calls[0][0]).not.toHaveProperty('relatedVisitId')
+  })
+
+  // Finding 1: 종류를 바꿔도 relatedVisitId가 남아 payload를 오염시키던 버그의 회귀 테스트
+  it('대상 방문을 고른 뒤 종류를 구역 방문으로 바꾸면 relatedVisitId가 초기화되어 payload에 남지 않는다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
+    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), { target: { value: 'pre_visit' } })
+    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), { target: { value: 'v1' } })
+
+    fireEvent.click(screen.getByText('schedule.type.ward_visit'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabel'), { target: { value: 'seoul-stake' } })
+    fireEvent.change(screen.getByLabelText('schedule.wardLabel'), { target: { value: '녹번 와드' } })
+
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('relatedVisitId')
+    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'ward_visit' }))
+  })
+
+  // Finding 2: 고른 방문이 목록에서 사라져도(예: 모임 날짜를 방문 이후로 변경) stale id가
+  // 그대로 서버로 전송되던 버그의 회귀 테스트. mock된 useUpcomingVisits는 fromDate가
+  // 방문일(2026-08-09)보다 늦으면 빈 목록을 돌려준다.
+  it('선택한 방문이 목록에서 사라지면(모임 날짜를 방문 이후로 변경) 저장 시 대상 방문을 다시 요구한다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
+    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), { target: { value: 'pre_visit' } })
+    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), { target: { value: 'v1' } })
+
+    // 방문일(2026-08-09) 이후로 모임 날짜를 옮기면 목록에서 v1이 사라진다
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-08-10' } })
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    expect(await screen.findByText('schedule.errorRelatedVisitRequired')).toBeInTheDocument()
+    expect(createSpy).not.toHaveBeenCalled()
+  })
+
+  // Finding 3: 대상 방문 자동 선택 시 contactTargetValue/presidentUid를 안 채워서
+  // 노트에 와드 감독이 아닌 스테이크 회장 연락처가 붙던(혹은 아예 안 붙던) 버그의 회귀 테스트.
+  // 수동으로 같은 와드를 대상으로 고른 경로와 결과(노트)가 같아야 한다.
+  it('대상 방문 자동 선택이 수동 대상 선택과 동일한 감독 연락처를 노트에 남긴다', async () => {
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: [MOCK_STAKE_PRESIDENT, MOCK_LEADER_BISHOP, MOCK_GYOMUN_BISHOP],
+      loading: false,
+      getLeaderByUnitName: vi.fn().mockReturnValue(undefined),
+    })
+
+    // 수동 경로: 스테이크를 직접 고르고 대상 Select에서 같은 와드를 선택
+    const { unmount } = render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-east-stake' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'ward:seoul-east-gyomun' } })
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    const manualNotes = createSpy.mock.calls[0][0].notes
+    unmount()
+
+    createSpy.mockClear()
+
+    // 자동 경로: 목적=사전 모임 + 대상 방문 선택만으로 같은 와드가 잡혀야 한다
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
+    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), { target: { value: 'pre_visit' } })
+    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), { target: { value: 'v1' } })
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+
+    expect(manualNotes).toBe('감독: 김교문 (010-2222-3333)')
+    expect(createSpy.mock.calls[0][0].notes).toBe(manualNotes)
   })
 })
