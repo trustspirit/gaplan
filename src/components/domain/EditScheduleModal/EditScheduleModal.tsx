@@ -86,20 +86,33 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
     date || schedule.date,
   )
 
+  // relatedVisitId Select를 사용자가 직접 조작했는지(연결 해제 포함) 추적한다. 한번
+  // 직접 건드리면 그 뒤로는 아래 자동 정리/복구 effect가 절대 개입하지 않는다 —
+  // 안 그러면 사용자의 명시적 선택이 날짜를 만졌다 되돌리는 것만으로 초기값으로
+  // 되살아나는 새 버그가 생긴다.
+  const relatedVisitTouchedRef = useRef(false)
+
   // 날짜를 바꾸면(방문 이후로 옮기는 등) 이미 골라둔 relatedVisitId가 새 조회 결과에서
   // 사라질 수 있다 — 그 stale id를 그대로 서버에 보내면 불투명한 에러가 난다.
   // 단, 이 모달은 생성 모달과 달리 기존 일정에 저장된 relatedVisitId가 초기값으로
   // 들어온다. 날짜를 안 건드렸는데 그 초기값이 목록에 없다고(취소된 방문, 조회
   // 범위 밖, 백필 시점 이슈 등) 사용자 의도 없이 지워버리면 이미 지난 방문에
-  // 연결된 과거 모임 편집 같은 정상적인 케이스까지 끊어버리게 된다. 그래서 사용자가
-  // 실제로 날짜를 바꿨을 때만(즉 date !== schedule.date) 이 정리를 적용한다.
+  // 연결된 과거 모임 편집 같은 정상적인 케이스까지 끊어버리게 된다. 그래서 날짜가
+  // 원래 값(schedule.date)과 같은 동안은 자동으로 지우지 않을 뿐 아니라, 날짜를
+  // 바꿨다가 다시 원래 값으로 되돌리면(오타 수정 등) 그 사이 자동으로 지워졌던
+  // relatedVisitId도 원래 저장값으로 복구한다 — 그렇지 않으면 "바꿨다 되돌림"만으로
+  // 사용자가 건드린 적 없는 유효한 연결이 조용히 끊긴 채 저장될 수 있다.
   useEffect(() => {
-    if (date === schedule.date) return
+    if (relatedVisitTouchedRef.current) return
+    if (date === schedule.date) {
+      setRelatedVisitId(schedule.relatedVisitId ?? '')
+      return
+    }
     if (!relatedVisitId || upcomingVisitsLoading) return
     if (!upcomingVisits.some(v => v.id === relatedVisitId)) {
       setRelatedVisitId('')
     }
-  }, [date, schedule.date, relatedVisitId, upcomingVisitsLoading, upcomingVisits])
+  }, [date, schedule.date, schedule.relatedVisitId, relatedVisitId, upcomingVisitsLoading, upcomingVisits])
 
   const deleteDescription = schedule.type === 'ward_visit' && schedule.wardName
     ? `구역 방문 · ${schedule.wardName}`
@@ -210,7 +223,10 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                       ? t('schedule.relatedVisitNone')
                       : t('schedule.relatedVisitPlaceholder')
                   }
-                  onChange={(e) => setRelatedVisitId(e.target.value)}
+                  onChange={(e) => {
+                    relatedVisitTouchedRef.current = true
+                    setRelatedVisitId(e.target.value)
+                  }}
                   options={upcomingVisits.map(v => ({
                     value: v.id,
                     label: `${dayjs(v.date).format('M/D(ddd)')} ${v.wardName} 방문`,

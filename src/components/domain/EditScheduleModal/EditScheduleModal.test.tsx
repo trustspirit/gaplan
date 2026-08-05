@@ -120,6 +120,53 @@ describe('EditScheduleModal 사전 모임 연결', () => {
     }))
   })
 
+  // 리뷰 Finding: 날짜를 바꿔 자동으로 지워진 relatedVisitId가, 날짜를 원래대로
+  // 되돌려도 복구되지 않고 그대로 null로 저장되던 버그의 회귀 테스트.
+  it('날짜를 바꿔 연결이 지워진 뒤 원래대로 되돌리면 relatedVisitId가 복구된다', async () => {
+    render(
+      <EditScheduleModal
+        schedule={MEETING_SCHEDULE}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+
+    // 방문일(2026-08-09) 이후로 옮기면 목록에서 v1이 사라져 자동으로 지워진다
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-08-10' } })
+    // 원래 날짜로 되돌린다 (오타 수정이었거나 그냥 만져본 경우)
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: MEETING_SCHEDULE.date } })
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(editSpy).toHaveBeenCalledWith(expect.objectContaining({
+      scheduleId: 'sched-1',
+      updates: expect.objectContaining({ relatedVisitId: 'v1' }),
+    }))
+  })
+
+  // 리뷰 Finding: 위 복구 로직이 사용자가 Select에서 직접 고른 선택(연결 해제 포함)까지
+  // 덮어써서는 안 된다 — 직접 건드린 뒤에는 날짜를 만졌다 되돌려도 그 선택이 유지돼야 한다.
+  it('사용자가 직접 연결을 해제한 뒤 날짜를 바꿨다 되돌려도 해제 상태가 유지된다', async () => {
+    render(
+      <EditScheduleModal
+        schedule={MEETING_SCHEDULE}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+
+    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), { target: { value: '' } })
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-08-10' } })
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: MEETING_SCHEDULE.date } })
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(editSpy).toHaveBeenCalledWith(expect.objectContaining({
+      scheduleId: 'sched-1',
+      updates: expect.objectContaining({ relatedVisitId: null }),
+    }))
+  })
+
   it('접견/모임이 아닌 일정(구역 방문)에는 relatedVisitId를 payload에 넣지 않는다', async () => {
     const visitSchedule: Schedule = {
       ...MEETING_SCHEDULE,
