@@ -27,6 +27,7 @@ export interface Schedule {
   visitPlanItemId?: string    // 해당 계획 항목 id
   projectId?: string          // 연계 프로젝트
   presidentAccompanied?: boolean  // 스테이크 회장 동행 여부 (ward_visit only)
+  relatedVisitId?: string  // interview/meeting: 이 일정이 사전 모임인 대상 ward_visit 문서 id
 }
 
 export interface TimeSlot {
