@@ -43,6 +43,14 @@ vi.mock('@/hooks/useUsers', () => ({
   useUsers: () => ({ users: mocks.users }),
 }))
 vi.mock('@/hooks/useLeaders')
+vi.mock('@/hooks/useUpcomingVisits', () => ({
+  useUpcomingVisits: () => ({
+    visits: [
+      { id: 'v1', date: '2026-08-09', wardName: '교문 와드', unitId: 'seoul-east-stake' },
+    ],
+    loading: false,
+  }),
+}))
 vi.mock('@/components/domain/ProjectPicker/ProjectPicker', () => ({
   ProjectPicker: () => <div data-testid="project-picker" />,
 }))
@@ -319,5 +327,77 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
 
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
     expect(createSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('ScheduleFormModal 사전 모임 목적', () => {
+  const SEVENTY_USER: AppUser = {
+    uid: 'test-uid', email: 'test@test.com', name: '테스트',
+    role: 'seventy', regionId: 'seoul', createdAt: '2026-01-01',
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    createSpy.mockReset()
+    createSpy.mockResolvedValue({ data: {} })
+    mocks.currentUser = {
+      uid: 'test-uid', email: 'test@test.com', role: 'seventy',
+      name: '테스트', unitId: 'seoul-stake', createdAt: '2026-01-01',
+    }
+    mocks.users = [SEVENTY_USER, MOCK_PRESIDENT_USER]
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: [MOCK_STAKE_PRESIDENT, MOCK_LEADER_BISHOP],
+      loading: false,
+      getLeaderByUnitName: vi.fn().mockReturnValue(undefined),
+    })
+  })
+
+  function fillDateTime() {
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-07-10' } })
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
+  }
+
+  it('사전 모임 목적인데 대상 방문을 안 고르면 저장을 막는다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'ward:seoul-nokbeon' } })
+    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), { target: { value: 'pre_visit' } })
+
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    expect(await screen.findByText('schedule.errorRelatedVisitRequired')).toBeInTheDocument()
+    expect(createSpy).not.toHaveBeenCalled()
+  })
+
+  it('대상 방문을 고르면 relatedVisitId를 payload에 포함한다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
+    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), { target: { value: 'pre_visit' } })
+    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), { target: { value: 'v1' } })
+
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'meeting', relatedVisitId: 'v1', targetKind: 'ward_bishop', wardId: 'seoul-east-gyomun',
+    }))
+  })
+
+  it('일반 목적이면 relatedVisitId 없이 저장된다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'ward:seoul-nokbeon' } })
+
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('relatedVisitId')
   })
 })
