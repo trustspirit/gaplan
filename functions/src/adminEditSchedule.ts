@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { DATE_RE, TIME_RE, isValidUrl } from './validators'
+import { validateRelatedVisit } from './relatedVisit'
 
 interface AdminEditScheduleRequest {
   scheduleId: string
@@ -18,6 +19,7 @@ interface AdminEditScheduleRequest {
     presidentAccompanied?: boolean | null
     targetKind?: 'stake_president' | 'ward_bishop' | 'other' | null
     wardId?: string | null
+    relatedVisitId?: string | null
   }
 }
 
@@ -127,6 +129,15 @@ export const adminEditSchedule = functions
       }
       allowed.wardId = updates.wardId
     }
+    if (updates.relatedVisitId !== undefined) {
+      if (updates.relatedVisitId !== null &&
+          (typeof updates.relatedVisitId !== 'string' || updates.relatedVisitId.length > 200)) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid relatedVisitId')
+      }
+      allowed.relatedVisitId = (updates.relatedVisitId && updates.relatedVisitId.trim())
+        ? updates.relatedVisitId.trim()
+        : null
+    }
 
     if (Object.keys(allowed).length === 0) {
       throw new functions.https.HttpsError('invalid-argument', 'No valid updates provided')
@@ -158,6 +169,21 @@ export const adminEditSchedule = functions
       const effectiveEnd = (allowed.endTime as string | undefined) ?? current.endTime
       if (effectiveStart >= effectiveEnd) {
         throw new functions.https.HttpsError('invalid-argument', 'endTime must be after startTime')
+      }
+    }
+
+    if (allowed.relatedVisitId) {
+      const current = snap.data()!
+      const effectiveDate = (allowed.date as string | undefined) ?? current.date
+      const visitSnap = await db.collection('schedules').doc(allowed.relatedVisitId as string).get()
+      const problem = validateRelatedVisit({
+        scheduleType: current.type,
+        scheduleSeventyUid: current.seventyUid,
+        scheduleDate: effectiveDate,
+        visit: visitSnap.exists ? (visitSnap.data() as { type?: string; seventyUid?: string; date?: string }) : null,
+      })
+      if (problem) {
+        throw new functions.https.HttpsError('invalid-argument', problem)
       }
     }
 
