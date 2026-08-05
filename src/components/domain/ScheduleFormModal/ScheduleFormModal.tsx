@@ -134,7 +134,7 @@ export function ScheduleFormModal({
   const effectiveSeventyUid = seventyUid || autoSeventyUid
 
   const { visits: upcomingVisits, loading: upcomingVisitsLoading } = useUpcomingVisits(
-    effectiveSeventyUid,
+    type === 'interview' || type === 'meeting' ? effectiveSeventyUid : '',
     date || dayjs().format('YYYY-MM-DD'),
   )
   const relatedVisit = upcomingVisits.find(v => v.id === relatedVisitId)
@@ -213,8 +213,9 @@ export function ScheduleFormModal({
         wardId = targetSelect.slice('ward:'.length)
       } else if (targetSelect === 'other') targetKind = 'other'
     }
-    // 접견/모임은 대상 하나는 반드시 지정 (빈 접견 방지 + 방문 전 모임 리마인더가
-    // targetKind/wardId로 매칭되므로 모임도 구조화 대상을 필수로 받는다)
+    // 접견/모임은 대상 하나는 반드시 지정 (빈 접견 방지 + 대상에 따라 연락처를 노트에
+    // 자동으로 채워주고, 분기 접견(스테이크 회장) 충족 여부를 targetKind로 판정하므로
+    // 구조화된 대상이 필요하다)
     if (type === 'interview' || type === 'meeting') {
       if (!targetKind) {
         setError(t('schedule.errorTargetRequired'))
@@ -380,7 +381,7 @@ export function ScheduleFormModal({
               <>
                 <Select
                   label={t('schedule.purposeLabel')}
-                  value={purpose}
+                  value={purpose === 'general' ? '' : purpose}
                   placeholder={t('schedule.purposeGeneral')}
                   onChange={(e) => {
                     const next = (e.target.value || 'general') as 'general' | 'pre_visit'
@@ -388,7 +389,6 @@ export function ScheduleFormModal({
                     if (next === 'general') setRelatedVisitId('')
                   }}
                   options={[
-                    { value: 'general', label: t('schedule.purposeGeneral') },
                     { value: 'pre_visit', label: t('schedule.purposePreVisit') },
                   ]}
                 />
@@ -422,7 +422,10 @@ export function ScheduleFormModal({
                       }}
                       options={upcomingVisits.map(v => ({
                         value: v.id,
-                        label: `${dayjs(v.date).format('M/D(ddd)')} ${v.wardName} 방문`,
+                        label: t('schedule.relatedVisitOption', {
+                          date: dayjs(v.date).format('M/D(ddd)'),
+                          ward: v.wardName,
+                        }),
                       }))}
                       disabled={upcomingVisits.length === 0}
                     />

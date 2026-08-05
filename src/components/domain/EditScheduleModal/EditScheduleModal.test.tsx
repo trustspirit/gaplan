@@ -78,6 +78,32 @@ describe('EditScheduleModal 사전 모임 연결', () => {
     }))
   })
 
+  // Finding 7: 목록이 비면(연결된 방문이 취소되거나 조회 창 밖으로 나가면) Select가
+  // disabled가 되어 화면에서 연결을 해제할 방법이 없어지던 버그의 회귀 테스트.
+  it('목록이 비어 있어도 relatedVisitId가 있으면 Select가 비활성화되지 않고, 빈 값을 고르면 relatedVisitId: null이 전송된다', async () => {
+    // 방문일(2026-08-09)보다 늦은 날짜라 useUpcomingVisits는 빈 목록을 돌려준다(목 조건).
+    const scheduleAfterVisit: Schedule = { ...MEETING_SCHEDULE, date: '2026-08-10' }
+    render(
+      <EditScheduleModal
+        schedule={scheduleAfterVisit}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+
+    const relatedVisitSelect = screen.getByLabelText('schedule.relatedVisitLabel')
+    expect(relatedVisitSelect).not.toBeDisabled()
+
+    fireEvent.change(relatedVisitSelect, { target: { value: '' } })
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(editSpy).toHaveBeenCalledWith(expect.objectContaining({
+      scheduleId: 'sched-1',
+      updates: expect.objectContaining({ relatedVisitId: null }),
+    }))
+  })
+
   it('날짜를 건드리지 않으면 초기 연결값이 목록에 없어도 그대로 보존된다', async () => {
     // 방문일(2026-08-09)보다 늦은 날짜로 저장된 일정이라 useUpcomingVisits는
     // fromDate=schedule.date 기준으로 빈 목록을 돌려준다(목 조건: fromDate > 2026-08-09).

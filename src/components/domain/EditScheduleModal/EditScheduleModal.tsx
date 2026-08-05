@@ -234,9 +234,12 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                   }}
                   options={upcomingVisits.map(v => ({
                     value: v.id,
-                    label: `${dayjs(v.date).format('M/D(ddd)')} ${v.wardName} 방문`,
+                    label: t('schedule.relatedVisitOption', {
+                      date: dayjs(v.date).format('M/D(ddd)'),
+                      ward: v.wardName,
+                    }),
                   }))}
-                  disabled={upcomingVisits.length === 0}
+                  disabled={upcomingVisits.length === 0 && !relatedVisitId}
                 />
               )}
 

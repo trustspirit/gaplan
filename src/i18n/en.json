@@ -279,6 +279,7 @@
     "relatedVisitLabel": "Target visit",
     "relatedVisitPlaceholder": "Select a visit",
     "relatedVisitNone": "No upcoming visits available",
+    "relatedVisitOption": "{{ward}} visit on {{date}}",
     "relatedVisitRecommendedBy": "Recommended by {{date}} (14 days before the visit)",
     "errorRelatedVisitRequired": "Select the target visit",
     "deleteConfirmText": "Deleting this schedule will also remove it from Google Calendar. Continue?",

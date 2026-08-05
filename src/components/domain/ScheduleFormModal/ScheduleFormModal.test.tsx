@@ -413,6 +413,19 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
     expect(createSpy.mock.calls[0][0]).not.toHaveProperty('relatedVisitId')
   })
 
+  // Finding 1: Select가 항상 placeholder 옵션을 렌더하는데 목적 Select의 options에도
+  // 'general' 항목을 넣어서 "일반"이 두 번(placeholder + 옵션) 나타나던 버그의 회귀 테스트.
+  it('목적 Select에 "일반" 라벨이 한 번만 나타난다', () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+
+    const purposeSelect = screen.getByLabelText('schedule.purposeLabel') as HTMLSelectElement
+    const generalOptions = Array.from(purposeSelect.options).filter(
+      o => o.textContent === 'schedule.purposeGeneral',
+    )
+    expect(generalOptions).toHaveLength(1)
+  })
+
   // Finding 1: 종류를 바꿔도 relatedVisitId가 남아 payload를 오염시키던 버그의 회귀 테스트
   it('대상 방문을 고른 뒤 종류를 구역 방문으로 바꾸면 relatedVisitId가 초기화되어 payload에 남지 않는다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
