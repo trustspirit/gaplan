@@ -55,6 +55,20 @@ async function main() {
   for (const { meetingId, visitId } of matched) console.log(`  ${meetingId} -> ${visitId}`)
   if (unmatched.length) console.log('미매칭(수동 연결 필요):', unmatched.join(', '))
 
+  // targetKind/wardId가 없어(CF 배포 누락 등으로) 애초에 자동 매칭 후보에서 빠진 모임/접견.
+  // 이 목록은 출력만 한다 — 자동으로 relatedVisitId를 쓰지 않는다. 사람이 직접 확인해야 한다.
+  const needsManualReview = docs.filter(d =>
+    (d.type === 'meeting' || d.type === 'interview') &&
+    d.status !== 'cancelled' &&
+    !d.relatedVisitId &&
+    d.targetKind !== 'ward_bishop',
+  )
+  console.log(`\n수동 확인 필요(자동 매칭 대상 아님, targetKind !== 'ward_bishop') ${needsManualReview.length}건`)
+  for (const d of needsManualReview) {
+    const info = (d.customTitle as string | undefined) ?? (d.unitId as string | undefined) ?? '(정보 없음)'
+    console.log(`  ${d.id}  ${d.date as string}  ${info}`)
+  }
+
   if (!WRITE) {
     console.log('\ndry-run 입니다. 실제로 쓰려면 --write 를 붙이세요.')
     return
