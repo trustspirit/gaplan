@@ -2,13 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { httpsCallable } from 'firebase/functions'
 import { useTranslation } from 'react-i18next'
+import dayjs from 'dayjs'
 import { X } from 'lucide-react'
 import { functions } from '@/firebase'
 import { useUsers } from '@/hooks/useUsers'
+import { useUpcomingVisits } from '@/hooks/useUpcomingVisits'
 import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
 import type { Schedule } from '@/types'
 import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
-import { DeleteConfirmSheet, Input, Textarea } from '@/components/ui'
+import { DeleteConfirmSheet, Input, Textarea, Select } from '@/components/ui'
 import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import styles from './EditScheduleModal.module.scss'
@@ -37,6 +39,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
   const [customTitle, setCustomTitle] = useState(schedule.customTitle ?? '')
   const [projectId, setProjectId] = useState(schedule.projectId ?? '')
   const [presidentAccompanied, setPresidentAccompanied] = useState(schedule.presidentAccompanied ?? false)
+  const [relatedVisitId, setRelatedVisitId] = useState(schedule.relatedVisitId ?? '')
   const [saving, setSaving] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -60,7 +63,8 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
     zoomLink !== (schedule.zoomLink ?? '') ||
     customTitle !== (schedule.customTitle ?? '') ||
     projectId !== (schedule.projectId ?? '') ||
-    presidentAccompanied !== (schedule.presidentAccompanied ?? false)
+    presidentAccompanied !== (schedule.presidentAccompanied ?? false) ||
+    relatedVisitId !== (schedule.relatedVisitId ?? '')
   const requestClose = () => {
     if (isDirty && !window.confirm(t('common.discardChanges'))) return
     onClose()
@@ -76,6 +80,26 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
 
   const isVisit = schedule.type === 'ward_visit'
   const isInterview = schedule.type === 'interview'
+  const isContact = schedule.type === 'interview' || schedule.type === 'meeting'
+  const { visits: upcomingVisits, loading: upcomingVisitsLoading } = useUpcomingVisits(
+    schedule.seventyUid,
+    date || schedule.date,
+  )
+
+  // 날짜를 바꾸면(방문 이후로 옮기는 등) 이미 골라둔 relatedVisitId가 새 조회 결과에서
+  // 사라질 수 있다 — 그 stale id를 그대로 서버에 보내면 불투명한 에러가 난다.
+  // 단, 이 모달은 생성 모달과 달리 기존 일정에 저장된 relatedVisitId가 초기값으로
+  // 들어온다. 날짜를 안 건드렸는데 그 초기값이 목록에 없다고(취소된 방문, 조회
+  // 범위 밖, 백필 시점 이슈 등) 사용자 의도 없이 지워버리면 이미 지난 방문에
+  // 연결된 과거 모임 편집 같은 정상적인 케이스까지 끊어버리게 된다. 그래서 사용자가
+  // 실제로 날짜를 바꿨을 때만(즉 date !== schedule.date) 이 정리를 적용한다.
+  useEffect(() => {
+    if (date === schedule.date) return
+    if (!relatedVisitId || upcomingVisitsLoading) return
+    if (!upcomingVisits.some(v => v.id === relatedVisitId)) {
+      setRelatedVisitId('')
+    }
+  }, [date, schedule.date, relatedVisitId, upcomingVisitsLoading, upcomingVisits])
 
   const deleteDescription = schedule.type === 'ward_visit' && schedule.wardName
     ? `구역 방문 · ${schedule.wardName}`
@@ -110,6 +134,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
           ...(!isVisit ? { customTitle: customTitle.trim() || null } : {}),
           projectId: projectId || null,
           ...(isVisit ? { presidentAccompanied: presidentAccompanied || null } : {}),
+          ...(isContact ? { relatedVisitId: relatedVisitId || null } : {}),
         },
       })
       onSaved()
@@ -173,6 +198,25 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                     {wardOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
+              )}
+
+              {/* Related visit — interview/meeting only: link/unlink the pre-visit meeting reminder */}
+              {isContact && (
+                <Select
+                  label={t('schedule.relatedVisitLabel')}
+                  value={relatedVisitId}
+                  placeholder={
+                    upcomingVisits.length === 0
+                      ? t('schedule.relatedVisitNone')
+                      : t('schedule.relatedVisitPlaceholder')
+                  }
+                  onChange={(e) => setRelatedVisitId(e.target.value)}
+                  options={upcomingVisits.map(v => ({
+                    value: v.id,
+                    label: `${dayjs(v.date).format('M/D(ddd)')} ${v.wardName} 방문`,
+                  }))}
+                  disabled={upcomingVisits.length === 0}
+                />
               )}
 
               {/* President accompanied — ward_visit only */}
