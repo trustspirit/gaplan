@@ -28,8 +28,11 @@ export function toKakaoTime(date: string, time: string): string {
   return new Date(`${date}T${time}:00+09:00`).toISOString().replace(/\.\d{3}Z$/, 'Z')
 }
 
+// title.slice()는 UTF-16 코드 유닛 기준이라 서로게이트 쌍(이모지 등)을 반으로
+// 쪼갤 수 있다. Array.from()은 코드 포인트 단위로 순회하므로 안전하다.
 export function truncateTitle(title: string): string {
-  return title.length <= KAKAO_TITLE_MAX ? title : title.slice(0, KAKAO_TITLE_MAX)
+  const codePoints = Array.from(title)
+  return codePoints.length <= KAKAO_TITLE_MAX ? title : codePoints.slice(0, KAKAO_TITLE_MAX).join('')
 }
 
 export function buildKakaoDescription(p: {
@@ -67,8 +70,8 @@ export function buildKakaoEventBody(p: {
   }
 }
 
-// calendarSync.ts:67-75와 같은 목록. 두 동기화가 같은 입력에서 본문을 만드므로
-// 갱신 조건도 같아야 한다.
+// calendarSync.ts의 needsUpdate 블록과 같은 목록. 두 동기화가 같은 입력에서
+// 본문을 만드므로 갱신 조건도 같아야 한다.
 const SYNCED_FIELDS = [
   'date',
   'startTime',
@@ -80,10 +83,24 @@ const SYNCED_FIELDS = [
   'notes',
 ] as const
 
+// unitId만 ''을 기본값으로 쓴다 — calendarSync.ts의 needsUpdate 블록이
+// (before?.unitId ?? '') !== (after.unitId ?? '')로 비교하기 때문에, 값을
+// 맞추지 않으면 두 동기화가 같은 변경을 서로 다르게 판단할 수 있다.
+const FIELD_DEFAULT: Record<(typeof SYNCED_FIELDS)[number], unknown> = {
+  date: null,
+  startTime: null,
+  endTime: null,
+  zoomLink: null,
+  customTitle: null,
+  unitId: '',
+  wardName: null,
+  notes: null,
+}
+
 export function needsKakaoUpdate(
   before: Record<string, unknown> | undefined,
   after: Record<string, unknown>,
 ): boolean {
   if (!before) return true
-  return SYNCED_FIELDS.some((f) => (before[f] ?? null) !== (after[f] ?? null))
+  return SYNCED_FIELDS.some((f) => (before[f] ?? FIELD_DEFAULT[f]) !== (after[f] ?? FIELD_DEFAULT[f]))
 }

@@ -35,6 +35,18 @@ describe('truncateTitle', () => {
     const exact = 'ㄱ'.repeat(50)
     expect(truncateTitle(exact)).toBe(exact)
   })
+
+  it('이모지가 경계에 걸려도 쪼개지 않는다', () => {
+    const title = 'ㄱ'.repeat(49) + '😀'
+    const result = truncateTitle(title)
+    expect(Array.from(result)).toHaveLength(50)
+    expect(result.endsWith('😀')).toBe(true)
+  })
+
+  it('이모지가 한계를 넘으면 통째로 잘라낸다', () => {
+    const title = 'ㄱ'.repeat(50) + '😀'
+    expect(truncateTitle(title)).toBe('ㄱ'.repeat(50))
+  })
 })
 
 describe('buildKakaoDescription', () => {
@@ -144,5 +156,9 @@ describe('needsKakaoUpdate', () => {
 
   it('undefined와 null을 같은 값으로 본다', () => {
     expect(needsKakaoUpdate({ ...AFTER, zoomLink: undefined }, { ...AFTER, zoomLink: null })).toBe(false)
+  })
+
+  it('unitId는 undefined와 빈 문자열을 같은 값으로 본다 (calendarSync.ts와 동일)', () => {
+    expect(needsKakaoUpdate({ ...AFTER, unitId: undefined }, { ...AFTER, unitId: '' })).toBe(false)
   })
 })
