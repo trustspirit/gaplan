@@ -587,7 +587,8 @@
     "disconnectFailed": "Failed to disconnect.",
     "disconnected": "Disconnected.",
     "missingKey": "Kakao app key is not configured. Please contact an administrator.",
-    "stateMismatch": "This sign-in request could not be verified. Please start over."
+    "stateMismatch": "This sign-in request could not be verified. Please start over.",
+    "calendarScopeRequired": "Calendar permission is required. Please try again and allow the KakaoTalk Calendar permission. If it keeps failing, contact an administrator."
   },
   "leaders": {
     "searchPlaceholder": "Search by name or unit",

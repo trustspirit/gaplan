@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { decideKakaoSyncAction } from './kakaoSyncAction'
+import { decideKakaoSyncAction, isPastScheduleDate } from './kakaoSyncAction'
 
 const CONFIRMED = {
   status: 'confirmed',
@@ -28,5 +28,28 @@ describe('decideKakaoSyncAction', () => {
 
   it('이전 스냅샷이 없으면(최초 쓰기) 이벤트가 있어도 갱신한다', () => {
     expect(decideKakaoSyncAction('event-1', undefined, CONFIRMED)).toBe('update')
+  })
+})
+
+describe('isPastScheduleDate', () => {
+  // 함수는 UTC에서 돌지만 schedule.date는 KST 날짜다. KST 8/7 오전 8시는
+  // UTC로는 아직 8/6이므로, UTC 기준으로 "오늘"을 잡으면 당일 일정이 과거로
+  // 오판돼 생성이 막힌다.
+  const NOW = new Date('2026-08-06T23:00:00Z').getTime() // = KST 2026-08-07 08:00
+
+  it('오늘(KST)은 과거가 아니다', () => {
+    expect(isPastScheduleDate('2026-08-07', NOW)).toBe(false)
+  })
+
+  it('어제는 과거다', () => {
+    expect(isPastScheduleDate('2026-08-06', NOW)).toBe(true)
+  })
+
+  it('내일은 과거가 아니다', () => {
+    expect(isPastScheduleDate('2026-08-08', NOW)).toBe(false)
+  })
+
+  it('date가 없으면 과거로 보지 않는다', () => {
+    expect(isPastScheduleDate(undefined, NOW)).toBe(false)
   })
 })

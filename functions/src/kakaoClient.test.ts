@@ -3,6 +3,7 @@ import {
   applyRefreshResponse,
   isAccessTokenExpired,
   createEventForm,
+  hasTalkCalendarScope,
   type KakaoTokenDoc,
 } from './kakaoClient'
 
@@ -88,5 +89,28 @@ describe('createEventForm', () => {
     // JSON 본문으로 보내면 거부된다.
     const form = createEventForm('primary', BODY)
     expect(JSON.parse(form.get('event')!)).toEqual(BODY)
+  })
+})
+
+describe('hasTalkCalendarScope', () => {
+  it('동의 목록에 talk_calendar가 있으면 true', () => {
+    expect(hasTalkCalendarScope('profile_nickname talk_calendar')).toBe(true)
+  })
+
+  it('선택 동의를 거부해 talk_calendar가 빠지면 false', () => {
+    expect(hasTalkCalendarScope('profile_nickname')).toBe(false)
+  })
+
+  it('동의 항목이 하나도 없으면 false', () => {
+    expect(hasTalkCalendarScope('')).toBe(false)
+  })
+
+  it('scope 필드 자체가 없으면 판단하지 않고 통과시킨다', () => {
+    // 판단할 근거가 없는데 막으면 멀쩡한 연동을 깨뜨린다.
+    expect(hasTalkCalendarScope(undefined)).toBe(true)
+  })
+
+  it('접두어가 같은 다른 항목을 talk_calendar로 오인하지 않는다', () => {
+    expect(hasTalkCalendarScope('talk_calendars')).toBe(false)
   })
 })

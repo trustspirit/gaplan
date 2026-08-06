@@ -1,6 +1,21 @@
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
 import { needsKakaoUpdate } from './kakaoEventBody'
 
+dayjs.extend(utc)
+dayjs.extend(timezone)
+
 export type KakaoSyncAction = 'skip' | 'create' | 'update'
+
+// schedule.date는 KST 벽시계 날짜다. 함수는 UTC에서 도므로 "오늘"도 반드시
+// Asia/Seoul 기준으로 계산해야 한다 — 아니면 KST 오전 9시 이전에는 오늘 일정이
+// 과거로 오판된다. 오늘은 과거가 아니다(당일 일정은 계속 생성한다).
+export function isPastScheduleDate(date: string | undefined, nowMs: number = Date.now()): boolean {
+  if (!date) return false
+  const todayKst = dayjs(nowMs).tz('Asia/Seoul').format('YYYY-MM-DD')
+  return date < todayKst
+}
 
 // existingEventId는 호출부가 이미 올바른 스냅샷(after.kakaoEventIds)에서 뽑아온
 // 값이어야 한다 — 어느 스냅샷을 읽을지는 이 함수의 책임이 아니다. 이 함수는

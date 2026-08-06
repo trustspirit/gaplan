@@ -25,7 +25,13 @@ export interface KakaoScheduleInput extends ScheduleTitleInput {
 // schedule.date + startTime은 KST 벽시계 값이다. 카카오는 UTC ISO8601을 요구한다.
 // '2026-08-09' + '10:00' → '2026-08-09T01:00:00Z'
 export function toKakaoTime(date: string, time: string): string {
-  return new Date(`${date}T${time}:00+09:00`).toISOString().replace(/\.\d{3}Z$/, 'Z')
+  const d = new Date(`${date}T${time}:00+09:00`)
+  // toISOString()은 잘못된 날짜에서 맨몸 RangeError("Invalid time value")를 던진다.
+  // 그 로그만으로는 어느 값이 문제였는지 알 수 없으므로 입력을 이름과 함께 남긴다.
+  if (Number.isNaN(d.getTime())) {
+    throw new Error(`[kakao] invalid schedule time: date="${date}" time="${time}"`)
+  }
+  return d.toISOString().replace(/\.\d{3}Z$/, 'Z')
 }
 
 // title.slice()는 UTF-16 코드 유닛 기준이라 서로게이트 쌍(이모지 등)을 반으로

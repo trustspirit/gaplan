@@ -162,3 +162,15 @@ describe('needsKakaoUpdate', () => {
     expect(needsKakaoUpdate({ ...AFTER, unitId: undefined }, { ...AFTER, unitId: '' })).toBe(false)
   })
 })
+
+describe('toKakaoTime 입력 검증', () => {
+  it('날짜가 잘못되면 입력을 담은 에러를 던진다', () => {
+    // toISOString()의 맨몸 RangeError("Invalid time value")는 어느 값이
+    // 문제였는지 알려 주지 않아 로그만 보고는 원인을 못 찾는다.
+    expect(() => toKakaoTime('2026-13-45', '10:00')).toThrow(/date="2026-13-45" time="10:00"/)
+  })
+
+  it('시간이 잘못되면 입력을 담은 에러를 던진다', () => {
+    expect(() => toKakaoTime('2026-08-09', '99:99')).toThrow(/date="2026-08-09" time="99:99"/)
+  })
+})

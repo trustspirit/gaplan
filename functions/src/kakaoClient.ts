@@ -13,7 +13,6 @@ export interface KakaoTokenDoc {
   accessToken: string
   accessTokenExpiresAt: number
   refreshTokenExpiresAt: number
-  kakaoUserId?: number
   connectedAt?: number
 }
 
@@ -22,6 +21,17 @@ export interface KakaoTokenResponse {
   expires_in: number
   refresh_token?: string
   refresh_token_expires_in?: number
+  // 동의한 항목 목록. 카카오는 공백으로 구분해 돌려준다. (예: 'talk_calendar profile_nickname')
+  scope?: string
+}
+
+// talk_calendar는 선택 동의 항목이다. 사용자가 거부해도 토큰은 정상 발급되므로
+// 연동은 성공한 것처럼 보이지만, 이후 모든 이벤트 생성이 403으로 죽는다.
+// 그 실패는 로그에만 남아 사용자에게는 아무 신호가 없다 — 연동 시점에 막는다.
+// scope 필드 자체가 없으면(문서상 항상 오지만, 방어적으로) 판단하지 않고 통과시킨다.
+export function hasTalkCalendarScope(scope: string | undefined): boolean {
+  if (scope === undefined) return true
+  return scope.split(/[\s,]+/).filter(Boolean).includes('talk_calendar')
 }
 
 export function getKakaoConfig(): { restApiKey: string; clientSecret: string } {
@@ -133,9 +143,12 @@ export async function getAccessToken(uid: string): Promise<string | null> {
   }
 }
 
+// scheduleId는 로그 전용이다. 사고 후 추적에서 "어느 일정이 실패했는가"를
+// 알 수 있어야 하는데, 지금은 sync 단계 로그에만 그 값이 있다.
 export async function createKakaoEvent(
   accessToken: string,
   body: KakaoEventBody,
+  scheduleId?: string,
 ): Promise<string | null> {
   const res = await postForm(
     `${KAPI_BASE}/v2/api/calendar/create/event`,
@@ -143,7 +156,9 @@ export async function createKakaoEvent(
     accessToken,
   )
   if (!res.ok) {
-    functions.logger.error(`[kakao] create event failed: ${res.status} ${await res.text()}`)
+    functions.logger.error(
+      `[kakao] create event failed schedule=${scheduleId ?? '-'}: ${res.status} ${await res.text()}`,
+    )
     return null
   }
   const json = (await res.json()) as { event_id?: string }
@@ -154,6 +169,7 @@ export async function updateKakaoEvent(
   accessToken: string,
   eventId: string,
   body: KakaoEventBody,
+  scheduleId?: string,
 ): Promise<void> {
   // 수정 API는 event_id + (event 또는 calendar_id) 중 최소 하나를 요구한다.
   // createEventForm은 생성용으로 calendar_id+event를 채워 주므로, 여기서는
@@ -163,17 +179,27 @@ export async function updateKakaoEvent(
   form.delete('calendar_id')
   const res = await postForm(`${KAPI_BASE}/v2/api/calendar/update/event/host`, form, accessToken)
   if (!res.ok) {
-    functions.logger.error(`[kakao] update event failed: ${res.status} ${await res.text()}`)
+    functions.logger.error(
+      `[kakao] update event failed schedule=${scheduleId ?? '-'} event=${eventId}: ` +
+        `${res.status} ${await res.text()}`,
+    )
   }
 }
 
-export async function deleteKakaoEvent(accessToken: string, eventId: string): Promise<void> {
+export async function deleteKakaoEvent(
+  accessToken: string,
+  eventId: string,
+  scheduleId?: string,
+): Promise<void> {
   const res = await fetch(
     `${KAPI_BASE}/v2/api/calendar/delete/event?event_id=${encodeURIComponent(eventId)}`,
     { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } },
   )
   if (!res.ok) {
-    functions.logger.error(`[kakao] delete event failed: ${res.status} ${await res.text()}`)
+    functions.logger.error(
+      `[kakao] delete event failed schedule=${scheduleId ?? '-'} event=${eventId}: ` +
+        `${res.status} ${await res.text()}`,
+    )
   }
 }
 

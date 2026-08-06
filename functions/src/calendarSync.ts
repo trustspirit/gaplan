@@ -8,6 +8,7 @@ import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
 import { UNIT_REGION_MAP } from './unitRegionMap'
 import { buildScheduleTitle } from './scheduleTitle'
+import { isBookkeepingOnlyWrite } from './bookkeepingWrite'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -24,6 +25,16 @@ export const calendarSync = functions
 
     const after = change.after.data()
     const before = change.before.data()
+
+    // kakaoCalendarSync도 같은 문서에 onWrite로 걸려 있고 kakaoEventIds를 되쓴다.
+    // 그 되쓰기가 먼저 도착하면 여기서 after.googleCalendarEventId는 아직
+    // undefined라 아래 조기 반환 가드에 걸리지 않고, before 쪽도 undefined라
+    // insert 경로로 들어가 구글 이벤트가 하나 더 생긴다.
+    // 장부 필드만 바뀐 write에는 캘린더 쪽에서 할 일이 없으므로 여기서 끊는다.
+    // (기존 동작 유지: 이 트리거 자신의 되쓰기는 원래도 66행 가드에서 반환됐다.
+    //  달라지는 것은 반환 지점이 앞당겨져 Firestore 읽기를 아끼는 것뿐이다.)
+    if (isBookkeepingOnlyWrite(before, after)) return
+
     const seventyUid = after?.seventyUid ?? before?.seventyUid
     const seventySnap = seventyUid
       ? await db.collection('users').doc(seventyUid).get()

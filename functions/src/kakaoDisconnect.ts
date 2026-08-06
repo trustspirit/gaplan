@@ -16,8 +16,14 @@ export const kakaoDisconnect = functions
     const accessToken = await getAccessToken(uid)
     if (accessToken) await unlinkKakao(accessToken)
 
-    await db.collection('kakaoTokens').doc(uid).delete()
-    await db.collection('users').doc(uid).update({ kakaoConnected: false })
+    // 토큰 삭제와 플래그 내리기는 함께 성공해야 한다. update는 사용자 문서가
+    // 없으면 NOT_FOUND로 던지는데, 그 시점엔 토큰이 이미 지워진 뒤라 절반만
+    // 끝난 작업이 실패 토스트로 보인다. set + merge로 맞추고 배치로 묶는다
+    // (kakaoClient.markDisconnected가 같은 이유로 이미 set + merge다).
+    const batch = db.batch()
+    batch.delete(db.collection('kakaoTokens').doc(uid))
+    batch.set(db.collection('users').doc(uid), { kakaoConnected: false }, { merge: true })
+    await batch.commit()
 
     return { connected: false }
   })
