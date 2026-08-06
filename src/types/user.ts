@@ -12,6 +12,7 @@ export interface AppUser {
   unitId?: string
   assignedSeventyUid?: string  // exec_secretary / admin+exec_secretary: 담당 칠십인 uid
   calendarConnected?: boolean
+  kakaoConnected?: boolean
   preRegistered?: boolean  // true = admin-created placeholder, not yet linked to Firebase Auth
   createdAt: string
 }

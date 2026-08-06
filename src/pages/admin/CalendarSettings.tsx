@@ -2,18 +2,23 @@ import { useState, useEffect } from 'react'
 import { doc, setDoc, getDoc, writeBatch } from 'firebase/firestore'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
+import { useAtomValue } from 'jotai'
 import { RefreshCw, Copy, Check, Globe } from 'lucide-react'
 import { manualCalendarSync } from '@/services/scheduleService'
+import { buildKakaoAuthUrl, disconnectKakao } from '@/services/kakaoService'
 import { db } from '@/firebase'
 import { REGIONS, getUnitsByRegion } from '@/constants/regions'
 import { generatePublicToken } from '@/utils/publicToken'
 import { useTopBar } from '@/hooks/useTopBar'
+import { authUserAtom } from '@/store/authAtom'
 import { Card, CardHeader, CardBody, Input, Button } from '@/components/ui'
 import styles from './CalendarSettings.module.scss'
 
 export function CalendarSettings() {
   const { t } = useTranslation()
   useTopBar({ subtext: t('admin.calendar') })
+  const user = useAtomValue(authUserAtom)
+  const [kakaoBusy, setKakaoBusy] = useState(false)
   const [calendarIds, setCalendarIds] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
@@ -70,6 +75,26 @@ export function CalendarSettings() {
       toast.error((e as { message?: string })?.message ?? t('common.syncError'))
     } finally {
       setSyncing(false)
+    }
+  }
+
+  const handleKakaoConnect = () => {
+    try {
+      window.location.href = buildKakaoAuthUrl()
+    } catch {
+      toast.error(t('kakao.missingKey'))
+    }
+  }
+
+  const handleKakaoDisconnect = async () => {
+    setKakaoBusy(true)
+    try {
+      await disconnectKakao()
+      toast.success(t('kakao.title'))
+    } catch {
+      toast.error(t('kakao.disconnectFailed'))
+    } finally {
+      setKakaoBusy(false)
     }
   }
 
@@ -313,6 +338,22 @@ export function CalendarSettings() {
               </div>
             ))}
           </div>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title={t('kakao.title')} />
+        <CardBody>
+          <p className={styles.desc}>{t('kakao.description')}</p>
+          {user?.kakaoConnected ? (
+            <Button variant="ghost" onClick={handleKakaoDisconnect} loading={kakaoBusy}>
+              {t('kakao.disconnect')}
+            </Button>
+          ) : (
+            <Button variant="primary" onClick={handleKakaoConnect}>
+              {t('kakao.connect')}
+            </Button>
+          )}
         </CardBody>
       </Card>
     </div>
