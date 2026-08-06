@@ -574,6 +574,22 @@
     "cancelFailed": "Failed to cancel attendance.",
     "visibilityFailed": "Failed to change visibility."
   },
+  "kakao": {
+    "title": "KakaoTalk Calendar",
+    "description": "Once connected, confirmed schedules are also added to your KakaoTalk calendar.",
+    "connect": "Connect Kakao Calendar",
+    "disconnect": "Disconnect",
+    "connected": "Connected",
+    "connecting": "Connecting...",
+    "expired": "Your Kakao connection has expired. Please reconnect.",
+    "reconnect": "Reconnect",
+    "connectFailed": "Failed to connect Kakao.",
+    "disconnectFailed": "Failed to disconnect.",
+    "disconnected": "Disconnected.",
+    "missingKey": "Kakao app key is not configured. Please contact an administrator.",
+    "stateMismatch": "This sign-in request could not be verified. Please start over.",
+    "calendarScopeRequired": "Calendar permission is required. Please try again and allow the KakaoTalk Calendar permission. If it keeps failing, contact an administrator."
+  },
   "leaders": {
     "searchPlaceholder": "Search by name or unit",
     "empty": "No results found",

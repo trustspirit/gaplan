@@ -2,18 +2,26 @@ import { useState, useEffect } from 'react'
 import { doc, setDoc, getDoc, writeBatch } from 'firebase/firestore'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
+import { useAtom } from 'jotai'
 import { RefreshCw, Copy, Check, Globe } from 'lucide-react'
 import { manualCalendarSync } from '@/services/scheduleService'
+import { buildKakaoAuthUrl, disconnectKakao } from '@/services/kakaoService'
 import { db } from '@/firebase'
 import { REGIONS, getUnitsByRegion } from '@/constants/regions'
 import { generatePublicToken } from '@/utils/publicToken'
 import { useTopBar } from '@/hooks/useTopBar'
+import { authUserAtom } from '@/store/authAtom'
 import { Card, CardHeader, CardBody, Input, Button } from '@/components/ui'
 import styles from './CalendarSettings.module.scss'
 
 export function CalendarSettings() {
   const { t } = useTranslation()
   useTopBar({ subtext: t('admin.calendar') })
+  // authUserAtom은 로그인 시 getDoc 한 번으로 채워지는 값이라 실시간 구독이 아니다.
+  // 연동/해제 결과를 여기서 직접 반영하지 않으면 화면이 바뀌지 않아 사용자는
+  // 작업이 실패했다고 오해한다 (TopBar의 이름 변경과 같은 패턴).
+  const [user, setUser] = useAtom(authUserAtom)
+  const [kakaoBusy, setKakaoBusy] = useState(false)
   const [calendarIds, setCalendarIds] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
@@ -70,6 +78,27 @@ export function CalendarSettings() {
       toast.error((e as { message?: string })?.message ?? t('common.syncError'))
     } finally {
       setSyncing(false)
+    }
+  }
+
+  const handleKakaoConnect = () => {
+    try {
+      window.location.href = buildKakaoAuthUrl()
+    } catch {
+      toast.error(t('kakao.missingKey'))
+    }
+  }
+
+  const handleKakaoDisconnect = async () => {
+    setKakaoBusy(true)
+    try {
+      await disconnectKakao()
+      setUser((prev) => (prev ? { ...prev, kakaoConnected: false } : prev))
+      toast.success(t('kakao.disconnected'))
+    } catch {
+      toast.error(t('kakao.disconnectFailed'))
+    } finally {
+      setKakaoBusy(false)
     }
   }
 
@@ -313,6 +342,25 @@ export function CalendarSettings() {
               </div>
             ))}
           </div>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title={t('kakao.title')} />
+        <CardBody>
+          <p className={styles.desc}>{t('kakao.description')}</p>
+          {user?.kakaoConnected ? (
+            <div className={styles.kakaoConnectedRow}>
+              <span className={styles.kakaoConnectedBadge}>{t('kakao.connected')}</span>
+              <Button variant="ghost" onClick={handleKakaoDisconnect} loading={kakaoBusy}>
+                {t('kakao.disconnect')}
+              </Button>
+            </div>
+          ) : (
+            <Button variant="primary" onClick={handleKakaoConnect}>
+              {t('kakao.connect')}
+            </Button>
+          )}
         </CardBody>
       </Card>
     </div>

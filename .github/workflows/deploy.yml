@@ -55,6 +55,7 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_SHARED_CALENDAR_ID: ${{ secrets.VITE_SHARED_CALENDAR_ID }}
+          VITE_KAKAO_REST_API_KEY: ${{ secrets.VITE_KAKAO_REST_API_KEY }}
         run: |
           {
             echo "VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY"
@@ -64,6 +65,7 @@ jobs:
             echo "VITE_FIREBASE_MESSAGING_SENDER_ID=$VITE_FIREBASE_MESSAGING_SENDER_ID"
             echo "VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID"
             echo "VITE_SHARED_CALENDAR_ID=$VITE_SHARED_CALENDAR_ID"
+            echo "VITE_KAKAO_REST_API_KEY=$VITE_KAKAO_REST_API_KEY"
           } > .env
 
       - name: Build
@@ -104,6 +106,21 @@ jobs:
       - name: Install functions dependencies
         run: npm install --prefer-offline --no-audit
         working-directory: functions
+
+      - name: Create .env
+        env:
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+        working-directory: functions
+        run: |
+          {
+            echo "KAKAO_REST_API_KEY=$KAKAO_REST_API_KEY"
+            echo "KAKAO_CLIENT_SECRET=$KAKAO_CLIENT_SECRET"
+            echo "EMAIL_USER=$EMAIL_USER"
+            echo "EMAIL_PASS=$EMAIL_PASS"
+          } > .env
 
       - name: Build functions
         run: npm run build

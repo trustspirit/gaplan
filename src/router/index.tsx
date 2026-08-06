@@ -114,6 +114,9 @@ const ProjectDetailPage = lazyRetry(() =>
 const LeadersPage = lazyRetry(() =>
   import('@/pages/admin/LeadersPage').then((m) => ({ default: m.LeadersPage })),
 )
+const KakaoCallback = lazyRetry(() =>
+  import('@/pages/auth/KakaoCallback').then((m) => ({ default: m.KakaoCallback })),
+)
 
 export function AppRouter() {
   return (
@@ -125,6 +128,7 @@ export function AppRouter() {
           <Route path="/pending" element={<PendingPage />} />
 
           <Route element={<ProtectedRoute />}>
+            <Route path="/kakao/callback" element={<KakaoCallback />} />
             <Route element={<ShellLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/calendar" element={<CalendarPage />} />

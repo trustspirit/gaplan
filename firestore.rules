@@ -136,5 +136,12 @@ service cloud.firestore {
       // Only admin can write (import script runs with admin SDK, bypasses rules)
       allow write: if isAdmin();
     }
+
+    match /kakaoTokens/{uid} {
+      // 리프레시 토큰은 해당 카카오 계정의 캘린더를 2개월간 조작할 수 있는
+      // 자격 증명이다. 본인조차 클라이언트에서 읽을 이유가 없다.
+      // Cloud Functions는 admin SDK를 쓰므로 이 규칙을 우회한다.
+      allow read, write: if false;
+    }
   }
 }

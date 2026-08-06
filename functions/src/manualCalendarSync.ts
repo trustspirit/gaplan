@@ -9,7 +9,7 @@ import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
 import { UNIT_REGION_MAP } from './unitRegionMap'
-import { UNIT_NAME_MAP } from './unitNameMap'
+import { buildScheduleTitle, type ScheduleTitleInput } from './scheduleTitle'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -58,17 +58,9 @@ export const manualCalendarSync = functions
         continue
       }
 
-      const unitName = UNIT_NAME_MAP[s.unitId ?? ''] ?? s.unitId ?? ''
-      let title: string
-      if (s.customTitle) {
-        title = s.customTitle as string
-      } else if (s.type === 'ward_visit') {
-        title = s.wardName ? `${unitName} - ${s.wardName} 방문` : `${unitName} 방문`
-      } else if (s.type === 'interview') {
-        title = `${unitName} 접견`
-      } else {
-        title = unitName ? `${unitName} 모임` : '모임'
-      }
+      // calendarSync / kakaoCalendarSync와 같은 함수를 쓴다 — 세 경로가 만드는
+      // 제목이 영원히 같아야 한다.
+      const title = buildScheduleTitle(s as ScheduleTitleInput)
 
       const startDateTime = `${s.date}T${s.startTime}:00+09:00`
       const endDateTime = `${s.date}T${s.endTime}:00+09:00`

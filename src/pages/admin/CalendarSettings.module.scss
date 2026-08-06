@@ -384,3 +384,18 @@
   font-size: $font-size-sm;
   color: $color-text;
 }
+
+// ─── Kakao Calendar ────────────────────────────────────────────────────────
+.kakaoConnectedRow {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.kakaoConnectedBadge {
+  font-size: $font-size-xs;
+  color: $color-success;
+  background: rgba($color-success, 0.08);
+  border-radius: $border-radius-sm;
+  padding: 2px 7px;
+}
