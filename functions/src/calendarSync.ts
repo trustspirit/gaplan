@@ -7,23 +7,13 @@ import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
 import { UNIT_REGION_MAP } from './unitRegionMap'
-import { UNIT_NAME_MAP } from './unitNameMap'
+import { buildScheduleTitle } from './scheduleTitle'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
     scopes: ['https://www.googleapis.com/auth/calendar.events'],
   })
   return google.calendar({ version: 'v3', auth })
-}
-
-function buildTitle(data: FirebaseFirestore.DocumentData): string {
-  if (data.customTitle) return data.customTitle as string
-  const unitName = UNIT_NAME_MAP[data.unitId ?? ''] ?? data.unitId ?? ''
-  if (data.type === 'ward_visit') {
-    return data.wardName ? `${unitName} - ${data.wardName} 방문` : `${unitName} 방문`
-  }
-  if (data.type === 'interview') return `${unitName} 접견`
-  return unitName ? `${unitName} 모임` : '모임'
 }
 
 export const calendarSync = functions
@@ -77,7 +67,7 @@ export const calendarSync = functions
 
     const startDateTime = `${after.date}T${after.startTime}:00+09:00`
     const endDateTime = `${after.date}T${after.endTime}:00+09:00`
-    const title = buildTitle(after)
+    const title = buildScheduleTitle(after)
 
     const calendar = getCalendarClient()
     const existingEventId: string | undefined = before?.googleCalendarEventId
