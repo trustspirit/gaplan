@@ -20,6 +20,17 @@ const LEADER: Leader = {
   email: 'a@b.com',
 }
 
+const LEADER_B: Leader = {
+  id: '301958',
+  externalUnitId: 301958,
+  unitNameKo: '수유 와드',
+  unitNameEn: 'Suyu Ward',
+  role: '감독',
+  name: '김성일',
+  phone: '010-1234-5678',
+  email: 'c@d.com',
+}
+
 describe('LeaderEditSheet', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -103,6 +114,34 @@ describe('LeaderEditSheet', () => {
     expect(onClose).not.toHaveBeenCalled()
     // 입력값이 남아 있어야 재시도할 수 있다
     expect(screen.getByLabelText('leaders.name')).toHaveValue('이윤학')
+  })
+
+  it('다른 지도자(id 변경)로 바뀌면 폼을 그 사람 값으로 리셋한다', () => {
+    const { rerender } = render(
+      <LeaderEditSheet leader={LEADER} onClose={vi.fn()} onSave={vi.fn()} />,
+    )
+
+    fireEvent.change(screen.getByLabelText('leaders.name'), { target: { value: '수정 중' } })
+    expect(screen.getByLabelText('leaders.name')).toHaveValue('수정 중')
+
+    rerender(<LeaderEditSheet leader={LEADER_B} onClose={vi.fn()} onSave={vi.fn()} />)
+
+    expect(screen.getByLabelText('leaders.name')).toHaveValue('김성일')
+    expect(screen.getByLabelText('leaders.phone')).toHaveValue('010-1234-5678')
+    expect(screen.getByLabelText('leaders.email')).toHaveValue('c@d.com')
+  })
+
+  it('같은 id의 새 객체로 리렌더되어도 입력 중이던 값을 유지한다', () => {
+    const { rerender } = render(
+      <LeaderEditSheet leader={LEADER} onClose={vi.fn()} onSave={vi.fn()} />,
+    )
+
+    fireEvent.change(screen.getByLabelText('leaders.name'), { target: { value: '수정 중' } })
+
+    // 값은 동일하지만 참조가 다른 새 leader 객체 (예: firestore 재구독으로 인한 리렌더)
+    rerender(<LeaderEditSheet leader={{ ...LEADER }} onClose={vi.fn()} onSave={vi.fn()} />)
+
+    expect(screen.getByLabelText('leaders.name')).toHaveValue('수정 중')
   })
 
   it('취소하면 저장 없이 닫는다', () => {
