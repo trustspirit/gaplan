@@ -90,7 +90,7 @@ export function CalendarSettings() {
     setKakaoBusy(true)
     try {
       await disconnectKakao()
-      toast.success(t('kakao.title'))
+      toast.success(t('kakao.disconnected'))
     } catch {
       toast.error(t('kakao.disconnectFailed'))
     } finally {
@@ -346,9 +346,12 @@ export function CalendarSettings() {
         <CardBody>
           <p className={styles.desc}>{t('kakao.description')}</p>
           {user?.kakaoConnected ? (
-            <Button variant="ghost" onClick={handleKakaoDisconnect} loading={kakaoBusy}>
-              {t('kakao.disconnect')}
-            </Button>
+            <div className={styles.kakaoConnectedRow}>
+              <span className={styles.kakaoConnectedBadge}>{t('kakao.connected')}</span>
+              <Button variant="ghost" onClick={handleKakaoDisconnect} loading={kakaoBusy}>
+                {t('kakao.disconnect')}
+              </Button>
+            </div>
           ) : (
             <Button variant="primary" onClick={handleKakaoConnect}>
               {t('kakao.connect')}

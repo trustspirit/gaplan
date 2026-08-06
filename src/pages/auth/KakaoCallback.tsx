@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { connectKakao } from '@/services/kakaoService'
-import { Spinner } from '@/components/ui'
+import { connectKakao, consumeKakaoState } from '@/services/kakaoService'
+import { Spinner, Button } from '@/components/ui'
+import styles from './KakaoCallback.module.scss'
 
 export function KakaoCallback() {
   const { t } = useTranslation()
@@ -18,6 +19,18 @@ export function KakaoCallback() {
     ran.current = true
 
     const code = params.get('code')
+    const returnedState = params.get('state')
+    // consumeKakaoState()는 1회성 읽기다 — 이 요청이 이 탭에서 우리가 시작한
+    // 인가 시도인지 확인하고, 같은 URL이 재사용돼도(리로드 등) 두 번째 확인은
+    // 항상 실패하게 만든다. 상태 확인은 code 존재 여부와 무관하게 항상 먼저
+    // 수행한다.
+    const expectedState = consumeKakaoState()
+
+    if (!returnedState || returnedState !== expectedState) {
+      setError(t('kakao.stateMismatch'))
+      return
+    }
+
     if (!code) {
       setError(t('kakao.connectFailed'))
       return
@@ -30,19 +43,19 @@ export function KakaoCallback() {
 
   if (error) {
     return (
-      <div style={{ padding: 24, textAlign: 'center' }}>
-        <p>{error}</p>
-        <button type="button" onClick={() => navigate('/admin/calendar', { replace: true })}>
+      <div className={styles.page}>
+        <p className={styles.message}>{error}</p>
+        <Button variant="ghost" onClick={() => navigate('/admin/calendar', { replace: true })}>
           {t('common.close')}
-        </button>
+        </Button>
       </div>
     )
   }
 
   return (
-    <div style={{ padding: 24, textAlign: 'center' }}>
+    <div className={styles.page}>
       <Spinner />
-      <p>{t('kakao.connecting')}</p>
+      <p className={styles.message}>{t('kakao.connecting')}</p>
     </div>
   )
 }

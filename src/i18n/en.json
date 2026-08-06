@@ -585,7 +585,9 @@
     "reconnect": "Reconnect",
     "connectFailed": "Failed to connect Kakao.",
     "disconnectFailed": "Failed to disconnect.",
-    "missingKey": "Kakao app key is not configured. Please contact an administrator."
+    "disconnected": "Disconnected.",
+    "missingKey": "Kakao app key is not configured. Please contact an administrator.",
+    "stateMismatch": "This sign-in request could not be verified. Please start over."
   },
   "leaders": {
     "searchPlaceholder": "Search by name or unit",
