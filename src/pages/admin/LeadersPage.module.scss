@@ -158,6 +158,7 @@
   font-size: $font-size-sm;
   color: $color-primary;
   text-decoration: none;
+  overflow-wrap: anywhere;
 
   &:hover {
     text-decoration: underline;

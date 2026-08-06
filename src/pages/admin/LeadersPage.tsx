@@ -132,7 +132,7 @@ export function LeadersPage() {
   }, [filtered])
 
   const handleSave = async (patch: LeaderPatch) => {
-    if (!editing) return
+    if (!editing) throw new Error('No leader selected for editing')
     await updateLeader(editing.id, patch)
   }
 

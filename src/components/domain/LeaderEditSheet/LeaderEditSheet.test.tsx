@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { LeaderEditSheet } from './LeaderEditSheet'
 import type { Leader } from '@/types/leader'
 
@@ -92,6 +93,44 @@ describe('LeaderEditSheet', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled())
   })
 
+  it('텍스트 입력에서 Enter를 누르면 저장된다', async () => {
+    const user = userEvent.setup()
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    const onClose = vi.fn()
+    render(<LeaderEditSheet leader={LEADER} onClose={onClose} onSave={onSave} />)
+
+    const phoneInput = screen.getByLabelText('leaders.phone')
+    await user.clear(phoneInput)
+    await user.type(phoneInput, '010-0000-1111{Enter}')
+
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith({
+        name: '이윤학',
+        phone: '010-0000-1111',
+        email: 'a@b.com',
+      }),
+    )
+    await waitFor(() => expect(onClose).toHaveBeenCalled())
+  })
+
+  it('저장 중에는 X 버튼으로 닫히지 않는다', async () => {
+    let resolveSave!: () => void
+    const onSave = vi.fn(
+      () => new Promise<void>(resolve => { resolveSave = resolve }),
+    )
+    const onClose = vi.fn()
+    render(<LeaderEditSheet leader={LEADER} onClose={onClose} onSave={onSave} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'leaders.save' }))
+    await waitFor(() => expect(onSave).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: 'common.close' }))
+    expect(onClose).not.toHaveBeenCalled()
+
+    resolveSave()
+    await waitFor(() => expect(onClose).toHaveBeenCalled())
+  })
+
   it('이름을 비우고 저장하면 에러를 표시하고 onSave를 부르지 않는다', async () => {
     const onSave = vi.fn()
     render(<LeaderEditSheet leader={LEADER} onClose={vi.fn()} onSave={onSave} />)
@@ -142,6 +181,22 @@ describe('LeaderEditSheet', () => {
     rerender(<LeaderEditSheet leader={{ ...LEADER }} onClose={vi.fn()} onSave={vi.fn()} />)
 
     expect(screen.getByLabelText('leaders.name')).toHaveValue('수정 중')
+  })
+
+  it('닫았다가 같은 지도자를 다시 열면 원래 값으로 리셋한다', () => {
+    const { rerender } = render(
+      <LeaderEditSheet leader={LEADER} onClose={vi.fn()} onSave={vi.fn()} />,
+    )
+
+    fireEvent.change(screen.getByLabelText('leaders.name'), { target: { value: '수정 중' } })
+    expect(screen.getByLabelText('leaders.name')).toHaveValue('수정 중')
+
+    // 시트를 닫는다 (부모가 leader를 null로)
+    rerender(<LeaderEditSheet leader={null} onClose={vi.fn()} onSave={vi.fn()} />)
+    // 같은 지도자를 다시 연다
+    rerender(<LeaderEditSheet leader={LEADER} onClose={vi.fn()} onSave={vi.fn()} />)
+
+    expect(screen.getByLabelText('leaders.name')).toHaveValue('이윤학')
   })
 
   it('취소하면 저장 없이 닫는다', () => {

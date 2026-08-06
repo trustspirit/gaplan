@@ -19,6 +19,7 @@ interface LeaderData {
 // 주소록은 /admin/leaders 화면에서 편집하며, 이 스크립트를 재실행하면
 // batch.set()이 UI 편집 내용을 전부 덮어쓴다.
 // 재실행이 정말 필요하면 먼저 Firestore 현재 값을 이 배열에 반영할 것.
+// 아래 ALLOW_LEADER_SEED_OVERWRITE 가드가 실수로 인한 재실행을 막는다.
 const LEADERS_DATA: LeaderData[] = [
   { externalUnitId: 169943, unitNameKo: "흥덕 와드", unitNameEn: "Heungdeok Ward", role: "감독", name: "조일진", phone: "010-2236-9524", email: "iljin119@naver.com" },
   { externalUnitId: 72044, unitNameKo: "신촌 와드", unitNameEn: "Sinchon Ward", role: "감독", name: "권경민", phone: "010-3231-0326" },
@@ -138,6 +139,13 @@ const LEADERS_DATA: LeaderData[] = [
 ]
 
 async function run() {
+  if (!process.env.ALLOW_LEADER_SEED_OVERWRITE) {
+    console.error('이 스크립트는 Firestore leaders 컬렉션 전체를 덮어씁니다.')
+    console.error('UI에서 수정한 내용이 모두 사라집니다. 정말 실행하려면:')
+    console.error('  ALLOW_LEADER_SEED_OVERWRITE=1 npx tsx functions/scripts/import-leaders.ts')
+    process.exit(1)
+  }
+
   const batch = db.batch()
   let count = 0
   for (const leader of LEADERS_DATA) {

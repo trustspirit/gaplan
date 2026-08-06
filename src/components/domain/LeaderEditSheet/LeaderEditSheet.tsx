@@ -41,7 +41,16 @@ export function LeaderEditSheet({ leader, onClose, onSave }: LeaderEditSheetProp
 
   if (!leader) return null
 
-  const handleSave = async () => {
+  // 저장 중에는 백드롭 클릭/ESC/X 버튼으로 닫히지 않게 막는다.
+  // 닫힌 뒤 저장이 실패하면 setSaveError가 언마운트된 컴포넌트에
+  // 떨어져서 실패가 조용히 사라진다.
+  const guardedClose = () => {
+    if (saving) return
+    onClose()
+  }
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
     if (!name.trim()) {
       setNameError(t('leaders.nameRequired'))
       setSaveError(null)
@@ -63,7 +72,7 @@ export function LeaderEditSheet({ leader, onClose, onSave }: LeaderEditSheetProp
   }
 
   const content = (
-    <div className={styles.form}>
+    <form className={styles.form} onSubmit={handleSave}>
       <div className={styles.meta}>
         <span className={styles.roleBadge}>{leader.role}</span>
         <span className={styles.unitName}>{leader.unitNameKo}</span>
@@ -93,21 +102,21 @@ export function LeaderEditSheet({ leader, onClose, onSave }: LeaderEditSheetProp
       )}
 
       <div className={styles.actions}>
-        <Button variant="ghost" fullWidth onClick={onClose} disabled={saving}>
+        <Button type="button" variant="ghost" fullWidth onClick={onClose} disabled={saving}>
           {t('leaders.cancel')}
         </Button>
-        <Button variant="primary" fullWidth onClick={handleSave} loading={saving}>
+        <Button type="submit" variant="primary" fullWidth loading={saving}>
           {t('leaders.save')}
         </Button>
       </div>
-    </div>
+    </form>
   )
 
   const title = t('leaders.edit')
 
   return isMobile ? (
-    <BottomSheet open onClose={onClose} title={title}>{content}</BottomSheet>
+    <BottomSheet open onClose={guardedClose} title={title}>{content}</BottomSheet>
   ) : (
-    <Modal open onClose={onClose} title={title}>{content}</Modal>
+    <Modal open onClose={guardedClose} title={title}>{content}</Modal>
   )
 }

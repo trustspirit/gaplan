@@ -63,6 +63,11 @@ describe('updateLeader', () => {
     await updateLeader('301957', { name: '이윤학' })
 
     expect(updateDoc).toHaveBeenCalledWith(DOC_REF, { name: '이윤학' })
+    // toHaveBeenCalledWith는 toEqual 의미론이라 { phone: undefined }도
+    // {}와 동일하게 통과한다. continue가 undefined 키를 쓰는 방식으로
+    // 회귀해도 위 assertion만으로는 못 잡으므로 실제 키 집합을 확인한다.
+    const payload = firestoreMocks.updateDoc.mock.calls[0][1] as Record<string, unknown>
+    expect(Object.keys(payload)).toEqual(['name'])
   })
 
   it('이름이 공백뿐이면 Error를 던지고 저장하지 않는다', async () => {
