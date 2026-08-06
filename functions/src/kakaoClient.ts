@@ -25,10 +25,9 @@ export interface KakaoTokenResponse {
 }
 
 export function getKakaoConfig(): { restApiKey: string; clientSecret: string } {
-  const cfg = functions.config().kakao ?? {}
   return {
-    restApiKey: cfg.rest_api_key ?? process.env.KAKAO_REST_API_KEY ?? '',
-    clientSecret: cfg.client_secret ?? process.env.KAKAO_CLIENT_SECRET ?? '',
+    restApiKey: functions.config().kakao?.rest_api_key ?? process.env.KAKAO_REST_API_KEY ?? '',
+    clientSecret: functions.config().kakao?.client_secret ?? process.env.KAKAO_CLIENT_SECRET ?? '',
   }
 }
 
@@ -101,7 +100,10 @@ async function refreshTokens(refreshToken: string): Promise<KakaoTokenResponse> 
 
 async function markDisconnected(uid: string): Promise<void> {
   const db = admin.firestore()
-  await db.collection('users').doc(uid).update({ kakaoConnected: false })
+  // set + merge는 문서가 없어도 던지지 않는다 (update는 NOT_FOUND로 던진다) —
+  // 이 함수는 getAccessToken의 catch 안에서 호출되므로 여기서 던지면
+  // "throw하지 않는다"는 getAccessToken의 계약이 깨진다.
+  await db.collection('users').doc(uid).set({ kakaoConnected: false }, { merge: true })
   functions.logger.warn(`[kakao] disconnected uid=${uid}`)
 }
 
@@ -153,6 +155,9 @@ export async function updateKakaoEvent(
   eventId: string,
   body: KakaoEventBody,
 ): Promise<void> {
+  // 수정 API는 event_id + (event 또는 calendar_id) 중 최소 하나를 요구한다.
+  // createEventForm은 생성용으로 calendar_id+event를 채워 주므로, 여기서는
+  // event_id를 추가하고 calendar_id를 지워 event만으로 요건을 충족시킨다.
   const form = createEventForm('primary', body)
   form.set('event_id', eventId)
   form.delete('calendar_id')
