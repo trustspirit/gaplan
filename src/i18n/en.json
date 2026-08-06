@@ -576,7 +576,15 @@
   },
   "leaders": {
     "searchPlaceholder": "Search by name or unit",
-    "empty": "No results found"
+    "empty": "No results found",
+    "edit": "Edit leader",
+    "name": "Name",
+    "phone": "Phone",
+    "email": "Email",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saveFailed": "Failed to save. Please try again.",
+    "nameRequired": "Please enter a name."
   },
   "pageHelp": {
     "admin": {

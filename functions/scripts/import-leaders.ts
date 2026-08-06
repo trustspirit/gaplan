@@ -15,6 +15,11 @@ interface LeaderData {
   email?: string
 }
 
+// ⚠️ 초기 시드 전용. 진실의 원천은 Firestore `leaders` 컬렉션이다.
+// 주소록은 /admin/leaders 화면에서 편집하며, 이 스크립트를 재실행하면
+// batch.set()이 UI 편집 내용을 전부 덮어쓴다.
+// 재실행이 정말 필요하면 먼저 Firestore 현재 값을 이 배열에 반영할 것.
+// 아래 ALLOW_LEADER_SEED_OVERWRITE 가드가 실수로 인한 재실행을 막는다.
 const LEADERS_DATA: LeaderData[] = [
   { externalUnitId: 169943, unitNameKo: "흥덕 와드", unitNameEn: "Heungdeok Ward", role: "감독", name: "조일진", phone: "010-2236-9524", email: "iljin119@naver.com" },
   { externalUnitId: 72044, unitNameKo: "신촌 와드", unitNameEn: "Sinchon Ward", role: "감독", name: "권경민", phone: "010-3231-0326" },
@@ -106,7 +111,7 @@ const LEADERS_DATA: LeaderData[] = [
   { externalUnitId: 106682, unitNameKo: "광안 와드", unitNameEn: "Gwangan Ward", role: "감독", name: "전영태", phone: "010-4513-7094", email: "jjt204320@naver.com" },
   { externalUnitId: 428698, unitNameKo: "Seoul Branch (English)", unitNameEn: "Seoul Branch (English)", role: "지부 회장", name: "EliHomeroTrejoFlores", phone: "010-2595-2187", email: "elitrejo@gmail.com" },
   { externalUnitId: 94382, unitNameKo: "상당 와드", unitNameEn: "Sangdang Ward", role: "감독", name: "최원창", phone: "010-7941-1939", email: "cb9714@naver.com" },
-  { externalUnitId: 301957, unitNameKo: "교문 와드", unitNameEn: "Gyomun Ward", role: "감독", name: "이상철", phone: "010-6718-0024", email: "bethe1004@hotmail.com" },
+  { externalUnitId: 301957, unitNameKo: "교문 와드", unitNameEn: "Gyomun Ward", role: "감독", name: "이윤학", phone: "010-4149-7611" },
   { externalUnitId: 509329, unitNameKo: "서울남 스테이크", unitNameEn: "Seoul South Stake", role: "스테이크 회장", name: "권태휘", phone: "010-8836-7251", email: "kwontaehuey@gmail.com" },
   { externalUnitId: 89443, unitNameKo: "여수 지부", unitNameEn: "Yeosu Branch", role: "지부 회장", name: "김태완", phone: "010-6420-8672", email: "kk91519@naver.com" },
   { externalUnitId: 258571, unitNameKo: "첨단 와드", unitNameEn: "Cheomdan Ward", role: "감독", name: "강승진", phone: "010-9238-1039", email: "kj981039@gmail.com" },
@@ -134,6 +139,13 @@ const LEADERS_DATA: LeaderData[] = [
 ]
 
 async function run() {
+  if (!process.env.ALLOW_LEADER_SEED_OVERWRITE) {
+    console.error('이 스크립트는 Firestore leaders 컬렉션 전체를 덮어씁니다.')
+    console.error('UI에서 수정한 내용이 모두 사라집니다. 정말 실행하려면:')
+    console.error('  ALLOW_LEADER_SEED_OVERWRITE=1 npx tsx functions/scripts/import-leaders.ts')
+    process.exit(1)
+  }
+
   const batch = db.batch()
   let count = 0
   for (const leader of LEADERS_DATA) {
