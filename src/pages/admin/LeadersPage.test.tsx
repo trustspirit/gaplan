@@ -1,10 +1,15 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { LeadersPage } from './LeadersPage'
 import * as useLeadersModule from '@/hooks/useLeaders'
 import type { Leader } from '@/types/leader'
 
 vi.mock('@/hooks/useLeaders')
+vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => true }))
+vi.mock('@/services/leaderService', () => ({
+  updateLeader: vi.fn().mockResolvedValue(undefined),
+  subscribeToLeaders: vi.fn(),
+}))
 
 beforeAll(() => {
   global.IntersectionObserver = vi.fn().mockImplementation(() => ({
@@ -95,5 +100,44 @@ describe('LeadersPage', () => {
     })
     expect(screen.getByText('홍길동')).toBeInTheDocument()
     expect(screen.queryByText('김철수')).not.toBeInTheDocument()
+  })
+
+  it('편집 버튼을 누르면 해당 지도자 값이 채워진 시트가 열린다', () => {
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: MOCK_LEADERS,
+      loading: false,
+      getLeaderByUnitName: vi.fn(),
+    })
+    render(<LeadersPage />)
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '김철수 정보 수정' }))
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByLabelText('leaders.name')).toHaveValue('김철수')
+    expect(screen.getByLabelText('leaders.phone')).toHaveValue('010-3333-4444')
+  })
+
+  it('저장하면 해당 지도자 id로 updateLeader를 호출한다', async () => {
+    const { updateLeader } = await import('@/services/leaderService')
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: MOCK_LEADERS,
+      loading: false,
+      getLeaderByUnitName: vi.fn(),
+    })
+    render(<LeadersPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: '김철수 정보 수정' }))
+    fireEvent.change(screen.getByLabelText('leaders.email'), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: 'leaders.save' }))
+
+    await waitFor(() =>
+      expect(updateLeader).toHaveBeenCalledWith('2', {
+        name: '김철수',
+        phone: '010-3333-4444',
+        email: '',
+      }),
+    )
   })
 })

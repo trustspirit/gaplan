@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react'
-import { Search } from 'lucide-react'
+import { Pencil, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLeaders } from '@/hooks/useLeaders'
 import type { Leader } from '@/types/leader'
 import { useTopBar } from '@/hooks/useTopBar'
 import { Skeleton } from '@/components/ui'
 import { ALL_UNITS, WARDS } from '@/constants/regions'
+import { LeaderEditSheet } from '@/components/domain'
+import { updateLeader, type LeaderPatch } from '@/services/leaderService'
 import styles from './LeadersPage.module.scss'
 
 const WARD_TO_UNIT_ID = new Map(WARDS.map((w) => [w.name.ko, w.unitId]))
@@ -26,35 +28,45 @@ interface StakeGroup {
   wardGroups: WardGroup[]
 }
 
-function LeaderCard({ leader }: { leader: Leader }) {
+function LeaderCard({ leader, onEdit }: { leader: Leader; onEdit: () => void }) {
   return (
     <div className={styles.card}>
-      <div className={styles.cardInfo}>
-        <span className={styles.roleBadge}>{leader.role}</span>
-        <span className={styles.cardName}>{leader.name}</span>
-      </div>
-      {(leader.phone || leader.email) && (
-        <div className={styles.cardContacts}>
-          {leader.phone && (
-            <a
-              href={`tel:${leader.phone}`}
-              className={styles.contactLink}
-              aria-label={`${leader.name} 전화`}
-            >
-              {leader.phone}
-            </a>
-          )}
-          {leader.email && (
-            <a
-              href={`mailto:${leader.email}`}
-              className={styles.contactLink}
-              aria-label={`${leader.name} 이메일`}
-            >
-              {leader.email}
-            </a>
-          )}
+      <div className={styles.cardMain}>
+        <div className={styles.cardInfo}>
+          <span className={styles.roleBadge}>{leader.role}</span>
+          <span className={styles.cardName}>{leader.name}</span>
         </div>
-      )}
+        {(leader.phone || leader.email) && (
+          <div className={styles.cardContacts}>
+            {leader.phone && (
+              <a
+                href={`tel:${leader.phone}`}
+                className={styles.contactLink}
+                aria-label={`${leader.name} 전화`}
+              >
+                {leader.phone}
+              </a>
+            )}
+            {leader.email && (
+              <a
+                href={`mailto:${leader.email}`}
+                className={styles.contactLink}
+                aria-label={`${leader.name} 이메일`}
+              >
+                {leader.email}
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+      <button
+        type="button"
+        className={styles.editButton}
+        onClick={onEdit}
+        aria-label={`${leader.name} 정보 수정`}
+      >
+        <Pencil size={16} />
+      </button>
     </div>
   )
 }
@@ -65,6 +77,7 @@ export function LeadersPage() {
   const lang = i18n.language === 'en' ? 'en' : 'ko'
   const { leaders, loading } = useLeaders()
   const [query, setQuery] = useState('')
+  const [editing, setEditing] = useState<Leader | null>(null)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -118,6 +131,11 @@ export function LeadersPage() {
     })
   }, [filtered])
 
+  const handleSave = async (patch: LeaderPatch) => {
+    if (!editing) return
+    await updateLeader(editing.id, patch)
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.searchWrapper}>
@@ -143,13 +161,13 @@ export function LeadersPage() {
             <div key={stakeGroup.stakeName.ko} className={styles.stakeGroup}>
               <h2 className={styles.stakeHeader}>{stakeGroup.stakeName[lang]}</h2>
               {stakeGroup.stakeLeaders.map((leader) => (
-                <LeaderCard key={leader.id} leader={leader} />
+                <LeaderCard key={leader.id} leader={leader} onEdit={() => setEditing(leader)} />
               ))}
               {stakeGroup.wardGroups.map(({ wardName, leaders }) => (
                 <div key={wardName.ko} className={styles.wardGroup}>
                   <h3 className={styles.wardHeader}>{wardName[lang]}</h3>
                   {leaders.map((leader) => (
-                    <LeaderCard key={leader.id} leader={leader} />
+                    <LeaderCard key={leader.id} leader={leader} onEdit={() => setEditing(leader)} />
                   ))}
                 </div>
               ))}
@@ -157,6 +175,12 @@ export function LeadersPage() {
           ))
         )}
       </div>
+
+      <LeaderEditSheet
+        leader={editing}
+        onClose={() => setEditing(null)}
+        onSave={handleSave}
+      />
     </div>
   )
 }
