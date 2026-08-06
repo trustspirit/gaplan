@@ -65,6 +65,14 @@
         { "fieldPath": "seventyUid", "order": "ASCENDING" },
         { "fieldPath": "dueDate", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "assignedSeventyUid", "order": "ASCENDING" },
+        { "fieldPath": "kakaoConnected", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
