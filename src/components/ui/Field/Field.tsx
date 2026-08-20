@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react'
 import clsx from 'clsx'
+import { fieldIds } from './fieldIds'
 import styles from './Field.module.scss'
 
 interface FieldProps {
@@ -12,6 +13,7 @@ interface FieldProps {
 }
 
 export function Field({ fieldId, label, hint, error, wrapperClassName, children }: FieldProps) {
+  const { errorId, hintId } = fieldIds(fieldId)
   return (
     <div className={clsx(styles.wrapper, wrapperClassName)}>
       {label && (
@@ -21,12 +23,12 @@ export function Field({ fieldId, label, hint, error, wrapperClassName, children 
       )}
       {children}
       {hint && (
-        <span id={`${fieldId}-hint`} className={styles.hint}>
+        <span id={hintId} className={styles.hint}>
           {hint}
         </span>
       )}
       {error && (
-        <span id={`${fieldId}-error`} className={styles.errorMsg}>
+        <span id={errorId} className={styles.errorMsg}>
           {error}
         </span>
       )}

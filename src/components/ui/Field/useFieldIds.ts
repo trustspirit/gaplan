@@ -1,10 +1,10 @@
 import { useId } from 'react'
+import { fieldIds } from './fieldIds'
 
 export function useFieldIds(id?: string) {
   const autoId = useId()
   const fieldId = id ?? autoId
-  const errorId = `${fieldId}-error`
-  const hintId = `${fieldId}-hint`
+  const { errorId, hintId } = fieldIds(fieldId)
   return {
     fieldId,
     errorId,
