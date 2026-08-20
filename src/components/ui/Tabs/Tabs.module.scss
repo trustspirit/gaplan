@@ -1,0 +1,47 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.list {
+  display: flex;
+  gap: $space-1;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: 44px;
+  padding: 0 $space-3;
+  // 밑줄이 리스트의 보더와 겹치도록 아래로 1px 내린다
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: var(--text-muted);
+  white-space: nowrap;
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+.active {
+  border-bottom-color: var(--accent);
+  color: var(--text);
+  font-weight: $font-weight-semibold;
+}
+.count {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border-radius: $border-radius-full;
+  padding: 2px $space-2;
+}
+.active .count {
+  color: var(--accent);
+  background: var(--accent-weak);
+}
