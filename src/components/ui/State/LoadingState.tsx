@@ -14,11 +14,17 @@ const ROW_HEIGHT: Record<Shape, string> = {
 interface LoadingStateProps {
   shape?: Shape
   rows?: number
-  label?: string
+  /** 보이는 텍스트가 아니라 접근성 이름이다 — 스켈레톤은 화면에 글자를 그리지 않는다 */
+  'aria-label'?: string
   className?: string
 }
 
-export function LoadingState({ shape = 'list', rows = 3, label, className }: LoadingStateProps) {
+export function LoadingState({
+  shape = 'list',
+  rows = 3,
+  'aria-label': ariaLabel,
+  className,
+}: LoadingStateProps) {
   const { t } = useTranslation()
   return (
     <div
@@ -26,7 +32,7 @@ export function LoadingState({ shape = 'list', rows = 3, label, className }: Loa
       data-shape={shape}
       role="status"
       aria-busy="true"
-      aria-label={label ?? t('common.loading')}
+      aria-label={ariaLabel ?? t('common.loading')}
     >
       {Array.from({ length: rows }, (_, i) => (
         <Skeleton key={i} height={ROW_HEIGHT[shape]} className={styles.row} data-skeleton-row="" />

@@ -14,6 +14,18 @@ describe('LoadingState', () => {
     expect(region).toHaveAccessibleName('common.loading')
   })
 
+  // 접근성 이름을 바꾸는 프롭은 'aria-label'이라 부른다 — Switch.label처럼
+  // 화면에 보이는 텍스트로 오해할 이름을 쓰지 않는다
+  it('takes its accessible name from aria-label', () => {
+    render(<LoadingState aria-label="일정 불러오는 중" />)
+    expect(screen.getByRole('status')).toHaveAccessibleName('일정 불러오는 중')
+  })
+
+  it('renders no visible text for the accessible name', () => {
+    render(<LoadingState aria-label="일정 불러오는 중" />)
+    expect(screen.queryByText('일정 불러오는 중')).not.toBeInTheDocument()
+  })
+
   it('renders the requested number of rows', () => {
     const { container } = render(<LoadingState rows={5} />)
     expect(container.querySelectorAll('[data-skeleton-row]')).toHaveLength(5)
