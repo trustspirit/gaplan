@@ -3,6 +3,7 @@ import type { InterviewReminder, MeetingReminder } from '@/utils/reminders'
 
 export interface RemindersState {
   hasPending: boolean
+  presenceLoading: boolean // 리마인더 유무(presence) 조회 중 — 아직 hasPending을 믿으면 안 된다
   loaded: boolean // 전체 목록을 한 번이라도 로드했는지
   interviewReminders: InterviewReminder[]
   meetingReminders: MeetingReminder[]
@@ -11,6 +12,7 @@ export interface RemindersState {
 
 export const remindersAtom = atom<RemindersState>({
   hasPending: false,
+  presenceLoading: true,
   loaded: false,
   interviewReminders: [],
   meetingReminders: [],
@@ -18,6 +20,8 @@ export const remindersAtom = atom<RemindersState>({
 })
 
 export const reminderHasAtom = atom(get => get(remindersAtom).hasPending)
+
+export const reminderPresenceLoadingAtom = atom(get => get(remindersAtom).presenceLoading)
 
 /** RemindersSync가 useReminders.dismiss를 여기 실어 두어 TopBar 패널이 호출한다. */
 export const reminderDismissAtom = atom<((key: string) => void) | null>(null)

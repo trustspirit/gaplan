@@ -63,3 +63,20 @@
   margin: 0;
   padding: $space-2 0;
 }
+
+.skeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: $space-2 0;
+}
+
+.retry {
+  padding: $space-2 0;
+  border: none;
+  background: none;
+  font-size: $font-size-sm;
+  color: $color-primary;
+  cursor: pointer;
+  text-align: left;
+}

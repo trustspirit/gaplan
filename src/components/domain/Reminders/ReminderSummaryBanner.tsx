@@ -3,7 +3,7 @@ import { useAtomValue } from 'jotai'
 import { Bell, ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
-import { BottomSheet, Modal } from '@/components/ui'
+import { BottomSheet, Modal, Skeleton } from '@/components/ui'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { remindersAtom, reminderHasAtom, reminderDismissAtom, reminderLoadAtom } from '@/store/remindersAtom'
 import { RemindersList } from '@/components/domain/Reminders/RemindersList'
@@ -19,7 +19,8 @@ function topSeverity(sevs: ReminderSeverity[]): ReminderSeverity {
 export function ReminderSummaryBanner() {
   const { t } = useTranslation()
   const hasPending = useAtomValue(reminderHasAtom)
-  const { interviewReminders, meetingReminders, loaded, loading } = useAtomValue(remindersAtom)
+  const { interviewReminders, meetingReminders, loaded, loading, presenceLoading } =
+    useAtomValue(remindersAtom)
   const dismiss = useAtomValue(reminderDismissAtom)
   const loadFull = useAtomValue(reminderLoadAtom)
   const isMobile = useIsMobile()
@@ -30,9 +31,13 @@ export function ReminderSummaryBanner() {
     loadFull?.()
   }, [loadFull])
 
+  // presence 조회 중에는 배너가 뜰지 말지 아직 모른다. null을 그리면 결과가 도착하는
+  // 순간 배너가 툭 끼어들며 아래 카드들이 밀리므로, 같은 높이의 자리를 미리 잡아 둔다.
+  if (presenceLoading) return <Skeleton className={styles.bannerSkeleton} />
+
   if (!hasPending) return null
 
-  // 로딩 중일 때만 비활성 스켈레톤을 보여준다.
+  // 전체 목록 로딩 중일 때만 비활성 스켈레톤을 보여준다.
   if (loading && !loaded) {
     return (
       <div className={clsx(styles.banner, styles.loading)}>

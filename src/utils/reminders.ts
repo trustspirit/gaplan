@@ -173,3 +173,11 @@ export function hasPendingReminders(
   )
   return computeMeetingReminders(wardVisits, meetings, dismissedKeys, today).length > 0
 }
+
+/**
+ * 리마인더를 받는 역할인지. 벨/배너가 자리를 미리 확보할지 판단하는 데도 쓰이므로
+ * RemindersSync의 게이트와 반드시 같은 조건을 써야 한다.
+ */
+export function isRemindersEligible(user: { role: string } | null): boolean {
+  return !!user && (user.role === 'seventy' || user.role === 'admin' || user.role === 'exec_secretary')
+}

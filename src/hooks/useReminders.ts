@@ -23,6 +23,9 @@ export function useReminders() {
   const [dismissed, setDismissed] = useState<string[]>([])
   const [schedulesLoading, setSchedulesLoading] = useState(false)
   const [hasPending, setHasPending] = useState(false)
+  // presence 조회가 끝나기 전에는 리마인더 유무를 모른다. false와 구분하지 않으면
+  // 벨/배너가 '없음'으로 렌더됐다가 툭 나타나며 레이아웃이 밀린다.
+  const [presenceLoading, setPresenceLoading] = useState(true)
   const [loaded, setLoaded] = useState(false)
   const today = useMemo(() => dayjs().format('YYYY-MM-DD'), [])
   const scope = useEffectiveScope()
@@ -37,10 +40,11 @@ export function useReminders() {
   useEffect(() => {
     if (!user) return
     let active = true
-    setLoaded(false); setSchedules([]); setDismissed([])
+    setLoaded(false); setSchedules([]); setDismissed([]); setPresenceLoading(true)
     fetchRemindersPresence(user.role === 'admin' ? querySeventyUid : undefined)
       .then(h => { if (active) setHasPending(h) })
       .catch(() => {})
+      .finally(() => { if (active) setPresenceLoading(false) })
     return () => { active = false }
   }, [user, querySeventyUid])
 
@@ -111,5 +115,5 @@ export function useReminders() {
 
   const loading = schedulesLoading || usersLoading
 
-  return { hasPending, loaded, loading, interviewReminders, meetingReminders, loadFull, dismiss }
+  return { hasPending, presenceLoading, loaded, loading, interviewReminders, meetingReminders, loadFull, dismiss }
 }

@@ -41,3 +41,10 @@
   border-color: rgba($color-success, .3);
   color: $color-success;
 }
+
+// .banner와 같은 높이(수직 패딩 2회 + 아이콘 줄)를 차지해 로딩 후 레이아웃이 밀리지 않게 한다.
+.bannerSkeleton {
+  width: 100%;
+  height: calc(#{$space-3} * 2 + 22px);
+  border-radius: $border-radius-xl;
+}

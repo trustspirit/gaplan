@@ -3,16 +3,19 @@ import { useAtomValue } from 'jotai'
 import { Bell } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
-import { BottomSheet } from '@/components/ui'
+import { BottomSheet, Skeleton } from '@/components/ui'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import { remindersAtom, reminderHasAtom, reminderDismissAtom, reminderLoadAtom } from '@/store/remindersAtom'
+import { authUserAtom } from '@/store/authAtom'
+import { isRemindersEligible } from '@/utils/reminders'
+import { remindersAtom, reminderDismissAtom, reminderLoadAtom } from '@/store/remindersAtom'
 import { RemindersList } from '@/components/domain/Reminders/RemindersList'
 import styles from './RemindersBell.module.scss'
 
 export function RemindersBell() {
   const { t } = useTranslation()
-  const hasPending = useAtomValue(reminderHasAtom)
-  const { interviewReminders, meetingReminders, loaded } = useAtomValue(remindersAtom)
+  const user = useAtomValue(authUserAtom)
+  const { hasPending, presenceLoading, interviewReminders, meetingReminders, loaded, loading } =
+    useAtomValue(remindersAtom)
   const dismiss = useAtomValue(reminderDismissAtom)
   const loadFull = useAtomValue(reminderLoadAtom)
   const isMobile = useIsMobile()
@@ -28,17 +31,32 @@ export function RemindersBell() {
     return () => document.removeEventListener('mousedown', close)
   }, [open, isMobile])
 
-  if (!hasPending) return null
+  // 리마인더 대상 역할이면 건수와 무관하게 벨을 항상 렌더한다. 예전처럼 hasPending으로
+  // 벨 자체를 감추면 presence 조회가 끝나는 순간 툭 나타나며 상단바가 밀린다.
+  if (!isRemindersEligible(user)) return null
 
-  const list = loaded ? (
-    <RemindersList
-      interviewReminders={interviewReminders}
-      meetingReminders={meetingReminders}
-      onDismiss={key => dismiss?.(key)}
-    />
-  ) : (
-    <p className={styles.empty}>{t('common.loading')}</p>
-  )
+  const isEmpty = loaded && interviewReminders.length + meetingReminders.length === 0
+  const list =
+    presenceLoading || (!loaded && loading) ? (
+      <div className={styles.skeletonList}>
+        {[1, 2, 3].map(i => (
+          <Skeleton key={i} height="20px" />
+        ))}
+      </div>
+    ) : isEmpty ? (
+      <p className={styles.empty}>{t('reminder.none')}</p>
+    ) : !loaded ? (
+      // presence는 끝났지만 전체 목록 로드에 실패한 상태 — 다시 시도할 수 있게 한다.
+      <button type="button" className={styles.retry} onClick={() => loadFull?.()}>
+        {t('common.retry')}
+      </button>
+    ) : (
+      <RemindersList
+        interviewReminders={interviewReminders}
+        meetingReminders={meetingReminders}
+        onDismiss={key => dismiss?.(key)}
+      />
+    )
 
   return (
     <div className={styles.wrap} ref={ref}>
@@ -49,7 +67,7 @@ export function RemindersBell() {
         aria-label={t('reminder.bellLabel')}
       >
         <Bell size={18} />
-        <span className={styles.dot} aria-hidden />
+        {hasPending && !presenceLoading && <span className={styles.dot} aria-hidden />}
       </button>
 
       {open && !isMobile && (
