@@ -20,6 +20,32 @@ $color-highlight-warning: #fff8e9;
 $color-highlight-danger:  #fee8e7;
 $color-highlight-success: #eff7ea;
 
+// Neutral scale — tinted toward $color-sidebar. Replaces the Tailwind grays
+// that leaked into component styles. Consumers land here in plan 4.
+$neutral-50:  #f6f7f9;
+$neutral-100: #eef0f3;
+$neutral-200: #e4e7eb;
+$neutral-300: #d6dae0;
+$neutral-400: #b3b9c1;
+$neutral-500: #8a919b;
+$neutral-600: #6a7280;
+$neutral-700: #4b525c;
+$neutral-800: #2c3138;
+$neutral-900: #14171a;
+
+// Semantic colors — hover/weak variants that were previously produced by
+// Sass color functions at each call site
+$color-primary-weak:   #f0f8fb;
+$color-primary-border:  #cfe4ec;
+$color-danger-weak:    #fff7f6;
+$color-warning-weak:   #fff9ec;
+$color-success-weak:   #eff7ea;
+$color-sidebar-deep:   #002744;
+$color-sidebar-active: #0b4166;
+$color-sidebar-text:   #9fb8ce;
+$color-border-strong:  $neutral-300;
+$color-surface-sunken: $neutral-50;
+
 // Typography
 $font-family: 'Inter', -apple-system, 'Helvetica Neue', Arial, sans-serif;
 $font-size-xs:   0.6875rem;
@@ -27,7 +53,9 @@ $font-size-sm:   0.8125rem;
 $font-size-base: 1rem;
 $font-size-md:   1.125rem;
 $font-size-lg:   1.25rem;
-$font-size-xl:   1.75rem;
+$font-size-xl:   1.5rem;   // was 1.75rem — page-section headings
+$font-size-2xl:  1.75rem;  // page titles (previous $font-size-xl value)
+$font-size-3xl:  2.25rem;  // stat figures
 
 $font-weight-normal:    400;
 $font-weight-medium:    500;
@@ -55,11 +83,9 @@ $border-radius-lg:   8px;
 $border-radius-xl:   12px;
 $border-radius-full: 9999px;
 
-// Shadows
-$shadow-raised:   0 2px 4px 0 rgba(0, 0, 0, 0.12);
-$shadow-detached: 0 4px 8px 0 rgba(0, 0, 0, 0.12);
-$shadow-overlaid: 0 8px 16px 0 rgba(0, 0, 0, 0.14);
-$shadow-popped:   0 16px 32px 0 rgba(0, 0, 0, 0.16);
+// Shadows — two levels only. Everything else uses a border.
+$shadow-raised:   0 1px 2px 0 rgba(20, 23, 26, 0.06);
+$shadow-overlaid: 0 12px 28px -8px rgba(20, 23, 26, 0.18);
 
 // Layout
 $sidebar-width:      56px;

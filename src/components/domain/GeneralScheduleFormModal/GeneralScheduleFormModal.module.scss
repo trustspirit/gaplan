@@ -24,7 +24,7 @@
   max-width: 480px;
   max-height: 90dvh;
   overflow-y: auto;
-  box-shadow: $shadow-detached;
+  box-shadow: $shadow-overlaid;
 
   @include mobile {
     border-radius: $border-radius-xl $border-radius-xl 0 0;
