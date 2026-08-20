@@ -41,9 +41,7 @@ describe('DataList', () => {
 
   it('makes a row a button when it has onClick', async () => {
     const onClick = vi.fn()
-    render(
-      <DataList rows={[{ ...ROWS[0], onClick }]} aria-label="다가오는 일정" />,
-    )
+    render(<DataList rows={[{ ...ROWS[0], onClick }]} aria-label="다가오는 일정" />)
     await userEvent.click(screen.getByRole('button', { name: /역삼 와드 방문/ }))
     expect(onClick).toHaveBeenCalledTimes(1)
   })
@@ -114,9 +112,7 @@ describe('DataList', () => {
     // tag는 '접견'으로 덮어써서 title('역삼 와드 방문')·subtitle('강남
     // 스테이크 · 김성호 회장')·lead·meta 어디에도 겹치는 부분 문자열이 없도록
     // 한다. tag가 이름에서 사라져도 title만으로 만족되는 검증은 무의미하다.
-    render(
-      <DataList rows={[{ ...ROWS[0], onClick, tag: '접견' }]} aria-label="다가오는 일정" />,
-    )
+    render(<DataList rows={[{ ...ROWS[0], onClick, tag: '접견' }]} aria-label="다가오는 일정" />)
     const rowButton = screen.getByRole('button')
     expect(rowButton).toHaveAccessibleName(/역삼 와드 방문/)
     expect(rowButton).toHaveAccessibleName(/강남 스테이크/)

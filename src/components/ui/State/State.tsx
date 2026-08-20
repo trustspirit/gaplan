@@ -21,10 +21,7 @@ interface ShellProps extends StateProps {
 
 function StateShell({ icon, tone, live, title, description, action, className }: ShellProps) {
   return (
-    <div
-      className={clsx(styles.state, styles[tone], className)}
-      role={live ? 'status' : undefined}
-    >
+    <div className={clsx(styles.state, styles[tone], className)} role={live ? 'status' : undefined}>
       <div className={styles.icon} aria-hidden="true">
         {icon}
       </div>

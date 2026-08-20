@@ -50,10 +50,7 @@ export function DataList({ rows, 'aria-label': ariaLabel, footer, className }: D
     <div className={clsx(styles.wrap, className)}>
       <ul className={styles.list} aria-label={ariaLabel}>
         {rows.map((row) => (
-          <li
-            key={row.id}
-            className={clsx(styles.row, row.highlighted && styles.highlighted)}
-          >
+          <li key={row.id} className={clsx(styles.row, row.highlighted && styles.highlighted)}>
             {row.onClick ? (
               <button type="button" className={styles.rowButton} onClick={row.onClick}>
                 <RowBody row={row} />

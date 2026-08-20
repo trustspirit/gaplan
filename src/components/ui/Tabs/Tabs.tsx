@@ -13,12 +13,7 @@ interface TabsProps {
   items: TabItem[]
   activeId: string
   onSelect?: (id: string) => void
-  renderLink?: (
-    item: TabItem,
-    children: ReactNode,
-    className: string,
-    active: boolean,
-  ) => ReactNode
+  renderLink?: (item: TabItem, children: ReactNode, className: string, active: boolean) => ReactNode
   'aria-label': string
   className?: string
 }

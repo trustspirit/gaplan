@@ -4,7 +4,10 @@ import { Field } from '@/components/ui/Field/Field'
 import { useFieldIds } from '@/components/ui/Field/useFieldIds'
 import styles from './Select.module.scss'
 
-interface SelectOption { value: string; label: string }
+interface SelectOption {
+  value: string
+  label: string
+}
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string
   error?: string

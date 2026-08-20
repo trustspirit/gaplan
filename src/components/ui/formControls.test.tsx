@@ -4,10 +4,7 @@ import { resolve } from 'node:path'
 import { Input, Select, Textarea } from './index'
 
 function readUiStyles(component: string) {
-  return readFileSync(
-    resolve(__dirname, component, `${component}.module.scss`),
-    'utf8',
-  )
+  return readFileSync(resolve(__dirname, component, `${component}.module.scss`), 'utf8')
 }
 
 describe('form controls', () => {
@@ -58,11 +55,11 @@ describe('form controls', () => {
   })
 
   it('describes the control with both hint and error', () => {
-    render(<Input label="줌 링크" hint="비워두면 자동 생성됩니다" error="형식이 올바르지 않습니다" />)
-    const input = screen.getByLabelText('줌 링크')
-    expect(input).toHaveAccessibleDescription(
-      '비워두면 자동 생성됩니다 형식이 올바르지 않습니다',
+    render(
+      <Input label="줌 링크" hint="비워두면 자동 생성됩니다" error="형식이 올바르지 않습니다" />,
     )
+    const input = screen.getByLabelText('줌 링크')
+    expect(input).toHaveAccessibleDescription('비워두면 자동 생성됩니다 형식이 올바르지 않습니다')
     expect(input).toHaveAttribute('aria-invalid', 'true')
   })
 
