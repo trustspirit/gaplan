@@ -1,0 +1,40 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-4;
+  margin-bottom: $space-5;
+}
+.text {
+  min-width: 0;
+  flex: 1;
+}
+.title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  line-height: $line-height-tight;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+.description {
+  margin-top: $space-1;
+  font-size: $font-size-sm;
+  color: var(--text-muted);
+}
+.actions {
+  display: flex;
+  gap: $space-2;
+  flex: none;
+}
+
+@include mobile {
+  .header {
+    flex-direction: column;
+    gap: $space-3;
+  }
+  .actions {
+    width: 100%;
+  }
+}
