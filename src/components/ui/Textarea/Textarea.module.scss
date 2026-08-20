@@ -1,20 +1,5 @@
 @use '@/styles/variables' as *;
 
-.wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: $space-1;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-}
-
-.label {
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: $color-text;
-}
-
 .textarea {
   width: 100%;
   max-width: 100%;
@@ -47,9 +32,4 @@
   &.error {
     border-color: $color-danger;
   }
-}
-
-.errorMsg {
-  font-size: $font-size-xs;
-  color: $color-danger;
 }

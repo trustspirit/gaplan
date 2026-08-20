@@ -1,0 +1,38 @@
+@use '@/styles/variables' as *;
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-8 $space-6;
+  text-align: center;
+}
+.icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: $space-1;
+  border-radius: $border-radius-full;
+  background: var(--surface-sunken);
+  color: var(--text-subtle);
+}
+.danger .icon {
+  background: var(--danger-weak);
+  color: var(--danger);
+}
+.title {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: var(--text);
+}
+.description {
+  max-width: 32ch;
+  font-size: $font-size-sm;
+  line-height: $line-height-loose;
+  color: var(--text-muted);
+}
+.action {
+  margin-top: $space-3;
+}

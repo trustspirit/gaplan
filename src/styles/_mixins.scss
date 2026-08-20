@@ -5,19 +5,29 @@ $breakpoint-mobile: 768px;
 $breakpoint-tablet: 1024px;
 
 @mixin mobile {
-  @media (max-width: #{$breakpoint-mobile}) { @content; }
+  @media (max-width: #{$breakpoint-mobile}) {
+    @content;
+  }
 }
 
 @mixin tablet {
-  @media (max-width: #{$breakpoint-tablet}) { @content; }
+  @media (max-width: #{$breakpoint-tablet}) {
+    @content;
+  }
 }
 
 @mixin desktop {
-  @media (min-width: #{$breakpoint-mobile + 1px}) { @content; }
+  @media (min-width: #{$breakpoint-mobile + 1px}) {
+    @content;
+  }
 }
 
+// 토큰을 CSS 커스텀 프로퍼티로 읽는다 — 여기서는 값이 순수한 CSS 속성값이라
+// Sass 함수 인자가 아니므로 var()가 안전하다 (rgba()/color.adjust() 호출부와 다르다).
+// 이 두 믹스인을 쓰는 프리미티브가 여섯 개라, 리터럴로 두면 테마를 바꿀 때
+// 프리미티브가 아니라 믹스인을 고쳐야 한다.
 @mixin focus-ring {
-  outline: 2px solid $color-primary;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -34,8 +44,8 @@ $breakpoint-tablet: 1024px;
 }
 
 @mixin card-base {
-  background: $color-surface;
-  border: 1px solid $color-border;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: $border-radius-lg;
   overflow: hidden;
 }

@@ -73,11 +73,6 @@
   display: flex;
   flex-direction: column;
   gap: $space-4;
-  transition: box-shadow 0.15s;
-
-  &:hover {
-    box-shadow: $shadow-detached;
-  }
 }
 
 .cardIcon {

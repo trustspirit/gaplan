@@ -1,28 +1,39 @@
-import { useId } from 'react'
 import clsx from 'clsx'
+import { Field } from '@/components/ui/Field/Field'
+import { useFieldIds } from '@/components/ui/Field/useFieldIds'
 import styles from './Textarea.module.scss'
 
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string
   error?: string
+  hint?: string
   wrapperClassName?: string
 }
-
-export function Textarea({ label, error, className, wrapperClassName, id, ...props }: TextareaProps) {
-  const autoId = useId()
-  const textareaId = id ?? autoId
-  const errorId = `${textareaId}-error`
+export function Textarea({
+  label,
+  error,
+  hint,
+  className,
+  wrapperClassName,
+  id,
+  ...props
+}: TextareaProps) {
+  const { fieldId, describedBy } = useFieldIds(id)
   return (
-    <div className={clsx(styles.wrapper, wrapperClassName)}>
-      {label && <label htmlFor={textareaId} className={styles.label}>{label}</label>}
+    <Field
+      fieldId={fieldId}
+      label={label}
+      hint={hint}
+      error={error}
+      wrapperClassName={wrapperClassName}
+    >
       <textarea
-        id={textareaId}
+        id={fieldId}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
+        aria-describedby={describedBy({ error, hint })}
         className={clsx(styles.textarea, error && styles.error, className)}
         {...props}
       />
-      {error && <span id={errorId} className={styles.errorMsg}>{error}</span>}
-    </div>
+    </Field>
   )
 }

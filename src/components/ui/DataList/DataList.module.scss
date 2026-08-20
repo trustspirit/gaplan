@@ -1,0 +1,116 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.wrap {
+  min-width: 0;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  border-bottom: 1px solid var(--border);
+  &:last-child {
+    border-bottom: none;
+  }
+}
+// 강조는 배경 채움으로만. 왼쪽 색 막대를 쓰지 않는다.
+.highlighted {
+  background: var(--surface-sunken);
+}
+.rowButton,
+.rowStatic {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  flex: 1;
+  min-width: 0;
+  padding: $space-3 $space-4;
+  text-align: left;
+}
+.rowButton {
+  min-height: 44px;
+  &:hover {
+    background: var(--surface-sunken);
+  }
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+.lead {
+  flex: none;
+  width: 46px;
+  text-align: center;
+}
+.leadPrimary {
+  display: block;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  line-height: $line-height-tight;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.leadSecondary {
+  font-size: $font-size-xs;
+  color: var(--text-subtle);
+}
+.main {
+  flex: 1;
+  min-width: 0;
+}
+.title {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: var(--text);
+  @include truncate;
+}
+.subtitle {
+  display: block;
+  font-size: $font-size-sm;
+  color: var(--text-muted);
+  @include truncate;
+}
+.meta {
+  flex: none;
+  font-size: $font-size-sm;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.tag {
+  flex: none;
+  padding: $space-1 $space-2;
+  border: 1px solid var(--border);
+  border-radius: $border-radius-sm;
+  background: var(--surface-sunken);
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: var(--text-muted);
+}
+.tagAccent {
+  border-color: var(--accent-border);
+  background: var(--accent-weak);
+  color: var(--accent);
+}
+.actions {
+  display: flex;
+  gap: $space-1;
+  flex: none;
+  padding-right: $space-3;
+}
+.footer {
+  padding: $space-3 $space-4;
+  border-top: 1px solid var(--border);
+  font-size: $font-size-sm;
+  color: var(--text-muted);
+}
+
+@include mobile {
+  .meta {
+    display: none; // 시각은 subtitle에 합쳐서 넘긴다
+  }
+}

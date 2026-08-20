@@ -24,7 +24,7 @@
   max-width: 480px;
   max-height: 90dvh;
   overflow-y: auto;
-  box-shadow: $shadow-detached;
+  box-shadow: $shadow-overlaid;
 
   @include mobile {
     border-radius: $border-radius-xl $border-radius-xl 0 0;
@@ -58,7 +58,9 @@
   width: 32px;
   height: 32px;
   border-radius: $border-radius-md;
-  &:hover { background: $color-bg; }
+  &:hover {
+    background: $color-bg;
+  }
 }
 
 .form {
@@ -138,6 +140,11 @@
   border: 1px solid $color-border;
   border-radius: $border-radius-sm;
 
-  input[type='checkbox'] { margin: 0; }
-  &:has(input:checked) { border-color: $color-primary; background: rgba($color-primary, 0.05); }
+  input[type='checkbox'] {
+    margin: 0;
+  }
+  &:has(input:checked) {
+    border-color: $color-primary;
+    background: rgba($color-primary, 0.05);
+  }
 }

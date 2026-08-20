@@ -20,7 +20,7 @@
 .modal {
   background: $color-surface;
   border-radius: $border-radius-xl;
-  box-shadow: $shadow-popped;
+  box-shadow: $shadow-overlaid;
   width: 100%;
   max-width: 480px;
   max-height: 90vh;

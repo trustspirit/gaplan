@@ -1,0 +1,41 @@
+// src/styles/_tokens.scss
+//
+// Derivation direction: SCSS literal -> CSS custom property.
+// Values live only in _variables.scss. This file interpolates them so runtime
+// consumers (color-mix, inline styles, future theming) can read them.
+//
+// It is NOT the other way around: turning $color-* into var(--*) would break
+// the 39 rgba($token, a) and 5 color.adjust($token, ...) call sites, since
+// var() cannot be an argument to a Sass function.
+@use 'variables' as *;
+
+:root {
+  --surface: #{$color-surface};
+  --surface-sunken: #{$color-surface-sunken};
+  --border: #{$color-border};
+  --border-strong: #{$color-border-strong};
+
+  --text: #{$color-text};
+  --text-muted: #{$color-text-muted};
+  --text-subtle: #{$color-text-light};
+
+  --accent: #{$color-primary};
+  --accent-hover: #{$color-primary-hover};
+  --accent-weak: #{$color-primary-weak};
+  --accent-border: #{$color-primary-border};
+
+  --danger: #{$color-danger};
+  --danger-weak: #{$color-danger-weak};
+  --warning: #{$color-warning};
+  --warning-weak: #{$color-warning-weak};
+  --success: #{$color-success};
+  --success-weak: #{$color-success-weak};
+
+  --sidebar: #{$color-sidebar-deep};
+  --sidebar-active: #{$color-sidebar-active};
+  --sidebar-text: #{$color-sidebar-text};
+
+  // Alias. DashboardPage.tsx and TaskProgress.module.scss already read
+  // var(--color-primary, <fallback>) and until now always hit the fallback.
+  --color-primary: #{$color-primary};
+}

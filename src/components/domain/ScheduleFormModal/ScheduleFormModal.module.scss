@@ -35,7 +35,7 @@
   min-width: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  box-shadow: $shadow-popped;
+  box-shadow: $shadow-overlaid;
   animation: slideUp 0.22s cubic-bezier(0.32, 0.72, 0, 1);
 
   @keyframes slideUp {

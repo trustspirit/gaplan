@@ -1,0 +1,45 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.group {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: $border-radius-lg;
+  background: var(--surface-sunken);
+}
+.segment {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 $space-3;
+  border-radius: $border-radius-md;
+  cursor: pointer;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: var(--text-muted);
+  white-space: nowrap;
+
+  @media (pointer: coarse) {
+    min-height: 40px;
+  }
+}
+// 활성 표시는 배경 채움 + 글자 무게로만 (왼쪽 스트라이프 금지)
+.active {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: $font-weight-semibold;
+  box-shadow: $shadow-raised;
+}
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.input:focus-visible + .text {
+  @include focus-ring;
+  border-radius: $border-radius-sm;
+}
