@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { expectNoAccentStripe } from '../testing/bannedPatterns'
 import { Tabs, type TabLinkProps, type TabItem } from './Tabs'
 
 const ITEMS = [
@@ -171,7 +172,6 @@ describe('Tabs', () => {
   // 활성 표시는 밑줄과 글자 무게로. 왼쪽 스트라이프 금지 (스펙 §3)
   it('never uses a left accent stripe', () => {
     const scss = readFileSync(resolve(__dirname, 'Tabs.module.scss'), 'utf8')
-    expect(scss).not.toMatch(/border-left:\s*[2-9]/)
-    expect(scss).not.toMatch(/box-shadow:\s*inset\s+[2-9]/)
+    expectNoAccentStripe(scss)
   })
 })

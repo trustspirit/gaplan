@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { expectNoAccentStripe } from '../testing/bannedPatterns'
 import { SegmentedControl } from './SegmentedControl'
 
 const OPTIONS = [
@@ -68,7 +69,6 @@ describe('SegmentedControl', () => {
   // 활성 표시는 배경 채움 + 글자 무게로만 한다 (스펙 §3)
   it('never uses a left accent stripe for the active segment', () => {
     const scss = readFileSync(resolve(__dirname, 'SegmentedControl.module.scss'), 'utf8')
-    expect(scss).not.toMatch(/border-left:\s*[2-9]/)
-    expect(scss).not.toMatch(/box-shadow:\s*inset\s+[2-9]/)
+    expectNoAccentStripe(scss)
   })
 })

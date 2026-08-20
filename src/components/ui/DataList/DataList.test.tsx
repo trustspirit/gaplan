@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { expectNoAccentStripe } from '../testing/bannedPatterns'
 import { DataList, type DataListRow } from './DataList'
 
 const ROWS: DataListRow[] = [
@@ -94,8 +95,7 @@ describe('DataList', () => {
   // 스펙 §3: 행 앞의 색 막대 금지. 종류는 우측 라벨 하나로만 말한다
   it('never puts a color bar in front of a row', () => {
     const scss = readFileSync(resolve(__dirname, 'DataList.module.scss'), 'utf8')
-    expect(scss).not.toMatch(/border-left:\s*[2-9]/)
-    expect(scss).not.toMatch(/box-shadow:\s*inset\s+[2-9]/)
+    expectNoAccentStripe(scss)
   })
 
   it('locks digit width on the meta column', () => {
