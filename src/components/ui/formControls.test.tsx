@@ -16,6 +16,7 @@ describe('form controls', () => {
 
     expect(screen.getByLabelText('설명')).toBeInstanceOf(HTMLTextAreaElement)
     expect(screen.getByText('필수입니다')).toBeInTheDocument()
+    expect(screen.getByLabelText('설명')).toHaveAccessibleDescription('필수입니다')
   })
 
   it('Input and Select keep date/time controls at mobile-friendly touch height', () => {
