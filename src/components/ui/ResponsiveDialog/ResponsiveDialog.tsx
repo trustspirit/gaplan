@@ -26,7 +26,7 @@ export function ResponsiveDialog({
 
   if (isMobile) {
     return (
-      <BottomSheet open={open} onClose={onClose} title={title}>
+      <BottomSheet open={open} onClose={onClose} title={title} aria-label={ariaLabel}>
         {children}
       </BottomSheet>
     )

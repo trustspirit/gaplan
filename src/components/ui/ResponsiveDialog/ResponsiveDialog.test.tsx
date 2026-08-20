@@ -34,6 +34,28 @@ describe('ResponsiveDialog', () => {
     expect(screen.getByRole('dialog', { name: '일정 편집' })).toBeInTheDocument()
   })
 
+  // aria-label은 title이 없는 다이얼로그의 유일한 이름이다 — 모바일에서 조용히
+  // 버려지면 role="dialog"에 이름이 하나도 없게 된다
+  it('names a titleless dialog with aria-label on mobile', () => {
+    mockViewport(true)
+    render(
+      <ResponsiveDialog open onClose={() => {}} aria-label="일정 상세">
+        <p>본문</p>
+      </ResponsiveDialog>,
+    )
+    expect(screen.getByRole('dialog', { name: '일정 상세' })).toBeInTheDocument()
+  })
+
+  it('prefers the title over aria-label for the mobile accessible name', () => {
+    mockViewport(true)
+    render(
+      <ResponsiveDialog open onClose={() => {}} title="일정 편집" aria-label="일정 상세">
+        <p>본문</p>
+      </ResponsiveDialog>,
+    )
+    expect(screen.getByRole('dialog', { name: '일정 편집' })).toBeInTheDocument()
+  })
+
   it('renders nothing visible when closed on desktop', () => {
     mockViewport(false)
     render(

@@ -11,10 +11,17 @@ interface BottomSheetProps {
   open: boolean
   onClose: () => void
   title?: string
+  'aria-label'?: string
   children: React.ReactNode
 }
 
-export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
+export function BottomSheet({
+  open,
+  onClose,
+  title,
+  'aria-label': ariaLabel,
+  children,
+}: BottomSheetProps) {
   const { t } = useTranslation()
   const sheetRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
@@ -37,19 +44,24 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
         role="dialog"
         aria-modal
         aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : ariaLabel}
         className={clsx(styles.sheet, open && styles.sheetOpen)}
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.handle} />
         {title && (
           <div className={styles.header}>
-            <h2 id={titleId} className={styles.title}>{title}</h2>
-            <button onClick={onClose} className={styles.close} aria-label={t('common.close')}><X size={18} /></button>
+            <h2 id={titleId} className={styles.title}>
+              {title}
+            </h2>
+            <button onClick={onClose} className={styles.close} aria-label={t('common.close')}>
+              <X size={18} />
+            </button>
           </div>
         )}
         <div className={styles.body}>{children}</div>
       </div>
     </div>,
-    document.body
+    document.body,
   )
 }
