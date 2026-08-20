@@ -72,7 +72,8 @@
     "acknowledge": "확인함",
     "bellLabel": "리마인더 확인",
     "panelTitle": "리마인더",
-    "summaryBanner": "확인할 리마인더 {{count}}건"
+    "summaryBanner": "확인할 리마인더 {{count}}건",
+    "none": "확인할 리마인더가 없습니다."
   },
   "visitPlan": {
     "listTitle": "방문 계획",
@@ -168,7 +169,8 @@
   },
   "scope": {
     "myAssigned": "내 담당",
-    "showAll": "전체 보기"
+    "all": "전체",
+    "label": "보기 범위"
   },
   "auth": {
     "greeting": "{{name}}님, 안녕하세요",

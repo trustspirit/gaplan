@@ -72,10 +72,13 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
   const user = useAtomValue(authUserAtom)
   const [viewSeventyUid, setViewSeventyUid] = useAtom(seventyViewAtom)
 
-  const isAdminExecSec =
+  // '내 담당' 쪽이 실제로 좁혀진 스코프로 해석될 때만 스위치를 노출한다.
+  // admin+exec_secretary인데 담당 칠십인이 없으면 어느 쪽을 골라도 전체라서 스위치가 거짓말이 된다.
+  const canScopeToOwn =
     user?.role === 'admin' &&
-    (user.secondaryRole === 'exec_secretary' || user.secondaryRole === 'seventy')
-  const isShowingAll = viewSeventyUid === SCOPE_ALL || (!viewSeventyUid && !user?.secondaryRole)
+    (user.secondaryRole === 'seventy' ||
+      (user.secondaryRole === 'exec_secretary' && !!user.assignedSeventyUid))
+  const isShowingAll = viewSeventyUid === SCOPE_ALL
 
   useEffect(() => {
     if (!open) return
@@ -96,16 +99,29 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
         {subtext && <p className={styles.sub}>{subtext}</p>}
       </div>
       <div className={styles.right}>
-        {isAdminExecSec && (
-          <button
-            type="button"
-            className={clsx(styles.scopeToggle, isShowingAll && styles.scopeToggleAll)}
-            onClick={() => setViewSeventyUid(isShowingAll ? null : SCOPE_ALL)}
-            title={isShowingAll ? t('scope.myAssigned') : t('scope.showAll')}
-          >
-            {isShowingAll ? <Globe size={14} /> : <User size={14} />}
-            <span>{isShowingAll ? t('scope.showAll') : t('scope.myAssigned')}</span>
-          </button>
+        {canScopeToOwn && (
+          <div className={styles.scopeSwitch} role="radiogroup" aria-label={t('scope.label')}>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={!isShowingAll}
+              className={clsx(styles.scopeOpt, !isShowingAll && styles.scopeOptActive)}
+              onClick={() => setViewSeventyUid(null)}
+            >
+              <User size={13} />
+              <span>{t('scope.myAssigned')}</span>
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={isShowingAll}
+              className={clsx(styles.scopeOpt, isShowingAll && styles.scopeOptActive)}
+              onClick={() => setViewSeventyUid(SCOPE_ALL)}
+            >
+              <Globe size={13} />
+              <span>{t('scope.all')}</span>
+            </button>
+          </div>
         )}
         {pendingCount > 0 && (
           <Badge variant="warning">{t('task.pendingCount', { count: pendingCount })}</Badge>
