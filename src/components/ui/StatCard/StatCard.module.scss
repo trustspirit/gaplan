@@ -1,0 +1,35 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.card {
+  @include card-base;
+  padding: $space-3 $space-4;
+}
+.label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: var(--text-muted);
+}
+.value {
+  margin-top: $space-2;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-semibold;
+  line-height: $line-height-tight;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.unit {
+  margin-left: 2px;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-normal;
+  color: var(--text-muted);
+}
+.note {
+  margin-top: $space-1;
+  font-size: $font-size-xs;
+  color: var(--text-muted);
+}
+.warning {
+  color: var(--warning);
+}
