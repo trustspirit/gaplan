@@ -35,4 +35,26 @@ describe('StatCard', () => {
     const scss = readFileSync(resolve(__dirname, 'StatCard.module.scss'), 'utf8')
     expect(scss).toMatch(/font-variant-numeric:\s*tabular-nums/)
   })
+
+  it('renders children before the note', () => {
+    render(
+      <StatCard label="추이" value={4} note="가장 최근">
+        <div data-testid="spark" />
+      </StatCard>,
+    )
+    const marker = screen.getByTestId('spark')
+    const noteEl = screen.getByText('가장 최근')
+    expect(marker.compareDocumentPosition(noteEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('applies tone class to note', () => {
+    const { rerender } = render(<StatCard label="경고" value={5} note="주의" tone="warning" />)
+    const noteEl = screen.getByText('주의')
+    expect(noteEl.className).toContain('warning')
+
+    rerender(<StatCard label="중립" value={5} note="정보" />)
+    const neutralNoteEl = screen.getByText('정보')
+    expect(neutralNoteEl.className).not.toContain('warning')
+    expect(neutralNoteEl.className).not.toContain('undefined')
+  })
 })
