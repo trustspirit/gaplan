@@ -1,0 +1,21 @@
+@use '@/styles/variables' as *;
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  min-width: 0;
+}
+.label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: var(--text);
+}
+.hint {
+  font-size: $font-size-xs;
+  color: var(--text-muted);
+}
+.errorMsg {
+  font-size: $font-size-xs;
+  color: var(--danger);
+}
