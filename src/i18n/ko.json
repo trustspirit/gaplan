@@ -706,5 +706,13 @@
     "summaryPending": "미응답",
     "emptyTasks": "생성된 Task가 없습니다.",
     "dueShort": "마감 {{date}}"
+  },
+  "state": {
+    "emptyTitle": "표시할 내용이 없습니다",
+    "errorTitle": "불러오지 못했습니다",
+    "errorDescription": "잠시 후 다시 시도해 주세요.",
+    "forbiddenTitle": "접근 권한이 없습니다",
+    "forbiddenDescription": "이 화면은 담당자만 볼 수 있습니다.",
+    "goHome": "홈으로"
   }
 }

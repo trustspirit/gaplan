@@ -706,5 +706,13 @@
     "summaryPending": "No response",
     "emptyTasks": "No tasks created yet.",
     "dueShort": "Due {{date}}"
+  },
+  "state": {
+    "emptyTitle": "Nothing to show",
+    "errorTitle": "Couldn't load this",
+    "errorDescription": "Please try again in a moment.",
+    "forbiddenTitle": "You don't have access",
+    "forbiddenDescription": "Only assigned members can view this screen.",
+    "goHome": "Go home"
   }
 }
