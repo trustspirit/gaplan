@@ -1,0 +1,63 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  cursor: pointer;
+  // 44px 터치 타겟은 트랙이 아니라 라벨 전체로 확보한다
+  min-height: 44px;
+}
+
+.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.track {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 23px;
+  border-radius: $border-radius-full;
+  background: var(--border-strong);
+  transition: background 0.16s;
+}
+
+.thumb {
+  position: absolute;
+  top: 2.5px;
+  left: 2.5px;
+  width: 18px;
+  height: 18px;
+  border-radius: $border-radius-full;
+  background: var(--surface);
+  box-shadow: $shadow-raised;
+  transition: transform 0.16s;
+}
+
+.input:checked + .track {
+  background: var(--accent);
+}
+
+.input:checked + .track .thumb {
+  transform: translateX(17px);
+}
+
+.input:focus-visible + .track {
+  @include focus-ring;
+}
+
+.label {
+  font-size: $font-size-sm;
+  color: var(--text);
+}
