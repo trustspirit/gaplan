@@ -111,12 +111,15 @@ describe('DataList', () => {
   // 너무 길다"는 이유로 축약하는 변경을 막기 위해 존재한다.
   it('keeps title, subtitle, and tag in the clickable row accessible name', () => {
     const onClick = vi.fn()
+    // tag는 '접견'으로 덮어써서 title('역삼 와드 방문')·subtitle('강남
+    // 스테이크 · 김성호 회장')·lead·meta 어디에도 겹치는 부분 문자열이 없도록
+    // 한다. tag가 이름에서 사라져도 title만으로 만족되는 검증은 무의미하다.
     render(
-      <DataList rows={[{ ...ROWS[0], onClick }]} aria-label="다가오는 일정" />,
+      <DataList rows={[{ ...ROWS[0], onClick, tag: '접견' }]} aria-label="다가오는 일정" />,
     )
     const rowButton = screen.getByRole('button')
     expect(rowButton).toHaveAccessibleName(/역삼 와드 방문/)
     expect(rowButton).toHaveAccessibleName(/강남 스테이크/)
-    expect(rowButton).toHaveAccessibleName(/방문/)
+    expect(rowButton).toHaveAccessibleName(/접견/)
   })
 })
