@@ -18,3 +18,4 @@ export { SegmentedControl, type SegmentOption } from './SegmentedControl/Segment
 export { Tabs, type TabItem } from './Tabs/Tabs'
 export { PageHeader } from './PageHeader/PageHeader'
 export { StatCard } from './StatCard/StatCard'
+export { DataList, type DataListRow } from './DataList/DataList'
