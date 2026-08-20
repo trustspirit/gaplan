@@ -1,0 +1,17 @@
+@use '@/styles/variables' as *;
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+.stat {
+  flex-direction: row;
+  gap: $space-3;
+  .row {
+    flex: 1;
+  }
+}
+.row {
+  border-radius: $border-radius-md;
+}
