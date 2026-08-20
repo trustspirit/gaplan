@@ -2,11 +2,13 @@ import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { DATE_RE, TIME_RE, isValidUrl } from './validators'
 import { validateRelatedVisit } from './relatedVisit'
+import { buildCcCouncilTitle, isKnownRegionId } from './ccCouncil'
 
 interface AdminCreateScheduleRequest {
   type: 'ward_visit' | 'interview' | 'meeting'
   seventyUid: string
   unitId?: string
+  regionId?: string
   wardName?: string
   presidentUid?: string
   date: string
@@ -17,7 +19,7 @@ interface AdminCreateScheduleRequest {
   customTitle?: string
   projectId?: string
   presidentAccompanied?: boolean
-  targetKind?: 'stake_president' | 'ward_bishop' | 'other'
+  targetKind?: 'stake_president' | 'ward_bishop' | 'other' | 'cc_council'
   wardId?: string
   relatedVisitId?: string
 }
@@ -29,7 +31,7 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const { type, seventyUid, unitId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId } = data
+    const { type, seventyUid, unitId, regionId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId } = data
 
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
@@ -83,9 +85,23 @@ export const adminCreateSchedule = functions
       if (type === 'ward_visit') {
         throw new functions.https.HttpsError('invalid-argument', 'targetKind is only for interview/meeting')
       }
-      if (!['stake_president', 'ward_bishop', 'other'].includes(targetKind)) {
+      if (!['stake_president', 'ward_bishop', 'other', 'cc_council'].includes(targetKind)) {
         throw new functions.https.HttpsError('invalid-argument', 'Invalid targetKind')
       }
+    }
+    // CC 협의 평의회: 특정 스테이크가 아니라 CC 전체가 대상이므로 unitId 대신 regionId로 범위를 잡는다.
+    if (targetKind === 'cc_council') {
+      if (type !== 'meeting') {
+        throw new functions.https.HttpsError('invalid-argument', 'cc_council is only valid for meeting type')
+      }
+      if (!regionId || !isKnownRegionId(regionId)) {
+        throw new functions.https.HttpsError('invalid-argument', 'Valid regionId required when targetKind is cc_council')
+      }
+      if (unitId) {
+        throw new functions.https.HttpsError('invalid-argument', 'unitId must be empty for cc_council')
+      }
+    } else if (regionId !== undefined) {
+      throw new functions.https.HttpsError('invalid-argument', 'regionId is only for cc_council meetings')
     }
     if (wardId !== undefined && (typeof wardId !== 'string' || wardId.length > 100)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid wardId')
@@ -157,10 +173,17 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('already-exists', '해당 시간에 이미 확정된 일정이 있습니다.')
     }
 
+    // CC 협의 평의회는 unitId가 없어 화면들이 이름을 못 붙인다. 앱/공개페이지/ICS/캘린더가
+    // 모두 customTitle을 우선 표시하므로, 제목을 여기서 한 번 채워 두면 전 표시 경로가 맞는다.
+    const resolvedCustomTitle =
+      customTitle?.trim() ||
+      (targetKind === 'cc_council' && regionId ? buildCcCouncilTitle(regionId) : null)
+
     await db.collection('schedules').add({
       type,
       seventyUid,
       unitId: unitId ?? '',
+      regionId: targetKind === 'cc_council' ? regionId : null,
       wardName: (type === 'ward_visit' && wardName) ? wardName.trim() : null,
       presidentUid: presidentUid ?? null,
       date,
@@ -168,7 +191,7 @@ export const adminCreateSchedule = functions
       endTime,
       notes: notes ?? null,
       zoomLink: zoomLink?.trim() ?? null,
-      customTitle: customTitle?.trim() ?? null,
+      customTitle: resolvedCustomTitle,
       projectId: (projectId && projectId.trim()) ? projectId.trim() : null,
       presidentAccompanied: (type === 'ward_visit' && presidentAccompanied === true) ? true : null,
       targetKind: (type !== 'ward_visit' && targetKind) ? targetKind : null,

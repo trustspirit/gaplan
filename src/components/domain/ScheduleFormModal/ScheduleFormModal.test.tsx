@@ -503,3 +503,109 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
     expect(createSpy.mock.calls[0][0].notes).toBe(manualNotes)
   })
 })
+
+describe('ScheduleFormModal 협의 평의회(CCM)', () => {
+  const SEVENTY_USER: AppUser = {
+    uid: 'test-uid',
+    email: 'test@test.com',
+    name: '테스트',
+    role: 'seventy',
+    regionIds: ['seoul', 'busan'],
+    createdAt: '2026-01-01',
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.currentUser = SEVENTY_USER
+    mocks.users = [SEVENTY_USER]
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: [MOCK_STAKE_PRESIDENT],
+      loading: false,
+      getLeaderByUnitName: vi.fn(),
+    })
+  })
+
+  function fillDateTime() {
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-07-10' } })
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
+  }
+
+  function openCcCouncilForm() {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'cc_council' } })
+  }
+
+  it('모임에서만 협의 평의회 대상을 제공한다', () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.interview'))
+    const interviewTarget = screen.getByLabelText('schedule.targetLabel') as HTMLSelectElement
+    expect(Array.from(interviewTarget.options).map(o => o.value)).not.toContain('cc_council')
+
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    const meetingTarget = screen.getByLabelText('schedule.targetLabel') as HTMLSelectElement
+    expect(Array.from(meetingTarget.options).map(o => o.value)).toContain('cc_council')
+  })
+
+  // 협의 평의회는 CC 전체가 대상이므로 스테이크를 먼저 고르지 않아도 선택할 수 있어야 한다
+  it('스테이크를 고르지 않아도 협의 평의회를 선택할 수 있다', () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    expect((screen.getByLabelText('schedule.stakeLabelOptional') as HTMLSelectElement).value).toBe('')
+    const target = screen.getByLabelText('schedule.targetLabel') as HTMLSelectElement
+    expect(Array.from(target.options).map(o => o.value)).toContain('cc_council')
+  })
+
+  it('선택하면 스테이크 대신 담당 CC 목록을 고르게 한다', () => {
+    openCcCouncilForm()
+    expect(screen.queryByLabelText('schedule.stakeLabelOptional')).not.toBeInTheDocument()
+    const ccSelect = screen.getByLabelText('schedule.ccRegionLabel') as HTMLSelectElement
+    expect(Array.from(ccSelect.options).map(o => o.value)).toEqual(
+      expect.arrayContaining(['seoul', 'busan']),
+    )
+    // 담당하지 않는 CC는 고를 수 없다
+    expect(Array.from(ccSelect.options).map(o => o.value)).not.toContain('seoul-south')
+  })
+
+  it('CC를 고르지 않으면 저장을 막는다', async () => {
+    openCcCouncilForm()
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    expect(await screen.findByText('schedule.errorCcRegionRequired')).toBeInTheDocument()
+    expect(createSpy).not.toHaveBeenCalled()
+  })
+
+  it('regionId와 cc_council을 보내고 unitId는 보내지 않는다', async () => {
+    openCcCouncilForm()
+    fireEvent.change(screen.getByLabelText('schedule.ccRegionLabel'), { target: { value: 'busan' } })
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    const payload = createSpy.mock.calls[0][0]
+    expect(payload).toMatchObject({ type: 'meeting', targetKind: 'cc_council', regionId: 'busan' })
+    expect(payload).not.toHaveProperty('unitId')
+    expect(payload).not.toHaveProperty('wardId')
+  })
+
+  // 스테이크를 먼저 고른 뒤 협의 평의회로 바꾸면 남은 unitId가 payload로 새어 나가면 안 된다
+  it('스테이크를 골랐다가 협의 평의회로 바꿔도 unitId가 남지 않는다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'cc_council' } })
+    fireEvent.change(screen.getByLabelText('schedule.ccRegionLabel'), { target: { value: 'seoul' } })
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('unitId')
+  })
+
+  it('협의 평의회에는 사전 준비 모임 목적을 노출하지 않는다', () => {
+    openCcCouncilForm()
+    expect(screen.queryByLabelText('schedule.purposeLabel')).not.toBeInTheDocument()
+  })
+})

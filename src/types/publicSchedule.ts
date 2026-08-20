@@ -2,6 +2,8 @@ export interface PublicScheduleItem {
   id: string
   type: string
   unitId: string
+  regionId?: string   // 협의 평의회: unitId 대신 CC로 범위를 표현한다
+  targetKind?: string
   date: string
   startTime: string
   endTime: string

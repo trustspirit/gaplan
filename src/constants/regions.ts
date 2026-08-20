@@ -44,6 +44,16 @@ export interface WardUnit {
   unitId: string   // parent stake/district id
 }
 
+/**
+ * 일정이 속한 CC(region) id. 협의 평의회는 CC 전체가 대상이라 unitId가 비고 regionId를
+ * 직접 들고 있으므로, 유닛 → CC 역산만 하면 CC 필터에서 통째로 사라진다.
+ */
+export function getScheduleRegionId(
+  schedule: { unitId?: string; regionId?: string },
+): string | undefined {
+  return schedule.regionId ?? ALL_UNITS.find((u) => u.id === schedule.unitId)?.regionId
+}
+
 export function getUnitName(
   unit: { name: string | { ko: string; en: string } },
   lang: 'ko' | 'en' = 'ko',

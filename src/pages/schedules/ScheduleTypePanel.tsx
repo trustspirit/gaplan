@@ -17,7 +17,7 @@ import { ScheduleFormModal } from '@/components/domain/ScheduleFormModal/Schedul
 import { ScheduleItem } from '@/components/domain/ScheduleItem/ScheduleItem'
 import type { Schedule, ScheduleType } from '@/types'
 import { canUseAdminTools } from '@/utils/permissions'
-import { ALL_UNITS, REGIONS } from '@/constants/regions'
+import { REGIONS, getScheduleRegionId } from '@/constants/regions'
 import styles from './ScheduleTypePage.module.scss'
 
 type FilterTab = 'all' | 'upcoming' | 'completed'
@@ -76,9 +76,7 @@ export function ScheduleTypePanel({
 
   const schedules = (
     filterRegion != null
-      ? rawSchedules.filter(
-          (s) => ALL_UNITS.find((u) => u.id === s.unitId)?.regionId === filterRegion,
-        )
+      ? rawSchedules.filter((s) => getScheduleRegionId(s) === filterRegion)
       : rawSchedules
   ).filter((s) => !deletingIds.has(s.id))
 

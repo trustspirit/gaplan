@@ -2,6 +2,7 @@ import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { DATE_RE, TIME_RE, isValidUrl } from './validators'
 import { validateRelatedVisit } from './relatedVisit'
+import { CC_COUNCIL_TARGET_KIND } from './ccCouncil'
 
 interface AdminEditScheduleRequest {
   scheduleId: string
@@ -17,7 +18,7 @@ interface AdminEditScheduleRequest {
     customTitle?: string | null
     projectId?: string | null
     presidentAccompanied?: boolean | null
-    targetKind?: 'stake_president' | 'ward_bishop' | 'other' | null
+    targetKind?: 'stake_president' | 'ward_bishop' | 'other' | 'cc_council' | null
     wardId?: string | null
     relatedVisitId?: string | null
   }
@@ -118,7 +119,7 @@ export const adminEditSchedule = functions
       allowed.presidentAccompanied = updates.presidentAccompanied === true ? true : null
     }
     if (updates.targetKind !== undefined) {
-      if (updates.targetKind !== null && !['stake_president', 'ward_bishop', 'other'].includes(updates.targetKind)) {
+      if (updates.targetKind !== null && !['stake_president', 'ward_bishop', 'other', CC_COUNCIL_TARGET_KIND].includes(updates.targetKind)) {
         throw new functions.https.HttpsError('invalid-argument', 'Invalid targetKind')
       }
       allowed.targetKind = updates.targetKind
@@ -161,6 +162,19 @@ export const adminEditSchedule = functions
         throw new functions.https.HttpsError('permission-denied',
           'exec_secretary can only edit schedules for their assigned seventy')
       }
+    }
+
+    // 협의 평의회는 'unitId는 비고 regionId가 채워져 있다'가 전제다. 수정으로 스테이크가
+    // 붙으면 그 스테이크 쿼리에까지 딸려 나오므로 막는다. (regionId는 애초에 수정 대상이 아니다)
+    if (snap.data()?.targetKind === CC_COUNCIL_TARGET_KIND) {
+      if (allowed.unitId) {
+        throw new functions.https.HttpsError('invalid-argument', 'cc_council schedules cannot be tied to a unit')
+      }
+      if (allowed.targetKind !== undefined && allowed.targetKind !== CC_COUNCIL_TARGET_KIND) {
+        throw new functions.https.HttpsError('invalid-argument', 'cc_council targetKind cannot be changed')
+      }
+    } else if (allowed.targetKind === CC_COUNCIL_TARGET_KIND) {
+      throw new functions.https.HttpsError('invalid-argument', 'cannot convert an existing schedule to cc_council')
     }
 
     if (allowed.startTime !== undefined || allowed.endTime !== undefined) {

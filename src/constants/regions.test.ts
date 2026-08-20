@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getRegionIdByUnit, ALL_UNITS, getWardById, getWardIdByName } from './regions'
+import { getRegionIdByUnit, ALL_UNITS, getWardById, getWardIdByName, getScheduleRegionId } from './regions'
 
 describe('getRegionIdByUnit', () => {
   it('returns the regionId for a known unit', () => {
@@ -24,5 +24,27 @@ describe('ward lookup helpers', () => {
   })
   it('getWardIdByName returns undefined for unknown name', () => {
     expect(getWardIdByName('없는 와드')).toBeUndefined()
+  })
+})
+
+describe('getScheduleRegionId', () => {
+  it('일반 일정은 unitId로 CC를 역산한다', () => {
+    expect(getScheduleRegionId({ unitId: 'seoul-east-stake' })).toBe('seoul')
+    expect(getScheduleRegionId({ unitId: 'daejeon-stake' })).toBe('seoul-south')
+    expect(getScheduleRegionId({ unitId: 'ulsan-district' })).toBe('busan')
+  })
+
+  // 협의 평의회는 unitId가 비어 있어, 역산만 하면 CC 필터에서 통째로 사라진다
+  it('unitId 없이 regionId만 있는 협의 평의회도 CC를 찾는다', () => {
+    expect(getScheduleRegionId({ unitId: '', regionId: 'seoul' })).toBe('seoul')
+  })
+
+  it('regionId가 unitId 역산보다 우선한다', () => {
+    expect(getScheduleRegionId({ unitId: 'busan-stake', regionId: 'seoul' })).toBe('seoul')
+  })
+
+  it('둘 다 없으면 undefined', () => {
+    expect(getScheduleRegionId({ unitId: 'nope' })).toBeUndefined()
+    expect(getScheduleRegionId({})).toBeUndefined()
   })
 })

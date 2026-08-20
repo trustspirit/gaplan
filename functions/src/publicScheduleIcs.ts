@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { getScopeUnitIds, getScopeDisplayName } from './regions'
+import { isCcCouncilForScope } from './ccCouncil'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -104,16 +105,39 @@ export const publicScheduleIcs = functions
       let schedulesQuery = admin.firestore()
         .collection('schedules') as admin.firestore.Query
       if (unitIds !== null) schedulesQuery = schedulesQuery.where('unitId', 'in', unitIds)
-      const [schedulesSnap, unitsSnap2] = await Promise.all([
+
+      // 협의 평의회는 CC 전체가 대상이라 unitId가 비어 있다. unitId-in 쿼리로는 못 잡으니
+      // regionId로 별도 조회해 합친다. (전체 공유는 이미 전 일정을 읽어 자동 포함)
+      const ccQuery =
+        unitIds !== null
+          ? admin.firestore().collection('schedules')
+              .where('regionId', '==', scopeValue)
+              .where('status', '==', 'confirmed')
+              .where('date', '>=', cutoffStr)
+              .orderBy('date', 'asc')
+              .get()
+          : null
+
+      const [schedulesSnap, unitsSnap2, ccSnap] = await Promise.all([
         schedulesQuery
           .where('status', '==', 'confirmed')
           .where('date', '>=', cutoffStr)
           .orderBy('date', 'asc')
           .get(),
         admin.firestore().collection('units').get(),
+        ccQuery,
       ])
 
       const unitSet = unitIds !== null ? new Set(unitIds) : null
+
+      const seenIds = new Set<string>()
+      const scheduleDocs = [...schedulesSnap.docs, ...(ccSnap?.docs ?? [])]
+        .filter((d) => {
+          if (seenIds.has(d.id)) return false
+          seenIds.add(d.id)
+          return true
+        })
+        .sort((a, b) => (a.data().date as string).localeCompare(b.data().date as string))
 
       const unitMap: Record<string, string> = {}
       unitsSnap2.docs.forEach((d) => { unitMap[d.id] = d.data().name ?? d.id })
@@ -121,9 +145,9 @@ export const publicScheduleIcs = functions
       const dtstamp = nowDtStamp()
       const events: string[] = []
 
-      schedulesSnap.docs.filter(d => {
-        // Regional shares expose ward visits only
-        return unitSet === null || d.data().type === 'ward_visit'
+      scheduleDocs.filter(d => {
+        // Regional shares expose ward visits only — 단, 그 CC의 협의 평의회는 함께 노출한다
+        return unitSet === null || d.data().type === 'ward_visit' || isCcCouncilForScope(d.data(), scopeValue)
       }).forEach((d) => {
         const data = d.data()
         const unitName = unitMap[data.unitId] ?? data.unitId ?? ''

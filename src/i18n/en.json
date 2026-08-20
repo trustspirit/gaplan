@@ -310,7 +310,10 @@
       "interview": "Interview",
       "meeting": "Sacrament Meeting",
       "general_attendance": "Event Attendance"
-    }
+    },
+    "targetOptionCcCouncil": "Stake presidents in the CC (Coordinating Council)",
+    "ccRegionLabel": "Coordinating Council",
+    "errorCcRegionRequired": "Select the CC for this coordinating council meeting."
   },
   "ward": {
     "assignTitle": "Assign Ward/Branch Visit Dates",

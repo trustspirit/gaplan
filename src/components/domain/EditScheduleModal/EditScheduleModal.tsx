@@ -7,7 +7,7 @@ import { X } from 'lucide-react'
 import { functions } from '@/firebase'
 import { useUsers } from '@/hooks/useUsers'
 import { useUpcomingVisits } from '@/hooks/useUpcomingVisits'
-import { ALL_UNITS, getWardsByUnit } from '@/constants/regions'
+import { ALL_UNITS, REGIONS, getWardsByUnit } from '@/constants/regions'
 import type { Schedule } from '@/types'
 import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
 import { DeleteConfirmSheet, Input, Textarea, Select } from '@/components/ui'
@@ -43,6 +43,11 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
   const [saving, setSaving] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // 협의 평의회는 CC 전체가 대상이라 스테이크가 없다. 스테이크를 붙이면 그 스테이크
+  // 쿼리에까지 딸려 나오므로(서버에서도 거부한다) 선택 자체를 노출하지 않는다.
+  const isCcCouncil = schedule.targetKind === 'cc_council'
+  const ccRegionName = REGIONS.find(r => r.id === schedule.regionId)?.name ?? schedule.regionId ?? ''
 
   const isFirstUnitChange = useRef(true)
   useEffect(() => {
@@ -145,7 +150,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
           startTime,
           endTime,
           notes: note || null,
-          unitId: unitId || undefined,
+          ...(isCcCouncil ? {} : { unitId: unitId || undefined }),
           ...(isVisit ? { wardName: wardName || null } : {}),
           ...(isInterview ? { presidentUid: presidentUid || null } : {}),
           ...(!isVisit ? { zoomLink: zoomLink.trim() || null } : {}),
@@ -187,20 +192,29 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
             {error && <div className={styles.errorBanner}>{error}</div>}
 
             <div className={styles.fields}>
-              {/* Stake/District */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>
-                  {t(schedule.type === 'meeting' ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel')}
-                </label>
-                <select
-                  className={styles.fieldSelect}
-                  value={unitId}
-                  onChange={e => setUnitId(e.target.value)}
-                >
-                  <option value="">{t('common.select')}</option>
-                  {unitOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              </div>
+              {/* Stake/District — 협의 평의회는 대상 CC를 읽기 전용으로 보여 준다 */}
+              {isCcCouncil ? (
+                <Input
+                  label={t('schedule.ccRegionLabel')}
+                  value={ccRegionName}
+                  disabled
+                  onChange={() => {}}
+                />
+              ) : (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>
+                    {t(schedule.type === 'meeting' ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel')}
+                  </label>
+                  <select
+                    className={styles.fieldSelect}
+                    value={unitId}
+                    onChange={e => setUnitId(e.target.value)}
+                  >
+                    <option value="">{t('common.select')}</option>
+                    {unitOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              )}
 
               {/* Ward — ward_visit only */}
               {isVisit && (

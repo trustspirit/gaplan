@@ -10,7 +10,7 @@ import { functions } from '@/firebase'
 import { useUsers } from '@/hooks/useUsers'
 import { useLeaders } from '@/hooks/useLeaders'
 import { useUpcomingVisits } from '@/hooks/useUpcomingVisits'
-import { ALL_UNITS, getWardsByUnit, getWardIdByName } from '@/constants/regions'
+import { ALL_UNITS, REGIONS, getWardsByUnit, getWardIdByName } from '@/constants/regions'
 import { isGeneralScheduleRelevant } from '@/types'
 import type { ScheduleType, GeneralSchedule, AppUser, InterviewTargetKind } from '@/types'
 import { Button, Select, Input, Textarea } from '@/components/ui'
@@ -24,6 +24,9 @@ import {
 import styles from './ScheduleFormModal.module.scss'
 
 const adminCreateScheduleFn = httpsCallable(functions, 'adminCreateSchedule')
+
+/** 대상 Select에서 'CC 내 스테이크 회장들'(협의 평의회)을 고른 상태 */
+const CC_COUNCIL_TARGET = 'cc_council'
 
 interface ScheduleFormModalProps {
   initialDate?: string
@@ -61,7 +64,8 @@ export function ScheduleFormModal({
   const [wardName, setWardName] = useState('')
   const [presidentUid, setPresidentUid] = useState('')
   const [contactTargetValue, setContactTargetValue] = useState('')
-  const [targetSelect, setTargetSelect] = useState('')  // '', 'other', 'unit:...', 'ward:...'
+  const [targetSelect, setTargetSelect] = useState('')  // '', 'other', 'cc_council', 'unit:...', 'ward:...'
+  const [ccRegionId, setCcRegionId] = useState('')      // 협의 평의회 대상 CC
   const [purpose, setPurpose] = useState<'general' | 'pre_visit'>('general')
   const [relatedVisitId, setRelatedVisitId] = useState('')
   const [date, setDate] = useState(initialDate ?? '')
@@ -81,7 +85,8 @@ export function ScheduleFormModal({
     date !== (initialDate ?? '') ||
     startTime !== '' || endTime !== '' || notes !== '' || zoomLink !== '' ||
     customTitle !== '' || projectId !== '' || unitId !== '' || wardName !== '' ||
-    contactTargetValue !== '' || targetSelect !== '' || isSabbath || presidentAccompanied
+    contactTargetValue !== '' || targetSelect !== '' || ccRegionId !== '' ||
+    isSabbath || presidentAccompanied
   const requestClose = () => {
     if (isDirty && !window.confirm(t('common.discardChanges'))) return
     onClose()
@@ -101,6 +106,7 @@ export function ScheduleFormModal({
     setPresidentUid('')
     setContactTargetValue('')
     setTargetSelect('')
+    setCcRegionId('')
     setZoomLink('')
     setCustomTitle('')
     setNotes('')
@@ -115,6 +121,7 @@ export function ScheduleFormModal({
     setPresidentUid('')
     setContactTargetValue('')
     setTargetSelect('')
+    setCcRegionId('')
     setRelatedVisitId('')
   }
 
@@ -178,7 +185,16 @@ export function ScheduleFormModal({
   }))
   const contactTargetOptions = getContactTargetOptions({ type, unitId, leaders, users })
   const selectedContactTarget = contactTargetOptions.find(o => o.label === contactTargetValue)
+  const isCcCouncil = targetSelect === CC_COUNCIL_TARGET
+  // 협의 평의회 대상 CC. 담당 칠십인이 정해졌으면 그 칠십인의 CC로 제한한다.
+  const ccRegionOptions = (
+    seventyRegionIds.length > 0
+      ? REGIONS.filter(r => seventyRegionIds.includes(r.id))
+      : effectiveSeventyUid ? [] : REGIONS
+  ).map(r => ({ value: r.id, label: r.name }))
   const targetOptions = [
+    // 협의 평의회는 특정 스테이크가 아니라 CC 전체가 대상이라 unitId와 무관하게 늘 고를 수 있다.
+    ...(type === 'meeting' ? [{ value: CC_COUNCIL_TARGET, label: t('schedule.targetOptionCcCouncil') }] : []),
     ...contactTargetOptions.map(o => ({ value: o.value, label: o.label })),
     { value: 'other', label: t('schedule.targetOptionOther') },
   ]
@@ -207,7 +223,8 @@ export function ScheduleFormModal({
     let targetKind: InterviewTargetKind | undefined
     let wardId: string | undefined
     if (type === 'interview' || type === 'meeting') {
-      if (targetSelect.startsWith('unit:')) targetKind = 'stake_president'
+      if (targetSelect === CC_COUNCIL_TARGET) targetKind = 'cc_council'
+      else if (targetSelect.startsWith('unit:')) targetKind = 'stake_president'
       else if (targetSelect.startsWith('ward:')) {
         targetKind = 'ward_bishop'
         wardId = targetSelect.slice('ward:'.length)
@@ -225,6 +242,10 @@ export function ScheduleFormModal({
         setError(t('schedule.errorTargetNameRequired'))
         return
       }
+      if (targetKind === 'cc_council' && !ccRegionId) {
+        setError(t('schedule.errorCcRegionRequired'))
+        return
+      }
     }
     if ((type === 'interview' || type === 'meeting') && purpose === 'pre_visit' && !relatedVisitId) {
       setError(t('schedule.errorRelatedVisitRequired'))
@@ -236,7 +257,10 @@ export function ScheduleFormModal({
       (type === 'interview' || type === 'meeting') &&
       contactTargetValue.trim() !== '' &&
       !selectedContactTarget
-    const finalNotes = isFreeTextTarget
+    // 협의 평의회는 붙일 유닛 리더가 하나로 정해지지 않으므로 연락처 자동 첨부를 건너뛴다.
+    const finalNotes = isCcCouncil
+      ? notes
+      : isFreeTextTarget
       ? (notes.trim() ? `대상: ${contactTargetValue.trim()}\n${notes}` : `대상: ${contactTargetValue.trim()}`)
       : buildNotesWithLeaderContact({
           type,
@@ -251,11 +275,12 @@ export function ScheduleFormModal({
       await adminCreateScheduleFn({
         type,
         seventyUid: effectiveSeventyUid,
-        ...(unitId ? { unitId } : {}),
+        ...(unitId && !isCcCouncil ? { unitId } : {}),
+        ...(isCcCouncil ? { regionId: ccRegionId } : {}),
         ...(wardName ? { wardName } : {}),
-        ...(presidentUid ? { presidentUid } : {}),
+        ...(presidentUid && !isCcCouncil ? { presidentUid } : {}),
         ...(targetKind ? { targetKind } : {}),
-        ...(wardId ? { wardId } : {}),
+        ...(wardId && !isCcCouncil ? { wardId } : {}),
         ...((type === 'interview' || type === 'meeting') && purpose === 'pre_visit' && relatedVisitId
           ? { relatedVisitId }
           : {}),
@@ -354,16 +379,27 @@ export function ScheduleFormModal({
               />
             )}
 
-            {/* Stake/District — required for ward_visit, optional for interview/meeting */}
-            <Select
-              label={
-                type === 'ward_visit' ? t('schedule.stakeLabel') : t('schedule.stakeLabelOptional')
-              }
-              value={unitId}
-              onChange={(e) => handleUnitChange(e.target.value)}
-              options={unitOptions}
-              disabled={unitSelectDisabled}
-            />
+            {/* 협의 평의회는 CC 전체가 대상이라 스테이크 대신 CC를 고른다 */}
+            {isCcCouncil ? (
+              <Select
+                label={t('schedule.ccRegionLabel')}
+                value={ccRegionId}
+                onChange={(e) => setCcRegionId(e.target.value)}
+                options={ccRegionOptions}
+                disabled={ccRegionOptions.length === 0}
+              />
+            ) : (
+              /* Stake/District — required for ward_visit, optional for interview/meeting */
+              <Select
+                label={
+                  type === 'ward_visit' ? t('schedule.stakeLabel') : t('schedule.stakeLabelOptional')
+                }
+                value={unitId}
+                onChange={(e) => handleUnitChange(e.target.value)}
+                options={unitOptions}
+                disabled={unitSelectDisabled}
+              />
+            )}
 
             {/* Ward — ward_visit only */}
             {type === 'ward_visit' && (
@@ -379,6 +415,7 @@ export function ScheduleFormModal({
             {/* Contact target — 구조화된 대상 Select(스테이크/지방부 회장, 와드/지부 감독) + 기타(직접 입력) */}
             {(type === 'interview' || type === 'meeting') && (
               <>
+                {!isCcCouncil && (
                 <Select
                   label={t('schedule.purposeLabel')}
                   value={purpose === 'general' ? '' : purpose}
@@ -392,6 +429,7 @@ export function ScheduleFormModal({
                     { value: 'pre_visit', label: t('schedule.purposePreVisit') },
                   ]}
                 />
+                )}
                 {purpose === 'pre_visit' && (
                   <>
                     <Select
@@ -442,11 +480,24 @@ export function ScheduleFormModal({
                   label={t('schedule.targetLabel')}
                   value={targetSelect}
                   onChange={(e) => {
-                    setTargetSelect(e.target.value)
-                    const opt = contactTargetOptions.find(o => o.value === e.target.value)
+                    const next = e.target.value
+                    setTargetSelect(next)
+                    const opt = contactTargetOptions.find(o => o.value === next)
                     setPresidentUid(opt?.presidentUid ?? '')
-                    if (e.target.value !== 'other') setContactTargetValue(opt?.label ?? '')
-                    else setContactTargetValue('')
+                    if (next === 'other') setContactTargetValue('')
+                    else setContactTargetValue(opt?.label ?? '')
+                    if (next === CC_COUNCIL_TARGET) {
+                      // 스테이크 선택은 CC 선택으로 대체된다 — 남은 값이 payload로 새어 나가지 않게 비운다
+                      setUnitId('')
+                      setWardName('')
+                      // 담당 CC가 하나뿐이면 굳이 고르게 하지 않는다
+                      setCcRegionId(ccRegionOptions.length === 1 ? ccRegionOptions[0].value : '')
+                      // 사전 준비 모임은 특정 와드 방문에 붙는 개념이라 협의 평의회에는 없다
+                      setPurpose('general')
+                      setRelatedVisitId('')
+                    } else {
+                      setCcRegionId('')
+                    }
                   }}
                   options={targetOptions}
                 />

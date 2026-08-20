@@ -1,12 +1,13 @@
 export type ScheduleType = 'ward_visit' | 'interview' | 'meeting' | 'general_attendance'
 export type ScheduleStatus = 'pending' | 'confirmed' | 'cancelled'
-export type InterviewTargetKind = 'stake_president' | 'ward_bishop' | 'other'
+export type InterviewTargetKind = 'stake_president' | 'ward_bishop' | 'other' | 'cc_council'
 
 export interface Schedule {
   id: string
   type: ScheduleType
   seventyUid: string
   unitId: string
+  regionId?: string   // CC(협의 평의회) 단위 일정 — cc_council 모임에만 채워지고 unitId는 빈 값이다
   presidentUid: string | null
   date: string
   startTime: string
@@ -17,7 +18,7 @@ export interface Schedule {
   googleCalendarEventId?: string
   wardName?: string   // ward visit: specific ward/branch name
   wardId?: string             // 대상/방문 와드·지부 id (WARDS.id) — ward_visit 및 ward_bishop 접견/모임
-  targetKind?: InterviewTargetKind  // interview/meeting 대상 유형
+  targetKind?: InterviewTargetKind  // interview/meeting 대상 유형 (cc_council = CC 내 스테이크 회장들)
   taskId?: string     // ward visit: links schedule back to source task (for re-confirmation cleanup)
   notes?: string
   zoomLink?: string | null
