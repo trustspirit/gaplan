@@ -40,20 +40,30 @@ describe('Tabs', () => {
     expect(screen.getByRole('tab', { name: '방문 계획' })).toHaveAttribute('tabindex', '-1')
   })
 
-  it('uses renderLink for items that have an href', () => {
+  it('uses renderLink for items that have an href, passing the active flag and a distinct className', () => {
+    const classNames: string[] = []
     render(
       <Tabs
-        items={[{ id: 'visits', label: '방문', href: '/schedules/visits' }]}
+        items={[
+          { id: 'visits', label: '방문', href: '/schedules/visits' },
+          { id: 'tasks', label: '태스크', href: '/schedules/tasks' },
+        ]}
         activeId="visits"
-        renderLink={(item, children, className) => (
-          <a href={item.href} className={className} role="tab" aria-selected>
-            {children}
-          </a>
-        )}
+        renderLink={(item, children, className, active) => {
+          classNames.push(className)
+          return (
+            <a href={item.href} className={className} role="tab" aria-selected={active}>
+              {children}
+            </a>
+          )
+        }}
         aria-label="일정 탭"
       />,
     )
     expect(screen.getByRole('tab', { name: '방문' })).toHaveAttribute('href', '/schedules/visits')
+    expect(screen.getByRole('tab', { selected: true })).toHaveTextContent('방문')
+    expect(screen.getByRole('tab', { name: '태스크' })).toHaveAttribute('aria-selected', 'false')
+    expect(classNames[0]).not.toEqual(classNames[1])
   })
 
   // 활성 표시는 밑줄과 글자 무게로. 왼쪽 스트라이프 금지 (스펙 §3)
