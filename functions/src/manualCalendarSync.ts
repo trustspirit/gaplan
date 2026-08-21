@@ -48,12 +48,25 @@ export const manualCalendarSync = functions
     let synced = 0
     let failed = 0
 
+    // 이 함수가 복구하려는 것이 바로 "칠십인의 regionId 때문에 트리거가 실패한 일정"이다
+    // (파일 첫머리 주석). 그러려면 트리거와 같은 입력을 봐야 한다. 한 칠십인이 여러
+    // 일정을 갖고 있으므로 uid로 캐시해 같은 문서를 여러 번 읽지 않는다.
+    const seventyRegionCache = new Map<string, string | undefined>()
+    async function seventyRegionOf(uid: string | undefined): Promise<string | undefined> {
+      if (!uid) return undefined
+      if (!seventyRegionCache.has(uid)) {
+        const snap = await db.collection('users').doc(uid).get()
+        seventyRegionCache.set(uid, snap.data()?.regionId)
+      }
+      return seventyRegionCache.get(uid)
+    }
+
     for (const docSnap of pending) {
       const s = docSnap.data()
-      // 칠십인 fallback은 여기 없다 — 이 경로는 유저 문서를 읽지 않는다. CCM은
-      // 일정 자신이 regionId를 들고 있으므로 fallback 없이도 제 캘린더를 찾는다.
-      const regionId = resolveScheduleRegionId(s)
-      const calendarId = calendars[regionId]
+      const regionId = resolveScheduleRegionId(s, await seventyRegionOf(s.seventyUid))
+      // calendarSync와 같은 마지막 수단 — 지역 캘린더가 없으면 공용 캘린더로 간다.
+      // 두 경로가 같은 일정을 다른 캘린더로 보내면 어느 쪽이 맞는지 알 수 없다.
+      const calendarId = calendars[regionId] ?? settingsSnap.data()?.sharedCalendarId
       if (!calendarId) {
         functions.logger.warn(
           `manualCalendarSync: no calendar for regionId="${regionId}" (unitId=${s.unitId}, scheduleRegionId=${s.regionId})`,
