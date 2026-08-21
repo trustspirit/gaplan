@@ -44,18 +44,15 @@ describe('TopBar 스코프 스위치', () => {
 
     const own = screen.getByRole('radio', { name: /scope.myAssigned/ })
     const all = screen.getByRole('radio', { name: /scope.all/ })
-    expect(own).toHaveAttribute('aria-checked', 'true')
-    expect(all).toHaveAttribute('aria-checked', 'false')
+    expect(own).toBeChecked()
+    expect(all).not.toBeChecked()
   })
 
   it('전체가 선택된 상태를 정확히 반영한다', () => {
     renderTopBar(makeUser({ secondaryRole: 'seventy' }), SCOPE_ALL)
 
-    expect(screen.getByRole('radio', { name: /scope.myAssigned/ })).toHaveAttribute(
-      'aria-checked',
-      'false',
-    )
-    expect(screen.getByRole('radio', { name: /scope.all/ })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('radio', { name: /scope.myAssigned/ })).not.toBeChecked()
+    expect(screen.getByRole('radio', { name: /scope.all/ })).toBeChecked()
   })
 
   it('각 선택지는 토글이 아니라 해당 스코프를 직접 지정한다', async () => {
