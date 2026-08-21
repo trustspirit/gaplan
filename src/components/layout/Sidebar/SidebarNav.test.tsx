@@ -71,6 +71,27 @@ describe('SidebarNav', () => {
     expect(screen.getByRole('link', { name: /nav.tasks/ })).not.toHaveTextContent('0')
   })
 
+  // 숫자만 있으면 스크린리더는 "Task 3"이라고만 읽는다 — 3이 무엇의 3인지 없다.
+  // MobileTabs.test.tsx가 이미 거는 것과 같은 단언을 데스크톱에도 건다.
+  it('announces what the badge number counts, not just the number', () => {
+    renderNav(ROLE.PRESIDENT, 3)
+    expect(screen.getByRole('link', { name: /nav.tasks/ })).toHaveAccessibleName(
+      /task.pendingCount/,
+    )
+  })
+
+  it('does not announce a pending count when there is nothing pending', () => {
+    renderNav(ROLE.PRESIDENT, 0)
+    expect(screen.getByRole('link', { name: /nav.tasks/ })).not.toHaveAccessibleName(
+      /task.pendingCount/,
+    )
+  })
+
+  it('names the navigation landmark', () => {
+    renderNav()
+    expect(screen.getByRole('navigation', { name: 'nav.primaryLabel' })).toBeInTheDocument()
+  })
+
   // 스펙 §3: 활성 표시는 배경 채움 + 글자 무게로만. 왼쪽 스트라이프 금지.
   // 직접 쓴 정규식은 border-left/inset 그림자만 봤고, 실제로 스트라이프를 그리는
   // 가장 흔한 방법인 ::before 색 바를 통째로 놓쳤다. 계획 1이 이미 만들어 둔

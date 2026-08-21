@@ -53,7 +53,7 @@ export function MobileTabs({ role, pendingTaskCount = 0 }: MobileTabsProps) {
 
   return (
     <>
-      <nav className={styles.bottomNav}>
+      <nav className={styles.bottomNav} aria-label={t('nav.tabBarLabel')}>
         {primary.map(renderTab)}
         {overflow.length > 0 && (
           <button

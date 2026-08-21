@@ -39,13 +39,21 @@ export function SidebarNav({ role, pendingTaskCount = 0 }: SidebarNavProps) {
           {NAV_ICONS[item.id]}
         </span>
         <span className={styles.navLabel}>{t(item.labelKey)}</span>
-        {count > 0 && <span className={styles.navBadge}>{count}</span>}
+        {count > 0 && (
+          <>
+            {/* 숫자만 읽어주면 "Task 3"이 된다 — 단위를 붙인 문장은 따로 숨겨서 넣는다 */}
+            <span className={styles.navBadge} aria-hidden="true">
+              {count}
+            </span>
+            <span className={styles.srOnly}>{t('task.pendingCount', { count })}</span>
+          </>
+        )}
       </NavLink>
     )
   }
 
   return (
-    <nav className={styles.nav}>
+    <nav className={styles.nav} aria-label={t('nav.primaryLabel')}>
       {mainItems.map(renderItem)}
       {adminItems.length > 0 && (
         <div className={styles.navGroup} role="group" aria-labelledby={adminHeadingId}>

@@ -105,6 +105,11 @@ describe('MobileTabs', () => {
 
   // 스펙 §3의 금지 규칙은 데스크톱 사이드바만이 아니라 탭바에도 걸린다 —
   // 활성 탭 위/앞의 색 막대도 같은 패턴이다.
+  it('names the navigation landmark', () => {
+    renderTabs()
+    expect(screen.getByRole('navigation', { name: 'nav.tabBarLabel' })).toBeInTheDocument()
+  })
+
   it('never marks the active tab with an accent bar', () => {
     expectNoAccentStripe(readFileSync(resolve(__dirname, 'MobileTabs.module.scss'), 'utf8'))
   })
