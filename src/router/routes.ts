@@ -33,4 +33,13 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
   '/dashboard': ROUTES.home,
   // 회장 전용 Task 화면은 홈이 흡수했다(스펙 §4.2).
   '/tasks': ROUTES.home,
+  // 캘린더와 일정은 한 화면이 됐다(스펙 §4.2). 옛 탭 경로도 같이 받는다 —
+  // 사람들이 /schedules/visits 를 북마크해 뒀다.
+  '/calendar': ROUTES.schedules,
+  '/schedules/visits': ROUTES.schedules,
+  '/schedules/interviews': ROUTES.schedules,
+  '/schedules/events': ROUTES.schedules,
+  '/visits': ROUTES.schedules,
+  '/interviews': ROUTES.schedules,
+  '/general-schedules': ROUTES.schedules,
 }

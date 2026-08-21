@@ -8,7 +8,6 @@ export type NavSection = 'main' | 'admin'
 // 아이콘을 빼먹으면 tsc가 잡아낸다 — id: string이었을 때는 그냥 빈칸으로 렌더됐다.
 export type NavItemId =
   | 'home'
-  | 'calendar'
   | 'schedules'
   | 'taskProgress'
   | 'stats'
@@ -47,7 +46,6 @@ const ENTRIES: Entry[] = [
     badge: 'pendingTasks',
     badgeRoles: [ROLE.PRESIDENT],
   },
-  { id: 'calendar', to: '/calendar', labelKey: 'nav.calendar', section: 'main', roles: ALL_ROLES },
   {
     id: 'schedules',
     to: ROUTES.schedules,

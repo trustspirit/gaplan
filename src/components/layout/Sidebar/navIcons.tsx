@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import type { NavItemId } from '@/components/layout/navItems'
 import {
   LayoutDashboard,
-  Calendar,
   CalendarRange,
   ClipboardList,
   BarChart3,
@@ -16,7 +15,6 @@ import {
 // 키는 NavItemDef.id와 1:1로 맞춘다.
 export const NAV_ICONS: Record<NavItemId, ReactNode> = {
   home: <LayoutDashboard size={18} />,
-  calendar: <Calendar size={18} />,
   schedules: <CalendarRange size={18} />,
   taskProgress: <ClipboardList size={18} />,
   stats: <BarChart3 size={18} />,

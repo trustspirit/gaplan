@@ -33,4 +33,18 @@ describe('LEGACY_REDIRECTS', () => {
   it('keeps the retired president task screen working', () => {
     expect(LEGACY_REDIRECTS['/tasks']).toBe(ROUTES.home)
   })
+
+  it('keeps every retired schedule path working', () => {
+    for (const old of [
+      '/calendar',
+      '/schedules/visits',
+      '/schedules/interviews',
+      '/schedules/events',
+      '/visits',
+      '/interviews',
+      '/general-schedules',
+    ]) {
+      expect(LEGACY_REDIRECTS[old], old).toBe(ROUTES.schedules)
+    }
+  })
 })

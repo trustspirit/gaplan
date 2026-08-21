@@ -67,9 +67,6 @@ const PendingPage = lazyRetry(() =>
 const DashboardPage = lazyRetry(() =>
   import('@/pages/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 )
-const CalendarPage = lazyRetry(() =>
-  import('@/pages/calendar/CalendarPage').then((m) => ({ default: m.CalendarPage })),
-)
 const SchedulesPage = lazyRetry(() =>
   import('@/pages/schedules/SchedulesPage').then((m) => ({ default: m.SchedulesPage })),
 )
@@ -134,7 +131,6 @@ export function AppRouter() {
               ))}
 
               <Route path={ROUTES.home} element={<DashboardPage />} />
-              <Route path="/calendar" element={<CalendarPage />} />
               <Route path={ROUTES.schedules} element={<SchedulesPage />} />
 
               <Route element={<RoleRoute allow={['admin']} />}>

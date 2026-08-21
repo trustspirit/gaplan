@@ -54,13 +54,13 @@ describe('MobileTabs', () => {
     expect(overlay()).toHaveAttribute('inert')
     await userEvent.click(screen.getByRole('button', { name: /nav.more/ }))
     expect(overlay()).not.toHaveAttribute('inert')
-    expect(within(overlay()).getByRole('link', { name: /nav.stats/ })).toBeInTheDocument()
+    expect(within(overlay()).getByRole('link', { name: /nav.visitPlans/ })).toBeInTheDocument()
   })
 
   it('closes the sheet once an overflow item is chosen', async () => {
     renderTabs()
     await userEvent.click(screen.getByRole('button', { name: /nav.more/ }))
-    await userEvent.click(within(overlay()).getByRole('link', { name: /nav.stats/ }))
+    await userEvent.click(within(overlay()).getByRole('link', { name: /nav.visitPlans/ }))
     expect(overlay()).toHaveAttribute('inert')
   })
 

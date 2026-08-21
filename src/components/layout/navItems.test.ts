@@ -19,7 +19,7 @@ function item(id: NavItemId): NavItemDef {
 describe('navItemsFor', () => {
   it('gives a president only the screens they can reach', () => {
     const ids = navItemsFor(ROLE.PRESIDENT).map((i) => i.id)
-    expect(ids).toEqual(['home', 'calendar', 'schedules'])
+    expect(ids).toEqual(['home', 'schedules'])
   })
 
   it('gives a seventy the read-only management screens but no settings', () => {
@@ -83,13 +83,21 @@ describe('navItemsFor', () => {
     }
   })
 
+  it('no longer offers a separate calendar screen', () => {
+    for (const role of [ROLE.PRESIDENT, ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY]) {
+      expect(
+        navItemsFor(role).map((i) => i.id),
+        role,
+      ).not.toContain('calendar')
+    }
+  })
+
   // 경로가 바뀌면 이 테스트가 의도적으로 깨진다 — 리다이렉트를 같이 넣었는지
   // 확인하고 갱신하라는 신호다.
   it('keeps every route path in step with ROUTES', () => {
     const byId = Object.fromEntries(navItemsFor(ROLE.ADMIN).map((i) => [i.id, i.to]))
     expect(byId).toEqual({
       home: '/home',
-      calendar: '/calendar',
       schedules: '/schedules',
       taskProgress: '/admin/task-progress',
       stats: '/admin/stats',

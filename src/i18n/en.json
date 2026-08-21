@@ -2,12 +2,9 @@
   "nav": {
     "dashboard": "Dashboard",
     "home": "Home",
-    "calendar": "Calendar",
-    "visits": "Visits",
     "interviews": "Interviews",
     "taskProgress": "Task Progress",
     "admin": "Admin",
-    "generalSchedules": "Events",
     "stats": "Statistics",
     "visitPlans": "Visit Plans",
     "projects": "Projects",
@@ -389,42 +386,7 @@
     "selectSeventyLabel": "Select Area Seventy",
     "slotsLoadFailed": "Failed to load slots. Please try again."
   },
-  "visits": {
-    "title": "Ward Visit Schedule",
-    "createTask": "Create Task",
-    "addSchedule": "Add Visit",
-    "thisMonth": "This Month",
-    "upcoming": "Upcoming",
-    "completed": "Completed",
-    "empty": "No visit schedule",
-    "noUpcoming": "No upcoming visits.",
-    "noCompleted": "No completed visits.",
-    "noAll": "No confirmed visit schedule.",
-    "tabs": {
-      "all": "All",
-      "upcoming": "Upcoming",
-      "completed": "Completed"
-    }
-  },
-  "interviews": {
-    "title": "Interview Schedule",
-    "createTask": "Create interview request",
-    "addSchedule": "Add Interview",
-    "thisMonth": "This Month",
-    "upcoming": "Upcoming",
-    "completed": "Completed",
-    "empty": "No interview/meeting schedule",
-    "noUpcoming": "No upcoming interviews or meetings.",
-    "noCompleted": "No completed interviews or meetings.",
-    "noAll": "No confirmed interview/meeting schedule.",
-    "tabs": {
-      "all": "All",
-      "upcoming": "Upcoming",
-      "completed": "Completed"
-    }
-  },
   "schedules": {
-    "interviewMeetingTab": "Interviews & Meetings",
     "title": "Schedules",
     "subtext": "Visits, interviews and events",
     "viewLabel": "View",
@@ -495,8 +457,6 @@
     "hint": "e.g. 30 = 30-min slots, 60 = 1-hour slots"
   },
   "calendar": {
-    "title": "Schedule Calendar",
-    "subtext": "Calendar",
     "syncTitle": "Sync to Google Calendar",
     "clearSelection": "Clear selection",
     "noSchedule": "No schedule.",
@@ -650,13 +610,9 @@
       "title": "Dashboard",
       "body": "View your assigned tasks and confirmed schedules.\n• Respond to pending tasks\n• Adjust the date range to see the period you want\n• Subscribe to Google Calendar for automatic sync"
     },
-    "calendar": {
-      "title": "Calendar",
-      "body": "View schedules in a monthly calendar layout.\n• Click a date to view or add schedules for that day\n• Export schedule data as CSV\n• Subscribe to Google Calendar for automatic sync"
-    },
     "schedules": {
       "title": "Schedules",
-      "body": "View visit, interview, and event schedules organized by tabs.\n• Filter by All, Upcoming, or Completed\n• Quickly check upcoming schedules in the side panel\n• Add new schedules with the + button"
+      "body": "See visits, interviews, and events in one screen.\n• Switch between month, week, and list views\n• Toggle visits, interviews, and events on or off with kind chips\n• Narrow the range by period and region\n• Export schedule data as CSV"
     },
     "stats": {
       "title": "Statistics",
