@@ -14,10 +14,6 @@ export const ROUTES = {
   planProjects: '/plans/projects',
   stats: '/stats',
   leaders: '/leaders',
-  users: '/admin/users',
-  availability: '/admin/availability',
-  calendarSettings: '/admin/calendar',
-  admin: '/admin',
   settings: '/settings',
   settingsSystem: '/settings/system',
   settingsSharing: '/settings/sharing',
@@ -56,6 +52,11 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
   '/admin/stats': ROUTES.stats,
   // 주소록이 칠십인에게 열리면서 /admin/ 밖으로 나왔다(판정 R43·R45).
   '/admin/leaders': ROUTES.leaders,
+  // 설정이 셋으로 갈리면서 옛 admin 화면들이 그 안으로 들어갔다(판정 R51·R52).
+  '/admin': ROUTES.settings,
+  '/admin/users': ROUTES.settingsSystem,
+  '/admin/availability': ROUTES.settingsSystem,
+  '/admin/calendar': ROUTES.settingsSystem,
 }
 
 /**
