@@ -9,10 +9,6 @@ import { RegionCheckboxes } from './RegionCheckboxes'
 import { PRE_ROLE_OPTIONS, UNIT_OPTIONS } from './userOptions'
 import styles from './users.module.scss'
 
-/**
- * UserManagement.tsx의 수동 사전등록 폼 — state 356-362, `togglePreRegion` 372-379,
- * `handlePreRegister` 432-464, JSX 573-641에서 옮겨왔다.
- */
 export function PreRegisterCard() {
   const { t } = useTranslation()
   const { users } = useUsers()

@@ -34,7 +34,6 @@ export function AccountPanel() {
     }
   }
 
-  // CalendarSettings.tsx:84-90과 동일한 동작을 유지한다.
   const handleKakaoConnect = () => {
     try {
       window.location.href = buildKakaoAuthUrl()
@@ -43,7 +42,6 @@ export function AccountPanel() {
     }
   }
 
-  // CalendarSettings.tsx:92-103과 동일한 동작을 유지한다.
   const handleKakaoDisconnect = async () => {
     setKakaoBusy(true)
     try {

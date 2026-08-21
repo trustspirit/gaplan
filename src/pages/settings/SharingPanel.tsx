@@ -33,8 +33,7 @@ type Filter = 'all' | 'active'
  * 공유 화면. 전체 공개 킬스위치 하나와, 그 아래 지역·단위별 공개 링크 목록을
  * 검색·필터로 좁혀 보는 목록으로 이루어진다.
  *
- * CalendarSettings.tsx:41-57과 같은 방식으로 최초 1회 getDoc으로 읽는다 — 실시간
- * 구독이 아니다. 그 화면은 곧 삭제되므로 지금은 로딩 방식이 중복된다.
+ * 최초 1회 getDoc으로 읽는다 — 실시간 구독이 아니다.
  */
 export function SharingPanel() {
   const { t } = useTranslation()

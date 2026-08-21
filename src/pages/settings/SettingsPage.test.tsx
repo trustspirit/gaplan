@@ -84,8 +84,8 @@ describe('SettingsPage', () => {
     expect(screen.getByText('state.forbiddenTitle')).toBeInTheDocument()
   })
 
-  // 태스크 10 fix round 1 — UserManagement.tsx가 갖고 있던 pageHelp.users가
-  // 시스템 탭에서 살아있는지 고정한다. PlansPage.tsx의 HELP_KEY와 같은 패턴.
+  // 태스크 10 fix round 1 — pageHelp.users가 시스템 탭에서 살아있는지 고정한다.
+  // PlansPage.tsx의 HELP_KEY와 같은 패턴.
   it('carries the help key that used to live on the standalone user-management page', () => {
     renderAt('/settings/system')
     expect(vi.mocked(useTopBar)).toHaveBeenLastCalledWith(

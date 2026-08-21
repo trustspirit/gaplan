@@ -28,7 +28,7 @@ beforeEach(() => {
   vi.mocked(toast.error).mockClear()
 })
 
-// EditUserModal.handleSave는 UserManagement.tsx에서 가장 밀도 높은 로직이었다
+// EditUserModal.handleSave는 가장 밀도 높은 로직이다
 // (여러 독립적인 변경-감지 불리언과 두 개의 가드 절) — 분해 리뷰 1차에서 지적된
 // 테스트 공백을 여기서 메운다.
 describe('EditUserModal', () => {

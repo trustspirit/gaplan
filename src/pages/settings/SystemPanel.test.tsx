@@ -8,7 +8,7 @@ vi.mock('react-i18next', () => ({
 vi.mock('./CalendarLinkCard', () => ({
   CalendarLinkCard: () => <div data-testid="calendar-link" />,
 }))
-vi.mock('@/pages/admin/AvailabilitySettings', () => ({
+vi.mock('./AvailabilitySettings', () => ({
   AvailabilitySettings: () => <div data-testid="availability" />,
 }))
 vi.mock('./users/UserListCard', () => ({ UserListCard: () => <div data-testid="users" /> }))
@@ -27,7 +27,6 @@ describe('SystemPanel', () => {
     expect(screen.getByTestId('availability')).toBeInTheDocument()
   })
 
-  // 태스크 10 — 사용자 관리(admin/UserManagement.tsx)를 갈라 여기 붙였다.
   it('carries the user administration cards', () => {
     render(<SystemPanel />)
     expect(screen.getByTestId('users')).toBeInTheDocument()

@@ -10,8 +10,6 @@ import { Card, CardHeader, CardBody, Input, Button } from '@/components/ui'
 /**
  * 지역별 구글 캘린더 ID 입력과 수동 동기화를 한 카드에 묶는다.
  * 판정 R50 — 동기화는 설정이 아니라 액션이다. 대상(지역 ID) 옆에 둔다.
- * CalendarSettings.tsx의 카드 1(201-226)·카드 2(228-237)에서 옮겨왔다 — 그 파일은
- * 곧 삭제될 예정이라 지금은 동작이 중복된다.
  */
 export function CalendarLinkCard() {
   const { t } = useTranslation()
