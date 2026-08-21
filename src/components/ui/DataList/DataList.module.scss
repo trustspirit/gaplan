@@ -100,6 +100,14 @@
   background: var(--accent-weak);
   color: var(--accent);
 }
+// state indicators (verified / accompanied / done, ...) next to the tag —
+// not actions, so they live in the row body, not the .actions slot.
+.badges {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  flex: none;
+}
 .actions {
   display: flex;
   gap: $space-1;

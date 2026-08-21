@@ -308,6 +308,8 @@
     "filterCustom": "Custom",
     "periodSchedules": "Schedules in Period",
     "presidentAccompanied": "Stake President Accompanies",
+    "presidentAccompaniedShort": "President Accompanies",
+    "attendanceVerified": "Attendance confirmed",
     "sabbathVisit": "Sabbath Visit",
     "sabbathVisitNotes": "Sacrament meeting visit",
     "type": {

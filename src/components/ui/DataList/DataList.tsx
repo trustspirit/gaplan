@@ -10,6 +10,10 @@ export interface DataListRow {
   meta?: string
   tag?: string
   tagTone?: 'neutral' | 'accent'
+  // Small state indicators (verified / accompanied / done, ...) — not
+  // actions. Rendered next to the tag. `actions` means "things you can do";
+  // these are just facts about the row, so they don't belong there.
+  badges?: ReactNode
   actions?: ReactNode
   onClick?: () => void
   highlighted?: boolean
@@ -42,6 +46,7 @@ function RowBody({ row }: { row: DataListRow }) {
           {row.tag}
         </span>
       )}
+      {row.badges && <div className={styles.badges}>{row.badges}</div>}
     </>
   )
 }

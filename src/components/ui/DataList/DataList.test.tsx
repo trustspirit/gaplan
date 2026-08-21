@@ -87,6 +87,18 @@ describe('DataList', () => {
     expect(onClick).not.toHaveBeenCalled()
   })
 
+  // badges are state (verified / accompanied / done, ...), not actions — they
+  // render next to the tag, not in the actions slot.
+  it('renders badges next to the tag', () => {
+    render(
+      <DataList
+        rows={[{ ...ROWS[0], badges: <span data-testid="row-badge">확인됨</span> }]}
+        aria-label="다가오는 일정"
+      />,
+    )
+    expect(screen.getByTestId('row-badge')).toBeInTheDocument()
+  })
+
   it('renders the footer', () => {
     render(<DataList rows={ROWS} aria-label="다가오는 일정" footer={<span>모두 보기</span>} />)
     expect(screen.getByText('모두 보기')).toBeInTheDocument()
