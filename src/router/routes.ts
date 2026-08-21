@@ -8,12 +8,19 @@
 export const ROUTES = {
   home: '/home',
   schedules: '/schedules',
+  plans: '/plans',
+  planVisits: '/plans/visit-plans',
+  planTasks: '/plans/tasks',
+  planProjects: '/plans/projects',
+  // ── 아래 다섯은 이 계획의 마지막 Task가 지운다. 통합 화면이 설 때까지 옛
+  //    화면이 계속 서비스돼야 해서 남아 있다.
   tasks: '/admin/tasks',
   taskProgress: '/admin/task-progress',
-  stats: '/admin/stats',
   visitPlans: '/admin/visit-plans',
   visitPlanner: '/admin/visit-planner',
   projects: '/admin/projects',
+  // ──
+  stats: '/admin/stats',
   leaders: '/admin/leaders',
   users: '/admin/users',
   availability: '/admin/availability',
@@ -43,3 +50,24 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
   '/interviews': ROUTES.schedules,
   '/general-schedules': ROUTES.schedules,
 }
+
+/**
+ * 파라미터가 있는 경로. ROUTES는 값을 그대로 `<Route path>`와 `navigate()`에
+ * 넘길 수 있는 완성된 경로만 담으므로, `:planId`가 든 패턴은 따로 둔다.
+ */
+export const PLAN_VISIT_DETAIL = `${ROUTES.planVisits}/:planId`
+export const PLAN_PROJECT_DETAIL = `${ROUTES.planProjects}/:projectId`
+
+export const planVisitDetailPath = (planId: string) => `${ROUTES.planVisits}/${planId}`
+export const planProjectDetailPath = (projectId: string) => `${ROUTES.planProjects}/${projectId}`
+
+/**
+ * 파라미터가 있는 옛 경로 → 새 경로. `LEGACY_REDIRECTS`와 섞지 않는 이유는
+ * 무결성 규칙이 다르기 때문이다 — 문자열 표는 "목적지가 ROUTES에 있는가"를,
+ * 이 표는 "양쪽 파라미터 이름이 같은가"를 지켜야 한다. `LegacyParamRedirect`가
+ * generatePath로 값을 옮기므로 이름이 어긋나면 런타임에 터진다.
+ */
+export const LEGACY_PARAM_REDIRECTS: { from: string; to: string }[] = [
+  { from: '/admin/visit-plans/:planId', to: PLAN_VISIT_DETAIL },
+  { from: '/admin/projects/:projectId', to: PLAN_PROJECT_DETAIL },
+]
