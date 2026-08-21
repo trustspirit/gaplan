@@ -1,7 +1,9 @@
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
-.page {
+// .page 는 옛 TaskProgress가 아직 쓴다. Task 11에서 그 화면과 함께 뺀다.
+.page,
+.panel {
   display: flex;
   flex-direction: column;
   gap: $space-4;
