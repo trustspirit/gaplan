@@ -456,6 +456,7 @@
     "inviteEmail": "Email",
     "inviteRole": "Role",
     "inviteRegion": "Region",
+    "inviteRegionHint": "multiple allowed",
     "inviteSend": "Send Invite",
     "inviteSuccess": " has been invited.",
     "inviteFailed": "Failed to send invite.",
@@ -485,7 +486,11 @@
     "preRegDeleteFailed": "Failed to delete",
     "inviteAssignedSeventy": "Assigned Area Seventy",
     "editAssignedSeventy": "Assigned Area Seventy",
-    "secondaryRole": "Secondary Role (optional)"
+    "secondaryRole": "Secondary Role (optional)",
+    "editExecSecretaryNeedsSeventy": "Exec secretary role requires selecting an assigned area seventy.",
+    "secondaryExecSecretaryNeedsSeventy": "Exec secretary as a secondary role requires selecting an assigned area seventy.",
+    "inviteExecSecretaryNeedsSeventy": "Inviting as exec secretary requires selecting an assigned area seventy.",
+    "preRegExecSecretaryNeedsSeventy": "Registering as exec secretary requires selecting an assigned area seventy."
   },
   "region": {
     "seoul": "Seoul CC",
