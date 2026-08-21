@@ -4,7 +4,13 @@ import { buildBoardItems, filterByStatus, SCHEDULE_KINDS } from './scheduleFilte
 import type { Schedule } from '@/types'
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (k: string) => k }),
+  useTranslation: () => ({
+    // calendar.monthTitleFormat은 화면에 보이는 문구가 아니라 dayjs 포맷 템플릿이다.
+    // 키를 그대로 돌려주면 dayjs가 글자마다 토큰으로 해석해
+    // "camlen0amr.0ont12TitleFor0amt" 같은 걸 만든다. 이 키만 실제 템플릿을 주고
+    // 나머지는 관례대로 키를 돌려준다.
+    t: (k: string) => (k === 'calendar.monthTitleFormat' ? 'YYYY년 M월' : k),
+  }),
   initReactI18next: { type: '3rdParty', init: () => {} },
 }))
 
@@ -87,9 +93,10 @@ describe('ScheduleListPanel', () => {
     expect(screen.queryByText('s-today')).toBeNull()
   })
 
-  it('groups rows under a month heading', () => {
+  it('groups rows under a month heading, oldest month first', () => {
     renderPanel()
-    expect(screen.getByRole('heading', { name: /2026/ })).toBeInTheDocument()
+    const headings = screen.getAllByRole('heading')
+    expect(headings.map((h) => h.textContent)).toEqual(['2026년 3월', '2026년 4월'])
   })
 
   it('says so when the filters leave nothing', () => {
