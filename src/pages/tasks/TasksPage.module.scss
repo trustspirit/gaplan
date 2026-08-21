@@ -11,6 +11,14 @@
     padding: $space-8;
   }
 
+  // 사이드바가 212px를 가져가므로 769px 뷰포트에서 본문은 557px뿐이다.
+  // 여기서 380px 고정 열을 유지하면 본문 열이 ~105px로 눌린다
+  // (557 - 24*2(패딩) - 24(gap) - 380). 모바일 경계(768px)까지 기다리지 않고
+  // 태블릿 구간부터 세로로 쌓는다.
+  @media (max-width: #{$breakpoint-tablet - 1px}) {
+    flex-direction: column;
+  }
+
   @include mobile {
     flex-direction: column;
     padding: $space-3;
@@ -28,6 +36,15 @@
 .sideCol {
   flex: 0 0 380px;
   width: 380px;
+
+  // 면담 과업 선택기가 들어 있는 열이다 — isMobile(JS)도 768px 경계를 쓰므로
+  // 이 구간(769~1023px)에서는 BottomSheet로 넘어가지 않고 그대로 DOM에 렌더링된다.
+  // 숨기면 아래에서 대체 진입점이 없어 기능이 통째로 막히므로, 고정폭을 풀어
+  // 본문 아래로 쌓는다(숨기지 않는다).
+  @media (max-width: #{$breakpoint-tablet - 1px}) {
+    flex: unset;
+    width: 100%;
+  }
 
   @include mobile {
     display: none;
