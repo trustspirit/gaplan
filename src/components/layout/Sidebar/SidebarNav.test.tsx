@@ -50,14 +50,14 @@ describe('SidebarNav', () => {
   })
 
   it('marks the current route with aria-current', () => {
-    renderNav(ROLE.ADMIN, undefined, '/admin/stats')
+    renderNav(ROLE.ADMIN, undefined, '/stats')
     expect(screen.getByRole('link', { name: /nav.stats/ })).toHaveAttribute('aria-current', 'page')
   })
 
-  // NavLink는 기본이 접두사 매칭이라 to="/admin"이 /admin/stats에서도 활성이 된다.
+  // NavLink는 기본이 접두사 매칭이라 to="/admin"이 /admin/users에서도 활성이 된다.
   // 그대로 두면 관리 항목이 모든 관리 화면에서 같이 하이라이트된다.
   it('does not mark a parent path as current when a child route is active', () => {
-    renderNav(ROLE.ADMIN, undefined, '/admin/stats')
+    renderNav(ROLE.ADMIN, undefined, '/admin/users')
     expect(screen.getByRole('link', { name: /nav.admin/ })).not.toHaveAttribute('aria-current')
   })
 

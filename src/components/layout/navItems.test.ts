@@ -99,7 +99,7 @@ describe('navItemsFor', () => {
       home: '/home',
       schedules: '/schedules',
       plans: '/plans',
-      stats: '/admin/stats',
+      stats: '/stats',
       leaders: '/admin/leaders',
       admin: '/admin',
     })
@@ -178,16 +178,16 @@ describe('navItemIsExact', () => {
 
 describe('navItemMatches', () => {
   it('matches a leaf item on its own path and on its child paths', () => {
-    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/admin/stats')).toBe(true)
-    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/admin/stats/2026')).toBe(true)
+    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/stats')).toBe(true)
+    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/stats/2026')).toBe(true)
   })
 
   it('does not match a path that merely shares a prefix', () => {
-    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/admin/statsx')).toBe(false)
+    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/statsx')).toBe(false)
   })
 
   it('matches a parent item only on its exact path', () => {
     expect(navItemMatches(ADMIN_ITEMS, item('admin'), '/admin')).toBe(true)
-    expect(navItemMatches(ADMIN_ITEMS, item('admin'), '/admin/stats')).toBe(false)
+    expect(navItemMatches(ADMIN_ITEMS, item('admin'), '/admin/users')).toBe(false)
   })
 })

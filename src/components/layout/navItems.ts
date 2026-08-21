@@ -81,8 +81,8 @@ export function navItemsFor(role: UserRole): NavItemDef[] {
 
 /**
  * 다른 항목의 부모 경로인가 — 그렇다면 정확 매칭해야 자식 화면에서 같이 켜지지 않는다.
- * (예: admin은 '/admin', stats는 '/admin/stats' — 접두사 매칭이면
- * /admin/stats 에서 둘 다 활성이 된다.)
+ * (예: admin은 '/admin', leaders는 '/admin/leaders' — 접두사 매칭이면
+ * /admin/leaders 에서 둘 다 활성이 된다.)
  *
  * `items`에는 반드시 그 역할의 **전체** 항목 목록을 넘긴다. 모바일 탭바처럼 목록을
  * primary/overflow로 쪼갠 뒤 한쪽만 넘기면, 같은 항목이 어느 쪽에 담겼는지에 따라

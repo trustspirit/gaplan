@@ -67,7 +67,7 @@ describe('MobileTabs', () => {
   // /admin/stats 는 primary 탭 stats의 경로이면서 동시에 오버플로에 들어간
   // admin(to: '/admin')의 자식 경로다. 두 곳이 같이 켜지면 지금 어디인지 알 수 없다.
   it('marks exactly one tab as current on a child route of an overflow item', () => {
-    renderTabs(ROLE.ADMIN, undefined, '/admin/stats')
+    renderTabs(ROLE.ADMIN, undefined, '/stats')
     expect(activeTabLabels()).toEqual(['nav.stats'])
   })
 

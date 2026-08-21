@@ -151,7 +151,7 @@ export function AppRouter() {
               </Route>
 
               <Route element={<RoleRoute allow={['admin', 'exec_secretary', 'seventy']} />}>
-                <Route path="/admin/stats" element={<StatsPage />} />
+                <Route path={ROUTES.stats} element={<StatsPage />} />
               </Route>
             </Route>
           </Route>

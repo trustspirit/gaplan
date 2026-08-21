@@ -12,7 +12,7 @@ export const ROUTES = {
   planVisits: '/plans/visit-plans',
   planTasks: '/plans/tasks',
   planProjects: '/plans/projects',
-  stats: '/admin/stats',
+  stats: '/stats',
   leaders: '/admin/leaders',
   users: '/admin/users',
   availability: '/admin/availability',
@@ -48,6 +48,8 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
   '/admin/task-progress': ROUTES.planTasks,
   // 방문 Task 생성 화면은 Task 생성의 「방문」 종류와 완전히 같은 일을 했다(판정 R30).
   '/admin/visit-planner': ROUTES.planTasks,
+  // 통계는 칠십인도 보는 화면이라 /admin/ 밖으로 나왔다(판정 R45).
+  '/admin/stats': ROUTES.stats,
 }
 
 /**
