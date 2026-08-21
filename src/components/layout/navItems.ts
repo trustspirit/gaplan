@@ -96,6 +96,26 @@ export function navItemsFor(role: UserRole): NavItemDef[] {
   return ENTRIES.filter((e) => e.roles.includes(role)).map(({ roles, ...item }) => item)
 }
 
+/**
+ * 다른 항목의 부모 경로인가 — 그렇다면 정확 매칭해야 자식 화면에서 같이 켜지지 않는다.
+ * (예: admin은 '/admin', taskProgress는 '/admin/task-progress' — 접두사 매칭이면
+ * /admin/task-progress 에서 둘 다 활성이 된다.)
+ *
+ * `items`에는 반드시 그 역할의 **전체** 항목 목록을 넘긴다. 모바일 탭바처럼 목록을
+ * primary/overflow로 쪼갠 뒤 한쪽만 넘기면, 같은 항목이 어느 쪽에 담겼는지에 따라
+ * 답이 달라진다.
+ */
+export function navItemIsExact(items: NavItemDef[], item: NavItemDef): boolean {
+  return items.some((o) => o.id !== item.id && o.to.startsWith(item.to + '/'))
+}
+
+/** 지금 경로가 이 항목을 가리키는가. NavLink의 `end` 규칙과 같은 판정을 코드로 쓴다. */
+export function navItemMatches(items: NavItemDef[], item: NavItemDef, pathname: string): boolean {
+  return navItemIsExact(items, item)
+    ? pathname === item.to
+    : pathname === item.to || pathname.startsWith(item.to + '/')
+}
+
 export const MAX_MOBILE_TABS = 5
 
 // 넘칠 때 마지막 칸은 '더보기' 버튼이 차지하므로 primary는 MAX-1개다.

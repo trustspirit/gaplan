@@ -4,7 +4,13 @@ import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { MoreHorizontal } from 'lucide-react'
 import type { UserRole } from '@/types'
-import { navItemsFor, splitMobileTabs, type NavItemDef } from '@/components/layout/navItems'
+import {
+  navItemsFor,
+  navItemIsExact,
+  navItemMatches,
+  splitMobileTabs,
+  type NavItemDef,
+} from '@/components/layout/navItems'
 import { BottomSheet } from '@/components/ui'
 import { NAV_ICONS } from './navIcons'
 import styles from './MobileTabs.module.scss'
@@ -18,14 +24,18 @@ export function MobileTabs({ role, pendingTaskCount = 0 }: MobileTabsProps) {
   const { t } = useTranslation()
   const { pathname } = useLocation()
   const [moreOpen, setMoreOpen] = useState(false)
-  const { primary, overflow } = splitMobileTabs(navItemsFor(role))
+  const items = navItemsFor(role)
+  const { primary, overflow } = splitMobileTabs(items)
 
-  const overflowActive = overflow.some((i) => pathname === i.to || pathname.startsWith(i.to + '/'))
+  // 활성 판정은 항상 쪼개기 전의 전체 목록(items) 기준이다 — 그래야 primary와
+  // overflow가 같은 규칙을 쓰고, 어느 쪽에 담겼는지에 따라 답이 달라지지 않는다.
+  const overflowActive = overflow.some((i) => navItemMatches(items, i, pathname))
 
   const renderTab = (item: NavItemDef) => (
     <NavLink
       key={item.id}
       to={item.to}
+      end={navItemIsExact(items, item)}
       className={({ isActive }) => clsx(styles.tab, isActive && styles.active)}
     >
       <span className={styles.tabIcon} aria-hidden="true">

@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { MobileTabs } from './MobileTabs'
+import styles from './MobileTabs.module.scss'
 import { ROLE } from '@/constants/roles'
 import { MAX_MOBILE_TABS } from '@/components/layout/navItems'
 import type { UserRole } from '@/types'
@@ -16,12 +17,18 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }))
 
-function renderTabs(role: UserRole = ROLE.ADMIN, pendingTaskCount?: number) {
+function renderTabs(role: UserRole = ROLE.ADMIN, pendingTaskCount?: number, path = '/dashboard') {
   return render(
-    <MemoryRouter initialEntries={['/dashboard']}>
+    <MemoryRouter initialEntries={[path]}>
       <MobileTabs role={role} pendingTaskCount={pendingTaskCount} />
     </MemoryRouter>,
   )
+}
+
+/** 탭바 안에서 활성으로 표시된 항목들의 라벨 */
+function activeTabLabels() {
+  const nav = screen.getByRole('navigation')
+  return Array.from(nav.querySelectorAll(`.${styles.active}`), (el) => el.textContent)
 }
 
 describe('MobileTabs', () => {
@@ -37,6 +44,13 @@ describe('MobileTabs', () => {
     renderTabs()
     await userEvent.click(screen.getByRole('button', { name: /nav.more/ }))
     expect(screen.getByRole('link', { name: /nav.stats/ })).toBeInTheDocument()
+  })
+
+  // /admin/task-progress 는 taskProgress 탭의 경로이면서 동시에 오버플로에 들어간
+  // admin(to: '/admin')의 자식 경로다. 두 곳이 같이 켜지면 지금 어디인지 알 수 없다.
+  it('marks exactly one tab as current on a child route of an overflow item', () => {
+    renderTabs(ROLE.ADMIN, undefined, '/admin/task-progress')
+    expect(activeTabLabels()).toEqual(['nav.taskProgress'])
   })
 
   it('renders no more button when every item fits', () => {

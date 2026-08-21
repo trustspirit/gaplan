@@ -1,5 +1,20 @@
-import { navItemsFor, splitMobileTabs, MAX_MOBILE_TABS } from './navItems'
+import {
+  navItemsFor,
+  navItemIsExact,
+  navItemMatches,
+  splitMobileTabs,
+  MAX_MOBILE_TABS,
+  type NavItemDef,
+  type NavItemId,
+} from './navItems'
 import { ROLE } from '@/constants/roles'
+
+const ADMIN_ITEMS = navItemsFor(ROLE.ADMIN)
+function item(id: NavItemId): NavItemDef {
+  const found = ADMIN_ITEMS.find((i) => i.id === id)
+  if (!found) throw new Error(`no nav item ${id}`)
+  return found
+}
 
 describe('navItemsFor', () => {
   it('gives a president only the screens they can reach', () => {
@@ -89,5 +104,39 @@ describe('splitMobileTabs', () => {
     const { primary, overflow } = splitMobileTabs(items)
     expect(primary).toHaveLength(MAX_MOBILE_TABS)
     expect(overflow).toHaveLength(0)
+  })
+})
+
+describe('navItemIsExact', () => {
+  it('is true for an item that is the parent path of another item', () => {
+    expect(navItemIsExact(ADMIN_ITEMS, item('admin'))).toBe(true)
+  })
+
+  it('is false for an item nothing else nests under', () => {
+    expect(navItemIsExact(ADMIN_ITEMS, item('stats'))).toBe(false)
+    expect(navItemIsExact(ADMIN_ITEMS, item('dashboard'))).toBe(false)
+  })
+
+  // 모바일 탭바는 목록을 primary/overflow로 쪼갠다. 한쪽만 넘기면 같은 항목이
+  // 어느 쪽에 담겼는지에 따라 답이 달라지므로, 호출부는 항상 전체 목록을 넘겨야 한다.
+  it('depends on the whole list — a slice can give the wrong answer', () => {
+    expect(navItemIsExact([item('admin')], item('admin'))).toBe(false)
+    expect(navItemIsExact(ADMIN_ITEMS, item('admin'))).toBe(true)
+  })
+})
+
+describe('navItemMatches', () => {
+  it('matches a leaf item on its own path and on its child paths', () => {
+    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/admin/stats')).toBe(true)
+    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/admin/stats/2026')).toBe(true)
+  })
+
+  it('does not match a path that merely shares a prefix', () => {
+    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/admin/statsx')).toBe(false)
+  })
+
+  it('matches a parent item only on its exact path', () => {
+    expect(navItemMatches(ADMIN_ITEMS, item('admin'), '/admin')).toBe(true)
+    expect(navItemMatches(ADMIN_ITEMS, item('admin'), '/admin/task-progress')).toBe(false)
   })
 })

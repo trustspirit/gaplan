@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import type { UserRole } from '@/types'
-import { navItemsFor, type NavItemDef } from '@/components/layout/navItems'
+import { navItemsFor, navItemIsExact, type NavItemDef } from '@/components/layout/navItems'
 import { NAV_ICONS } from './navIcons'
 import styles from './Sidebar.module.scss'
 
@@ -31,8 +31,8 @@ export function SidebarNav({ role, pendingTaskCount = 0 }: SidebarNavProps) {
         to={item.to}
         // NavLink는 기본이 접두사 매칭이다. 다른 항목의 부모 경로인 항목
         // (예: /admin 은 /admin/stats 의 부모)은 정확 매칭으로 바꾸지 않으면
-        // 자식 화면에서도 같이 활성으로 표시된다.
-        end={items.some((o) => o.id !== item.id && o.to.startsWith(item.to + '/'))}
+        // 자식 화면에서도 같이 활성으로 표시된다. 같은 규칙을 MobileTabs도 쓴다.
+        end={navItemIsExact(items, item)}
         className={({ isActive }) => clsx(styles.navItem, isActive && styles.active)}
       >
         <span className={styles.navIcon} aria-hidden="true">
