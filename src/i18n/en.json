@@ -14,7 +14,9 @@
     "schedules": "Schedules",
     "more": "More",
     "leaders": "Directory",
-    "accountMenu": "Account menu"
+    "accountMenu": "Account menu",
+    "sectionMain": "Menu",
+    "sectionAdmin": "Admin"
   },
   "stats": {
     "pageTitle": "Visit Statistics",

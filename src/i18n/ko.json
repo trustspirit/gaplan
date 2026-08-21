@@ -14,7 +14,9 @@
     "schedules": "일정",
     "more": "더보기",
     "leaders": "주소록",
-    "accountMenu": "계정 메뉴"
+    "accountMenu": "계정 메뉴",
+    "sectionMain": "메뉴",
+    "sectionAdmin": "관리"
   },
   "stats": {
     "pageTitle": "방문 통계",

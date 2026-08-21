@@ -1,82 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import {
-  LayoutDashboard,
-  Calendar,
-  CalendarRange,
-  CheckSquare,
-  Settings,
-  LogOut,
-  ClipboardList,
-  Languages,
-  BarChart3,
-  ClipboardPen,
-  FolderKanban,
-  MoreHorizontal,
-  BookUser,
-} from 'lucide-react'
+import { LogOut, Languages, MoreHorizontal } from 'lucide-react'
 import clsx from 'clsx'
 import type { UserRole } from '@/types'
-import { ROLE } from '@/constants/roles'
 import { Avatar, BottomSheet } from '@/components/ui'
 import { signOut } from '@/services/authService'
 import { LANGUAGES, type SupportedLang } from '@/i18n'
+import { navItemsFor, type NavItemDef } from '@/components/layout/navItems'
+import { NAV_ICONS } from './navIcons'
+import { SidebarNav } from './SidebarNav'
 import styles from './Sidebar.module.scss'
-
-interface NavItem {
-  to: string
-  icon: React.ReactNode
-  labelKey: string
-  roles: UserRole[]
-}
-
-const ALL_ROLES: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY, ROLE.PRESIDENT]
-const ADMIN_STAFF: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY]
-const ADMIN_EXEC: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY]
-
-const NAV_ITEMS: NavItem[] = [
-  {
-    to: '/dashboard',
-    icon: <LayoutDashboard size={20} />,
-    labelKey: 'nav.dashboard',
-    roles: ALL_ROLES,
-  },
-  { to: '/calendar', icon: <Calendar size={20} />, labelKey: 'nav.calendar', roles: ALL_ROLES },
-  {
-    to: '/schedules',
-    icon: <CalendarRange size={20} />,
-    labelKey: 'nav.schedules',
-    roles: ALL_ROLES,
-  },
-  { to: '/tasks', icon: <CheckSquare size={20} />, labelKey: 'nav.tasks', roles: [ROLE.PRESIDENT] },
-  {
-    to: '/admin/task-progress',
-    icon: <ClipboardList size={20} />,
-    labelKey: 'nav.taskProgress',
-    roles: ADMIN_STAFF,
-  },
-  { to: '/admin/stats', icon: <BarChart3 size={20} />, labelKey: 'nav.stats', roles: ADMIN_STAFF },
-  {
-    to: '/admin/visit-plans',
-    icon: <ClipboardPen size={20} />,
-    labelKey: 'nav.visitPlans',
-    roles: ADMIN_EXEC,
-  },
-  {
-    to: '/admin/projects',
-    icon: <FolderKanban size={20} />,
-    labelKey: 'nav.projects',
-    roles: ADMIN_EXEC,
-  },
-  {
-    to: '/admin/leaders',
-    icon: <BookUser size={20} />,
-    labelKey: 'nav.leaders',
-    roles: [ROLE.ADMIN],
-  },
-  { to: '/admin', icon: <Settings size={20} />, labelKey: 'nav.admin', roles: [ROLE.ADMIN] },
-]
 
 interface SidebarProps {
   role: UserRole
@@ -86,7 +20,7 @@ interface SidebarProps {
 
 export function Sidebar({ role, name, mobile }: SidebarProps) {
   const { t, i18n } = useTranslation()
-  const items = NAV_ITEMS.filter((i) => i.roles.includes(role))
+  const items = navItemsFor(role)
   const location = useLocation()
   const [moreOpen, setMoreOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -110,13 +44,13 @@ export function Sidebar({ role, name, mobile }: SidebarProps) {
 
   if (mobile) {
     const MAX_TABS = 5
-    const renderTab = (item: NavItem) => (
+    const renderTab = (item: NavItemDef) => (
       <NavLink
         key={item.to}
         to={item.to}
         className={({ isActive }) => clsx(styles.tabItem, isActive && styles.active)}
       >
-        {item.icon}
+        {NAV_ICONS[item.id]}
         <span className={styles.tabLabel}>{t(item.labelKey)}</span>
       </NavLink>
     )
@@ -153,7 +87,7 @@ export function Sidebar({ role, name, mobile }: SidebarProps) {
                 className={styles.moreItem}
                 onClick={() => setMoreOpen(false)}
               >
-                {item.icon}
+                {NAV_ICONS[item.id]}
                 <span>{t(item.labelKey)}</span>
               </NavLink>
             ))}
@@ -168,20 +102,7 @@ export function Sidebar({ role, name, mobile }: SidebarProps) {
       <div className={styles.logo}>
         <img src="/favicon.svg" alt="GA Plan" className={styles.logoImg} />
       </div>
-      <nav className={styles.nav}>
-        {items.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            title={t(item.labelKey)}
-            className={({ isActive }) => clsx(styles.navItem, isActive && styles.active)}
-          >
-            {item.icon}
-            {/* visible on wide desktop only; the rail keeps the title tooltip */}
-            <span className={styles.navLabel}>{t(item.labelKey)}</span>
-          </NavLink>
-        ))}
-      </nav>
+      <SidebarNav role={role} />
       <div className={styles.footer} ref={dropdownRef}>
         <button
           className={styles.avatarButton}
