@@ -333,6 +333,22 @@
     "confirmVisit": "이 날짜로 확정",
     "takenDateHint": "이 날짜에 다른 와드가 배정됨"
   },
+  "settings": {
+    "title": "설정",
+    "subtext": "시스템과 공유, 내 계정",
+    "navLabel": "설정 화면",
+    "tab": { "system": "시스템", "sharing": "공유", "account": "내 계정" },
+    "account": {
+      "title": "내 계정",
+      "nameTitle": "이름",
+      "nameDesc": "다른 사람에게 보이는 이름입니다.",
+      "nameSaved": "이름을 바꿨습니다.",
+      "nameFailed": "이름을 바꾸지 못했습니다.",
+      "languageTitle": "언어",
+      "calendarTitle": "구글 캘린더",
+      "kakaoTitle": "카카오 캘린더"
+    }
+  },
   "admin": {
     "dashboard": "관리자 대시보드",
     "users": "사용자 관리",

@@ -333,6 +333,22 @@
     "confirmVisit": "Confirm This Date",
     "takenDateHint": "Another ward is assigned to this date"
   },
+  "settings": {
+    "title": "Settings",
+    "subtext": "System, sharing, and your account",
+    "navLabel": "Settings screens",
+    "tab": { "system": "System", "sharing": "Sharing", "account": "My account" },
+    "account": {
+      "title": "My account",
+      "nameTitle": "Name",
+      "nameDesc": "The name other people see.",
+      "nameSaved": "Name changed.",
+      "nameFailed": "Could not change the name.",
+      "languageTitle": "Language",
+      "calendarTitle": "Google Calendar",
+      "kakaoTitle": "Kakao Calendar"
+    }
+  },
   "admin": {
     "dashboard": "Admin Dashboard",
     "users": "User Management",
