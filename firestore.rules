@@ -119,11 +119,15 @@ service cloud.firestore {
       allow read, write: if isAuth() && request.auth.uid == uid;
     }
 
+    // 공개 일정표 관련 세 문서는 「설정 › 공유」가 쓰고, 그 화면은 관리자와
+    // 집행서기가 함께 본다(스펙 §4.3). 나머지 settings 문서는 시스템 배선이라
+    // 관리자 전용으로 남는다 — 규칙을 settings/{doc} 전체로 열지 않는다.
     match /settings/{doc} {
       // All authenticated users can read settings (presidents may need calendar IDs for their own use).
-      // Write is admin-only.
       allow read: if isAuth();
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        || (isExecSecretary()
+            && doc in ['public', 'publicUnits', 'publicTokens']);
     }
 
     match /userSettings/{uid} {
