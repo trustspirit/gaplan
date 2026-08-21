@@ -27,6 +27,20 @@ describe('ROUTES', () => {
     const paths = Object.values(ROUTES)
     expect(new Set(paths).size).toBe(paths.length)
   })
+
+  it('puts every settings screen under one root', () => {
+    expect(ROUTES.settings).toBe('/settings')
+    for (const key of ['settingsSystem', 'settingsSharing', 'settingsAccount'] as const) {
+      expect(ROUTES[key], key).toMatch(/^\/settings\//)
+    }
+  })
+
+  // 판정 R51 — 옛 admin 허브와 그 아래 세 화면은 설정이 흡수했다.
+  it('no longer names the retired admin screens', () => {
+    for (const key of ['admin', 'users', 'availability', 'calendarSettings']) {
+      expect(Object.keys(ROUTES), key).not.toContain(key)
+    }
+  })
 })
 
 describe('LEGACY_REDIRECTS', () => {
@@ -87,6 +101,13 @@ describe('LEGACY_REDIRECTS', () => {
     for (const gone of ['tasks', 'taskProgress', 'visitPlans', 'visitPlanner', 'projects']) {
       expect(Object.keys(ROUTES), gone).not.toContain(gone)
     }
+  })
+
+  it('keeps every retired admin path working', () => {
+    expect(LEGACY_REDIRECTS['/admin']).toBe(ROUTES.settings)
+    expect(LEGACY_REDIRECTS['/admin/users']).toBe(ROUTES.settingsSystem)
+    expect(LEGACY_REDIRECTS['/admin/availability']).toBe(ROUTES.settingsSystem)
+    expect(LEGACY_REDIRECTS['/admin/calendar']).toBe(ROUTES.settingsSystem)
   })
 })
 

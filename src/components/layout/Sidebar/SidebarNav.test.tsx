@@ -49,20 +49,37 @@ describe('SidebarNav', () => {
     expect(screen.queryByRole('group')).not.toBeInTheDocument()
   })
 
+  // 판정 R47 — 계정 항목은 main 섹션에 둔다. admin으로 두면 회장·칠십인에게
+  // "내 계정" 하나짜리 관리 그룹 헤딩이 뜨는데, 스펙 §4.2가 이들에게 관리 구역을
+  // 아예 주지 않기 때문에 그건 거짓 표시가 된다.
+  it('gives the account item no admin heading even though its section-mate list is empty for the same role', () => {
+    renderNav(ROLE.PRESIDENT)
+    expect(screen.getByRole('link', { name: /nav.account/ })).toBeInTheDocument()
+    expect(screen.queryByRole('group')).not.toBeInTheDocument()
+  })
+
+  // 승인 대기는 항목이 아예 없는 유일한 역할이다 — 위 두 president 테스트와는
+  // 별개로, "항목이 하나도 없을 때도 그룹이 없다"를 따로 고정해 둔다.
+  it('renders nothing at all for a role with no nav items', () => {
+    renderNav(ROLE.PENDING)
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+    expect(screen.queryByRole('group')).not.toBeInTheDocument()
+  })
+
   it('marks the current route with aria-current', () => {
     renderNav(ROLE.ADMIN, undefined, '/stats')
     expect(screen.getByRole('link', { name: /nav.stats/ })).toHaveAttribute('aria-current', 'page')
   })
 
-  // 통계·주소록이 /admin/ 밖으로 나가면서 설정('/admin') 아래에는 네비 항목이
+  // 통계·주소록이 /admin/ 밖으로 나가면서 설정('/settings') 아래에는 네비 항목이
   // 하나도 남지 않았다. 겹쳐 켜질 상대가 없으니 접두사 매칭이 그대로 맞는 답이 된다
   // — 사용자 관리 화면에서 설정이 켜져 있는 것이 지금 어디인지 알려 준다.
   it('keeps the settings item current on the screens that live under it', () => {
-    renderNav(ROLE.ADMIN, undefined, '/admin/users')
+    renderNav(ROLE.ADMIN, undefined, '/settings/system')
     const current = screen
       .getAllByRole('link')
       .filter((el) => el.getAttribute('aria-current') === 'page')
-    expect(current.map((el) => el.textContent)).toEqual(['nav.admin'])
+    expect(current.map((el) => el.textContent)).toEqual(['nav.settings'])
   })
 
   it('shows the pending count on the badged item', () => {

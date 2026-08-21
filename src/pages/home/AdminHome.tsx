@@ -66,9 +66,9 @@ export function AdminHome() {
       })
     } else if (schedulePublic && !publicUrl) {
       toast.info(t('common.publicLinkMissing'))
-      navigate(ROUTES.calendarSettings)
+      navigate(ROUTES.settingsSharing)
     } else {
-      navigate(ROUTES.calendarSettings)
+      navigate(ROUTES.settingsSharing)
     }
   }
 

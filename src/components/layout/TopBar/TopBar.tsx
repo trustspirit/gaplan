@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
-import { LogOut, Pencil, Languages, HelpCircle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { LogOut, UserCircle, Languages, HelpCircle } from 'lucide-react'
 import { useAtom, useAtomValue } from 'jotai'
-import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { Badge, Avatar, SegmentedControl, ResponsiveDialog } from '@/components/ui'
 import { signOut } from '@/services/authService'
-import { updateUserName } from '@/services/userService'
 import { authUserAtom } from '@/store/authAtom'
 import { seventyViewAtom } from '@/store/seventyViewAtom'
 import { SCOPE_ALL } from '@/utils/scope'
 import { LANGUAGES, type SupportedLang } from '@/i18n'
 import { RemindersBell } from '@/components/domain/Reminders/RemindersBell'
+import { ROUTES } from '@/router/routes'
 import styles from './TopBar.module.scss'
 
 interface TopBarProps {
@@ -21,50 +21,9 @@ interface TopBarProps {
   helpInfoKey?: string
 }
 
-function EditNameRow({ onDone }: { onDone: () => void }) {
-  const [user, setUser] = useAtom(authUserAtom)
-  const { t } = useTranslation()
-  const [value, setValue] = useState(user?.name ?? '')
-  const [saving, setSaving] = useState(false)
-
-  const handleSave = async () => {
-    if (!user || !value.trim()) return
-    setSaving(true)
-    try {
-      await updateUserName(user.uid, value.trim())
-      setUser({ ...user, name: value.trim() })
-      toast.success(t('auth.nameSaved'))
-      onDone()
-    } catch {
-      toast.error(t('auth.nameSaveFailed'))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className={styles.editNameRow}>
-      <input
-        className={styles.editNameInput}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') handleSave()
-        }}
-        autoFocus
-        maxLength={30}
-      />
-      <button type="button" className={styles.editNameSave} onClick={handleSave} disabled={saving}>
-        {saving ? '…' : t('common.save')}
-      </button>
-    </div>
-  )
-}
-
 export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarProps) {
   const { t, i18n } = useTranslation()
   const [open, setOpen] = useState(false)
-  const [editingName, setEditingName] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const user = useAtomValue(authUserAtom)
@@ -83,7 +42,6 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
     function close(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false)
-        setEditingName(false)
       }
     }
     document.addEventListener('mousedown', close)
@@ -128,10 +86,7 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
           <button
             type="button"
             className={styles.avatarBtn}
-            onClick={() => {
-              setOpen((v) => !v)
-              setEditingName(false)
-            }}
+            onClick={() => setOpen((v) => !v)}
             aria-label={t('auth.accountMenu')}
           >
             <Avatar name={name} size="sm" />
@@ -141,23 +96,14 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
               <div className={styles.dropdownUser}>
                 <span className={styles.dropdownName}>{name}</span>
               </div>
-              {editingName ? (
-                <EditNameRow
-                  onDone={() => {
-                    setEditingName(false)
-                    setOpen(false)
-                  }}
-                />
-              ) : (
-                <button
-                  type="button"
-                  className={styles.dropdownItem}
-                  onClick={() => setEditingName(true)}
-                >
-                  <Pencil size={14} />
-                  {t('auth.changeName')}
-                </button>
-              )}
+              <Link
+                to={ROUTES.settingsAccount}
+                className={styles.dropdownItem}
+                onClick={() => setOpen(false)}
+              >
+                <UserCircle size={14} />
+                {t('nav.account')}
+              </Link>
               <div className={styles.dropdownDivider} />
               <div className={styles.dropdownLangRow}>
                 <Languages size={14} className={styles.dropdownLangIcon} />

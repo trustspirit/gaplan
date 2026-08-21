@@ -80,20 +80,11 @@ const SchedulesPage = lazyRetry(() =>
 const PlansPage = lazyRetry(() =>
   import('@/pages/plans/PlansPage').then((m) => ({ default: m.PlansPage })),
 )
-const AdminDashboard = lazyRetry(() =>
-  import('@/pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })),
-)
-const UserManagement = lazyRetry(() =>
-  import('@/pages/admin/UserManagement').then((m) => ({ default: m.UserManagement })),
-)
 const StatsPage = lazyRetry(() =>
   import('@/pages/admin/StatsPage').then((m) => ({ default: m.StatsPage })),
 )
-const AvailabilitySettings = lazyRetry(() =>
-  import('@/pages/admin/AvailabilitySettings').then((m) => ({ default: m.AvailabilitySettings })),
-)
-const CalendarSettings = lazyRetry(() =>
-  import('@/pages/admin/CalendarSettings').then((m) => ({ default: m.CalendarSettings })),
+const SettingsPage = lazyRetry(() =>
+  import('@/pages/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 )
 const VisitPlanBoardPage = lazyRetry(() =>
   import('@/pages/admin/VisitPlanBoardPage').then((m) => ({ default: m.VisitPlanBoardPage })),
@@ -142,11 +133,13 @@ export function AppRouter() {
                 <Route path={PLAN_PROJECT_DETAIL} element={<ProjectDetailPage />} />
               </Route>
 
-              <Route element={<RoleRoute allow={['admin']} />}>
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/users" element={<UserManagement />} />
-                <Route path="/admin/availability" element={<AvailabilitySettings />} />
-                <Route path="/admin/calendar" element={<CalendarSettings />} />
+              {/* 설정은 화면마다 권한이 다르다 — 셸이 역할별 목록을 갖고,
+                  역할에 없는 슬러그는 자기 첫 화면으로 튕긴다(판정 R47). */}
+              <Route
+                element={<RoleRoute allow={['admin', 'exec_secretary', 'seventy', 'president']} />}
+              >
+                <Route path={ROUTES.settings} element={<SettingsPage />} />
+                <Route path={`${ROUTES.settings}/:tab`} element={<SettingsPage />} />
               </Route>
 
               <Route element={<RoleRoute allow={['admin', 'exec_secretary', 'seventy']} />}>

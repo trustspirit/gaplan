@@ -1,0 +1,22 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
+  padding: $space-5;
+  min-width: 0;
+
+  @include mobile {
+    gap: $space-3;
+    padding: $space-3;
+    // 하단 탭바가 마지막 행을 가리지 않게 띄운다
+    padding-bottom: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px) + #{$space-4});
+    overflow-x: hidden;
+  }
+}
+
+.nav {
+  border-bottom: 1px solid var(--border);
+}

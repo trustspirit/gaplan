@@ -65,10 +65,10 @@ describe('MobileTabs', () => {
   })
 
   // 통계·주소록이 /admin/ 밖으로 나가면서 primary 탭이 오버플로 항목의 자식
-  // 경로를 밟는 일은 없어졌다. 남은 부모-자식은 오버플로의 설정('/admin')과 그
+  // 경로를 밟는 일은 없어졌다. 남은 부모-자식은 오버플로의 설정('/settings')과 그
   // 아래 화면들뿐 — 그 경로에서 탭바가 켜는 것은 「더보기」 하나여야 한다(판정 R46).
   it('marks exactly one tab as current on a child route of an overflow item', () => {
-    renderTabs(ROLE.ADMIN, undefined, '/admin/users')
+    renderTabs(ROLE.ADMIN, undefined, '/settings/system')
     expect(activeTabLabels()).toEqual(['nav.more'])
   })
 

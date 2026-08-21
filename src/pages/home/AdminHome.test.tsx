@@ -97,7 +97,7 @@ describe('AdminHome', () => {
   it('sends an admin without a public link to the calendar settings route', async () => {
     render(<AdminHome />)
     await userEvent.click(screen.getByRole('button', { name: /common.publicLink/ }))
-    expect(navigateMock).toHaveBeenCalledWith('/admin/calendar')
+    expect(navigateMock).toHaveBeenCalledWith('/settings/sharing')
   })
 
   it('opens the schedule form from the new-schedule action', async () => {
@@ -113,7 +113,7 @@ describe('AdminHome', () => {
     await userEvent.click(await screen.findByRole('button', { name: /common.publicLink/ }))
 
     expect(toast.info).toHaveBeenCalledWith('common.publicLinkMissing')
-    expect(navigateMock).toHaveBeenCalledWith('/admin/calendar')
+    expect(navigateMock).toHaveBeenCalledWith('/settings/sharing')
   })
 
   it('copies the public link instead of navigating once a token exists', async () => {

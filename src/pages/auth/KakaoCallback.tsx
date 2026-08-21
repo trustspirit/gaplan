@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useSetAtom } from 'jotai'
 import { connectKakao, consumeKakaoState } from '@/services/kakaoService'
 import { authUserAtom } from '@/store/authAtom'
+import { ROUTES } from '@/router/routes'
 import { Spinner, Button } from '@/components/ui'
 import styles from './KakaoCallback.module.scss'
 
@@ -45,7 +46,7 @@ export function KakaoCallback() {
     connectKakao(code)
       .then(() => {
         setUser((prev) => (prev ? { ...prev, kakaoConnected: true } : prev))
-        navigate('/admin/calendar', { replace: true })
+        navigate(ROUTES.settingsAccount, { replace: true })
       })
       .catch((e: unknown) => {
         // 톡캘린더는 선택 동의 항목이라 거부해도 토큰은 발급된다. 서버가
@@ -63,7 +64,7 @@ export function KakaoCallback() {
     return (
       <div className={styles.page}>
         <p className={styles.message}>{error}</p>
-        <Button variant="ghost" onClick={() => navigate('/admin/calendar', { replace: true })}>
+        <Button variant="ghost" onClick={() => navigate(ROUTES.settingsAccount, { replace: true })}>
           {t('common.close')}
         </Button>
       </div>

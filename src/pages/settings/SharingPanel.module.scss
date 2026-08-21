@@ -1,0 +1,112 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.desc {
+  margin: 0 0 $space-3;
+  font-size: $font-size-sm;
+  color: var(--text-muted);
+}
+
+.globalRow {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.warning {
+  margin: 0 0 $space-3;
+  padding: $space-2 $space-3;
+  border-radius: $border-radius-md;
+  background: var(--warning-weak);
+  color: var(--text);
+  font-size: $font-size-sm;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-3;
+  margin-bottom: $space-3;
+
+  @include mobile {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.summary {
+  margin: 0 0 $space-3;
+  font-size: $font-size-sm;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.noMatch {
+  margin: 0;
+  padding: $space-4 0;
+  color: var(--text-muted);
+  font-size: $font-size-sm;
+  text-align: center;
+}
+
+.group {
+  & + & {
+    margin-top: $space-2;
+  }
+}
+
+// 활성 표시는 배경 채움 + 글자 무게로만 한다 (스펙 §3 — 왼쪽 색 스트라이프 금지).
+.row {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-2 $space-3;
+  border-radius: $border-radius-md;
+  border: 1px solid var(--border);
+  background: var(--surface);
+
+  & + & {
+    margin-top: $space-1;
+  }
+}
+
+.rowIndented {
+  margin-left: $space-5;
+}
+
+.rowActive {
+  background: var(--accent-weak);
+  font-weight: $font-weight-semibold;
+}
+
+.rowName {
+  flex: 1;
+  min-width: 0;
+  font-size: $font-size-sm;
+  color: var(--text);
+  @include truncate;
+}
+
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: $border-radius-md;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-sunken);
+    color: var(--text);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}

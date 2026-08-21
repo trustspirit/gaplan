@@ -6,7 +6,14 @@ export type NavSection = 'main' | 'admin'
 
 // NAV_ICONS(navIcons.tsx)가 이 유니언으로 Record를 채워야 하므로, 항목을 추가하고
 // 아이콘을 빼먹으면 tsc가 잡아낸다 — id: string이었을 때는 그냥 빈칸으로 렌더됐다.
-export type NavItemId = 'home' | 'schedules' | 'plans' | 'stats' | 'leaders' | 'admin'
+export type NavItemId =
+  | 'home'
+  | 'schedules'
+  | 'plans'
+  | 'stats'
+  | 'leaders'
+  | 'settings'
+  | 'account'
 
 export interface NavItemDef {
   id: NavItemId
@@ -19,6 +26,7 @@ export interface NavItemDef {
 
 const ALL_ROLES: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY, ROLE.PRESIDENT]
 const ADMIN_STAFF: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY]
+const ADMIN_EXEC: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY]
 
 interface Entry extends NavItemDef {
   roles: UserRole[]
@@ -44,6 +52,16 @@ const ENTRIES: Entry[] = [
     section: 'main',
     roles: ALL_ROLES,
   },
+  // 판정 R47 — 회장·칠십인은 관리 구역을 아예 볼 수 없으니(스펙 §4.2), 계정 항목이
+  // section: 'admin'이면 그들에게 항목 하나짜리 '관리' 그룹 헤딩이 뜬다. main으로
+  // 두어 홈·일정과 나란한 평범한 탭이 되게 한다.
+  {
+    id: 'account',
+    to: ROUTES.settingsAccount,
+    labelKey: 'nav.account',
+    section: 'main',
+    roles: [ROLE.SEVENTY, ROLE.PRESIDENT],
+  },
   {
     id: 'plans',
     to: ROUTES.plans,
@@ -59,7 +77,13 @@ const ENTRIES: Entry[] = [
     section: 'admin',
     roles: ADMIN_STAFF,
   },
-  { id: 'admin', to: ROUTES.admin, labelKey: 'nav.admin', section: 'admin', roles: [ROLE.ADMIN] },
+  {
+    id: 'settings',
+    to: ROUTES.settings,
+    labelKey: 'nav.settings',
+    section: 'admin',
+    roles: ADMIN_EXEC,
+  },
 ]
 
 export function navItemsFor(role: UserRole): NavItemDef[] {
