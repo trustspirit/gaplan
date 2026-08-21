@@ -1,8 +1,15 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { inviteUser, deleteUserAccount, deletePreRegisteredUser } from '@/services/userService'
+import { toast } from 'sonner'
+import {
+  inviteUser,
+  deleteUserAccount,
+  deletePreRegisteredUser,
+  addPreRegisteredUser,
+} from '@/services/userService'
 import { UserListCard } from './UserListCard'
 import { InviteCard } from './InviteCard'
+import { PreRegisterCard } from './PreRegisterCard'
 
 let users: unknown[] = []
 let loading = false
@@ -22,6 +29,10 @@ beforeEach(() => {
   vi.mocked(deletePreRegisteredUser)
     .mockClear()
     .mockResolvedValue(undefined as never)
+  vi.mocked(addPreRegisteredUser)
+    .mockClear()
+    .mockResolvedValue(undefined as never)
+  vi.mocked(toast.error).mockClear()
 })
 
 vi.mock('jotai', () => ({
@@ -124,5 +135,51 @@ describe('user management', () => {
 
     expect(deletePreRegisteredUser).toHaveBeenCalledWith('u2')
     expect(deleteUserAccount).not.toHaveBeenCalled()
+  })
+})
+
+// fix round 2 — PreRegisterCard.tsx는 리뷰 1차에서 지적됐던 유일한 미커버 파일이다.
+// handlePreRegister의 가드 절과 역할별 필드 스프레드를 여기서 고정한다.
+describe('PreRegisterCard', () => {
+  it('submits with the exact fields the component builds — president role, unit selected, whitespace trimmed', async () => {
+    render(<PreRegisterCard />)
+    await userEvent.type(screen.getByLabelText('user.name'), '  박선희  ')
+    await userEvent.type(screen.getByLabelText('user.preRegEmail'), '  sh@test.com  ')
+    await userEvent.selectOptions(screen.getByLabelText('user.preRegUnit'), 'seoul-stake')
+    await userEvent.click(screen.getByRole('button', { name: 'user.preRegSubmit' }))
+
+    // 기본 역할은 'president'다 — 역할 선택을 건드릴 필요가 없다.
+    expect(addPreRegisteredUser).toHaveBeenCalledWith({
+      name: '박선희',
+      email: 'sh@test.com',
+      role: 'president',
+      unitId: 'seoul-stake',
+    })
+  })
+
+  it('submits with region fields when the role is seventy, and omits unitId — the other side of the same branch', async () => {
+    render(<PreRegisterCard />)
+    await userEvent.type(screen.getByLabelText('user.name'), '이지역')
+    await userEvent.selectOptions(screen.getByLabelText('user.role'), 'seventy')
+    await userEvent.click(screen.getByRole('checkbox', { name: '서울 CC' }))
+    await userEvent.click(screen.getByRole('button', { name: 'user.preRegSubmit' }))
+
+    expect(addPreRegisteredUser).toHaveBeenCalledWith({
+      name: '이지역',
+      email: '',
+      role: 'seventy',
+      regionIds: ['seoul'],
+      regionId: 'seoul',
+    })
+  })
+
+  it('blocks the submission when exec_secretary has no assigned seventy, and calls no service', async () => {
+    render(<PreRegisterCard />)
+    await userEvent.type(screen.getByLabelText('user.name'), '경비서기')
+    await userEvent.selectOptions(screen.getByLabelText('user.role'), 'exec_secretary')
+    await userEvent.click(screen.getByRole('button', { name: 'user.preRegSubmit' }))
+
+    expect(toast.error).toHaveBeenCalledWith('user.preRegExecSecretaryNeedsSeventy')
+    expect(addPreRegisteredUser).not.toHaveBeenCalled()
   })
 })
