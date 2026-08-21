@@ -303,6 +303,7 @@
     "calendarBannerText": "Subscribe to Google Calendar to view all confirmed schedules on your phone.",
     "calendarConnected": "Subscribed",
     "calendarSuccess": "Subscribed to Google Calendar!",
+    "calendarSubscribeFailed": "Could not connect the calendar.",
     "filterRolling": "Default",
     "filterCustom": "Custom",
     "periodSchedules": "Schedules in Period",

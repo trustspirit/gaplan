@@ -16,7 +16,7 @@ export function CalendarBanner({ connected }: { connected?: boolean }) {
       await subscribeToSharedCalendar()
       toast.success(t('schedule.calendarSuccess'))
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : '연동에 실패했습니다.')
+      toast.error(err instanceof Error ? err.message : t('schedule.calendarSubscribeFailed'))
     } finally {
       setLoading(false)
     }
