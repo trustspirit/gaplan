@@ -6,6 +6,7 @@ import type { UserRole } from '@/types'
 import { Avatar } from '@/components/ui'
 import { signOut } from '@/services/authService'
 import { LANGUAGES, type SupportedLang } from '@/i18n'
+import { usePendingTaskCount } from '@/hooks/usePendingTaskCount'
 import { MobileTabs } from './MobileTabs'
 import { SidebarNav } from './SidebarNav'
 import styles from './Sidebar.module.scss'
@@ -20,6 +21,7 @@ export function Sidebar({ role, name, mobile }: SidebarProps) {
   const { t, i18n } = useTranslation()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const pendingTaskCount = usePendingTaskCount()
 
   useEffect(() => {
     if (!dropdownOpen) return
@@ -38,7 +40,7 @@ export function Sidebar({ role, name, mobile }: SidebarProps) {
   }
 
   if (mobile) {
-    return <MobileTabs role={role} />
+    return <MobileTabs role={role} pendingTaskCount={pendingTaskCount} />
   }
 
   return (
@@ -46,7 +48,7 @@ export function Sidebar({ role, name, mobile }: SidebarProps) {
       <div className={styles.logo}>
         <img src="/favicon.svg" alt="GA Plan" className={styles.logoImg} />
       </div>
-      <SidebarNav role={role} />
+      <SidebarNav role={role} pendingTaskCount={pendingTaskCount} />
       <div className={styles.footer} ref={dropdownRef}>
         <button
           className={styles.avatarButton}
