@@ -1,4 +1,12 @@
 {
+  "home": {
+    "allClear": "Nothing needs you right now",
+    "allClearDesc": "New requests will show up here.",
+    "moreTasks": "{{count}} more",
+    "moreTasksClose": "Collapse",
+    "dueIn": "D-{{days}}",
+    "overdueBy": "D+{{days}}"
+  },
   "nav": {
     "home": "Home",
     "admin": "Admin",

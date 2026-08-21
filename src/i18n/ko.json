@@ -1,4 +1,12 @@
 {
+  "home": {
+    "allClear": "지금 처리할 일이 없습니다",
+    "allClearDesc": "새 요청이 오면 여기에 표시됩니다.",
+    "moreTasks": "외 {{count}}건",
+    "moreTasksClose": "접기",
+    "dueIn": "D-{{days}}",
+    "overdueBy": "D+{{days}}"
+  },
   "nav": {
     "home": "홈",
     "admin": "관리",

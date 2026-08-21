@@ -95,3 +95,39 @@
 .confirmBtn {
   margin-top: $space-3;
 }
+
+// ── 나머지 Task 접힘 (계획 5) ───────────────────────────────────────────────
+.restBlock {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.restToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  align-self: flex-start;
+  padding: $space-2 $space-3;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-sunken);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.restList {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}

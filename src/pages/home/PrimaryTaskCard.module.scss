@@ -1,0 +1,40 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.card {
+  // 주 카드는 배경 채움과 여백으로만 도드라진다 (스펙 §3).
+  background: var(--surface);
+  border: 1px solid var(--accent-border);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  margin-bottom: $space-2;
+}
+
+.label {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.note {
+  margin: 0 0 $space-2;
+  font-size: 14px;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+.due {
+  margin: 0 0 $space-4;
+  font-size: 13px;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.dueOverdue {
+  color: var(--danger);
+}
