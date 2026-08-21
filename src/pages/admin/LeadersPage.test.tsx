@@ -63,8 +63,12 @@ const MOCK_LEADERS: Leader[] = [
 ]
 
 describe('LeadersPage', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
+    // clearAllMocks가 mockReturnValue까지 지운다. 로그인 사용자는 테스트마다
+    // 관리자에서 다시 출발한다 — 역할을 바꾸는 테스트가 뒤에 영향을 주지 않도록.
+    const { useAtomValue } = await import('jotai')
+    vi.mocked(useAtomValue).mockReturnValue({ uid: 'test', role: 'admin', name: '관리자' })
   })
 
   it('로딩 중에는 skeleton을 표시한다', () => {
@@ -117,6 +121,23 @@ describe('LeadersPage', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(screen.getByLabelText('leaders.name')).toHaveValue('김철수')
     expect(screen.getByLabelText('leaders.phone')).toHaveValue('010-3333-4444')
+  })
+
+  // 판정 R44 — 주소록은 칠십인에게 열렸지만 firestore.rules의 write는 여전히
+  // admin 전용이다. 버튼을 그대로 두면 누르면 규칙 계층에서 거부되는 버튼이 된다.
+  it('칠십인에게는 편집 버튼을 내주지 않는다', async () => {
+    const { useAtomValue } = await import('jotai')
+    vi.mocked(useAtomValue).mockReturnValue({ uid: 'sv1', role: 'seventy', name: '칠십인' })
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: MOCK_LEADERS,
+      loading: false,
+      getLeaderByUnitName: vi.fn(),
+    })
+    render(<LeadersPage />)
+
+    // 명단은 그대로 보인다 — 막는 것은 편집뿐이다.
+    expect(screen.getByText('김철수')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /정보 수정/ })).not.toBeInTheDocument()
   })
 
   it('저장하면 해당 지도자 id로 updateLeader를 호출한다', async () => {

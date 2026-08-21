@@ -13,6 +13,16 @@ describe('ROUTES', () => {
     expect(ROUTES.home).toBe('/home')
   })
 
+  it('keeps the stats screen out of the admin namespace', () => {
+    // 칠십인이 보는 화면이라 /admin/ 접두사가 어긋난다(판정 R45).
+    expect(ROUTES.stats).toBe('/stats')
+  })
+
+  it('keeps the leaders directory out of the admin namespace', () => {
+    // 칠십인도 보는 화면이 됐다(판정 R43·R45).
+    expect(ROUTES.leaders).toBe('/leaders')
+  })
+
   it('never repeats a path under two names', () => {
     const paths = Object.values(ROUTES)
     expect(new Set(paths).size).toBe(paths.length)
@@ -36,6 +46,14 @@ describe('LEGACY_REDIRECTS', () => {
 
   it('keeps the old landing path working', () => {
     expect(LEGACY_REDIRECTS['/dashboard']).toBe(ROUTES.home)
+  })
+
+  it('keeps the old stats path working', () => {
+    expect(LEGACY_REDIRECTS['/admin/stats']).toBe(ROUTES.stats)
+  })
+
+  it('keeps the old leaders path working', () => {
+    expect(LEGACY_REDIRECTS['/admin/leaders']).toBe(ROUTES.leaders)
   })
 
   it('keeps the retired president task screen working', () => {

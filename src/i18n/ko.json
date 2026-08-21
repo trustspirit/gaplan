@@ -1,4 +1,12 @@
 {
+  "home": {
+    "allClear": "지금 처리할 일이 없습니다",
+    "allClearDesc": "새 요청이 오면 여기에 표시됩니다.",
+    "moreTasks": "외 {{count}}건",
+    "moreTasksClose": "접기",
+    "dueIn": "D-{{days}}",
+    "overdueBy": "D+{{days}}"
+  },
   "nav": {
     "home": "홈",
     "admin": "관리",
@@ -295,6 +303,7 @@
     "calendarBannerText": "구글 캘린더 구독으로 모든 확정 일정을 핸드폰에서 바로 확인하세요.",
     "calendarConnected": "구독 완료",
     "calendarSuccess": "구글 캘린더에 구독되었습니다!",
+    "calendarSubscribeFailed": "캘린더 연동에 실패했습니다.",
     "filterRolling": "기본",
     "filterCustom": "직접 입력",
     "periodSchedules": "기간 내 일정",

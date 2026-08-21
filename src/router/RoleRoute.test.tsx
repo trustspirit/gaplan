@@ -19,10 +19,10 @@ function renderGuarded(role: UserRole | null) {
   store.set(authUserAtom, user)
   return render(
     <Provider store={store}>
-      <MemoryRouter initialEntries={['/admin/leaders']}>
+      <MemoryRouter initialEntries={['/admin/users']}>
         <Routes>
           <Route element={<RoleRoute allow={[ROLE.ADMIN]} />}>
-            <Route path="/admin/leaders" element={<p>leaders screen</p>} />
+            <Route path="/admin/users" element={<p>users screen</p>} />
           </Route>
           <Route path="/login" element={<p>login screen</p>} />
         </Routes>
@@ -38,12 +38,12 @@ describe('RoleRoute', () => {
     renderGuarded(ROLE.PRESIDENT)
     expect(screen.getByText('state.forbiddenTitle')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'state.goHome' })).toHaveAttribute('href', '/home')
-    expect(screen.queryByText('leaders screen')).not.toBeInTheDocument()
+    expect(screen.queryByText('users screen')).not.toBeInTheDocument()
   })
 
   it('renders the guarded screen for a role that is allowed', () => {
     renderGuarded(ROLE.ADMIN)
-    expect(screen.getByText('leaders screen')).toBeInTheDocument()
+    expect(screen.getByText('users screen')).toBeInTheDocument()
     expect(screen.queryByText('state.forbiddenTitle')).not.toBeInTheDocument()
   })
 

@@ -27,7 +27,6 @@ describe('navItemsFor', () => {
     expect(ids).toContain('plans')
     expect(ids).toContain('stats')
     expect(ids).not.toContain('admin')
-    expect(ids).not.toContain('leaders')
   })
 
   it('gives an exec secretary the planning screens but not user administration', () => {
@@ -99,10 +98,19 @@ describe('navItemsFor', () => {
       home: '/home',
       schedules: '/schedules',
       plans: '/plans',
-      stats: '/admin/stats',
-      leaders: '/admin/leaders',
+      stats: '/stats',
+      leaders: '/leaders',
       admin: '/admin',
     })
+  })
+
+  // 스펙 §4.2 — 칠십인도 주소록을 본다. 계획 4의 R36이 미뤄 둔 것을 여기서 연다.
+  it('gives the seventy the leaders directory', () => {
+    expect(navItemsFor(ROLE.SEVENTY).map((i) => i.id)).toContain('leaders')
+  })
+
+  it('still keeps the leaders directory from the president', () => {
+    expect(navItemsFor(ROLE.PRESIDENT).map((i) => i.id)).not.toContain('leaders')
   })
 
   it('no longer offers the three separate plan screens', () => {
@@ -115,12 +123,12 @@ describe('navItemsFor', () => {
   })
 
   // 스펙 §4.2의 표는 관리자·집행서기를 함께 6개(홈·일정·계획·통계·주소록·설정)로
-  // 묶지만, 현재 구현은 두 항목이 [ROLE.ADMIN] 전용이라 집행서기는 4개에 그친다.
-  // 주소록은 판정 R36으로 미뤘고, 설정은 이후 계획의 설정 개편에서 다룬다.
+  // 묶는다. 주소록이 열리며 집행서기·칠십인이 5개가 됐고, 남은 차이는 설정
+  // 하나뿐이다 — 그건 이후 계획의 설정 개편에서 다룬다.
   it('gives each role the item count this build currently supports', () => {
     expect(navItemsFor(ROLE.PRESIDENT)).toHaveLength(2)
-    expect(navItemsFor(ROLE.SEVENTY)).toHaveLength(4)
-    expect(navItemsFor(ROLE.EXEC_SECRETARY)).toHaveLength(4)
+    expect(navItemsFor(ROLE.SEVENTY)).toHaveLength(5)
+    expect(navItemsFor(ROLE.EXEC_SECRETARY)).toHaveLength(5)
     expect(navItemsFor(ROLE.ADMIN)).toHaveLength(6)
   })
 })
@@ -158,9 +166,14 @@ describe('splitMobileTabs', () => {
   })
 })
 
+// 통계·주소록이 /admin/ 밖으로 나가면서 실제 네비 목록에는 다른 항목의 부모
+// 경로인 항목이 하나도 남지 않았다. 함수의 계약 자체는 합성 목록으로 지키고,
+// 오늘의 목록이 어떤 상태인지는 따로 못박는다.
+const NESTED: NavItemDef[] = [item('admin'), { ...item('leaders'), to: '/admin/users' }]
+
 describe('navItemIsExact', () => {
   it('is true for an item that is the parent path of another item', () => {
-    expect(navItemIsExact(ADMIN_ITEMS, item('admin'))).toBe(true)
+    expect(navItemIsExact(NESTED, NESTED[0])).toBe(true)
   })
 
   it('is false for an item nothing else nests under', () => {
@@ -168,26 +181,40 @@ describe('navItemIsExact', () => {
     expect(navItemIsExact(ADMIN_ITEMS, item('home'))).toBe(false)
   })
 
+  // 판정 R45의 결과. 설정('/admin')마저 더는 다른 네비 항목의 부모가 아니다.
+  it('is false for every item in the current admin list', () => {
+    for (const i of ADMIN_ITEMS) {
+      expect(navItemIsExact(ADMIN_ITEMS, i), i.id).toBe(false)
+    }
+  })
+
   // 모바일 탭바는 목록을 primary/overflow로 쪼갠다. 한쪽만 넘기면 같은 항목이
   // 어느 쪽에 담겼는지에 따라 답이 달라지므로, 호출부는 항상 전체 목록을 넘겨야 한다.
   it('depends on the whole list — a slice can give the wrong answer', () => {
-    expect(navItemIsExact([item('admin')], item('admin'))).toBe(false)
-    expect(navItemIsExact(ADMIN_ITEMS, item('admin'))).toBe(true)
+    expect(navItemIsExact([NESTED[0]], NESTED[0])).toBe(false)
+    expect(navItemIsExact(NESTED, NESTED[0])).toBe(true)
   })
 })
 
 describe('navItemMatches', () => {
   it('matches a leaf item on its own path and on its child paths', () => {
-    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/admin/stats')).toBe(true)
-    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/admin/stats/2026')).toBe(true)
+    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/stats')).toBe(true)
+    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/stats/2026')).toBe(true)
   })
 
   it('does not match a path that merely shares a prefix', () => {
-    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/admin/statsx')).toBe(false)
+    expect(navItemMatches(ADMIN_ITEMS, item('stats'), '/statsx')).toBe(false)
   })
 
   it('matches a parent item only on its exact path', () => {
+    expect(navItemMatches(NESTED, NESTED[0], '/admin')).toBe(true)
+    expect(navItemMatches(NESTED, NESTED[0], '/admin/users')).toBe(false)
+  })
+
+  // 설정 아래에 남은 화면들(사용자·가용시간·캘린더)은 네비 항목이 아니다. 그래서
+  // 설정은 이제 접두사 매칭으로 켜지고, 그 자식 화면에서도 설정이 활성으로 남는다.
+  it('keeps the settings tab lit on the screens that live under it', () => {
     expect(navItemMatches(ADMIN_ITEMS, item('admin'), '/admin')).toBe(true)
-    expect(navItemMatches(ADMIN_ITEMS, item('admin'), '/admin/stats')).toBe(false)
+    expect(navItemMatches(ADMIN_ITEMS, item('admin'), '/admin/users')).toBe(true)
   })
 })
