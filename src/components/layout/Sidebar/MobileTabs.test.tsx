@@ -20,7 +20,7 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }))
 
-function renderTabs(role: UserRole = ROLE.ADMIN, pendingTaskCount?: number, path = '/dashboard') {
+function renderTabs(role: UserRole = ROLE.ADMIN, pendingTaskCount?: number, path = '/home') {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <MobileTabs role={role} pendingTaskCount={pendingTaskCount} />

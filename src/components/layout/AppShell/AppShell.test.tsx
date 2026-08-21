@@ -66,7 +66,7 @@ function renderShell(user: AppUser) {
   store.set(authUserAtom, user)
   return render(
     <Provider store={store}>
-      <MemoryRouter initialEntries={['/dashboard']}>
+      <MemoryRouter initialEntries={['/home']}>
         <AppShell role={user.role} name={user.name} topBar={<div />}>
           <div>content</div>
         </AppShell>

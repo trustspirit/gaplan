@@ -27,6 +27,6 @@ describe('ForbiddenPage', () => {
         <ForbiddenPage />
       </MemoryRouter>,
     )
-    expect(screen.getByRole('link', { name: 'state.goHome' })).toHaveAttribute('href', '/dashboard')
+    expect(screen.getByRole('link', { name: 'state.goHome' })).toHaveAttribute('href', '/home')
   })
 })

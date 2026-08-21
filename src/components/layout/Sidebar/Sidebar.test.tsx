@@ -19,7 +19,7 @@ vi.mock('@/services/authService', () => ({ signOut: vi.fn() }))
 
 function renderSidebar(pendingTaskCount: number | undefined, mobile: boolean) {
   return render(
-    <MemoryRouter initialEntries={['/dashboard']}>
+    <MemoryRouter initialEntries={['/home']}>
       <Sidebar
         role={ROLE.PRESIDENT}
         name="홍길동"

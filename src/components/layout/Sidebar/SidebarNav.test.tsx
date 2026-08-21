@@ -11,7 +11,7 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
 }))
 
-function renderNav(role: UserRole = ROLE.ADMIN, pendingTaskCount?: number, path = '/dashboard') {
+function renderNav(role: UserRole = ROLE.ADMIN, pendingTaskCount?: number, path = '/home') {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <SidebarNav role={role} pendingTaskCount={pendingTaskCount} />
@@ -22,7 +22,7 @@ function renderNav(role: UserRole = ROLE.ADMIN, pendingTaskCount?: number, path 
 describe('SidebarNav', () => {
   it('renders every label as visible text, not only as a tooltip', () => {
     renderNav()
-    expect(screen.getByRole('link', { name: /nav.dashboard/ })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /nav.home/ })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /nav.stats/ })).toBeInTheDocument()
   })
 

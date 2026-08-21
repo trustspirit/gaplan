@@ -37,7 +37,7 @@ describe('RoleRoute', () => {
   it('explains the refusal in place instead of redirecting', () => {
     renderGuarded(ROLE.PRESIDENT)
     expect(screen.getByText('state.forbiddenTitle')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'state.goHome' })).toHaveAttribute('href', '/dashboard')
+    expect(screen.getByRole('link', { name: 'state.goHome' })).toHaveAttribute('href', '/home')
     expect(screen.queryByText('leaders screen')).not.toBeInTheDocument()
   })
 
