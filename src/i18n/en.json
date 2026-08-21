@@ -338,6 +338,16 @@
     "subtext": "System, sharing, and your account",
     "navLabel": "Settings screens",
     "tab": { "system": "System", "sharing": "Sharing", "account": "My account" },
+    "system": {
+      "title": "System",
+      "calendarTitle": "Regional calendar links",
+      "calendarDesc": "The Google Calendar ID that confirmed schedules go to, per region.",
+      "syncTitle": "Sync now",
+      "syncDesc": "Re-send confirmed schedules that never reached the calendar.",
+      "syncResult": "Sent {{synced}}.",
+      "availabilityTitle": "Default availability",
+      "usersTitle": "Users & permissions"
+    },
     "account": {
       "title": "My account",
       "nameTitle": "Name",

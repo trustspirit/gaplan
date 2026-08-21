@@ -338,6 +338,16 @@
     "subtext": "시스템과 공유, 내 계정",
     "navLabel": "설정 화면",
     "tab": { "system": "시스템", "sharing": "공유", "account": "내 계정" },
+    "system": {
+      "title": "시스템",
+      "calendarTitle": "지역별 캘린더 연결",
+      "calendarDesc": "지역마다 확정된 일정이 들어갈 구글 캘린더 ID입니다.",
+      "syncTitle": "지금 동기화",
+      "syncDesc": "캘린더에 올라가지 않은 확정 일정을 다시 보냅니다.",
+      "syncResult": "{{synced}}건을 보냈습니다.",
+      "availabilityTitle": "가용 시간 기본값",
+      "usersTitle": "사용자 & 권한"
+    },
     "account": {
       "title": "내 계정",
       "nameTitle": "이름",
