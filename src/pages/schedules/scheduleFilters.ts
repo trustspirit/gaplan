@@ -186,7 +186,7 @@ export function scheduleQueryFor(user: AppUser): { presidentUid?: string; sevent
   // 타지 못하고 무제한 조회 분기로 빠진다 — 하지만 그 조회를 실제로 막는 건
   // firestore.rules다. 제약 없는 schedules 조회는 규칙이 거부하므로, 배정 안 된
   // exec_secretary 화면에는 남의 일정이 아니라 permission-denied 에러와 빈
-  // 목록이 뜬다. CalendarPage.tsx·ScheduleTypePanel.tsx의 기존 동작과 같다.
+  // 목록이 뜬다. 옛 CalendarPage.tsx·ScheduleTypePanel.tsx도 그렇게 동작했다.
   if (user.role === 'exec_secretary') return { seventyUid: user.assignedSeventyUid ?? '' }
   return {}
 }

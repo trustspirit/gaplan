@@ -36,13 +36,11 @@ interface CalendarViewProps {
   selectedDate?: string | null
   /** Resolve a unitId to its display name for schedule chips */
   getUnitName?: (unitId: string) => string
-  defaultView?: ViewMode
   /**
-   * 부모가 뷰를 소유할 때 넘긴다. 넘기면 내부 토글 버튼을 렌더하지 않는다 —
-   * 통합 일정 화면은 월/주/목록 셋을 한 컨트롤로 다루므로 토글이 두 곳에
-   * 있으면 안 된다.
+   * 뷰는 부모가 소유한다 — 통합 일정 화면은 월/주/목록 셋을 한 컨트롤로
+   * 다루므로, 이 컴포넌트가 자체 토글을 갖고 있으면 컨트롤이 두 곳에 생긴다.
    */
-  view?: ViewMode
+  view: ViewMode
 }
 
 function chipLabel(s: Schedule, getUnitName?: (id: string) => string): string {
@@ -83,13 +81,9 @@ export function CalendarView({
   onDateClick,
   selectedDate,
   getUnitName,
-  defaultView = 'month',
-  view: controlledView,
+  view,
 }: CalendarViewProps) {
   const { t } = useTranslation()
-  const [innerView, setInnerView] = useState<ViewMode>(defaultView)
-  const view = controlledView ?? innerView
-  const isControlled = controlledView !== undefined
   const [current, setCurrent] = useState(dayjs())
   const [weekOffset, setWeekOffset] = useState(0) // mobile 3-day sliding offset
   // Re-derive DOW whenever language changes
@@ -380,24 +374,6 @@ export function CalendarView({
         <Button variant="ghost" size="sm" onClick={() => movePeriod(1)}>
           <ChevronRight size={16} />
         </Button>
-        {!isControlled && (
-          <div className={styles.viewToggle}>
-            <Button
-              variant={view === 'month' ? 'primary' : 'ghost'}
-              size="sm"
-              onClick={() => setInnerView('month')}
-            >
-              {t('common.monthView')}
-            </Button>
-            <Button
-              variant={view === 'week' ? 'primary' : 'ghost'}
-              size="sm"
-              onClick={() => setInnerView('week')}
-            >
-              {t('common.weekView')}
-            </Button>
-          </div>
-        )}
       </div>
 
       <div

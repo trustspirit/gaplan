@@ -1,8 +1,6 @@
 {
   "nav": {
-    "dashboard": "Dashboard",
     "home": "Home",
-    "interviews": "Interviews",
     "taskProgress": "Task Progress",
     "admin": "Admin",
     "stats": "Statistics",
