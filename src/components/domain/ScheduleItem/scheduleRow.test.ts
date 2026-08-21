@@ -41,6 +41,7 @@ describe('toScheduleRow', () => {
     const row = toScheduleRow({
       schedule: schedule({ wardName: '녹번 와드' }),
       unitName: '서울 스테이크',
+      wardLabel: '녹번 와드',
       today: TODAY,
       t,
     })
@@ -52,20 +53,34 @@ describe('toScheduleRow', () => {
     expect(row.title).toBe('서울 스테이크')
   })
 
-  it('puts the ward name in the subtitle when there is no custom title', () => {
+  // wardLabel is the caller-resolved (locale-aware) display name — e.g. what
+  // useUnits().getWardName(schedule.wardName) returns — not the raw
+  // schedule.wardName. The function must be pure, so it never resolves this
+  // itself; it just places whatever resolved label the caller hands it.
+  it('puts the resolved ward label in the subtitle when there is no custom title', () => {
     const row = toScheduleRow({
       schedule: schedule({ wardName: '녹번 와드' }),
       unitName: '서울 스테이크',
+      wardLabel: 'Nokbeon Ward',
       today: TODAY,
       t,
     })
-    expect(row.subtitle).toBe('녹번 와드')
+    expect(row.subtitle).toBe('Nokbeon Ward')
   })
 
+  it('has no subtitle when the schedule has no ward', () => {
+    const row = toScheduleRow({ schedule: schedule(), unitName: '서울 스테이크', today: TODAY, t })
+    expect(row.subtitle).toBeUndefined()
+  })
+
+  // Component wins: ScheduleItem.tsx only appends the ward suffix when there
+  // is no customTitle (`!schedule.customTitle && schedule.wardName`). A
+  // customTitle suppresses it even though wardLabel is present.
   it('prefers the custom title over the unit name, and drops the ward subtitle', () => {
     const row = toScheduleRow({
       schedule: schedule({ customTitle: '특별 모임', wardName: '녹번 와드' }),
       unitName: '서울 스테이크',
+      wardLabel: '녹번 와드',
       today: TODAY,
       t,
     })

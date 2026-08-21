@@ -6,16 +6,23 @@ import { DOW_LABELS } from '@/utils/date'
 export interface ScheduleRowInput {
   schedule: Schedule
   unitName: string
+  wardLabel?: string // resolved (locale-aware) display name for schedule.wardName — looked up by the caller, e.g. useUnits().getWardName
   today: string // YYYY-MM-DD
   t: (key: string, opts?: Record<string, unknown>) => string
 }
 
-export function toScheduleRow({ schedule, unitName, today, t }: ScheduleRowInput): DataListRow {
+export function toScheduleRow({
+  schedule,
+  unitName,
+  wardLabel,
+  today,
+  t,
+}: ScheduleRowInput): DataListRow {
   const date = dayjs(schedule.date)
   const dow = DOW_LABELS[date.day()]
   const isPast = date.isBefore(dayjs(today), 'day')
   const title = schedule.customTitle ?? unitName
-  const subtitle = !schedule.customTitle && schedule.wardName ? schedule.wardName : undefined
+  const subtitle = !schedule.customTitle && wardLabel ? wardLabel : undefined
 
   return {
     id: schedule.id,
