@@ -158,6 +158,45 @@ describe('PresidentHome', () => {
     expect(screen.getByRole('button', { name: 'home.moreTasks' })).toBeInTheDocument()
   })
 
+  // 재열기 규칙의 바깥 가드. TaskCard가 스스로도 막지만(TaskCard.test.tsx),
+  // 접힘 목록은 pending과 responded를 한데 담으므로 호출자 쪽 조건이 따로 산다.
+  describe('접힘 목록의 재열기 규칙', () => {
+    async function openFold(rest: Task[]) {
+      tasks = [task({ id: 'primary', dueDate: NOW.format('YYYY-MM-DD') }), ...rest]
+      render(<PresidentHome />)
+      const toggle = screen.getByRole('button', { name: 'home.moreTasks' })
+      await userEvent.click(toggle)
+      return within(document.getElementById(toggle.getAttribute('aria-controls')!)!)
+    }
+
+    it('hands a responded ward-visit task back to the picker', async () => {
+      const fold = await openFold([
+        task({ id: 'visit', status: 'responded', type: 'select_visit' }),
+      ])
+
+      await userEvent.click(fold.getByRole('button', { name: 'common.edit' }))
+      expect(openTask).toHaveBeenCalledWith(expect.objectContaining({ id: 'visit' }))
+    })
+
+    it('leaves a responded interview task with no way back in', async () => {
+      const fold = await openFold([
+        task({ id: 'interview', status: 'responded', type: 'select_interview' }),
+      ])
+
+      expect(fold.getByText('common.waiting')).toBeInTheDocument()
+      expect(fold.queryByRole('button')).not.toBeInTheDocument()
+    })
+
+    it('still opens a pending interview task from the fold', async () => {
+      const fold = await openFold([
+        task({ id: 'todo', dueDate: NOW.add(3, 'day').format('YYYY-MM-DD') }),
+      ])
+
+      await userEvent.click(fold.getByRole('button', { name: 'common.process' }))
+      expect(openTask).toHaveBeenCalledWith(expect.objectContaining({ id: 'todo' }))
+    })
+  })
+
   it('opens the picker from the primary card', async () => {
     tasks = [task({ id: 'only' })]
     render(<PresidentHome />)
