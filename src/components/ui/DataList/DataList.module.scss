@@ -16,14 +16,28 @@
   &:last-child {
     border-bottom: none;
   }
+
+  @include mobile {
+    // let content wrap instead of overflowing horizontally once a row
+    // carries lead + title/subtitle + meta + tag + badges + actions
+    flex-wrap: wrap;
+  }
 }
 // 강조는 배경 채움으로만. 왼쪽 색 막대를 쓰지 않는다.
 .highlighted {
   background: var(--surface-sunken);
 }
 // 흐림은 배경이 아니라 텍스트를 옅게 — ScheduleItem의 .past와 같은 처리.
+// Scoped to the row content (rowButton/rowStatic), not a bare top-level
+// rule — `.dimmed` is applied on the <li>, which is also the parent of the
+// sibling `.actions` div, so an unscoped rule would cascade into the
+// action buttons (kebab, notes, calendar-add, zoom) too and make them
+// look disabled even though they stay fully clickable.
 .dimmed {
-  opacity: 0.55;
+  .rowButton,
+  .rowStatic {
+    opacity: 0.55;
+  }
 }
 .rowButton,
 .rowStatic {
@@ -34,6 +48,11 @@
   min-width: 0;
   padding: $space-3 $space-4;
   text-align: left;
+
+  @include mobile {
+    flex-wrap: wrap;
+    row-gap: $space-1;
+  }
 }
 .rowButton {
   min-height: 44px;
@@ -119,10 +138,4 @@
   border-top: 1px solid var(--border);
   font-size: $font-size-sm;
   color: var(--text-muted);
-}
-
-@include mobile {
-  .meta {
-    display: none; // 시각은 subtitle에 합쳐서 넘긴다
-  }
 }
