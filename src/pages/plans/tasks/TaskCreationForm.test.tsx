@@ -58,8 +58,23 @@ describe('TaskCreationForm', () => {
   // 방문은 일요일만, 접견은 아무 날이나라서 의미가 다르다.
   it('clears the chosen dates when the type changes', async () => {
     render(<TaskCreationForm />)
+
+    // 날짜를 뺀 나머지 조건(회장, 칠십인)을 먼저 채워서 버튼이 날짜 유무에만
+    // 좌우되게 만든다 — 그래야 날짜가 안 지워지면 이 테스트가 실패한다.
+    await userEvent.click(screen.getByRole('checkbox'))
+    await userEvent.selectOptions(screen.getByLabelText('role.seventy'), SEVENTY.uid)
+
+    const dayButtons = screen
+      .getAllByRole('button')
+      .filter(
+        (btn) => /^\d{1,2}$/.test(btn.textContent ?? '') && !(btn as HTMLButtonElement).disabled,
+      )
+    await userEvent.click(dayButtons[0])
+
+    expect(screen.getByRole('button', { name: /task\.create/ })).toBeEnabled()
+
     await userEvent.click(screen.getByRole('button', { name: 'task.type.select_visit' }))
-    await userEvent.click(screen.getByRole('button', { name: 'task.type.select_interview' }))
+
     expect(screen.getByRole('button', { name: /task\.create/ })).toBeDisabled()
   })
 })

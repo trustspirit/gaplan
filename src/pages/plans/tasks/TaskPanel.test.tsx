@@ -45,8 +45,6 @@ let mockTasks: Task[] = [expiredTask]
 const adminUser: AppUser = { uid: 'admin-1', role: 'admin', name: '관리자' } as AppUser
 let currentUser: AppUser = adminUser
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }))
-
 vi.mock('jotai', () => ({
   useSetAtom: () => vi.fn(),
   useAtomValue: () => currentUser,

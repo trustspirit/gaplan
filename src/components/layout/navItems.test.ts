@@ -114,8 +114,10 @@ describe('navItemsFor', () => {
     }
   })
 
-  // 스펙 §4.2의 역할별 항목 수. 칠십인의 주소록은 판정 R36으로 미뤘으므로 4개다.
-  it('gives each role the item count the spec asks for', () => {
+  // 스펙 §4.2의 표는 관리자·집행서기를 함께 6개(홈·일정·계획·통계·주소록·설정)로
+  // 묶지만, 현재 구현은 두 항목이 [ROLE.ADMIN] 전용이라 집행서기는 4개에 그친다.
+  // 주소록은 판정 R36으로 미뤘고, 설정은 이후 계획의 설정 개편에서 다룬다.
+  it('gives each role the item count this build currently supports', () => {
     expect(navItemsFor(ROLE.PRESIDENT)).toHaveLength(2)
     expect(navItemsFor(ROLE.SEVENTY)).toHaveLength(4)
     expect(navItemsFor(ROLE.EXEC_SECRETARY)).toHaveLength(4)

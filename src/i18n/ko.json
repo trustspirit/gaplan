@@ -41,7 +41,6 @@
   },
   "project": {
     "listTitle": "프로젝트",
-    "listSubtext": "진행중인 프로젝트 관리",
     "newProject": "새 프로젝트",
     "titleLabel": "제목",
     "notesLabel": "노트",
@@ -75,7 +74,6 @@
   },
   "visitPlan": {
     "listTitle": "방문 계획",
-    "listSubtext": "초안을 작성하고 발행합니다",
     "newPlan": "새 계획",
     "planTitle": "계획 제목",
     "seventy": "지역 칠십인",
@@ -189,7 +187,6 @@
     "accountMenu": "계정 메뉴"
   },
   "task": {
-    "createNew": "새 태스크 만들기",
     "type": {
       "select_visit": "와드 방문",
       "select_interview": "접견/모임"
@@ -332,9 +329,7 @@
     "dashboard": "관리자 대시보드",
     "users": "사용자 관리",
     "inviteDesc": "초대 및 역할 관리",
-    "taskCreate": "Task 생성",
     "taskCreateDesc": "스테이크/지방부 회장에게 Task 할당",
-    "taskProgress": "Task 진행 현황",
     "taskProgressDesc": "응답 여부·결과 확인 및 일정 확정",
     "calendar": "구글 캘린더",
     "calendarDesc": "공유 캘린더 연동 설정",
@@ -625,7 +620,7 @@
     },
     "taskProgress": {
       "title": "Task 진행 현황",
-      "body": "스테이크/지방부 회장에게 보낸 Task의 진행 현황을 확인합니다.\n• 응답 여부와 제출 내용을 확인할 수 있습니다\n• 응답을 검토 후 일정을 확정할 수 있습니다\n• 만료 버튼으로 Task를 닫을 수 있습니다"
+      "body": "스테이크/지방부 회장에게 Task를 생성하고 진행 현황을 한 화면에서 확인합니다.\n• 새 Task를 만들어 스테이크/지방부 회장에게 배정할 수 있습니다\n• 응답 여부와 제출 내용을 확인할 수 있습니다\n• 응답을 검토 후 일정을 확정할 수 있습니다\n• 만료 버튼으로 Task를 닫을 수 있습니다"
     },
     "users": {
       "title": "사용자 관리",
@@ -652,7 +647,6 @@
     "dateFormat": "M월 D일 (ddd)"
   },
   "taskProgress": {
-    "createInterviewTask": "접견 시간 선택 Task 만들기",
     "detailTitle": "태스크 상세",
     "statusLabel": "상태",
     "assigneeLabel": "담당자",
