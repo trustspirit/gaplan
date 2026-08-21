@@ -48,6 +48,7 @@
     "titleLabel": "Title",
     "notesLabel": "Notes",
     "create": "Create",
+    "createFailed": "Could not create the project.",
     "save": "Save",
     "delete": "Delete",
     "deleteConfirm": "Delete this project?",
@@ -55,6 +56,7 @@
     "pickerLabel": "Project (optional)",
     "linkedSchedules": "Linked schedules",
     "noLinkedSchedules": "No linked schedules",
+    "statusLabel": "Project status",
     "status": {
       "active": "Active",
       "done": "Done",
