@@ -89,13 +89,10 @@ export function PresidentHome() {
                     <TaskCard
                       key={task.id}
                       task={task}
-                      // 답한 뒤에도 방문 Task는 와드별 날짜를 고쳐 낼 수 있다.
-                      // 접견 Task는 다시 열지 않는다 — 한 번 잡힌 시간은 고정이다.
-                      onAction={
-                        task.status !== 'responded' || task.type === 'select_visit'
-                          ? openTask
-                          : undefined
-                      }
+                      // 누구를 다시 열어 줄지는 TaskCard가 정한다 — 답한 방문 Task만
+                      // 열리고 접견 Task는 잠긴다. 여기서 한 번 더 거르면 같은 규칙이
+                      // 두 곳에 살면서, 한쪽만 고쳐도 아무 테스트도 깨지지 않는다.
+                      onAction={openTask}
                     />
                   ))}
                 </div>
