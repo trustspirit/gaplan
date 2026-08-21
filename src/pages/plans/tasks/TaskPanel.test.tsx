@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Task } from '@/types'
+import type { AppUser, Task } from '@/types'
 
 const mocks = vi.hoisted(() => ({
   deleteTask: vi.fn(),
@@ -42,11 +42,14 @@ const interviewRespondedTask: Task = {
 
 let mockTasks: Task[] = [expiredTask]
 
+const adminUser: AppUser = { uid: 'admin-1', role: 'admin', name: '관리자' } as AppUser
+let currentUser: AppUser = adminUser
+
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }))
 
 vi.mock('jotai', () => ({
   useSetAtom: () => vi.fn(),
-  useAtomValue: () => ({ uid: 'admin-1', role: 'admin', name: '관리자' }),
+  useAtomValue: () => currentUser,
   atom: vi.fn(),
 }))
 
@@ -150,6 +153,14 @@ vi.mock('@/components/domain/ScheduleSuggestions/ScheduleSuggestions', () => ({
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
+vi.mock('./TaskCreationForm', () => ({
+  TaskCreationForm: ({ onCreated }: { onCreated?: () => void }) => (
+    <button type="button" data-testid="creation-form" onClick={() => onCreated?.()}>
+      pretend to create
+    </button>
+  ),
+}))
+
 import { TaskPanel } from './TaskPanel'
 
 function task(overrides: Partial<Task>): Task {
@@ -160,6 +171,7 @@ describe('TaskPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockTasks = [expiredTask]
+    currentUser = adminUser
     mocks.deleteTask.mockResolvedValue(undefined)
   })
 
@@ -209,5 +221,46 @@ describe('TaskPanel', () => {
 
     expect(await screen.findByText(/taskProgress\.responseStatus/)).toBeInTheDocument()
     expect(screen.queryByText('taskProgress.awaitingConfirm:1')).not.toBeInTheDocument()
+  })
+
+  it('keeps the creation form folded away until asked', () => {
+    render(<TaskPanel />)
+    const toggle = screen.getByRole('button', { name: 'plans.createTask' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByTestId('creation-form')).not.toBeInTheDocument()
+  })
+
+  it('opens the creation form and points the toggle at it', async () => {
+    const user = userEvent.setup()
+    render(<TaskPanel />)
+    const toggle = screen.getByRole('button', { name: 'plans.createTask' })
+    await user.click(toggle)
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    const region = document.getElementById(toggle.getAttribute('aria-controls')!)
+    expect(region).not.toBeNull()
+    expect(within(region!).getByTestId('creation-form')).toBeInTheDocument()
+  })
+
+  it('folds the form back once a task is created', async () => {
+    const user = userEvent.setup()
+    render(<TaskPanel />)
+    await user.click(screen.getByRole('button', { name: 'plans.createTask' }))
+    await user.click(screen.getByTestId('creation-form'))
+    expect(screen.queryByTestId('creation-form')).not.toBeInTheDocument()
+  })
+})
+
+describe('TaskPanel for a seventy', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockTasks = [expiredTask]
+    mocks.deleteTask.mockResolvedValue(undefined)
+    currentUser = { uid: 'sv1', role: 'seventy', name: '칠십인' } as AppUser
+  })
+
+  it('offers no creation toggle — the seventy cannot make tasks', () => {
+    render(<TaskPanel />)
+    expect(screen.queryByRole('button', { name: 'plans.createTask' })).not.toBeInTheDocument()
   })
 })

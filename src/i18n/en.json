@@ -694,5 +694,9 @@
     "forbiddenTitle": "You don't have access",
     "forbiddenDescription": "Only assigned members can view this screen.",
     "goHome": "Go home"
+  },
+  "plans": {
+    "createTask": "New task",
+    "createTaskClose": "Close"
   }
 }
