@@ -1,0 +1,65 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.bottomNav {
+  display: flex;
+  width: 100%;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: $space-1 $space-1 0;
+}
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 52px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: var(--text-subtle);
+  &:focus-visible {
+    @include focus-ring;
+    outline-offset: -2px;
+  }
+}
+// 활성 = 색 + 글자 무게. 상단 막대를 그리지 않는다.
+.active {
+  color: var(--accent);
+  font-weight: $font-weight-semibold;
+}
+.tabIcon {
+  position: relative;
+  display: inline-flex;
+}
+.dot {
+  position: absolute;
+  top: -2px;
+  right: -5px;
+  width: 6px;
+  height: 6px;
+  border-radius: $border-radius-full;
+  background: var(--danger);
+}
+.tabLabel {
+  @include truncate;
+  max-width: 100%;
+}
+.moreList {
+  display: flex;
+  flex-direction: column;
+}
+.moreItem {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  min-height: 48px;
+  padding: 0 $space-2;
+  font-size: $font-size-base;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  &:last-child {
+    border-bottom: none;
+  }
+}
