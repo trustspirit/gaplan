@@ -6,7 +6,6 @@ import type { UserRole } from '@/types'
 import { Avatar } from '@/components/ui'
 import { signOut } from '@/services/authService'
 import { LANGUAGES, type SupportedLang } from '@/i18n'
-import { usePendingTaskCount } from '@/hooks/usePendingTaskCount'
 import { MobileTabs } from './MobileTabs'
 import { SidebarNav } from './SidebarNav'
 import styles from './Sidebar.module.scss'
@@ -15,13 +14,13 @@ interface SidebarProps {
   role: UserRole
   name: string
   mobile?: boolean
+  pendingTaskCount?: number
 }
 
-export function Sidebar({ role, name, mobile }: SidebarProps) {
+export function Sidebar({ role, name, mobile, pendingTaskCount }: SidebarProps) {
   const { t, i18n } = useTranslation()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const pendingTaskCount = usePendingTaskCount()
 
   useEffect(() => {
     if (!dropdownOpen) return
