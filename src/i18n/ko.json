@@ -46,7 +46,12 @@
     "neverVisited": "방문 이력 없음",
     "daysAgo_one": "{{count}}일 전",
     "daysAgo_other": "{{count}}일 전",
-    "selectHint": "방문 계획 기능은 추후 제공됩니다"
+    "selectHint": "방문 계획 기능은 추후 제공됩니다",
+    "severity": {
+      "green": "양호",
+      "amber": "주의",
+      "red": "지연"
+    }
   },
   "project": {
     "listTitle": "프로젝트",

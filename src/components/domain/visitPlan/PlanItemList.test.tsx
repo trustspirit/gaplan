@@ -88,6 +88,42 @@ describe('PlanItemList', () => {
     expect(screen.queryByText(/stats\.daysAgo/)).not.toBeInTheDocument()
   })
 
+  // 등급은 색으로만 전해지면 안 된다 — 점에 title/aria-label로 이름을 단다.
+  it('names the severity dot with the grade, not just its colour', () => {
+    const recency: LastVisitEntry = {
+      id: '녹번 와드',
+      name: '녹번 와드',
+      regionId: 'seoul',
+      lastVisitDate: '2026-01-01',
+      daysSince: 40,
+      severity: 'green',
+    }
+    render(
+      <PlanItemList
+        items={[item()]}
+        lastVisitByWard={new Map([['녹번 와드', recency]])}
+        generalSchedules={[]}
+        onRemove={vi.fn()}
+      />,
+    )
+    expect(screen.getByRole('img', { name: 'stats.severity.green' })).toBeInTheDocument()
+  })
+
+  // No recency entry at all is the state the review flagged: meta renders
+  // nothing, so the dot is the ONLY signal on the row. It still falls back
+  // to severity 'red' and must still carry an accessible name for it.
+  it('names the fallback red severity even when the dot is the only signal on the row', () => {
+    render(
+      <PlanItemList
+        items={[item()]}
+        lastVisitByWard={new Map()}
+        generalSchedules={[]}
+        onRemove={vi.fn()}
+      />,
+    )
+    expect(screen.getByRole('img', { name: 'stats.severity.red' })).toBeInTheDocument()
+  })
+
   it('shows the days-ago text when there is a recency entry', () => {
     const recency: LastVisitEntry = {
       id: '녹번 와드',
