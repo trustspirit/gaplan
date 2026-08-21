@@ -3,8 +3,22 @@ import { ROLE } from '@/constants/roles'
 
 export type NavSection = 'main' | 'admin'
 
+// NAV_ICONS(navIcons.tsx)가 이 유니언으로 Record를 채워야 하므로, 항목을 추가하고
+// 아이콘을 빼먹으면 tsc가 잡아낸다 — id: string이었을 때는 그냥 빈칸으로 렌더됐다.
+export type NavItemId =
+  | 'dashboard'
+  | 'calendar'
+  | 'schedules'
+  | 'tasks'
+  | 'taskProgress'
+  | 'stats'
+  | 'visitPlans'
+  | 'projects'
+  | 'leaders'
+  | 'admin'
+
 export interface NavItemDef {
-  id: string
+  id: NavItemId
   to: string
   labelKey: string
   section: NavSection

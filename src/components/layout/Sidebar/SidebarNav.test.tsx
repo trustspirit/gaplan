@@ -35,6 +35,19 @@ describe('SidebarNav', () => {
     expect(screen.queryByText('nav.sectionAdmin')).not.toBeInTheDocument()
   })
 
+  // 스크린 리더가 "관리"를 외딴 문단으로만 읽지 않고, 그 아래 항목들을 하나의
+  // 그룹으로 알리도록 role="group" + aria-labelledby로 묶는다.
+  it('associates the admin heading with its items via a labelled group', () => {
+    renderNav(ROLE.ADMIN)
+    expect(screen.getByRole('group', { name: 'nav.sectionAdmin' })).toBeInTheDocument()
+  })
+
+  it('renders no group wrapper at all when a role has no admin screens', () => {
+    renderNav(ROLE.PRESIDENT)
+    expect(screen.queryByRole('group', { name: 'nav.sectionAdmin' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group')).not.toBeInTheDocument()
+  })
+
   it('marks the current route with aria-current', () => {
     renderNav(ROLE.ADMIN, undefined, '/admin/stats')
     expect(screen.getByRole('link', { name: /nav.stats/ })).toHaveAttribute(
