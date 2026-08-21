@@ -31,11 +31,8 @@ describe('SidebarNav', () => {
     expect(screen.getByText('nav.sectionAdmin')).toBeInTheDocument()
   })
 
-  // 설정 개편(판정 R47) 이후 회장·칠십인도 admin 섹션의 계정 항목을 하나씩
-  // 받아서, 승인 대기(항목이 아예 없는 유일한 역할) 말고는 "admin 섹션이 없는
-  // 역할"이 더는 없다.
   it('omits the section heading when a role has no admin screens', () => {
-    renderNav(ROLE.PENDING)
+    renderNav(ROLE.PRESIDENT)
     expect(screen.queryByText('nav.sectionAdmin')).not.toBeInTheDocument()
   })
 
@@ -47,8 +44,25 @@ describe('SidebarNav', () => {
   })
 
   it('renders no group wrapper at all when a role has no admin screens', () => {
-    renderNav(ROLE.PENDING)
+    renderNav(ROLE.PRESIDENT)
     expect(screen.queryByRole('group', { name: 'nav.sectionAdmin' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group')).not.toBeInTheDocument()
+  })
+
+  // 판정 R47 — 계정 항목은 main 섹션에 둔다. admin으로 두면 회장·칠십인에게
+  // "내 계정" 하나짜리 관리 그룹 헤딩이 뜨는데, 스펙 §4.2가 이들에게 관리 구역을
+  // 아예 주지 않기 때문에 그건 거짓 표시가 된다.
+  it('gives the account item no admin heading even though its section-mate list is empty for the same role', () => {
+    renderNav(ROLE.PRESIDENT)
+    expect(screen.getByRole('link', { name: /nav.account/ })).toBeInTheDocument()
+    expect(screen.queryByRole('group')).not.toBeInTheDocument()
+  })
+
+  // 승인 대기는 항목이 아예 없는 유일한 역할이다 — 위 두 president 테스트와는
+  // 별개로, "항목이 하나도 없을 때도 그룹이 없다"를 따로 고정해 둔다.
+  it('renders nothing at all for a role with no nav items', () => {
+    renderNav(ROLE.PENDING)
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
     expect(screen.queryByRole('group')).not.toBeInTheDocument()
   })
 

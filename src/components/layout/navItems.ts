@@ -52,6 +52,16 @@ const ENTRIES: Entry[] = [
     section: 'main',
     roles: ALL_ROLES,
   },
+  // 판정 R47 — 회장·칠십인은 관리 구역을 아예 볼 수 없으니(스펙 §4.2), 계정 항목이
+  // section: 'admin'이면 그들에게 항목 하나짜리 '관리' 그룹 헤딩이 뜬다. main으로
+  // 두어 홈·일정과 나란한 평범한 탭이 되게 한다.
+  {
+    id: 'account',
+    to: ROUTES.settingsAccount,
+    labelKey: 'nav.account',
+    section: 'main',
+    roles: [ROLE.SEVENTY, ROLE.PRESIDENT],
+  },
   {
     id: 'plans',
     to: ROUTES.plans,
@@ -73,15 +83,6 @@ const ENTRIES: Entry[] = [
     labelKey: 'nav.settings',
     section: 'admin',
     roles: ADMIN_EXEC,
-  },
-  // 판정 R47 — 회장·칠십인은 자기 계정 하나만 볼 수 있으므로, 「설정」이라는
-  // 이름으로 보내면 눌렀을 때 갈 곳이 하나뿐인 섹션에 도착한다. 곧장 계정으로 보낸다.
-  {
-    id: 'account',
-    to: ROUTES.settingsAccount,
-    labelKey: 'nav.account',
-    section: 'admin',
-    roles: [ROLE.SEVENTY, ROLE.PRESIDENT],
   },
 ]
 
