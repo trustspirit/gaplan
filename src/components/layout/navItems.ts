@@ -46,7 +46,7 @@ export function navItemsFor(role: UserRole): NavItemDef[] {
   return ENTRIES.filter((e) => e.roles.includes(role)).map(({ roles, ...item }) => item)
 }
 
-export const MAX_MOBILE_TABS = 4
+export const MAX_MOBILE_TABS = 5
 
 // 넘칠 때 마지막 칸은 '더보기' 버튼이 차지하므로 primary는 MAX-1개다.
 export function splitMobileTabs(items: NavItemDef[]) {

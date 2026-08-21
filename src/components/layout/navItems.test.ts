@@ -42,14 +42,16 @@ describe('navItemsFor', () => {
   })
 
   it('marks only the president task screen with the pending badge', () => {
-    const badged = navItemsFor(ROLE.PRESIDENT).filter((i) => i.badge)
+    const items = navItemsFor(ROLE.PRESIDENT)
+    const badged = items.filter((i) => i.badge)
     expect(badged.map((i) => i.id)).toEqual(['tasks'])
+    expect(items[0]).not.toHaveProperty('roles')
   })
 
   // 경로는 이 계획에서 바꾸지 않는다 — 통합은 계획 3
   it('keeps every route path as it is today', () => {
     const byId = Object.fromEntries(navItemsFor(ROLE.ADMIN).map((i) => [i.id, i.to]))
-    expect(byId).toMatchObject({
+    expect(byId).toEqual({
       dashboard: '/dashboard',
       calendar: '/calendar',
       schedules: '/schedules',
@@ -79,5 +81,13 @@ describe('splitMobileTabs', () => {
     const { primary, overflow } = splitMobileTabs(items)
     expect(primary).toHaveLength(MAX_MOBILE_TABS - 1)
     expect(primary.concat(overflow)).toEqual(items)
+  })
+
+  it('shows all items at the exact boundary of MAX_MOBILE_TABS', () => {
+    const items = navItemsFor(ROLE.SEVENTY)
+    expect(items.length).toBe(MAX_MOBILE_TABS)
+    const { primary, overflow } = splitMobileTabs(items)
+    expect(primary).toHaveLength(MAX_MOBILE_TABS)
+    expect(overflow).toHaveLength(0)
   })
 })
