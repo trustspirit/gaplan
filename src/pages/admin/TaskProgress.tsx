@@ -31,7 +31,8 @@ import { MultiDatePicker } from '@/components/domain/MultiDatePicker/MultiDatePi
 import { ResponseMatrix } from '@/components/domain/ResponseMatrix/ResponseMatrix'
 import { ScheduleSuggestions } from '@/components/domain/ScheduleSuggestions/ScheduleSuggestions'
 import type { Task, RespondedSlot, GeneralSchedule, AppUser } from '@/types'
-import styles from './TaskProgress.module.scss'
+// 옛 화면은 Task 11에서 지운다. 그때까지 옮겨간 스타일시트를 빌려 쓴다.
+import styles from '@/pages/plans/tasks/tasks.module.scss'
 
 function StatusBadge({ status }: { status: Task['status'] }) {
   const { t } = useTranslation()
