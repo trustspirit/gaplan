@@ -12,14 +12,14 @@
 .legend {
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
-  color: $color-text;
+  color: var(--text);
   padding: 0;
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  border: 1px solid $color-border;
+  border: 1px solid var(--border);
   border-radius: $border-radius-md;
   overflow: hidden;
 }
@@ -30,13 +30,13 @@
   gap: $space-3;
   padding: $space-3;
   cursor: pointer;
-  border-bottom: 1px solid $color-border;
+  border-bottom: 1px solid var(--border);
   transition: background 0.1s;
   &:last-child {
     border-bottom: none;
   }
   &:hover {
-    background: $color-bg;
+    background: var(--surface-sunken);
   }
 }
 
@@ -45,10 +45,10 @@
   height: 16px;
   flex-shrink: 0;
   cursor: pointer;
-  accent-color: var(--color-primary, #{$color-primary});
+  accent-color: var(--accent);
 }
 
 .name {
   font-size: $font-size-sm;
-  color: $color-text;
+  color: var(--text);
 }
