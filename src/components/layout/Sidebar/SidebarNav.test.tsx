@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { expectNoAccentStripe } from '@/components/ui/testing/bannedPatterns'
 import { SidebarNav } from './SidebarNav'
 import { ROLE } from '@/constants/roles'
 import type { UserRole } from '@/types'
@@ -71,9 +72,10 @@ describe('SidebarNav', () => {
   })
 
   // 스펙 §3: 활성 표시는 배경 채움 + 글자 무게로만. 왼쪽 스트라이프 금지.
+  // 직접 쓴 정규식은 border-left/inset 그림자만 봤고, 실제로 스트라이프를 그리는
+  // 가장 흔한 방법인 ::before 색 바를 통째로 놓쳤다. 계획 1이 이미 만들어 둔
+  // 공용 검사기를 쓴다 — 논리 속성과 의사 요소까지 본다.
   it('never marks the active item with a left accent stripe', () => {
-    const scss = readFileSync(resolve(__dirname, 'Sidebar.module.scss'), 'utf8')
-    expect(scss).not.toMatch(/border-left:\s*[2-9]/)
-    expect(scss).not.toMatch(/box-shadow:\s*inset\s+[2-9]/)
+    expectNoAccentStripe(readFileSync(resolve(__dirname, 'Sidebar.module.scss'), 'utf8'))
   })
 })

@@ -68,21 +68,25 @@ export function MobileTabs({ role, pendingTaskCount = 0 }: MobileTabsProps) {
           </button>
         )}
       </nav>
-      <BottomSheet open={moreOpen} onClose={() => setMoreOpen(false)} title={t('nav.more')}>
-        <div className={styles.moreList}>
-          {overflow.map((item) => (
-            <NavLink
-              key={item.id}
-              to={item.to}
-              className={styles.moreItem}
-              onClick={() => setMoreOpen(false)}
-            >
-              <span aria-hidden="true">{NAV_ICONS[item.id]}</span>
-              <span>{t(item.labelKey)}</span>
-            </NavLink>
-          ))}
-        </div>
-      </BottomSheet>
+      {/* 오버플로가 없는 역할(회장·지역 칠십인)에서는 시트를 아예 만들지 않는다 —
+          BottomSheet는 닫혀 있어도 포털로 position:fixed 오버레이를 남긴다. */}
+      {overflow.length > 0 && (
+        <BottomSheet open={moreOpen} onClose={() => setMoreOpen(false)} title={t('nav.more')}>
+          <div className={styles.moreList}>
+            {overflow.map((item) => (
+              <NavLink
+                key={item.id}
+                to={item.to}
+                className={styles.moreItem}
+                onClick={() => setMoreOpen(false)}
+              >
+                <span aria-hidden="true">{NAV_ICONS[item.id]}</span>
+                <span>{t(item.labelKey)}</span>
+              </NavLink>
+            ))}
+          </div>
+        </BottomSheet>
+      )}
     </>
   )
 }
