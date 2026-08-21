@@ -24,7 +24,7 @@ describe('navItemsFor', () => {
 
   it('gives a seventy the read-only management screens but no settings', () => {
     const ids = navItemsFor(ROLE.SEVENTY).map((i) => i.id)
-    expect(ids).toContain('taskProgress')
+    expect(ids).toContain('plans')
     expect(ids).toContain('stats')
     expect(ids).not.toContain('admin')
     expect(ids).not.toContain('leaders')
@@ -32,8 +32,7 @@ describe('navItemsFor', () => {
 
   it('gives an exec secretary the planning screens but not user administration', () => {
     const ids = navItemsFor(ROLE.EXEC_SECRETARY).map((i) => i.id)
-    expect(ids).toContain('visitPlans')
-    expect(ids).toContain('projects')
+    expect(ids).toContain('plans')
     expect(ids).not.toContain('admin')
   })
 
@@ -41,7 +40,7 @@ describe('navItemsFor', () => {
     const ids = navItemsFor(ROLE.ADMIN).map((i) => i.id)
     expect(ids).toContain('admin')
     expect(ids).toContain('leaders')
-    expect(ids).toContain('visitPlans')
+    expect(ids).toContain('plans')
   })
 
   it('gives a pending user nothing', () => {
@@ -99,13 +98,30 @@ describe('navItemsFor', () => {
     expect(byId).toEqual({
       home: '/home',
       schedules: '/schedules',
-      taskProgress: '/admin/task-progress',
+      plans: '/plans',
       stats: '/admin/stats',
-      visitPlans: '/admin/visit-plans',
-      projects: '/admin/projects',
       leaders: '/admin/leaders',
       admin: '/admin',
     })
+  })
+
+  it('no longer offers the three separate plan screens', () => {
+    for (const role of [ROLE.PRESIDENT, ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY]) {
+      const ids = navItemsFor(role).map((i) => i.id)
+      expect(ids, role).not.toContain('taskProgress')
+      expect(ids, role).not.toContain('visitPlans')
+      expect(ids, role).not.toContain('projects')
+    }
+  })
+
+  // 스펙 §4.2의 표는 관리자·집행서기를 함께 6개(홈·일정·계획·통계·주소록·설정)로
+  // 묶지만, 현재 구현은 두 항목이 [ROLE.ADMIN] 전용이라 집행서기는 4개에 그친다.
+  // 주소록은 판정 R36으로 미뤘고, 설정은 이후 계획의 설정 개편에서 다룬다.
+  it('gives each role the item count this build currently supports', () => {
+    expect(navItemsFor(ROLE.PRESIDENT)).toHaveLength(2)
+    expect(navItemsFor(ROLE.SEVENTY)).toHaveLength(4)
+    expect(navItemsFor(ROLE.EXEC_SECRETARY)).toHaveLength(4)
+    expect(navItemsFor(ROLE.ADMIN)).toHaveLength(6)
   })
 })
 
@@ -172,6 +188,6 @@ describe('navItemMatches', () => {
 
   it('matches a parent item only on its exact path', () => {
     expect(navItemMatches(ADMIN_ITEMS, item('admin'), '/admin')).toBe(true)
-    expect(navItemMatches(ADMIN_ITEMS, item('admin'), '/admin/task-progress')).toBe(false)
+    expect(navItemMatches(ADMIN_ITEMS, item('admin'), '/admin/stats')).toBe(false)
   })
 })

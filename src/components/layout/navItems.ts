@@ -6,15 +6,7 @@ export type NavSection = 'main' | 'admin'
 
 // NAV_ICONS(navIcons.tsx)가 이 유니언으로 Record를 채워야 하므로, 항목을 추가하고
 // 아이콘을 빼먹으면 tsc가 잡아낸다 — id: string이었을 때는 그냥 빈칸으로 렌더됐다.
-export type NavItemId =
-  | 'home'
-  | 'schedules'
-  | 'taskProgress'
-  | 'stats'
-  | 'visitPlans'
-  | 'projects'
-  | 'leaders'
-  | 'admin'
+export type NavItemId = 'home' | 'schedules' | 'plans' | 'stats' | 'leaders' | 'admin'
 
 export interface NavItemDef {
   id: NavItemId
@@ -27,7 +19,6 @@ export interface NavItemDef {
 
 const ALL_ROLES: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY, ROLE.PRESIDENT]
 const ADMIN_STAFF: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY]
-const ADMIN_EXEC: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY]
 
 interface Entry extends NavItemDef {
   roles: UserRole[]
@@ -54,27 +45,13 @@ const ENTRIES: Entry[] = [
     roles: ALL_ROLES,
   },
   {
-    id: 'taskProgress',
-    to: ROUTES.taskProgress,
-    labelKey: 'nav.taskProgress',
+    id: 'plans',
+    to: ROUTES.plans,
+    labelKey: 'nav.plans',
     section: 'admin',
     roles: ADMIN_STAFF,
   },
   { id: 'stats', to: ROUTES.stats, labelKey: 'nav.stats', section: 'admin', roles: ADMIN_STAFF },
-  {
-    id: 'visitPlans',
-    to: ROUTES.visitPlans,
-    labelKey: 'nav.visitPlans',
-    section: 'admin',
-    roles: ADMIN_EXEC,
-  },
-  {
-    id: 'projects',
-    to: ROUTES.projects,
-    labelKey: 'nav.projects',
-    section: 'admin',
-    roles: ADMIN_EXEC,
-  },
   {
     id: 'leaders',
     to: ROUTES.leaders,
@@ -104,8 +81,8 @@ export function navItemsFor(role: UserRole): NavItemDef[] {
 
 /**
  * 다른 항목의 부모 경로인가 — 그렇다면 정확 매칭해야 자식 화면에서 같이 켜지지 않는다.
- * (예: admin은 '/admin', taskProgress는 '/admin/task-progress' — 접두사 매칭이면
- * /admin/task-progress 에서 둘 다 활성이 된다.)
+ * (예: admin은 '/admin', stats는 '/admin/stats' — 접두사 매칭이면
+ * /admin/stats 에서 둘 다 활성이 된다.)
  *
  * `items`에는 반드시 그 역할의 **전체** 항목 목록을 넘긴다. 모바일 탭바처럼 목록을
  * primary/overflow로 쪼갠 뒤 한쪽만 넘기면, 같은 항목이 어느 쪽에 담겼는지에 따라

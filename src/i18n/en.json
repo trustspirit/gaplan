@@ -1,12 +1,10 @@
 {
   "nav": {
     "home": "Home",
-    "taskProgress": "Task Progress",
     "admin": "Admin",
     "stats": "Statistics",
-    "visitPlans": "Visit Plans",
-    "projects": "Projects",
     "schedules": "Schedules",
+    "plans": "Plans",
     "more": "More",
     "leaders": "Directory",
     "accountMenu": "Account menu",
@@ -43,11 +41,11 @@
   },
   "project": {
     "listTitle": "Projects",
-    "listSubtext": "Manage ongoing projects",
     "newProject": "New project",
     "titleLabel": "Title",
     "notesLabel": "Notes",
     "create": "Create",
+    "createFailed": "Could not create the project.",
     "save": "Save",
     "delete": "Delete",
     "deleteConfirm": "Delete this project?",
@@ -55,6 +53,7 @@
     "pickerLabel": "Project (optional)",
     "linkedSchedules": "Linked schedules",
     "noLinkedSchedules": "No linked schedules",
+    "statusLabel": "Project status",
     "status": {
       "active": "Active",
       "done": "Done",
@@ -75,7 +74,6 @@
   },
   "visitPlan": {
     "listTitle": "Visit Plans",
-    "listSubtext": "Draft and publish visit plans",
     "newPlan": "New plan",
     "planTitle": "Plan title",
     "seventy": "Area Seventy",
@@ -87,6 +85,7 @@
     "publishSuccess": "Published",
     "saveSuccess": "Saved",
     "saveFailed": "Save failed.",
+    "createFailed": "Could not create the plan.",
     "addVisit": "Add visit",
     "wardStaleFirst": "Ward (most overdue first)",
     "searchWard": "Search wards",
@@ -188,7 +187,6 @@
     "accountMenu": "Account menu"
   },
   "task": {
-    "createNew": "New task",
     "type": {
       "select_visit": "Ward Visit",
       "select_interview": "Interview / Meeting"
@@ -331,12 +329,8 @@
     "dashboard": "Admin Dashboard",
     "users": "User Management",
     "inviteDesc": "Invite and manage roles",
-    "taskCreate": "Create Task",
     "taskCreateDesc": "Assign tasks to stake/district presidents",
-    "taskProgress": "Task Progress",
     "taskProgressDesc": "View responses and confirm schedules",
-    "visitPlanner": "Visit Planner",
-    "visitPlannerDesc": "Assign ward/branch visit Sundays",
     "calendar": "Google Calendar",
     "calendarDesc": "Shared calendar integration",
     "scheduleEdit": "Edit Schedule",
@@ -626,7 +620,7 @@
     },
     "taskProgress": {
       "title": "Task Progress",
-      "body": "Track the status of tasks sent to stake/district presidents.\n• Check response status and submitted content\n• Confirm schedules after reviewing responses\n• Use the expire button to close a task"
+      "body": "Create tasks for stake/district presidents and track their progress in one screen.\n• Create a new task and assign it to a stake/district president\n• Check response status and submitted content\n• Confirm schedules after reviewing responses\n• Use the expire button to close a task"
     },
     "users": {
       "title": "User Management",
@@ -653,7 +647,6 @@
     "dateFormat": "MMM D (ddd)"
   },
   "taskProgress": {
-    "createInterviewTask": "Create interview time-selection task",
     "detailTitle": "Task detail",
     "statusLabel": "Status",
     "assigneeLabel": "Assignee",
@@ -691,5 +684,17 @@
     "forbiddenTitle": "You don't have access",
     "forbiddenDescription": "Only assigned members can view this screen.",
     "goHome": "Go home"
+  },
+  "plans": {
+    "title": "Plans",
+    "subtext": "Visit plans, tasks and projects",
+    "tabsLabel": "Plans tabs",
+    "tab": {
+      "visitPlans": "Visit plans",
+      "tasks": "Tasks",
+      "projects": "Projects"
+    },
+    "createTask": "New task",
+    "createTaskClose": "Close"
   }
 }

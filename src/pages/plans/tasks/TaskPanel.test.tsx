@@ -1,7 +1,7 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Task } from '@/types'
+import type { AppUser, Task } from '@/types'
 
 const mocks = vi.hoisted(() => ({
   deleteTask: vi.fn(),
@@ -42,11 +42,12 @@ const interviewRespondedTask: Task = {
 
 let mockTasks: Task[] = [expiredTask]
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }))
+const adminUser: AppUser = { uid: 'admin-1', role: 'admin', name: '관리자' } as AppUser
+let currentUser: AppUser = adminUser
 
 vi.mock('jotai', () => ({
   useSetAtom: () => vi.fn(),
-  useAtomValue: () => ({ uid: 'admin-1', role: 'admin', name: '관리자' }),
+  useAtomValue: () => currentUser,
   atom: vi.fn(),
 }))
 
@@ -134,6 +135,8 @@ vi.mock('@/components/ui', () => ({
     )
   },
   Modal: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  EmptyState: ({ title }: { title?: string }) => <p>{title}</p>,
+  LoadingState: () => <div>loading</div>,
 }))
 
 vi.mock('@/components/domain/MultiDatePicker/MultiDatePicker', () => ({
@@ -148,18 +151,53 @@ vi.mock('@/components/domain/ScheduleSuggestions/ScheduleSuggestions', () => ({
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
-import { TaskProgress } from './TaskProgress'
+vi.mock('./TaskCreationForm', () => ({
+  TaskCreationForm: ({ onCreated }: { onCreated?: () => void }) => (
+    <button type="button" data-testid="creation-form" onClick={() => onCreated?.()}>
+      pretend to create
+    </button>
+  ),
+}))
 
-describe('TaskProgress', () => {
+import { TaskPanel } from './TaskPanel'
+
+function task(overrides: Partial<Task>): Task {
+  return { ...expiredTask, ...overrides }
+}
+
+describe('TaskPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockTasks = [expiredTask]
+    currentUser = adminUser
     mocks.deleteTask.mockResolvedValue(undefined)
+  })
+
+  it('counts every status in the summary row', () => {
+    mockTasks = [
+      task({ id: '1', status: 'responded' }),
+      task({ id: '2', status: 'pending' }),
+      task({ id: '3', status: 'pending' }),
+      task({ id: '4', status: 'completed' }),
+      task({ id: '5', status: 'expired' }),
+    ]
+    render(<TaskPanel />)
+    const summary = screen.getByTestId('task-summary')
+    expect(within(summary).getByTestId('total-responded')).toHaveTextContent('1')
+    expect(within(summary).getByTestId('total-pending')).toHaveTextContent('2')
+    expect(within(summary).getByTestId('total-completed')).toHaveTextContent('1')
+    expect(within(summary).getByTestId('total-expired')).toHaveTextContent('1')
+  })
+
+  it('shows an empty state when the role has no tasks at all', () => {
+    mockTasks = []
+    render(<TaskPanel />)
+    expect(screen.getByText('taskProgress.emptyTasks')).toBeInTheDocument()
   })
 
   it('allows deleting an expired task', async () => {
     const user = userEvent.setup()
-    render(<TaskProgress />)
+    render(<TaskPanel />)
 
     const deleteButton = await screen.findByRole('button', { name: 'common.delete' })
     await user.click(deleteButton)
@@ -177,9 +215,50 @@ describe('TaskProgress', () => {
   it('interview 응답 task는 빈 확정 대기 row 섹션을 만들지 않는다', async () => {
     mockTasks = [interviewRespondedTask]
 
-    render(<TaskProgress />)
+    render(<TaskPanel />)
 
     expect(await screen.findByText(/taskProgress\.responseStatus/)).toBeInTheDocument()
     expect(screen.queryByText('taskProgress.awaitingConfirm:1')).not.toBeInTheDocument()
+  })
+
+  it('keeps the creation form folded away until asked', () => {
+    render(<TaskPanel />)
+    const toggle = screen.getByRole('button', { name: 'plans.createTask' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByTestId('creation-form')).not.toBeInTheDocument()
+  })
+
+  it('opens the creation form and points the toggle at it', async () => {
+    const user = userEvent.setup()
+    render(<TaskPanel />)
+    const toggle = screen.getByRole('button', { name: 'plans.createTask' })
+    await user.click(toggle)
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    const region = document.getElementById(toggle.getAttribute('aria-controls')!)
+    expect(region).not.toBeNull()
+    expect(within(region!).getByTestId('creation-form')).toBeInTheDocument()
+  })
+
+  it('folds the form back once a task is created', async () => {
+    const user = userEvent.setup()
+    render(<TaskPanel />)
+    await user.click(screen.getByRole('button', { name: 'plans.createTask' }))
+    await user.click(screen.getByTestId('creation-form'))
+    expect(screen.queryByTestId('creation-form')).not.toBeInTheDocument()
+  })
+})
+
+describe('TaskPanel for a seventy', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockTasks = [expiredTask]
+    mocks.deleteTask.mockResolvedValue(undefined)
+    currentUser = { uid: 'sv1', role: 'seventy', name: '칠십인' } as AppUser
+  })
+
+  it('offers no creation toggle — the seventy cannot make tasks', () => {
+    render(<TaskPanel />)
+    expect(screen.queryByRole('button', { name: 'plans.createTask' })).not.toBeInTheDocument()
   })
 })

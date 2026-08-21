@@ -8,7 +8,14 @@ import { RoleRoute } from './RoleRoute'
 import { Spinner } from '@/components/ui'
 import { AppShell, TopBar, ShellLayout } from '@/components/layout'
 import { authUserAtom } from '@/store/authAtom'
-import { ROUTES, LEGACY_REDIRECTS } from './routes'
+import {
+  ROUTES,
+  LEGACY_REDIRECTS,
+  LEGACY_PARAM_REDIRECTS,
+  PLAN_VISIT_DETAIL,
+  PLAN_PROJECT_DETAIL,
+} from './routes'
+import { LegacyParamRedirect } from './LegacyParamRedirect'
 import styles from './Router.module.scss'
 
 // Outer Suspense fallback — only reached by lazy routes outside ShellLayout
@@ -70,17 +77,14 @@ const DashboardPage = lazyRetry(() =>
 const SchedulesPage = lazyRetry(() =>
   import('@/pages/schedules/SchedulesPage').then((m) => ({ default: m.SchedulesPage })),
 )
+const PlansPage = lazyRetry(() =>
+  import('@/pages/plans/PlansPage').then((m) => ({ default: m.PlansPage })),
+)
 const AdminDashboard = lazyRetry(() =>
   import('@/pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })),
 )
 const UserManagement = lazyRetry(() =>
   import('@/pages/admin/UserManagement').then((m) => ({ default: m.UserManagement })),
-)
-const TaskCreation = lazyRetry(() =>
-  import('@/pages/admin/RegionSettings').then((m) => ({ default: m.TaskCreation })),
-)
-const TaskProgress = lazyRetry(() =>
-  import('@/pages/admin/TaskProgress').then((m) => ({ default: m.TaskProgress })),
 )
 const StatsPage = lazyRetry(() =>
   import('@/pages/admin/StatsPage').then((m) => ({ default: m.StatsPage })),
@@ -91,17 +95,8 @@ const AvailabilitySettings = lazyRetry(() =>
 const CalendarSettings = lazyRetry(() =>
   import('@/pages/admin/CalendarSettings').then((m) => ({ default: m.CalendarSettings })),
 )
-const VisitPlanner = lazyRetry(() =>
-  import('@/pages/admin/VisitPlanner').then((m) => ({ default: m.VisitPlanner })),
-)
-const VisitPlanListPage = lazyRetry(() =>
-  import('@/pages/admin/VisitPlanListPage').then((m) => ({ default: m.VisitPlanListPage })),
-)
 const VisitPlanBoardPage = lazyRetry(() =>
   import('@/pages/admin/VisitPlanBoardPage').then((m) => ({ default: m.VisitPlanBoardPage })),
-)
-const ProjectListPage = lazyRetry(() =>
-  import('@/pages/admin/ProjectListPage').then((m) => ({ default: m.ProjectListPage })),
 )
 const ProjectDetailPage = lazyRetry(() =>
   import('@/pages/admin/ProjectDetailPage').then((m) => ({ default: m.ProjectDetailPage })),
@@ -129,9 +124,23 @@ export function AppRouter() {
               {Object.entries(LEGACY_REDIRECTS).map(([from, to]) => (
                 <Route key={from} path={from} element={<Navigate to={to} replace />} />
               ))}
+              {/* 파라미터가 있는 옛 경로. 표는 routes.ts가 갖는다. */}
+              {LEGACY_PARAM_REDIRECTS.map(({ from, to }) => (
+                <Route key={from} path={from} element={<LegacyParamRedirect to={to} />} />
+              ))}
 
               <Route path={ROUTES.home} element={<DashboardPage />} />
               <Route path={ROUTES.schedules} element={<SchedulesPage />} />
+
+              <Route element={<RoleRoute allow={['admin', 'exec_secretary', 'seventy']} />}>
+                <Route path={ROUTES.plans} element={<PlansPage />} />
+                <Route path={`${ROUTES.plans}/:tab`} element={<PlansPage />} />
+              </Route>
+
+              <Route element={<RoleRoute allow={['admin', 'exec_secretary']} />}>
+                <Route path={PLAN_VISIT_DETAIL} element={<VisitPlanBoardPage />} />
+                <Route path={PLAN_PROJECT_DETAIL} element={<ProjectDetailPage />} />
+              </Route>
 
               <Route element={<RoleRoute allow={['admin']} />}>
                 <Route path="/admin" element={<AdminDashboard />} />
@@ -141,17 +150,7 @@ export function AppRouter() {
                 <Route path="/admin/leaders" element={<LeadersPage />} />
               </Route>
 
-              <Route element={<RoleRoute allow={['admin', 'exec_secretary']} />}>
-                <Route path="/admin/tasks" element={<TaskCreation />} />
-                <Route path="/admin/visit-planner" element={<VisitPlanner />} />
-                <Route path="/admin/visit-plans" element={<VisitPlanListPage />} />
-                <Route path="/admin/visit-plans/:planId" element={<VisitPlanBoardPage />} />
-                <Route path="/admin/projects" element={<ProjectListPage />} />
-                <Route path="/admin/projects/:id" element={<ProjectDetailPage />} />
-              </Route>
-
               <Route element={<RoleRoute allow={['admin', 'exec_secretary', 'seventy']} />}>
-                <Route path="/admin/task-progress" element={<TaskProgress />} />
                 <Route path="/admin/stats" element={<StatsPage />} />
               </Route>
             </Route>

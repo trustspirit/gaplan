@@ -54,21 +54,21 @@ describe('MobileTabs', () => {
     expect(overlay()).toHaveAttribute('inert')
     await userEvent.click(screen.getByRole('button', { name: /nav.more/ }))
     expect(overlay()).not.toHaveAttribute('inert')
-    expect(within(overlay()).getByRole('link', { name: /nav.visitPlans/ })).toBeInTheDocument()
+    expect(within(overlay()).getByRole('link', { name: /nav.leaders/ })).toBeInTheDocument()
   })
 
   it('closes the sheet once an overflow item is chosen', async () => {
     renderTabs()
     await userEvent.click(screen.getByRole('button', { name: /nav.more/ }))
-    await userEvent.click(within(overlay()).getByRole('link', { name: /nav.visitPlans/ }))
+    await userEvent.click(within(overlay()).getByRole('link', { name: /nav.leaders/ }))
     expect(overlay()).toHaveAttribute('inert')
   })
 
-  // /admin/task-progress 는 taskProgress 탭의 경로이면서 동시에 오버플로에 들어간
+  // /admin/stats 는 primary 탭 stats의 경로이면서 동시에 오버플로에 들어간
   // admin(to: '/admin')의 자식 경로다. 두 곳이 같이 켜지면 지금 어디인지 알 수 없다.
   it('marks exactly one tab as current on a child route of an overflow item', () => {
-    renderTabs(ROLE.ADMIN, undefined, '/admin/task-progress')
-    expect(activeTabLabels()).toEqual(['nav.taskProgress'])
+    renderTabs(ROLE.ADMIN, undefined, '/admin/stats')
+    expect(activeTabLabels()).toEqual(['nav.stats'])
   })
 
   it('renders no more button when every item fits', () => {

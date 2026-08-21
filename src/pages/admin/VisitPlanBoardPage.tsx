@@ -18,6 +18,7 @@ import { AddVisitPanel } from '@/components/domain/visitPlan/AddVisitPanel'
 import { PlanItemList } from '@/components/domain/visitPlan/PlanItemList'
 import { BalancePanel } from '@/components/domain/visitPlan/BalancePanel'
 import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
+import { ROUTES } from '@/router/routes'
 import type { VisitPlan, VisitPlanItem } from '@/types'
 import styles from './VisitPlanBoardPage.module.scss'
 
@@ -168,7 +169,7 @@ export function VisitPlanBoardPage() {
           }
         }
         await deleteVisitPlan(plan.id)
-        navigate('/admin/visit-plans')
+        navigate(ROUTES.planVisits)
       },
       t('common.deleted'),
     )

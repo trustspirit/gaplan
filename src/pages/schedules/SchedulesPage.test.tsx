@@ -110,7 +110,7 @@ vi.mock('@/hooks/useEffectiveScope', () => ({
 }))
 
 // 서비스 모듈은 import만으로 src/firebase.ts를 평가한다 — getAuth/getFirestore가
-// 즉시 돌아서 jsdom에서 터진다. 저장소의 다른 페이지 테스트(TaskProgress.test.tsx)와
+// 즉시 돌아서 jsdom에서 터진다. 저장소의 다른 페이지 테스트(src/pages/plans/tasks/TaskPanel.test.tsx)와
 // 같은 이유로 서비스와 sonner를 함께 막는다.
 vi.mock('@/services/scheduleService', () => ({
   manualCalendarSync: vi.fn(async () => ({ message: 'ok' })),

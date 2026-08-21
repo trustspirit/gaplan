@@ -6,10 +6,19 @@ import { toast } from 'sonner'
 import { authUserAtom } from '@/store/authAtom'
 import { useProjects } from '@/hooks/useProjects'
 import { createProject, updateProject } from '@/services/projectService'
-import { useTopBar } from '@/hooks/useTopBar'
-import { Card, CardHeader, CardBody, Button, Input, Badge, Skeleton } from '@/components/ui'
+import { planProjectDetailPath } from '@/router/routes'
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  Button,
+  Input,
+  Badge,
+  EmptyState,
+  LoadingState,
+} from '@/components/ui'
 import type { ProjectStatus } from '@/types'
-import styles from './ProjectListPage.module.scss'
+import styles from './ProjectPanel.module.scss'
 
 const STATUS_VARIANT: Record<ProjectStatus, 'success' | 'default' | 'warning'> = {
   active: 'default',
@@ -17,9 +26,8 @@ const STATUS_VARIANT: Record<ProjectStatus, 'success' | 'default' | 'warning'> =
   dropped: 'warning',
 }
 
-export function ProjectListPage() {
+export function ProjectPanel() {
   const { t } = useTranslation()
-  useTopBar({ subtext: t('project.listSubtext'), helpInfoKey: 'pageHelp.projects' })
   const navigate = useNavigate()
   const user = useAtomValue(authUserAtom)!
   const { projects, loading } = useProjects()
@@ -36,7 +44,7 @@ export function ProjectListPage() {
       setTitle('')
       setNotes('')
     } catch {
-      toast.error('생성에 실패했습니다.')
+      toast.error(t('project.createFailed'))
     } finally {
       setCreating(false)
     }
@@ -49,7 +57,7 @@ export function ProjectListPage() {
   ]
 
   return (
-    <div className={styles.page}>
+    <div className={styles.panel}>
       <Card>
         <CardHeader title={t('project.newProject')} />
         <CardBody>
@@ -74,34 +82,35 @@ export function ProjectListPage() {
       <Card>
         <CardHeader title={t('project.listTitle')} />
         <CardBody>
-          {loading && [1, 2, 3].map((i) => <Skeleton key={i} height="52px" />)}
-          {!loading && projects.length === 0 && (
-            <p className={styles.empty}>{t('project.empty')}</p>
-          )}
-          {projects.map((p) => (
-            <div key={p.id} className={styles.row}>
-              <button
-                type="button"
-                className={styles.rowMain}
-                onClick={() => navigate(`/admin/projects/${p.id}`)}
-              >
-                <span className={styles.rowTitle}>{p.title}</span>
-                <Badge variant={STATUS_VARIANT[p.status]}>{t(`project.status.${p.status}`)}</Badge>
-              </button>
-              <select
-                className={styles.statusSelect}
-                value={p.status}
-                onChange={(e) => updateProject(p.id, { status: e.target.value as ProjectStatus })}
-                aria-label={t('project.status.active')}
-              >
-                {statusOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
+          {loading && <LoadingState shape="list" rows={3} />}
+          {!loading && projects.length === 0 && <EmptyState title={t('project.empty')} />}
+          {!loading &&
+            projects.map((p) => (
+              <div key={p.id} className={styles.row}>
+                <button
+                  type="button"
+                  className={styles.rowMain}
+                  onClick={() => navigate(planProjectDetailPath(p.id))}
+                >
+                  <span className={styles.rowTitle}>{p.title}</span>
+                  <Badge variant={STATUS_VARIANT[p.status]}>
+                    {t(`project.status.${p.status}`)}
+                  </Badge>
+                </button>
+                <select
+                  className={styles.statusSelect}
+                  value={p.status}
+                  onChange={(e) => updateProject(p.id, { status: e.target.value as ProjectStatus })}
+                  aria-label={t('project.statusLabel')}
+                >
+                  {statusOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
         </CardBody>
       </Card>
     </div>

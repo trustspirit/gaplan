@@ -35,7 +35,7 @@
   --sidebar-active: #{$color-sidebar-active};
   --sidebar-text: #{$color-sidebar-text};
 
-  // Alias. DashboardPage.tsx and TaskProgress.module.scss already read
+  // Alias. DashboardPage.tsx and src/pages/plans/tasks/tasks.module.scss already read
   // var(--color-primary, <fallback>) and until now always hit the fallback.
   --color-primary: #{$color-primary};
 }

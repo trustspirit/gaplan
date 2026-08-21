@@ -9,12 +9,13 @@ import { getProject, updateProject, deleteProject } from '@/services/projectServ
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { useTopBar } from '@/hooks/useTopBar'
 import { Card, CardHeader, CardBody, Button, Input, Spinner } from '@/components/ui'
+import { ROUTES } from '@/router/routes'
 import type { Project, ProjectStatus, Schedule } from '@/types'
 import styles from './ProjectDetailPage.module.scss'
 
 export function ProjectDetailPage() {
   const { t } = useTranslation()
-  const { id } = useParams<{ id: string }>()
+  const { projectId } = useParams<{ projectId: string }>()
   const navigate = useNavigate()
 
   const [project, setProject] = useState<Project | null>(null)
@@ -29,12 +30,12 @@ export function ProjectDetailPage() {
   useTopBar({ subtext: project?.title })
 
   useEffect(() => {
-    if (!id) return
+    if (!projectId) return
     setLoading(true)
     setLoadError(false)
     Promise.all([
-      getProject(id),
-      getDocs(query(collection(db, 'schedules'), where('projectId', '==', id))),
+      getProject(projectId),
+      getDocs(query(collection(db, 'schedules'), where('projectId', '==', projectId))),
     ])
       .then(([p, snap]) => {
         setProject(p)
@@ -50,7 +51,7 @@ export function ProjectDetailPage() {
         setLoadError(true)
         setLoading(false)
       })
-  }, [id, reloadKey])
+  }, [projectId, reloadKey])
 
   const handleSave = async () => {
     if (!project) return
@@ -68,7 +69,7 @@ export function ProjectDetailPage() {
       project.id,
       async () => {
         await deleteProject(project.id)
-        navigate('/admin/projects')
+        navigate(ROUTES.planProjects)
       },
       t('common.deleted'),
     )

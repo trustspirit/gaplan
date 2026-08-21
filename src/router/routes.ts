@@ -8,12 +8,11 @@
 export const ROUTES = {
   home: '/home',
   schedules: '/schedules',
-  tasks: '/admin/tasks',
-  taskProgress: '/admin/task-progress',
+  plans: '/plans',
+  planVisits: '/plans/visit-plans',
+  planTasks: '/plans/tasks',
+  planProjects: '/plans/projects',
   stats: '/admin/stats',
-  visitPlans: '/admin/visit-plans',
-  visitPlanner: '/admin/visit-planner',
-  projects: '/admin/projects',
   leaders: '/admin/leaders',
   users: '/admin/users',
   availability: '/admin/availability',
@@ -42,4 +41,32 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
   '/visits': ROUTES.schedules,
   '/interviews': ROUTES.schedules,
   '/general-schedules': ROUTES.schedules,
+  // 방문 계획 · Task 생성 · Task 현황 · 프로젝트가 /plans의 탭이 됐다(스펙 §4.2).
+  '/admin/visit-plans': ROUTES.planVisits,
+  '/admin/projects': ROUTES.planProjects,
+  '/admin/tasks': ROUTES.planTasks,
+  '/admin/task-progress': ROUTES.planTasks,
+  // 방문 Task 생성 화면은 Task 생성의 「방문」 종류와 완전히 같은 일을 했다(판정 R30).
+  '/admin/visit-planner': ROUTES.planTasks,
 }
+
+/**
+ * 파라미터가 있는 경로. ROUTES는 값을 그대로 `<Route path>`와 `navigate()`에
+ * 넘길 수 있는 완성된 경로만 담으므로, `:planId`가 든 패턴은 따로 둔다.
+ */
+export const PLAN_VISIT_DETAIL = `${ROUTES.planVisits}/:planId`
+export const PLAN_PROJECT_DETAIL = `${ROUTES.planProjects}/:projectId`
+
+export const planVisitDetailPath = (planId: string) => `${ROUTES.planVisits}/${planId}`
+export const planProjectDetailPath = (projectId: string) => `${ROUTES.planProjects}/${projectId}`
+
+/**
+ * 파라미터가 있는 옛 경로 → 새 경로. `LEGACY_REDIRECTS`와 섞지 않는 이유는
+ * 무결성 규칙이 다르기 때문이다 — 문자열 표는 "목적지가 ROUTES에 있는가"를,
+ * 이 표는 "양쪽 파라미터 이름이 같은가"를 지켜야 한다. `LegacyParamRedirect`가
+ * generatePath로 값을 옮기므로 이름이 어긋나면 런타임에 터진다.
+ */
+export const LEGACY_PARAM_REDIRECTS: { from: string; to: string }[] = [
+  { from: '/admin/visit-plans/:planId', to: PLAN_VISIT_DETAIL },
+  { from: '/admin/projects/:projectId', to: PLAN_PROJECT_DETAIL },
+]
