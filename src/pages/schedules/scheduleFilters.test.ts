@@ -250,8 +250,11 @@ describe('scheduleQueryFor', () => {
     })
   })
 
-  // 배정된 칠십인이 없으면 빈 문자열을 넘긴다 — 조건 없는 전체 조회로 새지 않게.
-  it('asks for nothing when an exec secretary has no seventy yet', () => {
+  // 배정된 칠십인이 없으면 빈 문자열을 넘긴다. 이 값 자체는 조건 없는 조회를 막지
+  // 않는다 — subscribeToSchedules는 falsy인 빈 문자열을 보고 무제한 조회 분기로
+  // 빠진다. 실제로 데이터가 안 새는 건 firestore.rules가 그 조회를 거부해서다
+  // (permission-denied + 빈 목록). 이 테스트는 그 반환값 자체만 고정한다.
+  it('returns an empty seventyUid when an exec secretary has no seventy assigned yet', () => {
     expect(scheduleQueryFor({ ...base, role: 'exec_secretary' })).toEqual({ seventyUid: '' })
   })
 

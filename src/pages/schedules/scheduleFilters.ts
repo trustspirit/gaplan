@@ -155,7 +155,12 @@ export function groupBoardItemsByMonth(items: BoardItem[]): Map<string, BoardIte
 export function scheduleQueryFor(user: AppUser): { presidentUid?: string; seventyUid?: string } {
   if (user.role === 'president') return { presidentUid: user.uid }
   if (user.role === 'seventy') return { seventyUid: user.uid }
-  // 배정된 칠십인이 없으면 빈 문자열 — 조건 없는 전체 조회로 새지 않게 한다.
+  // 배정된 칠십인이 없으면 빈 문자열을 넘긴다. 이 빈 문자열은 falsy라
+  // subscribeToSchedules(scheduleService.ts)의 `else if (filters.seventyUid)`를
+  // 타지 못하고 무제한 조회 분기로 빠진다 — 하지만 그 조회를 실제로 막는 건
+  // firestore.rules다. 제약 없는 schedules 조회는 규칙이 거부하므로, 배정 안 된
+  // exec_secretary 화면에는 남의 일정이 아니라 permission-denied 에러와 빈
+  // 목록이 뜬다. CalendarPage.tsx·ScheduleTypePanel.tsx의 기존 동작과 같다.
   if (user.role === 'exec_secretary') return { seventyUid: user.assignedSeventyUid ?? '' }
   return {}
 }
