@@ -9,8 +9,9 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }))
 
-// 달력 격자 자체는 CalendarView가 이미 자기 테스트를 갖고 있다. 여기서는
-// 패널이 뷰 모드를 넘기는지, 날짜 선택을 어떻게 다루는지만 본다.
+// CalendarView는 여기서 일부러 목으로 대체한다 — 이 파일은 패널의 배선(뷰
+// 모드 전달, 날짜 선택 처리)만 본다. CalendarView 자체의 controlled/
+// uncontrolled 계약은 CalendarView.test.tsx가 따로 다룬다.
 vi.mock('@/components/domain/CalendarView/CalendarView', () => ({
   CalendarView: ({ view, onDateClick }: { view?: string; onDateClick?: (d: string) => void }) => (
     <div>
