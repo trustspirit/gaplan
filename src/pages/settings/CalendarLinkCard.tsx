@@ -48,7 +48,7 @@ export function CalendarLinkCard() {
     try {
       const result = await manualCalendarSync()
       setSyncResult({ synced: result.synced })
-      if (!result.success) toast.error(result.message)
+      toast.success(result.message)
     } catch (e: unknown) {
       toast.error((e as { message?: string })?.message ?? t('common.syncError'))
     } finally {

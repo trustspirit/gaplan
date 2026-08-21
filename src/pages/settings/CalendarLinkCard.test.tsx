@@ -33,13 +33,13 @@ describe('CalendarLinkCard', () => {
   it('fills each region input from the stored settings', async () => {
     render(<CalendarLinkCard />)
     await waitFor(() =>
-      expect(screen.getByLabelText(/서울/)).toHaveValue('seoul@group.calendar.google.com'),
+      expect(screen.getByLabelText('서울 CC')).toHaveValue('seoul@group.calendar.google.com'),
     )
   })
 
   it('saves every region id in one write', async () => {
     render(<CalendarLinkCard />)
-    await waitFor(() => expect(screen.getByLabelText(/서울/)).toHaveValue(expect.any(String)))
+    await waitFor(() => expect(screen.getByLabelText('서울 CC')).toHaveValue(expect.any(String)))
     await userEvent.click(screen.getByRole('button', { name: 'common.save' }))
 
     await waitFor(() =>
