@@ -26,7 +26,10 @@ import type { AppUser } from '@/types'
 // bug), the two instances consume two different, adjacent values from the
 // sequence within the same render pass, and disagree.
 const useTasksSpy = vi.hoisted(() =>
-  vi.fn((): { tasks: Array<{ id: string }>; loading: boolean } => ({ tasks: [], loading: false })),
+  vi.fn((): { tasks: Array<{ id: string; status: string }>; loading: boolean } => ({
+    tasks: [],
+    loading: false,
+  })),
 )
 vi.mock('@/hooks/useTasks', () => ({ useTasks: useTasksSpy }))
 vi.mock('react-i18next', () => ({
@@ -51,7 +54,11 @@ function makeUser(over: Partial<AppUser>): AppUser {
 }
 
 function tasksOfLength(n: number) {
-  return { tasks: Array.from({ length: n }, (_, i) => ({ id: `t${n}-${i}` })), loading: false }
+  // 배지는 아직 답하지 않은(pending) 것만 센다 — usePendingTaskCount 참고
+  return {
+    tasks: Array.from({ length: n }, (_, i) => ({ id: `t${n}-${i}`, status: 'pending' })),
+    loading: false,
+  }
 }
 
 function renderShell(user: AppUser) {
@@ -68,23 +75,22 @@ function renderShell(user: AppUser) {
   )
 }
 
-function readDesktopCount() {
-  const links = screen.getAllByRole('link', { name: /nav.tasks/ })
-  for (const link of links) {
-    const badge = within(link).queryByText(/^\d+$/)
-    if (badge) return Number(badge.textContent)
-  }
-  return 0
+// 두 사이드바 모두 같은 링크 이름을 쓰므로, 랜드마크 이름으로 갈라서 읽는다.
+function taskLinkIn(navLabel: string) {
+  const nav = screen.getByRole('navigation', { name: navLabel })
+  return within(nav).getByRole('link', { name: /nav.tasks/ })
 }
 
+// 데스크톱은 눈에 보이는 숫자 배지를 그린다
+function readDesktopCount() {
+  const badge = within(taskLinkIn('nav.primaryLabel')).queryByText(/^\d+$/)
+  return badge ? Number(badge.textContent) : 0
+}
+
+// 모바일은 점만 그리고 개수는 스크린리더 문장으로만 알린다
 function readMobileCount() {
-  const links = screen.getAllByRole('link', { name: /nav.tasks/ })
-  for (const link of links) {
-    const badge = within(link).queryByText(/task\.pendingCount:\d+/)
-    const match = badge?.textContent?.match(/task\.pendingCount:(\d+)/)
-    if (match) return Number(match[1])
-  }
-  return 0
+  const match = taskLinkIn('nav.tabBarLabel').textContent?.match(/task\.pendingCount:(\d+)/)
+  return match ? Number(match[1]) : 0
 }
 
 describe('AppShell', () => {
