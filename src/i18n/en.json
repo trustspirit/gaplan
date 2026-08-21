@@ -357,6 +357,19 @@
       "languageTitle": "Language",
       "calendarTitle": "Google Calendar",
       "kakaoTitle": "Kakao Calendar"
+    },
+    "sharing": {
+      "title": "Sharing",
+      "globalTitle": "Public schedule",
+      "globalDesc": "Anyone with the link can see confirmed schedules.",
+      "globalOffWarning": "The public schedule is off, so none of the links below open.",
+      "unitsTitle": "Per-unit links",
+      "searchPlaceholder": "Search regions and stakes",
+      "filterAll": "All",
+      "filterActive": "Active only",
+      "summary": "{{active}} active of {{total}}",
+      "noMatch": "No name matches.",
+      "copied": "Link copied."
     }
   },
   "admin": {

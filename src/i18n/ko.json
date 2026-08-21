@@ -357,6 +357,19 @@
       "languageTitle": "언어",
       "calendarTitle": "구글 캘린더",
       "kakaoTitle": "카카오 캘린더"
+    },
+    "sharing": {
+      "title": "공유",
+      "globalTitle": "전체 공개 일정표",
+      "globalDesc": "켜면 링크를 가진 누구나 확정 일정을 볼 수 있습니다.",
+      "globalOffWarning": "전체 공개가 꺼져 있어 아래 단위별 링크도 열리지 않습니다.",
+      "unitsTitle": "단위별 공개 링크",
+      "searchPlaceholder": "지역 · 스테이크 이름으로 찾기",
+      "filterAll": "전체",
+      "filterActive": "활성만",
+      "summary": "활성 {{active}}개 / 전체 {{total}}개",
+      "noMatch": "찾는 이름이 없습니다.",
+      "copied": "링크를 복사했습니다."
     }
   },
   "admin": {
