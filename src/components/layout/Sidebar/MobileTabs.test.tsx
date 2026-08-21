@@ -82,24 +82,24 @@ describe('MobileTabs', () => {
     expect(screen.queryByRole('button', { name: /nav.more/ })).not.toBeInTheDocument()
   })
 
-  // 최종 리뷰(FIX 3) — 칠십인은 6개 항목(홈·일정·계획·통계·주소록·계정)을 받아 5탭
-  // 예산을 넘긴다. account를 ENTRIES 맨 뒤로 옮긴 뒤에는 최소한 통계가 더보기 밖으로
-  // 나온다 — 주소록·계정 두 개만 더보기에 남는다(navItems.ts 상단 주석 참고).
-  it('gives a seventy this exact primary/overflow split', () => {
+  // 최종 리뷰 fix round 2 — 판정 R48이 폐기되면서 account가 칠십인 nav에서
+  // 빠졌다. 칠십인은 이제 스펙 §4.2 표 그대로 5개(홈·일정·계획·통계·주소록)이고
+  // MAX_MOBILE_TABS(5)에 정확히 맞아 더보기 자체가 없다 — §4.6이 금지한
+  // 통계·주소록 매몰이 근본적으로 사라진다. navItems.test.ts의
+  // `gives each role the item count this build currently supports`가 개수(5)를,
+  // 여기서는 실제로 렌더되는 탭 구성을 못박는다.
+  it('gives a seventy all five items directly, with no overflow at all', () => {
     renderTabs(ROLE.SEVENTY)
     const nav = within(screen.getByRole('navigation'))
     const primaryLabels = nav.getAllByRole('link').map((el) => el.textContent)
-    expect(primaryLabels).toEqual(['nav.home', 'nav.schedules', 'nav.plans', 'nav.stats'])
-    expect(screen.getByRole('button', { name: /nav.more/ })).toBeInTheDocument()
-  })
-
-  it('puts the seventy leaders and account entries behind the more button', async () => {
-    renderTabs(ROLE.SEVENTY)
-    await userEvent.click(screen.getByRole('button', { name: /nav.more/ }))
-    const overflowLabels = within(overlay())
-      .getAllByRole('link')
-      .map((el) => el.textContent)
-    expect(overflowLabels).toEqual(['nav.leaders', 'nav.account'])
+    expect(primaryLabels).toEqual([
+      'nav.home',
+      'nav.schedules',
+      'nav.plans',
+      'nav.stats',
+      'nav.leaders',
+    ])
+    expect(screen.queryByRole('button', { name: /nav.more/ })).not.toBeInTheDocument()
   })
 
   // 셸은 데스크톱에서도 MobileTabs를 마운트해 둔다. 오버플로가 없는 역할에서까지

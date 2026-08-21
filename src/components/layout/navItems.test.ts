@@ -56,13 +56,25 @@ describe('navItemsFor', () => {
     }
   })
 
-  // 판정 R48 — 칠십인의 카카오 연동은 내 계정에만 있다.
-  it('gives the seventy and the president an account item instead', () => {
-    for (const role of [ROLE.SEVENTY, ROLE.PRESIDENT]) {
-      const ids = navItemsFor(role).map((i) => i.id)
-      expect(ids, role).toContain('account')
-      expect(ids, role).not.toContain('settings')
-    }
+  // 판정 R47 — 회장은 설정 화면 자체를 볼 수 없으니 계정으로 곧장 보내는 항목을
+  // 대신 받는다.
+  it('gives the president an account item instead of settings', () => {
+    const ids = navItemsFor(ROLE.PRESIDENT).map((i) => i.id)
+    expect(ids).toContain('account')
+    expect(ids).not.toContain('settings')
+  })
+
+  // 판정 R48 폐기(최종 리뷰 fix round 2) — R48은 칠십인의 카카오 연동이 내
+  // 계정에만 있다는 근거로 이 항목을 줬다. 그 근거가 두 번 무너졌다: 개편 전
+  // 카카오 카드는 애초에 admin 전용 화면(`/admin/calendar`)에 있어 칠십인이
+  // 갈 수 없었고, 최종 리뷰 1라운드 FIX 1이 카카오 카드를 assignedSeventyUid가
+  // 있는 사용자로 한정해 지금은 칠십인의 내 계정에 카카오 카드 자체가 없다.
+  // 스펙 §4.2 표가 칠십인에게 원래 주는 5개(홈·일정·계획·통계·주소록)에는
+  // 애초에 계정이 없다 — 이제 그 표와 일치한다.
+  it('no longer gives the seventy a separate account item', () => {
+    const ids = navItemsFor(ROLE.SEVENTY).map((i) => i.id)
+    expect(ids).not.toContain('account')
+    expect(ids).not.toContain('settings')
   })
 
   it('sends the account item straight to the account screen', () => {
@@ -150,12 +162,13 @@ describe('navItemsFor', () => {
     }
   })
 
-  // 설정 개편(판정 R47·R48) 이후의 실제 개수. 회장은 홈·일정·계정 3개, 칠십인은
-  // 거기에 계획·통계·주소록이 더해져 6개, 집행서기·관리자는 계정 대신 설정이
-  // 붙어 역시 6개다.
+  // 설정 개편(판정 R47) + R48 폐기(최종 리뷰 fix round 2) 이후의 실제 개수.
+  // 회장은 홈·일정·계정 3개. 칠십인은 이제 계정 없이 홈·일정·계획·통계·주소록
+  // 5개 — 스펙 §4.2 표와 정확히 같은 개수라 MAX_MOBILE_TABS(5)를 넘지 않는다.
+  // 집행서기·관리자는 계정 대신 설정이 붙어 6개(계획·통계·주소록·설정 + 홈·일정).
   it('gives each role the item count this build currently supports', () => {
     expect(navItemsFor(ROLE.PRESIDENT)).toHaveLength(3)
-    expect(navItemsFor(ROLE.SEVENTY)).toHaveLength(6)
+    expect(navItemsFor(ROLE.SEVENTY)).toHaveLength(5)
     expect(navItemsFor(ROLE.EXEC_SECRETARY)).toHaveLength(6)
     expect(navItemsFor(ROLE.ADMIN)).toHaveLength(6)
   })

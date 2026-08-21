@@ -38,16 +38,20 @@ interface Entry extends NavItemDef {
 //
 // 순서가 곧 모바일 하단 탭의 primary/overflow 경계다(splitMobileTabs). 데스크톱
 // 사이드바(SidebarNav)는 section으로 다시 나눠 그리므로 순서에 영향받지 않지만,
-// MobileTabs는 이 배열 순서를 그대로 슬라이스한다 — 최종 리뷰(FIX 3)가 찾아낸
-// 지점이다: account가 plans/stats/leaders보다 앞에 있으면 칠십인의 6개 항목 중
-// 뒤 두 개(통계·주소록)가 항상 더보기 뒤로 밀린다(스펙 §4.6은 그 둘을 묻지 않는다).
-// account를 맨 뒤로 옮기면 칠십인은 최소한 통계까지는 primary에 들어온다. 주소록
-// 하나는 여전히 더보기에 남는다 — 칠십인의 항목 수(6)가 MAX_MOBILE_TABS(5)를
-// 넘는 한 4자리 primary에 5개(홈·일정·계획·통계·주소록)를 다 욱여넣을 수는 없다.
-// 스펙 §4.2 표가 칠십인에게 원래 5개(계정 제외)만 주는 것과 이 배열이 칠십인에게
-// account까지 6번째로 주는 것 사이의 불일치이며, account를 칠십인 roles에서
-// 빼는 것은 판정 R48("칠십인의 카카오 연동은 내 계정에만 있다")을 깨므로 이
-// 수정의 범위 밖이다. 최종 리포트에 남긴다.
+// MobileTabs는 이 배열 순서를 그대로 슬라이스한다.
+//
+// account는 이제 회장에게만 있다(최종 리뷰 fix round 2). 판정 R48은 칠십인에게도
+// account를 줬다 — "카카오 연동이 내 계정에만 있으니 칠십인도 거기 가야 한다"는
+// 근거였는데, 그 근거가 두 번 무너졌다: (1) 이 화면 개편 전에는 카카오 카드가
+// `/admin/calendar`(RoleRoute allow=['admin'])에 있었으므로 칠십인은 원래도 거기
+// 못 갔다. (2) FIX 1(같은 최종 리뷰 1라운드)이 카카오 카드를 assignedSeventyUid
+// 있는 사용자로 한정했는데, 그 필드는 칠십인 자신에게는 없다 — 지금 칠십인의 내
+// 계정에는 카카오 카드 자체가 없다. 남는 건 이름·언어·구글 캘린더뿐이고 스펙
+// §4.2는 그 셋에 칠십인용 nav 자리를 준 적이 없다. 표가 원래 요구하던 5개
+// (홈·일정·계획·통계·주소록)로 돌아가면 MAX_MOBILE_TABS(5)에 정확히 맞아
+// overflow 자체가 없어진다 — §4.6이 금지한 통계·주소록 매몰 문제가 근본적으로
+// 사라진다. 회장은 유지한다 — 스펙 §4.2가 회장의 세 탭을 홈·일정·계정으로
+// 못박았다.
 const ENTRIES: Entry[] = [
   {
     id: 'home',
@@ -87,9 +91,9 @@ const ENTRIES: Entry[] = [
     section: 'admin',
     roles: ADMIN_EXEC,
   },
-  // 판정 R47 — 회장·칠십인은 설정 화면 자체를 볼 수 없으니(스펙 §4.2), 계정 항목이
-  // section: 'admin'이면 그들에게 항목 하나짜리 '관리' 그룹 헤딩이 뜬다. main으로
-  // 두어 홈·일정과 나란한 평범한 탭이 되게 한다. SidebarNav는 main/admin을 다시
+  // 판정 R47 — 회장은 설정 화면 자체를 볼 수 없으니(스펙 §4.2), 계정 항목이
+  // section: 'admin'이면 항목 하나짜리 '관리' 그룹 헤딩이 뜬다. main으로 두어
+  // 홈·일정과 나란한 평범한 탭이 되게 한다. SidebarNav는 main/admin을 다시
   // 나눠서 그리므로 배열 안에서 admin 항목들보다 뒤에 있어도 데스크톱에는 영향이
   // 없다(main이 먼저, admin 그룹이 나중) — 영향받는 것은 모바일 탭바뿐이다.
   {
@@ -97,7 +101,7 @@ const ENTRIES: Entry[] = [
     to: ROUTES.settingsAccount,
     labelKey: 'nav.account',
     section: 'main',
-    roles: [ROLE.SEVENTY, ROLE.PRESIDENT],
+    roles: [ROLE.PRESIDENT],
   },
 ]
 
