@@ -338,7 +338,11 @@
     "title": "설정",
     "subtext": "시스템과 공유, 내 계정",
     "navLabel": "설정 화면",
-    "tab": { "system": "시스템", "sharing": "공유", "account": "내 계정" },
+    "tab": {
+      "system": "시스템",
+      "sharing": "공유",
+      "account": "내 계정"
+    },
     "system": {
       "title": "시스템",
       "calendarTitle": "지역별 캘린더 연결",
@@ -370,17 +374,16 @@
       "filterActive": "활성만",
       "summary": "활성 {{active}}개 / 전체 {{total}}개",
       "noMatch": "찾는 이름이 없습니다.",
-      "copied": "링크를 복사했습니다."
+      "copied": "링크를 복사했습니다.",
+      "collapseRegion": "{{region}} 접기",
+      "expandRegion": "{{region}} 펼치기"
     }
   },
   "admin": {
     "dashboard": "관리자 대시보드",
-    "users": "사용자 관리",
-    "inviteDesc": "초대 및 역할 관리",
     "taskCreateDesc": "스테이크/지방부 회장에게 Task 할당",
     "taskProgressDesc": "응답 여부·결과 확인 및 일정 확정",
     "calendar": "구글 캘린더",
-    "calendarDesc": "공유 캘린더 연동 설정",
     "calendarSaved": "구글 캘린더가 저장되었습니다.",
     "availabilityTitle": "가능 일정 설정",
     "availabilitySaved": "가능 일정이 저장되었습니다.",
@@ -408,21 +411,12 @@
     "scheduleCancelSuccess": "일정이 취소되었습니다.",
     "scheduleCancelFailed": "일정 취소에 실패했습니다.",
     "calSynced": "캘린더 등록됨",
-    "calendarRegionLabel": "지역 캘린더 ID",
-    "calendarDesc2": "각 지역별로 공유 캘린더를 생성하고, Google Calendar 설정에서 캘린더 ID를 복사해 입력하세요. 확정된 일정이 해당 지역 캘린더에 자동으로 기록됩니다.",
     "scheduleEditSuccess": "일정이 수정되었습니다.",
     "scheduleEditFailed": "일정 수정에 실패했습니다.",
     "scheduleEditCalendarHint": "구글 캘린더에 등록된 일정입니다. 저장 시 캘린더도 자동으로 업데이트됩니다.",
     "scheduleNotesPlaceholder": "메모 (선택)",
     "scheduleTimeError": "종료 시간은 시작 시간보다 늦어야 합니다.",
     "publicScheduleTitle": "공개 일정표",
-    "publicScheduleDesc": "활성화하면 로그인 없이도 확정된 일정을 볼 수 있는 공개 링크가 생성됩니다.",
-    "schedulePublicEnabled": "공개 일정표가 활성화되었습니다.",
-    "schedulePublicDisabled": "공개 일정표가 비활성화되었습니다.",
-    "schedulePublicOn": "공개 활성화됨",
-    "schedulePublicOff": "비공개 (기본값)",
-    "perUnitPublicTitle": "지방부별 공개 일정표",
-    "perUnitPublicDesc": "지방부/CC별로 공개 여부와 공유 링크를 관리합니다.",
     "selectSeventyLabel": "지역 칠십인 선택",
     "slotsLoadFailed": "슬롯 로딩에 실패했습니다. 다시 시도해주세요."
   },

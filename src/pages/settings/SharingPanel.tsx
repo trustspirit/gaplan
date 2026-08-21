@@ -3,7 +3,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
-import { Copy, Check } from 'lucide-react'
+import { Copy, Check, ChevronDown, ChevronRight } from 'lucide-react'
 import { db } from '@/firebase'
 import {
   setGlobalPublic,
@@ -33,8 +33,7 @@ type Filter = 'all' | 'active'
  * 공유 화면. 전체 공개 킬스위치 하나와, 그 아래 지역·단위별 공개 링크 목록을
  * 검색·필터로 좁혀 보는 목록으로 이루어진다.
  *
- * CalendarSettings.tsx:41-57과 같은 방식으로 최초 1회 getDoc으로 읽는다 — 실시간
- * 구독이 아니다. 그 화면은 곧 삭제되므로 지금은 로딩 방식이 중복된다.
+ * 최초 1회 getDoc으로 읽는다 — 실시간 구독이 아니다.
  */
 export function SharingPanel() {
   const { t } = useTranslation()
@@ -45,6 +44,9 @@ export function SharingPanel() {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const [copiedScope, setCopiedScope] = useState<string | null>(null)
+  // 지역 접기(스펙 §4.3). 기본은 전부 접힘 — 검색어나 「활성만」으로 목록이 이미
+  // 좁혀졌을 때는 접어 둘 이유가 없으므로 그때는 이 상태와 무관하게 강제로 펼친다.
+  const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     Promise.all([getDoc(doc(db, 'settings', 'public')), getDoc(doc(db, 'settings', 'publicUnits'))])
@@ -56,8 +58,11 @@ export function SharingPanel() {
         setGlobalToken(pubData?.globalToken ?? '')
         setUnitStates((unitsSnap.data() as Record<string, PublicScopeState>) ?? {})
       })
+      // 읽기가 실패하면 여기 안 걸면 "전부 꺼짐"으로 조용히 렌더된다 — 뭔가
+      // 잘못됐다는 표시가 전혀 없다.
+      .catch(() => toast.error(t('common.loadFailed')))
       .finally(() => setFetching(false))
-  }, [])
+  }, [t])
 
   const groups = useMemo(() => buildSharingGroups(unitStates), [unitStates])
   const filteredGroups = useMemo(
@@ -65,6 +70,18 @@ export function SharingPanel() {
     [groups, query, filter],
   )
   const activeSummary = countActive(groups)
+  // 검색어나 「활성만」이 이미 목록을 좁혀 놓았으면 접어 둔 지역도 강제로 편다 —
+  // 안 그러면 검색 결과가 접힌 지역 안에 숨어 "찾았는데 안 보인다"가 된다.
+  const isNarrowing = query.trim() !== '' || filter === 'active'
+  const isRegionExpanded = (regionId: string) => isNarrowing || expandedRegions.has(regionId)
+  const toggleRegion = (regionId: string) => {
+    setExpandedRegions((prev) => {
+      const next = new Set(prev)
+      if (next.has(regionId)) next.delete(regionId)
+      else next.add(regionId)
+      return next
+    })
+  }
 
   const filterOptions: SegmentOption<Filter>[] = [
     { value: 'all', label: t('settings.sharing.filterAll') },
@@ -158,38 +175,59 @@ export function SharingPanel() {
           {!fetching && filteredGroups.length === 0 ? (
             <p className={styles.noMatch}>{t('settings.sharing.noMatch')}</p>
           ) : (
-            filteredGroups.map((group) => (
-              <div key={group.regionId} className={styles.group}>
-                {group.rows.map((row) => (
-                  <div
-                    key={row.scopeId}
-                    data-scope-row
-                    className={clsx(
-                      styles.row,
-                      row.depth === 1 && styles.rowIndented,
-                      row.enabled && styles.rowActive,
-                    )}
-                  >
-                    <span className={styles.rowName}>{row.nameKo}</span>
-                    <Switch
-                      checked={row.enabled}
-                      onChange={(next) => handleScopeToggle(row, next)}
-                      aria-label={row.nameKo}
-                    />
-                    {row.enabled && row.token && (
-                      <button
-                        type="button"
-                        className={styles.copyBtn}
-                        onClick={() => handleCopy(row.scopeId, row.token)}
-                        title={t('common.copyLink')}
-                      >
-                        {copiedScope === row.scopeId ? <Check size={14} /> : <Copy size={14} />}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ))
+            filteredGroups.map((group) => {
+              const [regionRow, ...unitRows] = group.rows
+              const expanded = isRegionExpanded(group.regionId)
+              const renderRow = (row: SharingRow) => (
+                <div
+                  key={row.scopeId}
+                  data-scope-row
+                  className={clsx(
+                    styles.row,
+                    row.depth === 1 && styles.rowIndented,
+                    row.enabled && styles.rowActive,
+                  )}
+                >
+                  {row.depth === 0 && unitRows.length > 0 && !isNarrowing && (
+                    <button
+                      type="button"
+                      className={styles.collapseBtn}
+                      onClick={() => toggleRegion(group.regionId)}
+                      aria-expanded={expanded}
+                      aria-label={t(
+                        expanded ? 'settings.sharing.collapseRegion' : 'settings.sharing.expandRegion',
+                        { region: row.nameKo },
+                      )}
+                    >
+                      {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    </button>
+                  )}
+                  <span className={styles.rowName}>{row.nameKo}</span>
+                  <Switch
+                    checked={row.enabled}
+                    onChange={(next) => handleScopeToggle(row, next)}
+                    aria-label={row.nameKo}
+                    disabled={fetching}
+                  />
+                  {row.enabled && row.token && (
+                    <button
+                      type="button"
+                      className={styles.copyBtn}
+                      onClick={() => handleCopy(row.scopeId, row.token)}
+                      title={t('common.copyLink')}
+                    >
+                      {copiedScope === row.scopeId ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  )}
+                </div>
+              )
+              return (
+                <div key={group.regionId} className={styles.group} data-region={group.regionId}>
+                  {renderRow(regionRow)}
+                  {expanded && unitRows.map(renderRow)}
+                </div>
+              )
+            })
           )}
         </CardBody>
       </Card>

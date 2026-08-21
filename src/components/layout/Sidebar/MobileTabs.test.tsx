@@ -82,6 +82,26 @@ describe('MobileTabs', () => {
     expect(screen.queryByRole('button', { name: /nav.more/ })).not.toBeInTheDocument()
   })
 
+  // 최종 리뷰 fix round 2 — 판정 R48이 폐기되면서 account가 칠십인 nav에서
+  // 빠졌다. 칠십인은 이제 스펙 §4.2 표 그대로 5개(홈·일정·계획·통계·주소록)이고
+  // MAX_MOBILE_TABS(5)에 정확히 맞아 더보기 자체가 없다 — §4.6이 금지한
+  // 통계·주소록 매몰이 근본적으로 사라진다. navItems.test.ts의
+  // `gives each role the item count this build currently supports`가 개수(5)를,
+  // 여기서는 실제로 렌더되는 탭 구성을 못박는다.
+  it('gives a seventy all five items directly, with no overflow at all', () => {
+    renderTabs(ROLE.SEVENTY)
+    const nav = within(screen.getByRole('navigation'))
+    const primaryLabels = nav.getAllByRole('link').map((el) => el.textContent)
+    expect(primaryLabels).toEqual([
+      'nav.home',
+      'nav.schedules',
+      'nav.plans',
+      'nav.stats',
+      'nav.leaders',
+    ])
+    expect(screen.queryByRole('button', { name: /nav.more/ })).not.toBeInTheDocument()
+  })
+
   // 셸은 데스크톱에서도 MobileTabs를 마운트해 둔다. 오버플로가 없는 역할에서까지
   // 시트를 그리면 position:fixed 오버레이가 매 세션 document.body에 남는다.
   it('mounts no overflow sheet at all when every item fits', () => {

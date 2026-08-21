@@ -13,10 +13,6 @@ import { ROLE_OPTIONS, UNIT_OPTIONS, getSecondaryRoleOptions } from './userOptio
 import type { SecondaryRoleOrNull } from './userOptions'
 import styles from './users.module.scss'
 
-/**
- * UserManagement.tsx의 초대 폼 — state 344-350, `toggleInviteRegion` 364-371,
- * `handleInvite` 385-430, JSX 470-571에서 옮겨왔다.
- */
 export function InviteCard() {
   const { t } = useTranslation()
   const currentUser = useAtomValue(authUserAtom)!

@@ -1,9 +1,8 @@
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
-// UserManagement.module.scss에서 옮겨왔다. 지역 체크박스 관련 클래스는
-// RegionCheckboxes.module.scss로 옮겨갔다. 색상은 이 오버홀에서 쓰는
-// var(--*) 토큰으로 바꿨다 — SharingPanel.module.scss와 같은 규칙이다.
+// 지역 체크박스 관련 클래스는 RegionCheckboxes.module.scss로 옮겨갔다. 색상은
+// 이 오버홀에서 쓰는 var(--*) 토큰으로 바꿨다 — SharingPanel.module.scss와 같은 규칙이다.
 
 .form {
   display: flex;

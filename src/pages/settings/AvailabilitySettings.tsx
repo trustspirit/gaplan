@@ -35,7 +35,7 @@ export function AvailabilitySettings() {
   return (
     <div className={styles.page}>
       <Card>
-        <CardHeader title={t('admin.availabilityTitle')} />
+        <CardHeader title={t('settings.system.availabilityTitle')} />
         <CardBody>
           <Select
             label={t('admin.selectSeventyLabel')}

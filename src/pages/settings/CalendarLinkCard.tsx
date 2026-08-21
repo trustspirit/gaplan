@@ -10,8 +10,6 @@ import { Card, CardHeader, CardBody, Input, Button } from '@/components/ui'
 /**
  * 지역별 구글 캘린더 ID 입력과 수동 동기화를 한 카드에 묶는다.
  * 판정 R50 — 동기화는 설정이 아니라 액션이다. 대상(지역 ID) 옆에 둔다.
- * CalendarSettings.tsx의 카드 1(201-226)·카드 2(228-237)에서 옮겨왔다 — 그 파일은
- * 곧 삭제될 예정이라 지금은 동작이 중복된다.
  */
 export function CalendarLinkCard() {
   const { t } = useTranslation()
@@ -27,8 +25,11 @@ export function CalendarLinkCard() {
         const data = snap.data()
         if (data?.calendars) setCalendarIds(data.calendars as Record<string, string>)
       })
+      // 안 걸면 실패해도 빈 폼이 조용히 뜬다 — 저장을 누르면 있던 캘린더 ID를
+      // 전부 지워버릴 수 있다.
+      .catch(() => toast.error(t('common.loadFailed')))
       .finally(() => setFetching(false))
-  }, [])
+  }, [t])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()

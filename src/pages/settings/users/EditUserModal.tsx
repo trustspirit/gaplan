@@ -21,8 +21,7 @@ import type { SecondaryRoleOrNull } from './userOptions'
 import styles from './users.module.scss'
 
 /**
- * UserManagement.tsx 52-280에서 옮겨왔다. 로직은 그대로다 — 지역 체크박스 두 곳만
- * RegionCheckboxes로 바꿨다.
+ * 로직은 그대로다 — 지역 체크박스 두 곳만 RegionCheckboxes로 바꿨다.
  */
 export function EditUserModal({
   user,

@@ -338,14 +338,18 @@
     "title": "Settings",
     "subtext": "System, sharing, and your account",
     "navLabel": "Settings screens",
-    "tab": { "system": "System", "sharing": "Sharing", "account": "My account" },
+    "tab": {
+      "system": "System",
+      "sharing": "Sharing",
+      "account": "My account"
+    },
     "system": {
       "title": "System",
       "calendarTitle": "Regional calendar links",
       "calendarDesc": "The Google Calendar ID that confirmed schedules go to, per region.",
       "syncTitle": "Sync now",
       "syncDesc": "Re-send confirmed schedules that never reached the calendar.",
-      "syncResult": "Sent {{synced}}.",
+      "syncResult": "Sent {{synced}} schedules.",
       "availabilityTitle": "Default availability",
       "usersTitle": "Users & permissions"
     },
@@ -370,17 +374,16 @@
       "filterActive": "Active only",
       "summary": "{{active}} active of {{total}}",
       "noMatch": "No name matches.",
-      "copied": "Link copied."
+      "copied": "Link copied.",
+      "collapseRegion": "Collapse {{region}}",
+      "expandRegion": "Expand {{region}}"
     }
   },
   "admin": {
     "dashboard": "Admin Dashboard",
-    "users": "User Management",
-    "inviteDesc": "Invite and manage roles",
     "taskCreateDesc": "Assign tasks to stake/district presidents",
     "taskProgressDesc": "View responses and confirm schedules",
     "calendar": "Google Calendar",
-    "calendarDesc": "Shared calendar integration",
     "scheduleEdit": "Edit Schedule",
     "scheduleDelete": "Cancel Schedule",
     "calendarSaved": "Google Calendar saved.",
@@ -408,21 +411,12 @@
     "scheduleCancelSuccess": "Schedule cancelled.",
     "scheduleCancelFailed": "Failed to cancel schedule.",
     "calSynced": "Synced to Calendar",
-    "calendarRegionLabel": "Region Calendar ID",
-    "calendarDesc2": "Create a shared calendar per region and paste the Calendar ID from Google Calendar settings. Confirmed schedules are automatically added to the corresponding calendar.",
     "scheduleEditSuccess": "Schedule updated.",
     "scheduleEditFailed": "Failed to update schedule.",
     "scheduleEditCalendarHint": "This schedule is synced to Google Calendar. Saving will automatically update the calendar event.",
     "scheduleNotesPlaceholder": "Notes (optional)",
     "scheduleTimeError": "End time must be later than start time.",
     "publicScheduleTitle": "Public Schedule",
-    "publicScheduleDesc": "When enabled, a public link is generated so anyone can view confirmed schedules without logging in.",
-    "schedulePublicEnabled": "Public schedule enabled.",
-    "schedulePublicDisabled": "Public schedule disabled.",
-    "schedulePublicOn": "Public access on",
-    "schedulePublicOff": "Private (default)",
-    "perUnitPublicTitle": "Per-Unit Public Schedule",
-    "perUnitPublicDesc": "Manage public access and share links per unit or CC.",
     "selectSeventyLabel": "Select Area Seventy",
     "slotsLoadFailed": "Failed to load slots. Please try again."
   },

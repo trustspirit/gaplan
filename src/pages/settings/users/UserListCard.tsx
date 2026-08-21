@@ -12,9 +12,6 @@ import type { AppUser } from '@/types'
 import { EditUserModal } from './EditUserModal'
 import styles from './users.module.scss'
 
-/**
- * UserManagement.tsx 282-335 (DeleteConfirmModal)에서 그대로 옮겨왔다.
- */
 function DeleteConfirmModal({
   user,
   onClose,
@@ -70,10 +67,6 @@ function DeleteConfirmModal({
   )
 }
 
-/**
- * UserManagement.tsx의 목록 카드 — JSX 644-701, 모달 마운트 704-728, 그리고
- * DeleteConfirmModal(282-335)에서 옮겨왔다.
- */
 export function UserListCard() {
   const { t } = useTranslation()
   const currentUser = useAtomValue(authUserAtom)!
@@ -86,7 +79,7 @@ export function UserListCard() {
   return (
     <>
       <Card>
-        <CardHeader title={t('user.allUsers')} />
+        <CardHeader title={t('settings.system.usersTitle')} />
         <CardBody>
           {usersLoading
             ? [1, 2, 3].map((i) => (
