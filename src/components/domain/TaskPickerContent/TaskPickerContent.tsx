@@ -1,5 +1,5 @@
 /**
- * TaskPickerContent — shared between DashboardPage and TasksPage.
+ * TaskPickerContent — renders the active-task picker on the president home screen.
  *
  * Renders the appropriate UI for a given active task:
  *  - select_visit     → WardAssigner (assign wards to available Sundays)

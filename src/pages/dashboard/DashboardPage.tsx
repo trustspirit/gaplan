@@ -196,7 +196,7 @@ function PresidentDashboard() {
                     key={task.id}
                     task={task}
                     // 답한 뒤에도 방문 Task는 와드별 날짜를 고쳐 낼 수 있다.
-                    // 접견 Task는 다시 열지 않는다 — TasksPage가 쓰던 규칙 그대로다.
+                    // 접견 Task는 다시 열지 않는다 — 한 번 잡힌 시간은 고정이다.
                     onAction={task.type === 'select_visit' ? openTask : undefined}
                   />
                 ))}
