@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { useAvailability } from '@/hooks/useAvailability'
 import { useUsers } from '@/hooks/useUsers'
 import { saveAvailabilitySlots } from '@/services/availabilityService'
-import { useTopBar } from '@/hooks/useTopBar'
 import { Card, CardHeader, CardBody, Select, Skeleton } from '@/components/ui'
 import { AvailabilityEditor } from '@/components/domain/AvailabilityEditor/AvailabilityEditor'
 import type { AvailabilitySlot } from '@/types'
@@ -12,7 +11,6 @@ import styles from './AvailabilitySettings.module.scss'
 
 export function AvailabilitySettings() {
   const { t } = useTranslation()
-  useTopBar({ subtext: t('admin.availabilityTitle') })
   const { users } = useUsers()
   const seventies = users.filter((u) => u.role === 'seventy')
   const [targetUid, setTargetUid] = useState('')
