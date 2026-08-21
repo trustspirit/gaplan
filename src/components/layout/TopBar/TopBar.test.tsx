@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { Provider, createStore } from 'jotai'
 import { TopBar } from './TopBar'
 import { authUserAtom } from '@/store/authAtom'
@@ -34,9 +35,11 @@ function renderTopBar(user: AppUser, viewSeventyUid: string | null = null) {
   store.set(authUserAtom, user)
   store.set(seventyViewAtom, viewSeventyUid)
   render(
-    <Provider store={store}>
-      <TopBar name={user.name} />
-    </Provider>,
+    <MemoryRouter>
+      <Provider store={store}>
+        <TopBar name={user.name} />
+      </Provider>
+    </MemoryRouter>,
   )
   return store
 }
@@ -85,5 +88,19 @@ describe('TopBar 스코프 스위치', () => {
   it('스코프 선택 권한이 없는 역할에게는 스위치를 감춘다', () => {
     renderTopBar(makeUser({ role: 'seventy' }))
     expect(screen.queryByRole('radiogroup')).toBeNull()
+  })
+})
+
+// 상단바에서 이름 변경 UI를 뺀 대신, 계정 메뉴에는 반드시 계정 화면으로 가는
+// 링크가 남아 있어야 한다 — 그 화면에 이름 변경이 옮겨갔기 때문이다. 경로나
+// import가 깨져도 조용히 사라지지 않도록 href까지 고정한다.
+describe('TopBar 계정 메뉴', () => {
+  it('계정 메뉴를 열면 계정 화면으로 가는 링크를 보여 준다', async () => {
+    renderTopBar(makeUser({}))
+
+    await userEvent.click(screen.getByRole('button', { name: /auth.accountMenu/ }))
+
+    const accountLink = screen.getByRole('link', { name: /nav.account/ })
+    expect(accountLink).toHaveAttribute('href', '/settings/account')
   })
 })
