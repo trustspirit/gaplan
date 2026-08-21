@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { AppUser } from '@/types'
 import { ROLE } from '@/constants/roles'
+import { useTopBar } from '@/hooks/useTopBar'
 import { SettingsPage } from './SettingsPage'
 
 let currentUser: AppUser
@@ -81,5 +82,21 @@ describe('SettingsPage', () => {
     currentUser = { uid: 'x1', role: ROLE.PENDING, name: '대기' } as AppUser
     renderAt('/settings')
     expect(screen.getByText('state.forbiddenTitle')).toBeInTheDocument()
+  })
+
+  // 태스크 10 fix round 1 — UserManagement.tsx가 갖고 있던 pageHelp.users가
+  // 시스템 탭에서 살아있는지 고정한다. PlansPage.tsx의 HELP_KEY와 같은 패턴.
+  it('carries the help key that used to live on the standalone user-management page', () => {
+    renderAt('/settings/system')
+    expect(vi.mocked(useTopBar)).toHaveBeenLastCalledWith(
+      expect.objectContaining({ helpInfoKey: 'pageHelp.users' }),
+    )
+  })
+
+  it('has no help key for tabs that never had one', () => {
+    renderAt('/settings/sharing')
+    expect(vi.mocked(useTopBar)).toHaveBeenLastCalledWith(
+      expect.objectContaining({ helpInfoKey: undefined }),
+    )
   })
 })

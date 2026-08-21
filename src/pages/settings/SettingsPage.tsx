@@ -8,8 +8,14 @@ import { ForbiddenState, PageHeader, Tabs } from '@/components/ui'
 import { SystemPanel } from './SystemPanel'
 import { SharingPanel } from './SharingPanel'
 import { AccountPanel } from './AccountPanel'
-import { settingsTabBySlug, settingsTabsFor } from './settingsTabs'
+import { settingsTabBySlug, settingsTabsFor, type SettingsTabId } from './settingsTabs'
 import styles from './SettingsPage.module.scss'
+
+// 탭마다 상단바 도움말이 다르다. sharing·account엔 아직 키가 없다 — helpInfoKey는
+// optional이라 undefined면 그냥 도움말 버튼이 안 뜬다. PlansPage.tsx의 HELP_KEY와 같은 패턴.
+const HELP_KEY: Partial<Record<SettingsTabId, string>> = {
+  system: 'pageHelp.users',
+}
 
 /**
  * 설정. 스펙 §4.2 — 좌측 하위 내비를 가진 섹션이고, 각 항목은 카드가 아니라
@@ -23,7 +29,11 @@ export function SettingsPage() {
   const tabs = useMemo(() => settingsTabsFor(user.role), [user.role])
   const active = settingsTabBySlug(user.role, slug)
 
-  useTopBar({ subtext: t('settings.subtext') })
+  // 훅은 조건부 반환보다 먼저 전부 부른다.
+  useTopBar({
+    subtext: t('settings.subtext'),
+    helpInfoKey: active ? HELP_KEY[active.id] : undefined,
+  })
 
   if (!active) {
     if (tabs.length === 0) return <ForbiddenState />

@@ -1,17 +1,25 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { inviteUser } from '@/services/userService'
+import { inviteUser, deleteUserAccount, deletePreRegisteredUser } from '@/services/userService'
 import { UserListCard } from './UserListCard'
 import { InviteCard } from './InviteCard'
 
 let users: unknown[] = []
+let loading = false
 
 beforeEach(() => {
   users = [
     { uid: 'u1', name: '홍길동', role: 'seventy', email: 'a@b.com' },
     { uid: 'u2', name: '김철수', role: 'president', email: 'c@d.com' },
   ]
+  loading = false
   vi.mocked(inviteUser)
+    .mockClear()
+    .mockResolvedValue(undefined as never)
+  vi.mocked(deleteUserAccount)
+    .mockClear()
+    .mockResolvedValue(undefined as never)
+  vi.mocked(deletePreRegisteredUser)
     .mockClear()
     .mockResolvedValue(undefined as never)
 })
@@ -25,7 +33,7 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
   initReactI18next: { type: '3rdParty', init: () => {} },
 }))
-vi.mock('@/hooks/useUsers', () => ({ useUsers: () => ({ users, loading: false }) }))
+vi.mock('@/hooks/useUsers', () => ({ useUsers: () => ({ users, loading }) }))
 vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
 vi.mock('@/services/userService', () => ({
   inviteUser: vi.fn(),
@@ -33,9 +41,16 @@ vi.mock('@/services/userService', () => ({
   updateUserRole: vi.fn(),
   updatePreRegisteredUserFields: vi.fn(),
   deleteUserAccount: vi.fn(),
+  deletePreRegisteredUser: vi.fn(),
   addPreRegisteredUser: vi.fn(),
 }))
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+vi.mock('@/components/ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/components/ui')>()
+  // Skeleton은 클래스만 있는 빈 div라 텍스트/role로 찾을 수 없다 — 로딩 테스트에서만
+  // 식별 가능하도록 표식을 붙인다. TaskPanel.test.tsx가 쓰는 것과 같은 패턴.
+  return { ...actual, Skeleton: () => <div data-testid="user-skeleton" /> }
+})
 
 describe('user management', () => {
   it('lists every user', () => {
@@ -46,8 +61,17 @@ describe('user management', () => {
 
   it('shows a skeleton instead of an empty list while loading', () => {
     users = []
+    loading = true
     render(<UserListCard />)
     expect(screen.queryByText('홍길동')).not.toBeInTheDocument()
+    expect(screen.getAllByTestId('user-skeleton')).toHaveLength(3)
+  })
+
+  it('shows real rows, not skeletons, once loading finishes', () => {
+    loading = false
+    render(<UserListCard />)
+    expect(screen.queryByTestId('user-skeleton')).not.toBeInTheDocument()
+    expect(screen.getByText('홍길동')).toBeInTheDocument()
   })
 
   it('invites the address that was typed', async () => {
@@ -57,19 +81,48 @@ describe('user management', () => {
 
     // inviteUser 는 객체가 아니라 위치 인자를 받는다:
     // (email, role, assignedRegionIds, invitedBy, assignedSeventyUid?, secondaryRole?, unitId?)
-    // 기본 역할(president)에서는 지역/칠십인/보조역할/스테이크 인자가 정말로
-    // undefined·null이라 expect.anything()으로는 매칭되지 않는다 — 값을 신경 쓰는
-    // 두 인자(이메일, invitedBy)만 확인한다.
-    expect(inviteUser).toHaveBeenCalled()
-    const call = vi.mocked(inviteUser).mock.calls[0]
-    expect(call[0]).toBe('new@test.com')
-    expect(typeof call[1]).toBe('string')
-    expect(call[3]).toBe('a1')
+    // 기본 역할(president)에서는 지역/칠십인/보조역할/스테이크 인자가 실제로
+    // undefined·null이다 — 값을 그대로 확인한다 (검증된 값, 추측 아님).
+    expect(inviteUser).toHaveBeenCalledWith(
+      'new@test.com',
+      'president',
+      undefined,
+      'a1',
+      undefined,
+      null,
+      undefined,
+    )
   })
 
   it('refuses to invite an empty address', async () => {
     render(<InviteCard />)
     await userEvent.click(screen.getByRole('button', { name: 'user.inviteSend' }))
     expect(inviteUser).not.toHaveBeenCalled()
+  })
+
+  it('deletes a live user through deleteUserAccount, not deletePreRegisteredUser', async () => {
+    users = [{ uid: 'u1', name: '홍길동', role: 'seventy', email: 'a@b.com' }]
+    render(<UserListCard />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'common.delete' }))
+    const dialog = screen.getByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'common.delete' }))
+
+    expect(deleteUserAccount).toHaveBeenCalledWith('u1')
+    expect(deletePreRegisteredUser).not.toHaveBeenCalled()
+  })
+
+  it('deletes a pre-registered user through deletePreRegisteredUser, not deleteUserAccount', async () => {
+    users = [
+      { uid: 'u2', name: '김철수', role: 'president', email: 'c@d.com', preRegistered: true },
+    ]
+    render(<UserListCard />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'common.delete' }))
+    const dialog = screen.getByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'common.delete' }))
+
+    expect(deletePreRegisteredUser).toHaveBeenCalledWith('u2')
+    expect(deleteUserAccount).not.toHaveBeenCalled()
   })
 })
