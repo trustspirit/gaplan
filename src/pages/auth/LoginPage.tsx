@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui'
 import { signInWithGoogle } from '@/services/authService'
 import { authUserAtom, authLoadingAtom } from '@/store/authAtom'
+import { ROUTES } from '@/router/routes'
 import styles from './LoginPage.module.scss'
 
 export function LoginPage() {
@@ -15,7 +16,7 @@ export function LoginPage() {
   const authLoading = useAtomValue(authLoadingAtom)
 
   if (!authLoading && user) {
-    let dest = '/dashboard'
+    let dest: string = ROUTES.home
     if (user.role === 'pending' && !user.unitId) dest = '/onboarding'
     else if (user.role === 'pending') dest = '/pending'
     else if (user.role === 'president' && !user.unitId) dest = '/onboarding'

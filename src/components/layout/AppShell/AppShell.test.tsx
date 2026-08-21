@@ -66,7 +66,7 @@ function renderShell(user: AppUser) {
   store.set(authUserAtom, user)
   return render(
     <Provider store={store}>
-      <MemoryRouter initialEntries={['/dashboard']}>
+      <MemoryRouter initialEntries={['/home']}>
         <AppShell role={user.role} name={user.name} topBar={<div />}>
           <div>content</div>
         </AppShell>
@@ -76,9 +76,10 @@ function renderShell(user: AppUser) {
 }
 
 // 두 사이드바 모두 같은 링크 이름을 쓰므로, 랜드마크 이름으로 갈라서 읽는다.
+// 배지는 이제 홈 항목에 붙는다(스펙 §4.2 — 회장 Task 탭 폐지).
 function taskLinkIn(navLabel: string) {
   const nav = screen.getByRole('navigation', { name: navLabel })
-  return within(nav).getByRole('link', { name: /nav.tasks/ })
+  return within(nav).getByRole('link', { name: /nav.home/ })
 }
 
 // 데스크톱은 눈에 보이는 숫자 배지를 그린다
@@ -117,7 +118,7 @@ describe('AppShell', () => {
     useTasksSpy.mockReset()
     useTasksSpy.mockReturnValue({ tasks: [], loading: false })
     const { container } = renderShell(makeUser({ role: ROLE.PRESIDENT }))
-    const links = screen.getAllByRole('link', { name: /nav.tasks/ })
+    const links = screen.getAllByRole('link', { name: /nav.home/ })
     expect(links).toHaveLength(2)
     for (const link of links) expect(link).not.toHaveTextContent(/[0-9]/)
     expect(container.querySelectorAll('[data-tab-dot]')).toHaveLength(0)

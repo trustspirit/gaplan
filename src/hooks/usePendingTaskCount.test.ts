@@ -38,8 +38,8 @@ describe('usePendingTaskCount', () => {
   })
 
   // subscribeToTasks는 pending + responded를 함께 실어 온다. 배지가 말하는
-  // "처리 필요"는 아직 회장이 답하지 않은 것뿐이다 — TasksPage 상단 배지와
-  // 같은 화면에서 다른 숫자가 나오면 안 된다.
+  // "처리 필요"는 아직 회장이 답하지 않은 것뿐이다 — 회장 홈 화면의 「처리 필요」
+  // 카드와 같은 화면에서 다른 숫자가 나오면 안 된다.
   it('counts only the tasks still waiting on the president', () => {
     useTasksSpy.mockReturnValue({
       tasks: [

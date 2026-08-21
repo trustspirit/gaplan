@@ -18,6 +18,6 @@ export function usePendingTaskCount(): number {
   const needsBadge = user ? navItemsFor(user.role).some((i) => i.badge === 'pendingTasks') : false
   const { tasks } = useTasks(needsBadge && user ? user.uid : '')
   // subscribeToTasks는 pending + responded를 함께 실어 온다. "처리 필요"는
-  // 아직 답하지 않은 것만 — TasksPage 상단 배지와 같은 기준이다.
+  // 아직 답하지 않은 것만 — 회장 홈 화면의 「처리 필요」 카드와 같은 기준이다.
   return needsBadge ? tasks.filter((task) => task.status === 'pending').length : 0
 }

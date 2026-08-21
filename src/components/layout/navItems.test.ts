@@ -19,7 +19,7 @@ function item(id: NavItemId): NavItemDef {
 describe('navItemsFor', () => {
   it('gives a president only the screens they can reach', () => {
     const ids = navItemsFor(ROLE.PRESIDENT).map((i) => i.id)
-    expect(ids).toEqual(['dashboard', 'calendar', 'schedules', 'tasks'])
+    expect(ids).toEqual(['home', 'schedules'])
   })
 
   it('gives a seventy the read-only management screens but no settings', () => {
@@ -56,19 +56,48 @@ describe('navItemsFor', () => {
     expect(lastMain).toBeLessThan(firstAdmin)
   })
 
-  it('marks only the president task screen with the pending badge', () => {
+  it('marks the president home screen with the pending badge', () => {
     const items = navItemsFor(ROLE.PRESIDENT)
     const badged = items.filter((i) => i.badge)
-    expect(badged.map((i) => i.id)).toEqual(['tasks'])
+    expect(badged.map((i) => i.id)).toEqual(['home'])
     expect(items[0]).not.toHaveProperty('roles')
   })
 
-  // 경로는 이 계획에서 바꾸지 않는다 — 통합은 계획 3
-  it('keeps every route path as it is today', () => {
+  // 홈은 전 역할이 갖는 항목이다. 배지를 조건 없이 붙이면 usePendingTaskCount가
+  // 배지를 그릴 곳이 없는 역할에도 Firestore 구독을 연다.
+  it('gives no role but the president a pending badge', () => {
+    for (const role of [ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY]) {
+      expect(
+        navItemsFor(role).some((i) => i.badge),
+        role,
+      ).toBe(false)
+    }
+  })
+
+  it('no longer offers a separate task screen', () => {
+    for (const role of [ROLE.PRESIDENT, ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY]) {
+      expect(
+        navItemsFor(role).map((i) => i.id),
+        role,
+      ).not.toContain('tasks')
+    }
+  })
+
+  it('no longer offers a separate calendar screen', () => {
+    for (const role of [ROLE.PRESIDENT, ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY]) {
+      expect(
+        navItemsFor(role).map((i) => i.id),
+        role,
+      ).not.toContain('calendar')
+    }
+  })
+
+  // 경로가 바뀌면 이 테스트가 의도적으로 깨진다 — 리다이렉트를 같이 넣었는지
+  // 확인하고 갱신하라는 신호다.
+  it('keeps every route path in step with ROUTES', () => {
     const byId = Object.fromEntries(navItemsFor(ROLE.ADMIN).map((i) => [i.id, i.to]))
     expect(byId).toEqual({
-      dashboard: '/dashboard',
-      calendar: '/calendar',
+      home: '/home',
       schedules: '/schedules',
       taskProgress: '/admin/task-progress',
       stats: '/admin/stats',
@@ -99,8 +128,14 @@ describe('splitMobileTabs', () => {
   })
 
   it('shows all items at the exact boundary of MAX_MOBILE_TABS', () => {
-    const items = navItemsFor(ROLE.SEVENTY)
-    expect(items.length).toBe(MAX_MOBILE_TABS)
+    // 역할별 항목 수는 IA가 바뀔 때마다 움직인다. 경계 자체를 고정하려는
+    // 테스트이므로 딱 MAX개짜리 목록을 직접 만든다.
+    const items: NavItemDef[] = Array.from({ length: MAX_MOBILE_TABS }, (_, i) => ({
+      id: `x${i}` as NavItemId,
+      to: `/x${i}`,
+      labelKey: 'x',
+      section: 'main',
+    }))
     const { primary, overflow } = splitMobileTabs(items)
     expect(primary).toHaveLength(MAX_MOBILE_TABS)
     expect(overflow).toHaveLength(0)
@@ -114,7 +149,7 @@ describe('navItemIsExact', () => {
 
   it('is false for an item nothing else nests under', () => {
     expect(navItemIsExact(ADMIN_ITEMS, item('stats'))).toBe(false)
-    expect(navItemIsExact(ADMIN_ITEMS, item('dashboard'))).toBe(false)
+    expect(navItemIsExact(ADMIN_ITEMS, item('home'))).toBe(false)
   })
 
   // 모바일 탭바는 목록을 primary/overflow로 쪼갠다. 한쪽만 넘기면 같은 항목이

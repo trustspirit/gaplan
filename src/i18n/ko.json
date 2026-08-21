@@ -1,13 +1,8 @@
 {
   "nav": {
-    "dashboard": "대시보드",
-    "calendar": "캘린더",
-    "visits": "방문",
-    "interviews": "접견",
-    "tasks": "Task",
+    "home": "홈",
     "taskProgress": "Task 현황",
     "admin": "관리",
-    "generalSchedules": "행사 일정",
     "stats": "통계",
     "visitPlans": "방문 계획",
     "projects": "프로젝트",
@@ -389,42 +384,30 @@
     "selectSeventyLabel": "지역 칠십인 선택",
     "slotsLoadFailed": "슬롯 로딩에 실패했습니다. 다시 시도해주세요."
   },
-  "visits": {
-    "title": "와드 방문 일정",
-    "createTask": "태스크 생성",
-    "addSchedule": "방문 일정 추가",
-    "thisMonth": "이번 달 방문",
-    "upcoming": "예정 방문",
-    "completed": "완료 방문",
-    "empty": "방문 일정이 없습니다",
-    "noUpcoming": "아직 예정된 방문이 없습니다.",
-    "noCompleted": "완료된 방문이 없습니다.",
-    "noAll": "확정된 방문 일정이 없습니다.",
-    "tabs": {
-      "all": "전체",
-      "upcoming": "예정",
-      "completed": "완료"
-    }
-  },
-  "interviews": {
-    "title": "접견 일정",
-    "createTask": "접견 요청 생성",
-    "addSchedule": "접견 일정 추가",
-    "thisMonth": "이번 달 접견·모임",
-    "upcoming": "예정 접견·모임",
-    "completed": "완료 접견·모임",
-    "empty": "접견·모임 일정이 없습니다",
-    "noUpcoming": "아직 예정된 접견·모임이 없습니다.",
-    "noCompleted": "완료된 접견·모임이 없습니다.",
-    "noAll": "확정된 접견·모임 일정이 없습니다.",
-    "tabs": {
-      "all": "전체",
-      "upcoming": "예정",
-      "completed": "완료"
-    }
-  },
   "schedules": {
-    "interviewMeetingTab": "접견·모임"
+    "title": "일정",
+    "subtext": "방문 · 접견 · 행사",
+    "viewLabel": "보기 방식",
+    "listView": "목록",
+    "kindFilterLabel": "일정 종류",
+    "kind": {
+      "visit": "방문",
+      "interview": "접견·모임",
+      "event": "행사"
+    },
+    "regionFilterLabel": "지역",
+    "statusFilterLabel": "상태",
+    "status": {
+      "all": "전체",
+      "upcoming": "예정",
+      "completed": "완료"
+    },
+    "addEvent": "행사 추가",
+    "emptyTitle": "일정이 없습니다",
+    "emptyDesc": "선택한 종류와 기간에 해당하는 일정이 없습니다.",
+    "thisMonth": "이번 달",
+    "upcoming": "예정",
+    "completed": "완료"
   },
   "user": {
     "invite": "사용자 초대",
@@ -472,8 +455,6 @@
     "hint": "예: 30 = 30분 단위, 60 = 1시간 단위"
   },
   "calendar": {
-    "title": "일정 캘린더",
-    "subtext": "캘린더",
     "syncTitle": "Google Calendar 수동 동기화",
     "clearSelection": "선택 해제",
     "noSchedule": "일정이 없습니다.",
@@ -627,13 +608,9 @@
       "title": "대시보드",
       "body": "나에게 배정된 Task와 확정된 일정을 확인합니다.\n• 대기 중인 Task에 응답할 수 있습니다\n• 기간 설정으로 원하는 범위의 일정을 볼 수 있습니다\n• 구글 캘린더 구독으로 일정을 자동 동기화할 수 있습니다"
     },
-    "calendar": {
-      "title": "캘린더",
-      "body": "월별 달력으로 일정을 확인합니다.\n• 날짜를 클릭해 해당 날의 일정을 확인하고 추가할 수 있습니다\n• CSV 내보내기로 일정 데이터를 다운로드할 수 있습니다\n• 구글 캘린더 구독으로 일정을 자동 동기화할 수 있습니다"
-    },
     "schedules": {
       "title": "일정",
-      "body": "방문·접견·행사 일정을 탭으로 구분해 확인합니다.\n• 전체·예정·완료 탭으로 필터링할 수 있습니다\n• 오른쪽 패널에서 다음 예정 일정을 빠르게 확인할 수 있습니다\n• + 일정 추가 버튼으로 새 일정을 등록할 수 있습니다"
+      "body": "방문·접견·행사를 한 화면에서 봅니다.\n• 월·주·목록으로 보기를 바꿀 수 있습니다\n• 종류 칩으로 방문·접견·행사를 켜고 끌 수 있습니다\n• 기간과 지역으로 범위를 좁힐 수 있습니다\n• CSV 내보내기로 일정 데이터를 다운로드할 수 있습니다"
     },
     "stats": {
       "title": "통계",
@@ -650,10 +627,6 @@
     "taskProgress": {
       "title": "Task 진행 현황",
       "body": "스테이크/지방부 회장에게 보낸 Task의 진행 현황을 확인합니다.\n• 응답 여부와 제출 내용을 확인할 수 있습니다\n• 응답을 검토 후 일정을 확정할 수 있습니다\n• 만료 버튼으로 Task를 닫을 수 있습니다"
-    },
-    "tasks": {
-      "title": "Task",
-      "body": "나에게 배정된 Task에 응답합니다.\n• 가능한 날짜를 선택해 제출할 수 있습니다\n• 와드/지부 배정 Task에는 와드별 날짜를 배정합니다\n• 제출 후에도 Task가 열려 있으면 재응답이 가능합니다"
     },
     "users": {
       "title": "사용자 관리",
@@ -680,6 +653,7 @@
     "dateFormat": "M월 D일 (ddd)"
   },
   "taskProgress": {
+    "createInterviewTask": "접견 시간 선택 Task 만들기",
     "detailTitle": "태스크 상세",
     "statusLabel": "상태",
     "assigneeLabel": "담당자",

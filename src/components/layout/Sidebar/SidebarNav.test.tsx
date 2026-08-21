@@ -11,7 +11,7 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
 }))
 
-function renderNav(role: UserRole = ROLE.ADMIN, pendingTaskCount?: number, path = '/dashboard') {
+function renderNav(role: UserRole = ROLE.ADMIN, pendingTaskCount?: number, path = '/home') {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <SidebarNav role={role} pendingTaskCount={pendingTaskCount} />
@@ -22,7 +22,7 @@ function renderNav(role: UserRole = ROLE.ADMIN, pendingTaskCount?: number, path 
 describe('SidebarNav', () => {
   it('renders every label as visible text, not only as a tooltip', () => {
     renderNav()
-    expect(screen.getByRole('link', { name: /nav.dashboard/ })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /nav.home/ })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /nav.stats/ })).toBeInTheDocument()
   })
 
@@ -63,26 +63,24 @@ describe('SidebarNav', () => {
 
   it('shows the pending count on the badged item', () => {
     renderNav(ROLE.PRESIDENT, 3)
-    expect(screen.getByRole('link', { name: /nav.tasks/ })).toHaveTextContent('3')
+    expect(screen.getByRole('link', { name: /nav.home/ })).toHaveTextContent('3')
   })
 
   it('omits the badge when the count is zero', () => {
     renderNav(ROLE.PRESIDENT, 0)
-    expect(screen.getByRole('link', { name: /nav.tasks/ })).not.toHaveTextContent('0')
+    expect(screen.getByRole('link', { name: /nav.home/ })).not.toHaveTextContent('0')
   })
 
   // 숫자만 있으면 스크린리더는 "Task 3"이라고만 읽는다 — 3이 무엇의 3인지 없다.
   // MobileTabs.test.tsx가 이미 거는 것과 같은 단언을 데스크톱에도 건다.
   it('announces what the badge number counts, not just the number', () => {
     renderNav(ROLE.PRESIDENT, 3)
-    expect(screen.getByRole('link', { name: /nav.tasks/ })).toHaveAccessibleName(
-      /task.pendingCount/,
-    )
+    expect(screen.getByRole('link', { name: /nav.home/ })).toHaveAccessibleName(/task.pendingCount/)
   })
 
   it('does not announce a pending count when there is nothing pending', () => {
     renderNav(ROLE.PRESIDENT, 0)
-    expect(screen.getByRole('link', { name: /nav.tasks/ })).not.toHaveAccessibleName(
+    expect(screen.getByRole('link', { name: /nav.home/ })).not.toHaveAccessibleName(
       /task.pendingCount/,
     )
   })

@@ -19,7 +19,7 @@ vi.mock('@/services/authService', () => ({ signOut: vi.fn() }))
 
 function renderSidebar(pendingTaskCount: number | undefined, mobile: boolean) {
   return render(
-    <MemoryRouter initialEntries={['/dashboard']}>
+    <MemoryRouter initialEntries={['/home']}>
       <Sidebar
         role={ROLE.PRESIDENT}
         name="홍길동"
@@ -33,12 +33,12 @@ function renderSidebar(pendingTaskCount: number | undefined, mobile: boolean) {
 describe('Sidebar', () => {
   it('forwards a nonzero pendingTaskCount to the desktop nav badge', () => {
     renderSidebar(3, false)
-    expect(screen.getByRole('link', { name: /nav.tasks/ })).toHaveTextContent('3')
+    expect(screen.getByRole('link', { name: /nav.home/ })).toHaveTextContent('3')
   })
 
   it('forwards a zero pendingTaskCount to the desktop nav (no badge)', () => {
     renderSidebar(0, false)
-    expect(screen.getByRole('link', { name: /nav.tasks/ })).not.toHaveTextContent(/[0-9]/)
+    expect(screen.getByRole('link', { name: /nav.home/ })).not.toHaveTextContent(/[0-9]/)
   })
 
   it('forwards a nonzero pendingTaskCount to the mobile tabs', () => {

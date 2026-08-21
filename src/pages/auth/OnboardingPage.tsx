@@ -9,6 +9,7 @@ import { authUserAtom } from '@/store/authAtom'
 import { ALL_UNITS } from '@/constants/regions'
 import type { UserRole } from '@/types'
 import { Input, Select, Button } from '@/components/ui'
+import { ROUTES } from '@/router/routes'
 import styles from './OnboardingPage.module.scss'
 
 export function OnboardingPage() {
@@ -55,7 +56,7 @@ export function OnboardingPage() {
         navigate('/pending')
       } else {
         toast.success('환영합니다!')
-        navigate('/dashboard')
+        navigate(ROUTES.home)
       }
     } catch {
       toast.error(t('onboarding.saveFailed'))

@@ -8,6 +8,7 @@ import { RoleRoute } from './RoleRoute'
 import { Spinner } from '@/components/ui'
 import { AppShell, TopBar, ShellLayout } from '@/components/layout'
 import { authUserAtom } from '@/store/authAtom'
+import { ROUTES, LEGACY_REDIRECTS } from './routes'
 import styles from './Router.module.scss'
 
 // Outer Suspense fallback — only reached by lazy routes outside ShellLayout
@@ -66,14 +67,8 @@ const PendingPage = lazyRetry(() =>
 const DashboardPage = lazyRetry(() =>
   import('@/pages/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 )
-const CalendarPage = lazyRetry(() =>
-  import('@/pages/calendar/CalendarPage').then((m) => ({ default: m.CalendarPage })),
-)
 const SchedulesPage = lazyRetry(() =>
   import('@/pages/schedules/SchedulesPage').then((m) => ({ default: m.SchedulesPage })),
-)
-const TasksPage = lazyRetry(() =>
-  import('@/pages/tasks/TasksPage').then((m) => ({ default: m.TasksPage })),
 )
 const AdminDashboard = lazyRetry(() =>
   import('@/pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })),
@@ -130,20 +125,13 @@ export function AppRouter() {
           <Route element={<ProtectedRoute />}>
             <Route path="/kakao/callback" element={<KakaoCallback />} />
             <Route element={<ShellLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/calendar" element={<CalendarPage />} />
-              <Route path="/schedules" element={<Navigate to="/schedules/visits" replace />} />
-              <Route path="/schedules/:tab" element={<SchedulesPage />} />
-              <Route path="/visits" element={<Navigate to="/schedules/visits" replace />} />
-              <Route path="/interviews" element={<Navigate to="/schedules/interviews" replace />} />
-              <Route
-                path="/general-schedules"
-                element={<Navigate to="/schedules/events" replace />}
-              />
+              {/* 옛 경로 → 새 경로. 표는 routes.ts가 갖고, 여기서는 펼치기만 한다. */}
+              {Object.entries(LEGACY_REDIRECTS).map(([from, to]) => (
+                <Route key={from} path={from} element={<Navigate to={to} replace />} />
+              ))}
 
-              <Route element={<RoleRoute allow={['president']} />}>
-                <Route path="/tasks" element={<TasksPage />} />
-              </Route>
+              <Route path={ROUTES.home} element={<DashboardPage />} />
+              <Route path={ROUTES.schedules} element={<SchedulesPage />} />
 
               <Route element={<RoleRoute allow={['admin']} />}>
                 <Route path="/admin" element={<AdminDashboard />} />
@@ -171,9 +159,9 @@ export function AppRouter() {
 
           <Route path="/respond/:taskId" element={<RespondPage />} />
           <Route path="/public/schedule/:token" element={<PublicSchedulePage />} />
-          <Route path="/public/schedule" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/public/schedule" element={<Navigate to={ROUTES.home} replace />} />
 
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

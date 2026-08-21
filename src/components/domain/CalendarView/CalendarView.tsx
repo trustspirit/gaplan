@@ -13,7 +13,7 @@ import styles from './CalendarView.module.scss'
 const getDOW = () => Array.from({ length: 7 }, (_, i) => dayjs().day(i).format('ddd')) as string[]
 const MAX_CHIPS = 2 // max chips shown per cell before "+N"
 
-type ViewMode = 'month' | 'week'
+export type ViewMode = 'month' | 'week'
 
 const SCHEDULE_TYPE_COLORS: Record<Schedule['type'], { bg: string; text: string; border: string }> =
   {
@@ -25,8 +25,8 @@ const SCHEDULE_TYPE_COLORS: Record<Schedule['type'], { bg: string; text: string;
 
 const GENERAL_CATEGORY_COLORS = {
   conference: { bg: '#fef3c7', text: '#92400e', border: '#fde68a' },
-  fasting:    { bg: '#ede9fe', text: '#5b21b6', border: '#ddd6fe' },
-  other:      { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' },
+  fasting: { bg: '#ede9fe', text: '#5b21b6', border: '#ddd6fe' },
+  other: { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' },
 } as const
 
 interface CalendarViewProps {
@@ -36,7 +36,11 @@ interface CalendarViewProps {
   selectedDate?: string | null
   /** Resolve a unitId to its display name for schedule chips */
   getUnitName?: (unitId: string) => string
-  defaultView?: ViewMode
+  /**
+   * 뷰는 부모가 소유한다 — 통합 일정 화면은 월/주/목록 셋을 한 컨트롤로
+   * 다루므로, 이 컴포넌트가 자체 토글을 갖고 있으면 컨트롤이 두 곳에 생긴다.
+   */
+  view: ViewMode
 }
 
 function chipLabel(s: Schedule, getUnitName?: (id: string) => string): string {
@@ -77,10 +81,9 @@ export function CalendarView({
   onDateClick,
   selectedDate,
   getUnitName,
-  defaultView = 'month',
+  view,
 }: CalendarViewProps) {
   const { t } = useTranslation()
-  const [view, setView] = useState<ViewMode>(defaultView)
   const [current, setCurrent] = useState(dayjs())
   const [weekOffset, setWeekOffset] = useState(0) // mobile 3-day sliding offset
   // Re-derive DOW whenever language changes
@@ -90,7 +93,7 @@ export function CalendarView({
     schedules.filter((s) => s.date === date && s.status === 'confirmed')
 
   const getGeneralEventsForDate = (date: string) =>
-    (generalSchedules ?? []).filter(gs => gs.date === date)
+    (generalSchedules ?? []).filter((gs) => gs.date === date)
 
   const movePeriod = (amount: number) => {
     setCurrent((c) => c.add(amount, view === 'month' ? 'month' : 'week'))
@@ -144,7 +147,8 @@ export function CalendarView({
           // general events share the chip budget so busy days can't blow out the cell
           const visibleGenerals = dayGenerals.slice(0, MAX_CHIPS)
           const visible = daySchedules.slice(0, MAX_CHIPS - visibleGenerals.length)
-          const extra = dayGenerals.length + daySchedules.length - visibleGenerals.length - visible.length
+          const extra =
+            dayGenerals.length + daySchedules.length - visibleGenerals.length - visible.length
 
           return (
             <div
@@ -159,7 +163,7 @@ export function CalendarView({
               onClick={() => onDateClick?.(dateStr)}
             >
               <span className={styles.cellDay}>{d.date()}</span>
-              {visibleGenerals.map(gs => {
+              {visibleGenerals.map((gs) => {
                 const c = GENERAL_CATEGORY_COLORS[gs.category] ?? GENERAL_CATEGORY_COLORS.other
                 return (
                   <span
@@ -289,7 +293,7 @@ export function CalendarView({
                       {d.format('D')}
                     </span>
                   </div>
-                  {getGeneralEventsForDate(dateStr).map(gs => {
+                  {getGeneralEventsForDate(dateStr).map((gs) => {
                     const c = GENERAL_CATEGORY_COLORS[gs.category] ?? GENERAL_CATEGORY_COLORS.other
                     return (
                       <div
@@ -370,29 +374,15 @@ export function CalendarView({
         <Button variant="ghost" size="sm" onClick={() => movePeriod(1)}>
           <ChevronRight size={16} />
         </Button>
-        <div className={styles.viewToggle}>
-          <Button
-            variant={view === 'month' ? 'primary' : 'ghost'}
-            size="sm"
-            onClick={() => setView('month')}
-          >
-            {t('common.monthView')}
-          </Button>
-          <Button
-            variant={view === 'week' ? 'primary' : 'ghost'}
-            size="sm"
-            onClick={() => setView('week')}
-          >
-            {t('common.weekView')}
-          </Button>
-        </div>
       </div>
 
       <div
         className={styles.swipeViewport}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
-        onPointerCancel={() => { swipeStart.current = null }}
+        onPointerCancel={() => {
+          swipeStart.current = null
+        }}
       >
         {view === 'month' ? renderMonthView() : renderWeekView()}
       </div>

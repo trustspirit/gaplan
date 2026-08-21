@@ -1,15 +1,14 @@
 import type { UserRole } from '@/types'
 import { ROLE } from '@/constants/roles'
+import { ROUTES } from '@/router/routes'
 
 export type NavSection = 'main' | 'admin'
 
 // NAV_ICONS(navIcons.tsx)가 이 유니언으로 Record를 채워야 하므로, 항목을 추가하고
 // 아이콘을 빼먹으면 tsc가 잡아낸다 — id: string이었을 때는 그냥 빈칸으로 렌더됐다.
 export type NavItemId =
-  | 'dashboard'
-  | 'calendar'
+  | 'home'
   | 'schedules'
-  | 'tasks'
   | 'taskProgress'
   | 'stats'
   | 'visitPlans'
@@ -32,68 +31,75 @@ const ADMIN_EXEC: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY]
 
 interface Entry extends NavItemDef {
   roles: UserRole[]
+  /** 배지를 실제로 보는 역할. 생략하면 roles 전원. */
+  badgeRoles?: UserRole[]
 }
 
 // 경로는 오늘의 값 그대로다. 일정/계획 통합과 리다이렉트는 계획 3에서 한다.
 const ENTRIES: Entry[] = [
   {
-    id: 'dashboard',
-    to: '/dashboard',
-    labelKey: 'nav.dashboard',
+    id: 'home',
+    to: ROUTES.home,
+    labelKey: 'nav.home',
     section: 'main',
     roles: ALL_ROLES,
+    badge: 'pendingTasks',
+    badgeRoles: [ROLE.PRESIDENT],
   },
-  { id: 'calendar', to: '/calendar', labelKey: 'nav.calendar', section: 'main', roles: ALL_ROLES },
   {
     id: 'schedules',
-    to: '/schedules',
+    to: ROUTES.schedules,
     labelKey: 'nav.schedules',
     section: 'main',
     roles: ALL_ROLES,
   },
   {
-    id: 'tasks',
-    to: '/tasks',
-    labelKey: 'nav.tasks',
-    section: 'main',
-    roles: [ROLE.PRESIDENT],
-    badge: 'pendingTasks',
-  },
-  {
     id: 'taskProgress',
-    to: '/admin/task-progress',
+    to: ROUTES.taskProgress,
     labelKey: 'nav.taskProgress',
     section: 'admin',
     roles: ADMIN_STAFF,
   },
-  { id: 'stats', to: '/admin/stats', labelKey: 'nav.stats', section: 'admin', roles: ADMIN_STAFF },
+  { id: 'stats', to: ROUTES.stats, labelKey: 'nav.stats', section: 'admin', roles: ADMIN_STAFF },
   {
     id: 'visitPlans',
-    to: '/admin/visit-plans',
+    to: ROUTES.visitPlans,
     labelKey: 'nav.visitPlans',
     section: 'admin',
     roles: ADMIN_EXEC,
   },
   {
     id: 'projects',
-    to: '/admin/projects',
+    to: ROUTES.projects,
     labelKey: 'nav.projects',
     section: 'admin',
     roles: ADMIN_EXEC,
   },
   {
     id: 'leaders',
-    to: '/admin/leaders',
+    to: ROUTES.leaders,
     labelKey: 'nav.leaders',
     section: 'admin',
     roles: [ROLE.ADMIN],
   },
-  { id: 'admin', to: '/admin', labelKey: 'nav.admin', section: 'admin', roles: [ROLE.ADMIN] },
+  { id: 'admin', to: ROUTES.admin, labelKey: 'nav.admin', section: 'admin', roles: [ROLE.ADMIN] },
 ]
 
 export function navItemsFor(role: UserRole): NavItemDef[] {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  return ENTRIES.filter((e) => e.roles.includes(role)).map(({ roles, ...item }) => item)
+  return ENTRIES.filter((entry) => entry.roles.includes(role)).map((entry) => {
+    const item: NavItemDef = {
+      id: entry.id,
+      to: entry.to,
+      labelKey: entry.labelKey,
+      section: entry.section,
+    }
+    // 배지는 그것을 실제로 보는 역할에만 붙인다. usePendingTaskCount가 이 필드를
+    // 보고 구독 여부를 정하므로, 전원에게 붙이면 배지가 늘 0인 역할에도 구독이 열린다.
+    if (entry.badge && (entry.badgeRoles ?? entry.roles).includes(role)) {
+      item.badge = entry.badge
+    }
+    return item
+  })
 }
 
 /**

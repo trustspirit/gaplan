@@ -25,6 +25,7 @@ import { adminConfirmSchedule, adminConfirmWardVisit } from '@/services/schedule
 import { deleteTask, expireTask, updateTaskDetails } from '@/services/taskService'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { useTopBar } from '@/hooks/useTopBar'
+import { ROUTES } from '@/router/routes'
 import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Modal } from '@/components/ui'
 import { MultiDatePicker } from '@/components/domain/MultiDatePicker/MultiDatePicker'
 import { ResponseMatrix } from '@/components/domain/ResponseMatrix/ResponseMatrix'
@@ -412,7 +413,8 @@ function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRowProps) 
             <div className={styles.taskInfo}>
               <span className={styles.taskPresident}>{presidentName}</span>
               <span className={styles.taskMeta}>
-                {unitName} · {typeLabel} · {t('taskProgress.dueShort', { date: dayjs(task.dueDate).format('M/D') })}
+                {unitName} · {typeLabel} ·{' '}
+                {t('taskProgress.dueShort', { date: dayjs(task.dueDate).format('M/D') })}
                 {task.status === 'pending' && (
                   <span className={clsx(styles.dDay, isOverdue && styles.dDayOverdue)}>
                     {isOverdue ? ` (D+${Math.abs(daysLeft)})` : ` (D-${daysLeft})`}
@@ -610,9 +612,21 @@ function RegionGroup({
         title={regionName}
         action={
           <div className={styles.regionSummary}>
-            {responded.length > 0 && <Badge variant="default">{t('taskProgress.respondedBadge', { count: responded.length })}</Badge>}
-            {pending.length > 0 && <Badge variant="warning">{t('taskProgress.pendingBadge', { count: pending.length })}</Badge>}
-            {completed.length > 0 && <Badge variant="success">{t('taskProgress.completedBadge', { count: completed.length })}</Badge>}
+            {responded.length > 0 && (
+              <Badge variant="default">
+                {t('taskProgress.respondedBadge', { count: responded.length })}
+              </Badge>
+            )}
+            {pending.length > 0 && (
+              <Badge variant="warning">
+                {t('taskProgress.pendingBadge', { count: pending.length })}
+              </Badge>
+            )}
+            {completed.length > 0 && (
+              <Badge variant="success">
+                {t('taskProgress.completedBadge', { count: completed.length })}
+              </Badge>
+            )}
           </div>
         }
       />
@@ -656,19 +670,25 @@ function RegionGroup({
 
             {visitResponded.length > 0 && (
               <div className={styles.statusSection}>
-                <p className={styles.statusLabel}>{t('taskProgress.awaitingConfirm', { count: visitResponded.length })}</p>
+                <p className={styles.statusLabel}>
+                  {t('taskProgress.awaitingConfirm', { count: visitResponded.length })}
+                </p>
                 {renderRows(visitResponded)}
               </div>
             )}
             {pending.length > 0 && (
               <div className={styles.statusSection}>
-                <p className={styles.statusLabel}>{t('taskProgress.noResponse', { count: pending.length })}</p>
+                <p className={styles.statusLabel}>
+                  {t('taskProgress.noResponse', { count: pending.length })}
+                </p>
                 {renderRows(pending)}
               </div>
             )}
             {visitCompleted.length > 0 && (
               <div className={styles.statusSection}>
-                <p className={styles.statusLabel}>{t('taskProgress.completedCount', { count: visitCompleted.length })}</p>
+                <p className={styles.statusLabel}>
+                  {t('taskProgress.completedCount', { count: visitCompleted.length })}
+                </p>
                 {renderRows(visitCompleted)}
               </div>
             )}
@@ -743,6 +763,9 @@ export function TaskProgress() {
     <div className={styles.page}>
       {(user.role === 'admin' || user.role === 'exec_secretary') && (
         <div className={styles.pageActions}>
+          <Button variant="secondary" size="sm" onClick={() => navigate(ROUTES.tasks)}>
+            + {t('taskProgress.createInterviewTask')}
+          </Button>
           <Button variant="primary" size="sm" onClick={() => navigate('/admin/visit-planner')}>
             + {t('task.createNew')}
           </Button>

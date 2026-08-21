@@ -24,24 +24,6 @@
   text-align: center;
 }
 
-.viewToggle {
-  display: flex;
-  gap: 2px;
-  margin-left: auto;
-
-  @include mobile {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    width: 100%;
-    margin-left: 0;
-
-    :global(button) {
-      width: 100%;
-      align-self: stretch;
-    }
-  }
-}
-
 // ── Month grid ────────────────────────────────────────────────────────────────
 
 .monthGrid {
