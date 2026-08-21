@@ -1,11 +1,8 @@
 {
   "nav": {
     "home": "홈",
-    "taskProgress": "Task 현황",
     "admin": "관리",
     "stats": "통계",
-    "visitPlans": "방문 계획",
-    "projects": "프로젝트",
     "schedules": "일정",
     "plans": "계획",
     "more": "더보기",
@@ -339,8 +336,6 @@
     "taskCreateDesc": "스테이크/지방부 회장에게 Task 할당",
     "taskProgress": "Task 진행 현황",
     "taskProgressDesc": "응답 여부·결과 확인 및 일정 확정",
-    "visitPlanner": "방문 일정 계획",
-    "visitPlannerDesc": "와드/지부별 방문 일요일 배정",
     "calendar": "구글 캘린더",
     "calendarDesc": "공유 캘린더 연동 설정",
     "calendarSaved": "구글 캘린더가 저장되었습니다.",

@@ -12,14 +12,6 @@ export const ROUTES = {
   planVisits: '/plans/visit-plans',
   planTasks: '/plans/tasks',
   planProjects: '/plans/projects',
-  // ── 아래 다섯은 이 계획의 마지막 Task가 지운다. 통합 화면이 설 때까지 옛
-  //    화면이 계속 서비스돼야 해서 남아 있다.
-  tasks: '/admin/tasks',
-  taskProgress: '/admin/task-progress',
-  visitPlans: '/admin/visit-plans',
-  visitPlanner: '/admin/visit-planner',
-  projects: '/admin/projects',
-  // ──
   stats: '/admin/stats',
   leaders: '/admin/leaders',
   users: '/admin/users',
@@ -49,6 +41,13 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
   '/visits': ROUTES.schedules,
   '/interviews': ROUTES.schedules,
   '/general-schedules': ROUTES.schedules,
+  // 방문 계획 · Task 생성 · Task 현황 · 프로젝트가 /plans의 탭이 됐다(스펙 §4.2).
+  '/admin/visit-plans': ROUTES.planVisits,
+  '/admin/projects': ROUTES.planProjects,
+  '/admin/tasks': ROUTES.planTasks,
+  '/admin/task-progress': ROUTES.planTasks,
+  // 방문 Task 생성 화면은 Task 생성의 「방문」 종류와 완전히 같은 일을 했다(판정 R30).
+  '/admin/visit-planner': ROUTES.planTasks,
 }
 
 /**

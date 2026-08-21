@@ -1,11 +1,8 @@
 {
   "nav": {
     "home": "Home",
-    "taskProgress": "Task Progress",
     "admin": "Admin",
     "stats": "Statistics",
-    "visitPlans": "Visit Plans",
-    "projects": "Projects",
     "schedules": "Schedules",
     "plans": "Plans",
     "more": "More",
@@ -339,8 +336,6 @@
     "taskCreateDesc": "Assign tasks to stake/district presidents",
     "taskProgress": "Task Progress",
     "taskProgressDesc": "View responses and confirm schedules",
-    "visitPlanner": "Visit Planner",
-    "visitPlannerDesc": "Assign ward/branch visit Sundays",
     "calendar": "Google Calendar",
     "calendarDesc": "Shared calendar integration",
     "scheduleEdit": "Edit Schedule",

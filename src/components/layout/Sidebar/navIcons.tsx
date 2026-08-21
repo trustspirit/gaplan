@@ -5,8 +5,6 @@ import {
   CalendarRange,
   ClipboardList,
   BarChart3,
-  ClipboardPen,
-  FolderKanban,
   BookUser,
   Settings,
 } from 'lucide-react'
@@ -16,10 +14,8 @@ import {
 export const NAV_ICONS: Record<NavItemId, ReactNode> = {
   home: <LayoutDashboard size={18} />,
   schedules: <CalendarRange size={18} />,
-  taskProgress: <ClipboardList size={18} />,
+  plans: <ClipboardList size={18} />,
   stats: <BarChart3 size={18} />,
-  visitPlans: <ClipboardPen size={18} />,
-  projects: <FolderKanban size={18} />,
   leaders: <BookUser size={18} />,
   admin: <Settings size={18} />,
 }

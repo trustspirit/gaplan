@@ -55,6 +55,21 @@ describe('LEGACY_REDIRECTS', () => {
       expect(LEGACY_REDIRECTS[old], old).toBe(ROUTES.schedules)
     }
   })
+
+  it('keeps every retired plan path working', () => {
+    expect(LEGACY_REDIRECTS['/admin/visit-plans']).toBe(ROUTES.planVisits)
+    expect(LEGACY_REDIRECTS['/admin/projects']).toBe(ROUTES.planProjects)
+    // Task 생성·현황·방문 Task 생성 세 화면이 한 탭이 됐다.
+    expect(LEGACY_REDIRECTS['/admin/tasks']).toBe(ROUTES.planTasks)
+    expect(LEGACY_REDIRECTS['/admin/task-progress']).toBe(ROUTES.planTasks)
+    expect(LEGACY_REDIRECTS['/admin/visit-planner']).toBe(ROUTES.planTasks)
+  })
+
+  it('no longer names the retired plan screens in ROUTES', () => {
+    for (const gone of ['tasks', 'taskProgress', 'visitPlans', 'visitPlanner', 'projects']) {
+      expect(Object.keys(ROUTES), gone).not.toContain(gone)
+    }
+  })
 })
 
 describe('plan routes', () => {
