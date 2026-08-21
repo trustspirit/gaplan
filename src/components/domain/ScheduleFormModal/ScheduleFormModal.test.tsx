@@ -17,6 +17,19 @@ const mocks = vi.hoisted(() => ({
 
 const { createSpy } = vi.hoisted(() => ({ createSpy: vi.fn() }))
 
+// 방문 목록 훅은 「그 날짜 이후」의 방문만 돌려준다. 고정 날짜를 쓰면 그 날이 지난
+// 뒤부터 폼의 기본 fromDate(=오늘)가 방문을 걸러내 테스트가 통째로 깨진다.
+// 오늘을 기준으로 잡아 시간이 흘러도 앞뒤 관계가 유지되게 한다.
+const dates = vi.hoisted(() => {
+  const day = (offset: number) => {
+    const d = new Date()
+    d.setDate(d.getDate() + offset)
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  }
+  return { visit: day(30), beforeVisit: day(7), afterVisit: day(31) }
+})
+
 // Heavy mocks to isolate the component
 vi.mock('@/firebase', () => ({ db: {}, functions: {}, auth: {} }))
 vi.mock('firebase/firestore', () => ({
@@ -47,8 +60,8 @@ vi.mock('@/hooks/useUpcomingVisits', () => ({
   // 실제 훅처럼 fromDate 이후의 방문만 돌려준다 — 모임 날짜를 방문 이후로 옮기면
   // 목록에서 사라지는 상황(Finding 2 회귀 테스트)을 재현하기 위해 인자에 반응해야 한다.
   useUpcomingVisits: (_seventyUid: string, fromDate: string) => ({
-    visits: fromDate && fromDate <= '2026-08-09'
-      ? [{ id: 'v1', date: '2026-08-09', wardName: '교문 와드', unitId: 'seoul-east-stake' }]
+    visits: fromDate && fromDate <= dates.visit
+      ? [{ id: 'v1', date: dates.visit, wardName: '교문 와드', unitId: 'seoul-east-stake' }]
       : [],
     loading: false,
   }),
@@ -365,7 +378,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
   })
 
   function fillDateTime() {
-    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-07-10' } })
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: dates.beforeVisit } })
     fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
     fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
   }
@@ -448,7 +461,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
 
   // Finding 2: 고른 방문이 목록에서 사라져도(예: 모임 날짜를 방문 이후로 변경) stale id가
   // 그대로 서버로 전송되던 버그의 회귀 테스트. mock된 useUpcomingVisits는 fromDate가
-  // 방문일(2026-08-09)보다 늦으면 빈 목록을 돌려준다.
+  // 방문일(dates.visit)보다 늦으면 빈 목록을 돌려준다.
   it('선택한 방문이 목록에서 사라지면(모임 날짜를 방문 이후로 변경) 저장 시 대상 방문을 다시 요구한다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.meeting'))
@@ -456,8 +469,8 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
     fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), { target: { value: 'pre_visit' } })
     fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), { target: { value: 'v1' } })
 
-    // 방문일(2026-08-09) 이후로 모임 날짜를 옮기면 목록에서 v1이 사라진다
-    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-08-10' } })
+    // 방문일 이후로 모임 날짜를 옮기면 목록에서 v1이 사라진다
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: dates.afterVisit } })
     fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
     fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
     fireEvent.click(screen.getByText('schedule.saveBtn'))
