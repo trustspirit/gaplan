@@ -653,6 +653,7 @@
     "dateFormat": "M월 D일 (ddd)"
   },
   "taskProgress": {
+    "createInterviewTask": "접견 시간 선택 Task 만들기",
     "detailTitle": "태스크 상세",
     "statusLabel": "상태",
     "assigneeLabel": "담당자",

@@ -25,6 +25,7 @@ import { adminConfirmSchedule, adminConfirmWardVisit } from '@/services/schedule
 import { deleteTask, expireTask, updateTaskDetails } from '@/services/taskService'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { useTopBar } from '@/hooks/useTopBar'
+import { ROUTES } from '@/router/routes'
 import { Card, CardHeader, CardBody, Badge, Button, Skeleton, Input, Modal } from '@/components/ui'
 import { MultiDatePicker } from '@/components/domain/MultiDatePicker/MultiDatePicker'
 import { ResponseMatrix } from '@/components/domain/ResponseMatrix/ResponseMatrix'
@@ -743,6 +744,9 @@ export function TaskProgress() {
     <div className={styles.page}>
       {(user.role === 'admin' || user.role === 'exec_secretary') && (
         <div className={styles.pageActions}>
+          <Button variant="secondary" size="sm" onClick={() => navigate(ROUTES.tasks)}>
+            + {t('taskProgress.createInterviewTask')}
+          </Button>
           <Button variant="primary" size="sm" onClick={() => navigate('/admin/visit-planner')}>
             + {t('task.createNew')}
           </Button>

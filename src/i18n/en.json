@@ -653,6 +653,7 @@
     "dateFormat": "MMM D (ddd)"
   },
   "taskProgress": {
+    "createInterviewTask": "Create interview time-selection task",
     "detailTitle": "Task detail",
     "statusLabel": "Status",
     "assigneeLabel": "Assignee",
