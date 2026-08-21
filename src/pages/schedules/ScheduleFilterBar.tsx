@@ -4,7 +4,12 @@ import clsx from 'clsx'
 import { SegmentedControl, type SegmentOption } from '@/components/ui'
 import { ScheduleDateRangeFilter } from '@/components/domain/ScheduleDateRangeFilter/ScheduleDateRangeFilter'
 import type { DateRange, ScheduleDateRangeSetting } from '@/hooks/useScheduleDateRange'
-import { SCHEDULE_KINDS, type ScheduleKind, type ScheduleStatusFilter } from './scheduleFilters'
+import {
+  SCHEDULE_KINDS,
+  toggleScheduleKind,
+  type ScheduleKind,
+  type ScheduleStatusFilter,
+} from './scheduleFilters'
 import styles from './ScheduleFilterBar.module.scss'
 
 interface RegionOption {
@@ -48,15 +53,11 @@ export function ScheduleFilterBar({
   const regionHeadingId = useId()
 
   const selected = new Set(kinds)
-  // 전부 끄면 빈 화면만 남고 되돌릴 실마리가 없다. 마지막 하나는 잠근다.
+  // 전부 끄면 빈 화면만 남고 되돌릴 실마리가 없다. 마지막 하나는 잠근다(사용자 affordance).
   const isLastOn = (kind: ScheduleKind) => selected.has(kind) && selected.size === 1
 
-  const toggleKind = (kind: ScheduleKind) => {
-    if (isLastOn(kind)) return
-    // SCHEDULE_KINDS 순서를 유지한다 — 토글할 때마다 칩 순서가 바뀌면 안 된다.
-    const next = SCHEDULE_KINDS.filter((k) => (k === kind ? !selected.has(k) : selected.has(k)))
-    onKindsChange([...next])
-  }
+  // 실제 규칙(마지막 하나는 안 꺼진다)은 순수 함수로 옮겨져 있다 — scheduleFilters.test.ts 참고.
+  const toggleKind = (kind: ScheduleKind) => onKindsChange(toggleScheduleKind(kinds, kind))
 
   const statusOptions: SegmentOption<ScheduleStatusFilter>[] = STATUSES.map((value) => ({
     value,

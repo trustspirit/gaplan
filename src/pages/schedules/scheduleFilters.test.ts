@@ -7,7 +7,9 @@ import {
   groupBoardItemsByMonth,
   kindOfScheduleType,
   scheduleQueryFor,
+  toggleScheduleKind,
   SCHEDULE_KINDS,
+  type ScheduleKind,
 } from './scheduleFilters'
 
 const RANGE = { start: '2026-01-01', end: '2026-12-31' }
@@ -228,6 +230,30 @@ describe('groupBoardItemsByMonth', () => {
     const grouped = groupBoardItemsByMonth(items)
     expect([...grouped.keys()]).toEqual(['2026-03', '2026-04'])
     expect(grouped.get('2026-03')!.map((i) => i.key)).toEqual(['s-a', 's-b'])
+  })
+})
+
+describe('toggleScheduleKind', () => {
+  it('turns one kind off and keeps the rest in canonical order', () => {
+    expect(toggleScheduleKind(['visit', 'interview', 'event'], 'interview')).toEqual([
+      'visit',
+      'event',
+    ])
+  })
+
+  it('turns a kind back on in canonical order, not appended at the end', () => {
+    expect(toggleScheduleKind(['visit'], 'event')).toEqual(['visit', 'event'])
+  })
+
+  // 전부 끄면 빈 화면만 남고 되돌릴 실마리가 없다. 마지막 하나는 그대로 돌려준다.
+  it('returns the last remaining kind unchanged rather than emptying it', () => {
+    expect(toggleScheduleKind(['visit'], 'visit')).toEqual(['visit'])
+  })
+
+  it('does not mutate the input array', () => {
+    const kinds: ScheduleKind[] = ['visit', 'interview', 'event']
+    toggleScheduleKind(kinds, 'interview')
+    expect(kinds).toEqual(['visit', 'interview', 'event'])
   })
 })
 

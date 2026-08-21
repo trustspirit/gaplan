@@ -25,6 +25,16 @@ export function kindOfScheduleType(type: ScheduleType): ScheduleKind | null {
   return KIND_OF_TYPE[type] ?? null
 }
 
+/**
+ * 종류 칩 하나를 뒤집는다. SCHEDULE_KINDS 순서로 다시 만들므로 토글해도 칩 순서가 변하지 않는다.
+ * 마지막 하나는 끄지 않는다 — 전부 꺼지면 빈 화면만 남고 되돌릴 실마리가 없다.
+ */
+export function toggleScheduleKind(kinds: ScheduleKind[], kind: ScheduleKind): ScheduleKind[] {
+  const selected = new Set(kinds)
+  if (selected.has(kind) && selected.size === 1) return kinds
+  return SCHEDULE_KINDS.filter((k) => (k === kind ? !selected.has(k) : selected.has(k)))
+}
+
 export type BoardEntry =
   | { source: 'schedule'; schedule: Schedule }
   | { source: 'event'; event: GeneralSchedule }
