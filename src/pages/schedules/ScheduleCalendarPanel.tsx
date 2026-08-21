@@ -18,8 +18,14 @@ interface ScheduleCalendarPanelProps {
    */
   schedules: Schedule[]
   generalSchedules: GeneralSchedule[]
-  /** 필터가 모두 적용된 병합 목록. 우측 목록이 이걸 그린다. */
+  /** 필터가 모두 적용된 병합 목록(기간 포함). 날짜 선택이 없을 때 우측 목록이 이걸 그린다. */
   items: BoardItem[]
+  /**
+   * 종류·지역·hiddenIds는 items와 같지만 기간(range)이 빠진 병합 목록. 격자가
+   * 범위 밖 달의 일정도 그리기 때문에, 그 날을 클릭했을 때 우측 목록이
+   * items로는 절대 못 찾는 항목을 여기서 찾는다. 날짜 선택이 있을 때만 쓴다.
+   */
+  allItems: BoardItem[]
   getUnitName: (unitId: string) => string
   selectedDate: string | null
   onSelectDate: (date: string | null) => void
@@ -32,6 +38,7 @@ export function ScheduleCalendarPanel({
   schedules,
   generalSchedules,
   items,
+  allItems,
   getUnitName,
   selectedDate,
   onSelectDate,
@@ -42,7 +49,10 @@ export function ScheduleCalendarPanel({
   // 같은 날을 다시 누르면 선택이 풀린다.
   const handleDateClick = (date: string) => onSelectDate(selectedDate === date ? null : date)
 
-  const listed = selectedDate ? items.filter((item) => item.date === selectedDate) : items
+  // 날짜가 선택되면 기간(range) 밖이라도 그 날의 항목을 보여준다 — 격자는
+  // range를 안 타므로(위 주석) 선택된 날이 range 밖일 수 있다. items로
+  // 찾으면 격자엔 보이는데 목록은 비는 모순이 생긴다.
+  const listed = selectedDate ? allItems.filter((item) => item.date === selectedDate) : items
 
   const listTitle = selectedDate
     ? t('calendar.selectedDateTitle', { date: dayjs(selectedDate).format('M/D (ddd)') })

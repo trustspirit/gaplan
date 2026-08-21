@@ -10,8 +10,8 @@ vi.mock('react-i18next', () => ({
 }))
 
 // CalendarView는 여기서 일부러 목으로 대체한다 — 이 파일은 패널의 배선(뷰
-// 모드 전달, 날짜 선택 처리)만 본다. CalendarView 자체의 controlled/
-// uncontrolled 계약은 CalendarView.test.tsx가 따로 다룬다.
+// 모드 전달, 날짜 선택 처리)만 본다. CalendarView 자체가 month/week 격자를
+// 실제로 그리는지는 CalendarView.test.tsx가 따로 다룬다.
 vi.mock('@/components/domain/CalendarView/CalendarView', () => ({
   CalendarView: ({ view, onDateClick }: { view?: string; onDateClick?: (d: string) => void }) => (
     <div>
@@ -50,11 +50,18 @@ function renderPanel(over: Partial<React.ComponentProps<typeof ScheduleCalendarP
     kinds: [...SCHEDULE_KINDS],
     range: { start: '2026-01-01', end: '2026-12-31' },
   })
+  const allItems = buildBoardItems({
+    schedules,
+    generalSchedules: [],
+    kinds: [...SCHEDULE_KINDS],
+    range: { start: '0000-01-01', end: '9999-12-31' },
+  })
   const props = {
     view: 'month' as const,
     schedules,
     generalSchedules: [],
     items,
+    allItems,
     getUnitName: (id: string) => id,
     selectedDate: null as string | null,
     onSelectDate: vi.fn(),
@@ -105,5 +112,28 @@ describe('ScheduleCalendarPanel', () => {
   it('says so when the selected day has nothing on it', () => {
     renderPanel({ selectedDate: '2026-06-01' })
     expect(screen.getByText('schedules.emptyTitle')).toBeInTheDocument()
+  })
+
+  // 격자는 range를 안 타므로 range 밖 날짜의 일정도 그린다. 그 날을 고르면
+  // 목록도 그 항목을 찾아야 한다 — items(기간 반영)만 보면 빈 목록이 된다.
+  it('lists a schedule outside the range when its day is selected, even though it is missing from items', () => {
+    const schedules = [schedule({ id: 'outside', date: '2027-01-15' })]
+    const items = buildBoardItems({
+      schedules,
+      generalSchedules: [],
+      kinds: [...SCHEDULE_KINDS],
+      range: { start: '2026-01-01', end: '2026-12-31' },
+    })
+    const allItems = buildBoardItems({
+      schedules,
+      generalSchedules: [],
+      kinds: [...SCHEDULE_KINDS],
+      range: { start: '0000-01-01', end: '9999-12-31' },
+    })
+    expect(items).toHaveLength(0)
+
+    renderPanel({ schedules, items, allItems, selectedDate: '2027-01-15' })
+
+    expect(screen.getByText('s-outside')).toBeInTheDocument()
   })
 })

@@ -56,6 +56,9 @@ import styles from './SchedulesPage.module.scss'
 
 type BoardView = 'month' | 'week' | 'list'
 
+// 기간 필터를 사실상 끄기 위한 값. allItems가 이걸로 buildBoardItems를 호출한다.
+const UNBOUNDED_RANGE = { start: '0000-01-01', end: '9999-12-31' }
+
 export function SchedulesPage() {
   const { t } = useTranslation()
   useTopBar({ subtext: t('schedules.subtext'), helpInfoKey: 'pageHelp.schedules' })
@@ -102,6 +105,24 @@ export function SchedulesPage() {
         regionId,
       ),
     [schedules, generalSchedules, kinds, range, deletingIds, regionId],
+  )
+
+  // items와 같은 종류·지역·hiddenIds 필터를 쓰지만 기간(range)은 뺀 병합
+  // 목록. 달력에서 range 밖 날짜를 선택했을 때 우측 목록이 그 항목을 찾는
+  // 용도로만 쓴다(ScheduleCalendarPanel 주석 참고) — 무제한 범위를 넘긴다.
+  const allItems = useMemo(
+    () =>
+      filterByRegion(
+        buildBoardItems({
+          schedules,
+          generalSchedules,
+          kinds,
+          range: UNBOUNDED_RANGE,
+          hiddenIds: deletingIds,
+        }),
+        regionId,
+      ),
+    [schedules, generalSchedules, kinds, deletingIds, regionId],
   )
 
   // 달력 격자는 병합 목록이 아니라 원본 두 벌을 받는다 — CalendarView가 그렇게 생겼다.
@@ -302,7 +323,7 @@ export function SchedulesPage() {
                   <RefreshCw size={14} />
                 </Button>
               )}
-              {canManage && (
+              {(canManage || user.role === 'seventy') && (
                 <Button variant="secondary" size="sm" onClick={() => setEventFormOpen(true)}>
                   + {t('schedules.addEvent')}
                 </Button>
@@ -345,6 +366,7 @@ export function SchedulesPage() {
             schedules={calendarSchedules}
             generalSchedules={calendarEvents}
             items={items}
+            allItems={allItems}
             getUnitName={getUnitName}
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
