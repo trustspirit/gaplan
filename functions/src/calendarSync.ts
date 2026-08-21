@@ -6,7 +6,7 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
-import { UNIT_REGION_MAP } from './unitRegionMap'
+import { resolveScheduleRegionId } from './scheduleRegion'
 import { buildScheduleTitle } from './scheduleTitle'
 import { isBookkeepingOnlyWrite } from './bookkeepingWrite'
 
@@ -39,11 +39,13 @@ export const calendarSync = functions
     const seventySnap = seventyUid
       ? await db.collection('users').doc(seventyUid).get()
       : null
-    const scheduleUnitId = after?.unitId ?? before?.unitId ?? ''
-    const regionId: string =
-      UNIT_REGION_MAP[scheduleUnitId] ??
-      seventySnap?.data()?.regionId ??
-      ''
+    const regionId: string = resolveScheduleRegionId(
+      {
+        regionId: after?.regionId ?? before?.regionId,
+        unitId: after?.unitId ?? before?.unitId,
+      },
+      seventySnap?.data()?.regionId,
+    )
 
     const settingsSnap = await db.collection('settings').doc('calendar').get()
     const calendars: Record<string, string> = settingsSnap.data()?.calendars ?? {}

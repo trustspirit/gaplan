@@ -8,7 +8,7 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
-import { UNIT_REGION_MAP } from './unitRegionMap'
+import { resolveScheduleRegionId } from './scheduleRegion'
 import { buildScheduleTitle, type ScheduleTitleInput } from './scheduleTitle'
 
 function getCalendarClient() {
@@ -50,10 +50,14 @@ export const manualCalendarSync = functions
 
     for (const docSnap of pending) {
       const s = docSnap.data()
-      const regionId = UNIT_REGION_MAP[s.unitId ?? ''] ?? ''
+      // 칠십인 fallback은 여기 없다 — 이 경로는 유저 문서를 읽지 않는다. CCM은
+      // 일정 자신이 regionId를 들고 있으므로 fallback 없이도 제 캘린더를 찾는다.
+      const regionId = resolveScheduleRegionId(s)
       const calendarId = calendars[regionId]
       if (!calendarId) {
-        functions.logger.warn(`manualCalendarSync: no calendar for regionId="${regionId}" (unitId=${s.unitId})`)
+        functions.logger.warn(
+          `manualCalendarSync: no calendar for regionId="${regionId}" (unitId=${s.unitId}, scheduleRegionId=${s.regionId})`,
+        )
         failed++
         continue
       }
