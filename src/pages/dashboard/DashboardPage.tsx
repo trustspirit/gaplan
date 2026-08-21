@@ -31,7 +31,8 @@ import { useWardSubmit } from '@/hooks/useWardSubmit'
 import { REGIONS } from '@/constants/regions'
 import { resolveScopedScheduleSeventyUid } from '@/utils/scope'
 import { selectGlanceSchedules } from '@/utils/glance'
-import styles from './DashboardPage.module.scss'
+// 옛 화면은 Task 6에서 지운다. 그때까지 옮겨간 스타일시트를 빌려 쓴다.
+import styles from '@/pages/home/HomePage.module.scss'
 
 function CalendarBanner({ connected }: { connected?: boolean }) {
   const { t } = useTranslation()
