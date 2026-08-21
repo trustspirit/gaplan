@@ -317,6 +317,10 @@ describe('SchedulesPage', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'schedules.listView' }))
 
     expect(screen.getAllByText('event-row')).toHaveLength(1)
+    // event-row 개수만 보면, general_attendance가 다시 kind를 얻어 ScheduleItem
+    // 경로(row-attend1)로 새 줄을 만들어도 이 assertion은 못 잡는다 — 그 줄은
+    // event-row가 아니라 row-*로 렌더되기 때문이다. 그 자리에 아무 것도 없는지도 본다.
+    expect(screen.queryByText(/^row-attend/)).toBeNull()
   })
 
   // Fix round 1 — Important 2 #4: 직접 따옴표를 다시 심는 리팩터가 formula
