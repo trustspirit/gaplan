@@ -61,3 +61,24 @@ describe('rowsToCsv — formula injection guard', () => {
     expect(rowsToCsv([['=say "hi"']])).toBe('﻿"\'=say ""hi"""')
   })
 })
+
+// 검사는 trimStart()한 값으로 하지만, 앞에 붙이는 건 원본 값 그대로다 — 셀 내용이
+// 원본과 달라지면 안 된다. trimStart()는 U+FEFF(ZWNBSP)도 공백으로 쳐서 걷어내므로
+// "앞에 BOM이 붙은 값" 경로도 같은 줄로 막힌다.
+describe('rowsToCsv — formula injection guard sees past leading whitespace', () => {
+  it('still guards a cell with a leading space before "=", and keeps that space in the output', () => {
+    expect(rowsToCsv([[' =1+1']])).toBe('﻿"\' =1+1"')
+  })
+
+  it('guards a leading space before "+" (isolates the whitespace-skip from the already-dangerous tab case)', () => {
+    expect(rowsToCsv([[' +1']])).toBe('﻿"\' +1"')
+  })
+
+  it('guards a cell with a leading U+FEFF before "="', () => {
+    expect(rowsToCsv([['﻿=1+1']])).toBe('﻿"\'﻿=1+1"')
+  })
+
+  it('leaves a whitespace-only cell unguarded — nothing dangerous follows the whitespace', () => {
+    expect(rowsToCsv([['   ']])).toBe('﻿"   "')
+  })
+})
