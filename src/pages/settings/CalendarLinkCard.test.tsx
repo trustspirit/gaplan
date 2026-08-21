@@ -39,7 +39,9 @@ describe('CalendarLinkCard', () => {
 
   it('saves every region id in one write', async () => {
     render(<CalendarLinkCard />)
-    await waitFor(() => expect(screen.getByLabelText('서울 CC')).toHaveValue(expect.any(String)))
+    await waitFor(() =>
+      expect(screen.getByLabelText('서울 CC')).toHaveValue('seoul@group.calendar.google.com'),
+    )
     await userEvent.click(screen.getByRole('button', { name: 'common.save' }))
 
     await waitFor(() =>
