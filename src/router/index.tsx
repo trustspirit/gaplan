@@ -135,14 +135,7 @@ export function AppRouter() {
 
               <Route path={ROUTES.home} element={<DashboardPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
-              <Route path="/schedules" element={<Navigate to="/schedules/visits" replace />} />
-              <Route path="/schedules/:tab" element={<SchedulesPage />} />
-              <Route path="/visits" element={<Navigate to="/schedules/visits" replace />} />
-              <Route path="/interviews" element={<Navigate to="/schedules/interviews" replace />} />
-              <Route
-                path="/general-schedules"
-                element={<Navigate to="/schedules/events" replace />}
-              />
+              <Route path={ROUTES.schedules} element={<SchedulesPage />} />
 
               <Route element={<RoleRoute allow={['admin']} />}>
                 <Route path="/admin" element={<AdminDashboard />} />
