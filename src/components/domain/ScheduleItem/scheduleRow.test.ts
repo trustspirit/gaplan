@@ -88,10 +88,11 @@ describe('toScheduleRow', () => {
     expect(row.subtitle).toBeUndefined()
   })
 
-  it('carries the time range as meta', () => {
+  // Exact match, not toContain — this task's guarantee is that the format
+  // (the en dash separator) stays exactly as ScheduleItem.tsx renders it.
+  it('carries the time range as meta, formatted exactly as the component does', () => {
     const row = toScheduleRow({ schedule: schedule(), unitName: 'u', today: TODAY, t })
-    expect(row.meta).toContain('10:00')
-    expect(row.meta).toContain('11:00')
+    expect(row.meta).toBe('10:00 – 11:00')
   })
 
   // 판정 R57 — 종류는 우측 배지 하나로만 말한다. 색 막대는 없앴다.
@@ -107,7 +108,10 @@ describe('toScheduleRow', () => {
   })
 
   // 지난 일정은 흐리게 — 지금 .past 클래스가 하는 일을 행 데이터로 옮긴다.
-  it('marks a past schedule as not highlighted', () => {
+  // dimmed, not highlighted: .highlighted fills a background (adds emphasis)
+  // while .past mutes text (removes emphasis) — opposite mechanisms, so a
+  // past schedule must not borrow the "highlighted" field.
+  it('marks a past schedule as dimmed, and a future one as not dimmed', () => {
     const past = toScheduleRow({
       schedule: schedule({ date: '2026-03-01' }),
       unitName: 'u',
@@ -115,7 +119,9 @@ describe('toScheduleRow', () => {
       t,
     })
     const future = toScheduleRow({ schedule: schedule(), unitName: 'u', today: TODAY, t })
-    expect(past.highlighted).toBe(false)
-    expect(future.highlighted).toBe(true)
+    expect(past.dimmed).toBe(true)
+    expect(future.dimmed).toBe(false)
+    expect(past.highlighted).toBeUndefined()
+    expect(future.highlighted).toBeUndefined()
   })
 })

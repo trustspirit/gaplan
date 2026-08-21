@@ -92,6 +92,25 @@ describe('DataList', () => {
     expect(screen.getByText('모두 보기')).toBeInTheDocument()
   })
 
+  // dimmed and highlighted are opposite mechanisms (mute text vs. fill
+  // background), so they must be independent classes, not the same field.
+  it('marks a dimmed row with its own class, independent of highlighted', () => {
+    render(
+      <DataList
+        rows={[
+          { ...ROWS[0], dimmed: true },
+          { ...ROWS[1], highlighted: true },
+        ]}
+        aria-label="다가오는 일정"
+      />,
+    )
+    const items = screen.getAllByRole('listitem')
+    expect(items[0].className).toMatch(/dimmed/)
+    expect(items[0].className).not.toMatch(/highlighted/)
+    expect(items[1].className).toMatch(/highlighted/)
+    expect(items[1].className).not.toMatch(/dimmed/)
+  })
+
   // 스펙 §3: 행 앞의 색 막대 금지. 종류는 우측 라벨 하나로만 말한다
   it('never puts a color bar in front of a row', () => {
     const scss = readFileSync(resolve(__dirname, 'DataList.module.scss'), 'utf8')

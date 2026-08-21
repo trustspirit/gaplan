@@ -21,6 +21,10 @@
 .highlighted {
   background: var(--surface-sunken);
 }
+// 흐림은 배경이 아니라 텍스트를 옅게 — ScheduleItem의 .past와 같은 처리.
+.dimmed {
+  opacity: 0.55;
+}
 .rowButton,
 .rowStatic {
   display: flex;

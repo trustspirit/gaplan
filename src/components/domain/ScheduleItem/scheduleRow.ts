@@ -31,6 +31,6 @@ export function toScheduleRow({
     subtitle,
     meta: `${schedule.startTime} – ${schedule.endTime}`,
     tag: t(`schedule.type.${schedule.type}`),
-    highlighted: !isPast,
+    dimmed: isPast,
   }
 }
