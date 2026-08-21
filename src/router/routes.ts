@@ -13,7 +13,7 @@ export const ROUTES = {
   planTasks: '/plans/tasks',
   planProjects: '/plans/projects',
   stats: '/stats',
-  leaders: '/admin/leaders',
+  leaders: '/leaders',
   users: '/admin/users',
   availability: '/admin/availability',
   calendarSettings: '/admin/calendar',
@@ -50,6 +50,8 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
   '/admin/visit-planner': ROUTES.planTasks,
   // 통계는 칠십인도 보는 화면이라 /admin/ 밖으로 나왔다(판정 R45).
   '/admin/stats': ROUTES.stats,
+  // 주소록이 칠십인에게 열리면서 /admin/ 밖으로 나왔다(판정 R43·R45).
+  '/admin/leaders': ROUTES.leaders,
 }
 
 /**

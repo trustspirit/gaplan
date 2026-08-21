@@ -54,11 +54,15 @@ describe('SidebarNav', () => {
     expect(screen.getByRole('link', { name: /nav.stats/ })).toHaveAttribute('aria-current', 'page')
   })
 
-  // NavLink는 기본이 접두사 매칭이라 to="/admin"이 /admin/users에서도 활성이 된다.
-  // 그대로 두면 관리 항목이 모든 관리 화면에서 같이 하이라이트된다.
-  it('does not mark a parent path as current when a child route is active', () => {
+  // 통계·주소록이 /admin/ 밖으로 나가면서 설정('/admin') 아래에는 네비 항목이
+  // 하나도 남지 않았다. 겹쳐 켜질 상대가 없으니 접두사 매칭이 그대로 맞는 답이 된다
+  // — 사용자 관리 화면에서 설정이 켜져 있는 것이 지금 어디인지 알려 준다.
+  it('keeps the settings item current on the screens that live under it', () => {
     renderNav(ROLE.ADMIN, undefined, '/admin/users')
-    expect(screen.getByRole('link', { name: /nav.admin/ })).not.toHaveAttribute('aria-current')
+    const current = screen
+      .getAllByRole('link')
+      .filter((el) => el.getAttribute('aria-current') === 'page')
+    expect(current.map((el) => el.textContent)).toEqual(['nav.admin'])
   })
 
   it('shows the pending count on the badged item', () => {

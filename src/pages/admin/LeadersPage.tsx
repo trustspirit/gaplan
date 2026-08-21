@@ -1,6 +1,9 @@
 import { useState, useMemo } from 'react'
+import { useAtomValue } from 'jotai'
 import { Pencil, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { authUserAtom } from '@/store/authAtom'
+import { isSuperAdmin } from '@/utils/permissions'
 import { useLeaders } from '@/hooks/useLeaders'
 import type { Leader } from '@/types/leader'
 import { useTopBar } from '@/hooks/useTopBar'
@@ -28,7 +31,15 @@ interface StakeGroup {
   wardGroups: WardGroup[]
 }
 
-function LeaderCard({ leader, onEdit }: { leader: Leader; onEdit: () => void }) {
+function LeaderCard({
+  leader,
+  canEdit,
+  onEdit,
+}: {
+  leader: Leader
+  canEdit: boolean
+  onEdit: () => void
+}) {
   return (
     <div className={styles.card}>
       <div className={styles.cardMain}>
@@ -59,20 +70,26 @@ function LeaderCard({ leader, onEdit }: { leader: Leader; onEdit: () => void }) 
           </div>
         )}
       </div>
-      <button
-        type="button"
-        className={styles.editButton}
-        onClick={onEdit}
-        aria-label={`${leader.name} 정보 수정`}
-      >
-        <Pencil size={16} />
-      </button>
+      {canEdit && (
+        <button
+          type="button"
+          className={styles.editButton}
+          onClick={onEdit}
+          aria-label={`${leader.name} 정보 수정`}
+        >
+          <Pencil size={16} />
+        </button>
+      )}
     </div>
   )
 }
 
 export function LeadersPage() {
   const { t, i18n } = useTranslation()
+  const user = useAtomValue(authUserAtom)
+  // firestore.rules의 `match /leaders`는 write를 admin으로만 연다. 버튼을 그대로
+  // 두면 칠십인에게 누르면 규칙 계층에서 거부되는 버튼이 생긴다(판정 R44).
+  const canEdit = isSuperAdmin(user)
   useTopBar({ subtext: t('nav.leaders') })
   const lang = i18n.language === 'en' ? 'en' : 'ko'
   const { leaders, loading } = useLeaders()
@@ -161,13 +178,23 @@ export function LeadersPage() {
             <div key={stakeGroup.stakeName.ko} className={styles.stakeGroup}>
               <h2 className={styles.stakeHeader}>{stakeGroup.stakeName[lang]}</h2>
               {stakeGroup.stakeLeaders.map((leader) => (
-                <LeaderCard key={leader.id} leader={leader} onEdit={() => setEditing(leader)} />
+                <LeaderCard
+                  key={leader.id}
+                  leader={leader}
+                  canEdit={canEdit}
+                  onEdit={() => setEditing(leader)}
+                />
               ))}
               {stakeGroup.wardGroups.map(({ wardName, leaders }) => (
                 <div key={wardName.ko} className={styles.wardGroup}>
                   <h3 className={styles.wardHeader}>{wardName[lang]}</h3>
                   {leaders.map((leader) => (
-                    <LeaderCard key={leader.id} leader={leader} onEdit={() => setEditing(leader)} />
+                    <LeaderCard
+                      key={leader.id}
+                      leader={leader}
+                      canEdit={canEdit}
+                      onEdit={() => setEditing(leader)}
+                    />
                   ))}
                 </div>
               ))}
@@ -176,11 +203,7 @@ export function LeadersPage() {
         )}
       </div>
 
-      <LeaderEditSheet
-        leader={editing}
-        onClose={() => setEditing(null)}
-        onSave={handleSave}
-      />
+      <LeaderEditSheet leader={editing} onClose={() => setEditing(null)} onSave={handleSave} />
     </div>
   )
 }

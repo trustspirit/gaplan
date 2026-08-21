@@ -64,9 +64,15 @@ describe('MobileTabs', () => {
     expect(overlay()).toHaveAttribute('inert')
   })
 
-  // /admin/stats 는 primary 탭 stats의 경로이면서 동시에 오버플로에 들어간
-  // admin(to: '/admin')의 자식 경로다. 두 곳이 같이 켜지면 지금 어디인지 알 수 없다.
+  // 통계·주소록이 /admin/ 밖으로 나가면서 primary 탭이 오버플로 항목의 자식
+  // 경로를 밟는 일은 없어졌다. 남은 부모-자식은 오버플로의 설정('/admin')과 그
+  // 아래 화면들뿐 — 그 경로에서 탭바가 켜는 것은 「더보기」 하나여야 한다(판정 R46).
   it('marks exactly one tab as current on a child route of an overflow item', () => {
+    renderTabs(ROLE.ADMIN, undefined, '/admin/users')
+    expect(activeTabLabels()).toEqual(['nav.more'])
+  })
+
+  it('lights only the matching primary tab on its own route', () => {
     renderTabs(ROLE.ADMIN, undefined, '/stats')
     expect(activeTabLabels()).toEqual(['nav.stats'])
   })

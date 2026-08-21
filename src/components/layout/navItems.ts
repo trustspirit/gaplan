@@ -57,7 +57,7 @@ const ENTRIES: Entry[] = [
     to: ROUTES.leaders,
     labelKey: 'nav.leaders',
     section: 'admin',
-    roles: [ROLE.ADMIN],
+    roles: ADMIN_STAFF,
   },
   { id: 'admin', to: ROUTES.admin, labelKey: 'nav.admin', section: 'admin', roles: [ROLE.ADMIN] },
 ]

@@ -147,11 +147,11 @@ export function AppRouter() {
                 <Route path="/admin/users" element={<UserManagement />} />
                 <Route path="/admin/availability" element={<AvailabilitySettings />} />
                 <Route path="/admin/calendar" element={<CalendarSettings />} />
-                <Route path="/admin/leaders" element={<LeadersPage />} />
               </Route>
 
               <Route element={<RoleRoute allow={['admin', 'exec_secretary', 'seventy']} />}>
                 <Route path={ROUTES.stats} element={<StatsPage />} />
+                <Route path={ROUTES.leaders} element={<LeadersPage />} />
               </Route>
             </Route>
           </Route>
