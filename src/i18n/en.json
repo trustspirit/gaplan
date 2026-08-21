@@ -424,7 +424,30 @@
     }
   },
   "schedules": {
-    "interviewMeetingTab": "Interviews & Meetings"
+    "interviewMeetingTab": "Interviews & meetings",
+    "title": "Schedules",
+    "subtext": "Visits, interviews and events",
+    "viewLabel": "View",
+    "listView": "List",
+    "kindFilterLabel": "Schedule kind",
+    "kind": {
+      "visit": "Visits",
+      "interview": "Interviews",
+      "event": "Events"
+    },
+    "regionFilterLabel": "Region",
+    "statusFilterLabel": "Status",
+    "status": {
+      "all": "All",
+      "upcoming": "Upcoming",
+      "completed": "Completed"
+    },
+    "addEvent": "Add event",
+    "emptyTitle": "No schedules",
+    "emptyDesc": "Nothing matches the selected kinds and date range.",
+    "thisMonth": "This month",
+    "upcoming": "Upcoming",
+    "completed": "Completed"
   },
   "user": {
     "invite": "Invite User",

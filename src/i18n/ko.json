@@ -424,7 +424,30 @@
     }
   },
   "schedules": {
-    "interviewMeetingTab": "접견·모임"
+    "interviewMeetingTab": "접견·모임",
+    "title": "일정",
+    "subtext": "방문 · 접견 · 행사",
+    "viewLabel": "보기 방식",
+    "listView": "목록",
+    "kindFilterLabel": "일정 종류",
+    "kind": {
+      "visit": "방문",
+      "interview": "접견·모임",
+      "event": "행사"
+    },
+    "regionFilterLabel": "지역",
+    "statusFilterLabel": "상태",
+    "status": {
+      "all": "전체",
+      "upcoming": "예정",
+      "completed": "완료"
+    },
+    "addEvent": "행사 추가",
+    "emptyTitle": "일정이 없습니다",
+    "emptyDesc": "선택한 종류와 기간에 해당하는 일정이 없습니다.",
+    "thisMonth": "이번 달",
+    "upcoming": "예정",
+    "completed": "완료"
   },
   "user": {
     "invite": "사용자 초대",
