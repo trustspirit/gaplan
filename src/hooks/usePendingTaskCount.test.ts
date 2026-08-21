@@ -7,7 +7,10 @@ import { ROLE } from '@/constants/roles'
 import type { AppUser } from '@/types'
 
 const useTasksSpy = vi.hoisted(() =>
-  vi.fn((): { tasks: Array<{ id: string }>; loading: boolean } => ({ tasks: [], loading: false })),
+  vi.fn((): { tasks: Array<{ id: string; status: string }>; loading: boolean } => ({
+    tasks: [],
+    loading: false,
+  })),
 )
 vi.mock('@/hooks/useTasks', () => ({ useTasks: useTasksSpy }))
 
@@ -34,12 +37,31 @@ describe('usePendingTaskCount', () => {
     useTasksSpy.mockReturnValue({ tasks: [], loading: false })
   })
 
-  it('counts the tasks assigned to a president', () => {
-    useTasksSpy.mockReturnValue({ tasks: [{ id: 'a' }, { id: 'b' }], loading: false })
+  // subscribeToTasks는 pending + responded를 함께 실어 온다. 배지가 말하는
+  // "처리 필요"는 아직 회장이 답하지 않은 것뿐이다 — TasksPage 상단 배지와
+  // 같은 화면에서 다른 숫자가 나오면 안 된다.
+  it('counts only the tasks still waiting on the president', () => {
+    useTasksSpy.mockReturnValue({
+      tasks: [
+        { id: 'a', status: 'pending' },
+        { id: 'b', status: 'responded' },
+        { id: 'c', status: 'pending' },
+      ],
+      loading: false,
+    })
     const { result } = renderHook(() => usePendingTaskCount(), {
       wrapper: wrapperFor(makeUser({ role: ROLE.PRESIDENT })),
     })
     expect(result.current).toBe(2)
+  })
+
+  // 어떤 역할이 배지를 받는지는 navItems가 badge: 'pendingTasks'로 이미 말한다.
+  // 훅이 역할을 다시 하드코딩하면 계획 3에서 항목이 옮겨갈 때 조용히 어긋난다.
+  it('subscribes for a role whose nav has a badged item', () => {
+    renderHook(() => usePendingTaskCount(), {
+      wrapper: wrapperFor(makeUser({ role: ROLE.PRESIDENT, uid: 'u9' })),
+    })
+    expect(useTasksSpy).toHaveBeenCalledWith('u9')
   })
 
   // 셸은 모든 화면에서 마운트되어 있다 — 배지가 없는 역할에서 구독을 열면 낭비다.
@@ -51,7 +73,7 @@ describe('usePendingTaskCount', () => {
   })
 
   it('returns zero for a role that has no badged item', () => {
-    useTasksSpy.mockReturnValue({ tasks: [{ id: 'a' }], loading: false })
+    useTasksSpy.mockReturnValue({ tasks: [{ id: 'a', status: 'pending' }], loading: false })
     const { result } = renderHook(() => usePendingTaskCount(), {
       wrapper: wrapperFor(makeUser({ role: ROLE.SEVENTY })),
     })

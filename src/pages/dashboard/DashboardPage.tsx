@@ -122,7 +122,9 @@ function PresidentDashboard() {
   const { tasks, loading: tasksLoading } = useTasks(user.uid)
   useTopBar({
     subtext: dayjs().format(t('calendar.monthTitleFormat')),
-    pendingCount: tasks.length,
+    // useTasks는 pending + responded를 함께 준다. "처리 필요"는 아직 답하지 않은
+    // 것만 — 사이드바 배지·TasksPage 상단 배지와 같은 기준이다.
+    pendingCount: tasks.filter((task) => task.status === 'pending').length,
     helpInfoKey: 'pageHelp.dashboardPresident',
   })
   const { schedules, loading: schedulesLoading } = useSchedules({ presidentUid: user.uid })
