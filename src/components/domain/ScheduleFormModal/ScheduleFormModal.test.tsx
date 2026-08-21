@@ -60,9 +60,10 @@ vi.mock('@/hooks/useUpcomingVisits', () => ({
   // 실제 훅처럼 fromDate 이후의 방문만 돌려준다 — 모임 날짜를 방문 이후로 옮기면
   // 목록에서 사라지는 상황(Finding 2 회귀 테스트)을 재현하기 위해 인자에 반응해야 한다.
   useUpcomingVisits: (_seventyUid: string, fromDate: string) => ({
-    visits: fromDate && fromDate <= dates.visit
-      ? [{ id: 'v1', date: dates.visit, wardName: '교문 와드', unitId: 'seoul-east-stake' }]
-      : [],
+    visits:
+      fromDate && fromDate <= dates.visit
+        ? [{ id: 'v1', date: dates.visit, wardName: '교문 와드', unitId: 'seoul-east-stake' }]
+        : [],
     loading: false,
   }),
 }))
@@ -74,10 +75,7 @@ vi.mock('react-dom', () => ({
 }))
 
 import { ScheduleFormModal } from './ScheduleFormModal'
-import {
-  buildNotesWithLeaderContact,
-  getContactTargetOptions,
-} from './leaderContactNotes'
+import { buildNotesWithLeaderContact, getContactTargetOptions } from './leaderContactNotes'
 import * as useLeadersModule from '@/hooks/useLeaders'
 import type { Leader } from '@/types/leader'
 
@@ -153,9 +151,10 @@ describe('ScheduleFormModal 메모 자동 입력', () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     // notes 영역이 비어있어야 함 (sabbathVisitNotes 자동 입력 없음)
     const notesElements = screen.queryAllByRole('textbox')
-    const notesField = notesElements.find(el =>
-      el.getAttribute('placeholder')?.includes('schedule.notesLabel') ||
-      el.tagName === 'TEXTAREA'
+    const notesField = notesElements.find(
+      (el) =>
+        el.getAttribute('placeholder')?.includes('schedule.notesLabel') ||
+        el.tagName === 'TEXTAREA',
     )
     if (notesField) {
       expect(notesField).toHaveValue('')
@@ -183,21 +182,23 @@ describe('ScheduleFormModal 연락처 대상', () => {
       users: [MOCK_PRESIDENT_USER],
     })
 
-    expect(options).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        label: '서울 스테이크 · 스테이크 회장',
-        unitNameKo: '서울 스테이크',
-        presidentUid: 'president-uid',
-      }),
-      expect.objectContaining({
-        label: '녹번 와드 · 감독',
-        unitNameKo: '녹번 와드',
-      }),
-      expect.objectContaining({
-        label: '중앙 수어 지부 · 지부 회장',
-        unitNameKo: '중앙 수어 지부',
-      }),
-    ]))
+    expect(options).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: '서울 스테이크 · 스테이크 회장',
+          unitNameKo: '서울 스테이크',
+          presidentUid: 'president-uid',
+        }),
+        expect.objectContaining({
+          label: '녹번 와드 · 감독',
+          unitNameKo: '녹번 와드',
+        }),
+        expect.objectContaining({
+          label: '중앙 수어 지부 · 지부 회장',
+          unitNameKo: '중앙 수어 지부',
+        }),
+      ]),
+    )
   })
 
   it('모임에서 와드/지부를 선택하면 해당 감독/지부 회장 연락처를 메모 앞에 붙인다', () => {
@@ -283,7 +284,9 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
   })
 
   function fillDateTime() {
-    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-07-10' } })
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), {
+      target: { value: '2026-07-10' },
+    })
     fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
     fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
   }
@@ -294,34 +297,51 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
     fireEvent.click(screen.getByText('schedule.type.interview'))
     // stake/district is now optional-labelled even for interview
     expect(screen.getByLabelText('schedule.stakeLabelOptional')).toBeInTheDocument()
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-stake' },
+    })
 
-    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'ward:seoul-nokbeon' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
+      target: { value: 'ward:seoul-nokbeon' },
+    })
 
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
 
     await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({
-      type: 'interview', targetKind: 'ward_bishop', wardId: 'seoul-nokbeon',
-    }))
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'interview',
+        targetKind: 'ward_bishop',
+        wardId: 'seoul-nokbeon',
+      }),
+    )
   })
 
   it('스테이크 대상 선택 시 targetKind=stake_president, presidentUid를 payload에 포함한다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
 
     fireEvent.click(screen.getByText('schedule.type.interview'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-stake' },
+    })
 
-    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'unit:seoul-stake' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
+      target: { value: 'unit:seoul-stake' },
+    })
 
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
 
     await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({
-      type: 'interview', targetKind: 'stake_president', unitId: 'seoul-stake', presidentUid: 'president-uid',
-    }))
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'interview',
+        targetKind: 'stake_president',
+        unitId: 'seoul-stake',
+        presidentUid: 'president-uid',
+      }),
+    )
     expect(createSpy.mock.calls[0][0]).not.toHaveProperty('wardId')
   })
 
@@ -331,15 +351,20 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
     fireEvent.click(screen.getByText('schedule.type.interview'))
     // No stake/unit selected — target select should only offer '기타'
     fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'other' } })
-    fireEvent.change(screen.getByLabelText('schedule.targetFreeTextLabel'), { target: { value: '홍길순' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetFreeTextLabel'), {
+      target: { value: '홍길순' },
+    })
 
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
 
     await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({
-      type: 'interview', targetKind: 'other',
-    }))
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'interview',
+        targetKind: 'other',
+      }),
+    )
     expect(createSpy.mock.calls[0][0]).not.toHaveProperty('unitId')
   })
 
@@ -357,8 +382,12 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
 
 describe('ScheduleFormModal 사전 모임 목적', () => {
   const SEVENTY_USER: AppUser = {
-    uid: 'test-uid', email: 'test@test.com', name: '테스트',
-    role: 'seventy', regionId: 'seoul', createdAt: '2026-01-01',
+    uid: 'test-uid',
+    email: 'test@test.com',
+    name: '테스트',
+    role: 'seventy',
+    regionId: 'seoul',
+    createdAt: '2026-01-01',
   }
 
   beforeEach(() => {
@@ -366,8 +395,12 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
     createSpy.mockReset()
     createSpy.mockResolvedValue({ data: {} })
     mocks.currentUser = {
-      uid: 'test-uid', email: 'test@test.com', role: 'seventy',
-      name: '테스트', unitId: 'seoul-stake', createdAt: '2026-01-01',
+      uid: 'test-uid',
+      email: 'test@test.com',
+      role: 'seventy',
+      name: '테스트',
+      unitId: 'seoul-stake',
+      createdAt: '2026-01-01',
     }
     mocks.users = [SEVENTY_USER, MOCK_PRESIDENT_USER]
     vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
@@ -378,7 +411,9 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
   })
 
   function fillDateTime() {
-    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: dates.beforeVisit } })
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), {
+      target: { value: dates.beforeVisit },
+    })
     fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
     fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
   }
@@ -386,9 +421,15 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
   it('사전 모임 목적인데 대상 방문을 안 고르면 저장을 막는다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.meeting'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
-    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'ward:seoul-nokbeon' } })
-    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), { target: { value: 'pre_visit' } })
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
+      target: { value: 'ward:seoul-nokbeon' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
+      target: { value: 'pre_visit' },
+    })
 
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
@@ -400,24 +441,39 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
   it('대상 방문을 고르면 relatedVisitId를 payload에 포함한다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.meeting'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
-    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), { target: { value: 'pre_visit' } })
-    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), { target: { value: 'v1' } })
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
+      target: { value: 'pre_visit' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), {
+      target: { value: 'v1' },
+    })
 
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
 
     await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({
-      type: 'meeting', relatedVisitId: 'v1', targetKind: 'ward_bishop', wardId: 'seoul-east-gyomun',
-    }))
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'meeting',
+        relatedVisitId: 'v1',
+        targetKind: 'ward_bishop',
+        wardId: 'seoul-east-gyomun',
+      }),
+    )
   })
 
   it('일반 목적이면 relatedVisitId 없이 저장된다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.meeting'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
-    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'ward:seoul-nokbeon' } })
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
+      target: { value: 'ward:seoul-nokbeon' },
+    })
 
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
@@ -434,7 +490,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
 
     const purposeSelect = screen.getByLabelText('schedule.purposeLabel') as HTMLSelectElement
     const generalOptions = Array.from(purposeSelect.options).filter(
-      o => o.textContent === 'schedule.purposeGeneral',
+      (o) => o.textContent === 'schedule.purposeGeneral',
     )
     expect(generalOptions).toHaveLength(1)
   })
@@ -443,13 +499,23 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
   it('대상 방문을 고른 뒤 종류를 구역 방문으로 바꾸면 relatedVisitId가 초기화되어 payload에 남지 않는다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.meeting'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
-    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), { target: { value: 'pre_visit' } })
-    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), { target: { value: 'v1' } })
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
+      target: { value: 'pre_visit' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), {
+      target: { value: 'v1' },
+    })
 
     fireEvent.click(screen.getByText('schedule.type.ward_visit'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabel'), { target: { value: 'seoul-stake' } })
-    fireEvent.change(screen.getByLabelText('schedule.wardLabel'), { target: { value: '녹번 와드' } })
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabel'), {
+      target: { value: 'seoul-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.wardLabel'), {
+      target: { value: '녹번 와드' },
+    })
 
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
@@ -465,12 +531,20 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
   it('선택한 방문이 목록에서 사라지면(모임 날짜를 방문 이후로 변경) 저장 시 대상 방문을 다시 요구한다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.meeting'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
-    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), { target: { value: 'pre_visit' } })
-    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), { target: { value: 'v1' } })
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
+      target: { value: 'pre_visit' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), {
+      target: { value: 'v1' },
+    })
 
     // 방문일 이후로 모임 날짜를 옮기면 목록에서 v1이 사라진다
-    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: dates.afterVisit } })
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), {
+      target: { value: dates.afterVisit },
+    })
     fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
     fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
     fireEvent.click(screen.getByText('schedule.saveBtn'))
@@ -492,8 +566,12 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
     // 수동 경로: 스테이크를 직접 고르고 대상 Select에서 같은 와드를 선택
     const { unmount } = render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.meeting'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-east-stake' } })
-    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'ward:seoul-east-gyomun' } })
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-east-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
+      target: { value: 'ward:seoul-east-gyomun' },
+    })
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
     await waitFor(() => expect(createSpy).toHaveBeenCalled())
@@ -505,9 +583,15 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
     // 자동 경로: 목적=사전 모임 + 대상 방문 선택만으로 같은 와드가 잡혀야 한다
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.meeting'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
-    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), { target: { value: 'pre_visit' } })
-    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), { target: { value: 'v1' } })
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
+      target: { value: 'pre_visit' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), {
+      target: { value: 'v1' },
+    })
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
     await waitFor(() => expect(createSpy).toHaveBeenCalled())
@@ -539,7 +623,9 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
   })
 
   function fillDateTime() {
-    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-07-10' } })
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), {
+      target: { value: '2026-07-10' },
+    })
     fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
     fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
   }
@@ -547,38 +633,42 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
   function openCcCouncilForm() {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.meeting'))
-    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'cc_council' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
+      target: { value: 'cc_council' },
+    })
   }
 
   it('모임에서만 협의 평의회 대상을 제공한다', () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.interview'))
     const interviewTarget = screen.getByLabelText('schedule.targetLabel') as HTMLSelectElement
-    expect(Array.from(interviewTarget.options).map(o => o.value)).not.toContain('cc_council')
+    expect(Array.from(interviewTarget.options).map((o) => o.value)).not.toContain('cc_council')
 
     fireEvent.click(screen.getByText('schedule.type.meeting'))
     const meetingTarget = screen.getByLabelText('schedule.targetLabel') as HTMLSelectElement
-    expect(Array.from(meetingTarget.options).map(o => o.value)).toContain('cc_council')
+    expect(Array.from(meetingTarget.options).map((o) => o.value)).toContain('cc_council')
   })
 
   // 협의 평의회는 CC 전체가 대상이므로 스테이크를 먼저 고르지 않아도 선택할 수 있어야 한다
   it('스테이크를 고르지 않아도 협의 평의회를 선택할 수 있다', () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.meeting'))
-    expect((screen.getByLabelText('schedule.stakeLabelOptional') as HTMLSelectElement).value).toBe('')
+    expect((screen.getByLabelText('schedule.stakeLabelOptional') as HTMLSelectElement).value).toBe(
+      '',
+    )
     const target = screen.getByLabelText('schedule.targetLabel') as HTMLSelectElement
-    expect(Array.from(target.options).map(o => o.value)).toContain('cc_council')
+    expect(Array.from(target.options).map((o) => o.value)).toContain('cc_council')
   })
 
   it('선택하면 스테이크 대신 담당 CC 목록을 고르게 한다', () => {
     openCcCouncilForm()
     expect(screen.queryByLabelText('schedule.stakeLabelOptional')).not.toBeInTheDocument()
     const ccSelect = screen.getByLabelText('schedule.ccRegionLabel') as HTMLSelectElement
-    expect(Array.from(ccSelect.options).map(o => o.value)).toEqual(
+    expect(Array.from(ccSelect.options).map((o) => o.value)).toEqual(
       expect.arrayContaining(['seoul', 'busan']),
     )
     // 담당하지 않는 CC는 고를 수 없다
-    expect(Array.from(ccSelect.options).map(o => o.value)).not.toContain('seoul-south')
+    expect(Array.from(ccSelect.options).map((o) => o.value)).not.toContain('seoul-south')
   })
 
   it('CC를 고르지 않으면 저장을 막는다', async () => {
@@ -592,7 +682,9 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
 
   it('regionId와 cc_council을 보내고 unitId는 보내지 않는다', async () => {
     openCcCouncilForm()
-    fireEvent.change(screen.getByLabelText('schedule.ccRegionLabel'), { target: { value: 'busan' } })
+    fireEvent.change(screen.getByLabelText('schedule.ccRegionLabel'), {
+      target: { value: 'busan' },
+    })
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
 
@@ -607,9 +699,15 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
   it('스테이크를 골랐다가 협의 평의회로 바꿔도 unitId가 남지 않는다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.meeting'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: 'seoul-stake' } })
-    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'cc_council' } })
-    fireEvent.change(screen.getByLabelText('schedule.ccRegionLabel'), { target: { value: 'seoul' } })
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
+      target: { value: 'cc_council' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.ccRegionLabel'), {
+      target: { value: 'seoul' },
+    })
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
 
