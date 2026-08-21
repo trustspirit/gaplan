@@ -42,9 +42,11 @@ import { rowsToCsv, downloadCsv } from './scheduleCsv'
 import {
   SCHEDULE_KINDS,
   buildBoardItems,
+  eventMatchesRegion,
   filterByRegion,
   filterByStatus,
   kindOfScheduleType,
+  scheduleMatchesRegion,
   scheduleQueryFor,
   type BoardItem,
   type ScheduleKind,
@@ -103,15 +105,26 @@ export function SchedulesPage() {
   )
 
   // 달력 격자는 병합 목록이 아니라 원본 두 벌을 받는다 — CalendarView가 그렇게 생겼다.
+  // 종류·지역·삭제 대기(hiddenIds)는 목록(items)과 같은 규칙으로 반영한다.
+  // 기간(range)만은 일부러 뺀다 — 격자는 스스로 월/주를 넘기므로, 범위 밖 달로
+  // 넘어가면 격자만 텅 비는 걸 막기 위해서다(ScheduleCalendarPanel 주석 참고).
   const calendarSchedules = useMemo(
     () =>
       schedules.filter((s) => {
         const kind = kindOfScheduleType(s.type)
-        return kind != null && kinds.includes(kind)
+        if (kind == null || !kinds.includes(kind)) return false
+        if (deletingIds.has(s.id)) return false
+        return scheduleMatchesRegion(s, regionId)
       }),
-    [schedules, kinds],
+    [schedules, kinds, deletingIds, regionId],
   )
-  const calendarEvents = kinds.includes('event') ? generalSchedules : []
+  const calendarEvents = useMemo(
+    () =>
+      kinds.includes('event')
+        ? generalSchedules.filter((e) => !deletingIds.has(e.id) && eventMatchesRegion(e, regionId))
+        : [],
+    [generalSchedules, kinds, deletingIds, regionId],
+  )
 
   const myAttendances = schedules.filter(
     (s) => s.type === 'general_attendance' && s.seventyUid === user.uid,

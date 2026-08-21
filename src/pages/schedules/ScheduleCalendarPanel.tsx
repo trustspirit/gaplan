@@ -10,7 +10,12 @@ import styles from './ScheduleCalendarPanel.module.scss'
 
 interface ScheduleCalendarPanelProps {
   view: ViewMode
-  /** 달력 격자에 그릴 원본. 종류·지역 필터는 이미 적용돼 있다. */
+  /**
+   * 달력 격자에 그릴 원본. 종류·지역 필터와 삭제 대기(hiddenIds)는 이미 적용돼
+   * 있다. 기간(range)만은 일부러 빠져 있다 — 격자는 스스로 월/주를 넘기므로,
+   * 범위 밖 달로 넘어가면 격자만 텅 비는 걸 막기 위해서다. 우측 목록(items)만
+   * 기간까지 반영한다.
+   */
   schedules: Schedule[]
   generalSchedules: GeneralSchedule[]
   /** 필터가 모두 적용된 병합 목록. 우측 목록이 이걸 그린다. */

@@ -118,16 +118,32 @@ export function filterByStatus(
   return items.filter((i) => i.date < today)
 }
 
+/**
+ * 일정 하나가 선택된 지역에 속하는지. `filterByRegion`(병합 목록)과 달력 격자용
+ * 원본 배열 필터(SchedulesPage)가 같은 규칙을 쓰도록 여기 하나로 둔다.
+ */
+export function scheduleMatchesRegion(schedule: Schedule, regionId: string | null): boolean {
+  if (regionId == null) return true
+  return getScheduleRegionId(schedule) === regionId
+}
+
+/**
+ * 행사 하나가 선택된 지역에 속하는지. 대상 지역(targetRegionIds)이 비어 있으면
+ * 전사 공지다 — 어느 지역을 골라도 보여야 한다.
+ */
+export function eventMatchesRegion(event: GeneralSchedule, regionId: string | null): boolean {
+  if (regionId == null) return true
+  const targets = event.targetRegionIds
+  return !targets?.length || targets.includes(regionId)
+}
+
 export function filterByRegion(items: BoardItem[], regionId: string | null): BoardItem[] {
   if (regionId == null) return items
-  return items.filter((item) => {
-    if (item.entry.source === 'schedule') {
-      return getScheduleRegionId(item.entry.schedule) === regionId
-    }
-    // 대상 지역이 비어 있으면 전사 공지다 — 어느 지역에서도 보인다.
-    const targets = item.entry.event.targetRegionIds
-    return !targets?.length || targets.includes(regionId)
-  })
+  return items.filter((item) =>
+    item.entry.source === 'schedule'
+      ? scheduleMatchesRegion(item.entry.schedule, regionId)
+      : eventMatchesRegion(item.entry.event, regionId),
+  )
 }
 
 export interface BoardCounts {

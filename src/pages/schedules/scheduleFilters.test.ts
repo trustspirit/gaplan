@@ -2,10 +2,12 @@ import type { GeneralSchedule, Schedule } from '@/types'
 import {
   buildBoardItems,
   countBoardItems,
+  eventMatchesRegion,
   filterByRegion,
   filterByStatus,
   groupBoardItemsByMonth,
   kindOfScheduleType,
+  scheduleMatchesRegion,
   scheduleQueryFor,
   toggleScheduleKind,
   SCHEDULE_KINDS,
@@ -197,6 +199,33 @@ describe('filterByRegion', () => {
         .map((i) => i.key)
         .sort(),
     ).toEqual(['e-orgwide', 'e-r1only'])
+  })
+})
+
+// 달력 격자는 병합 BoardItem이 아니라 원본 Schedule[]/GeneralSchedule[]를 받으므로
+// (SchedulesPage.tsx), filterByRegion과 같은 규칙을 개별 항목 단위로도 노출해 둔다.
+// 이 둘이 filterByRegion과 갈라지면 격자와 목록이 서로 다른 지역을 보여준다
+// (Fix round 1, Important 1).
+describe('scheduleMatchesRegion', () => {
+  it('keeps everything when no region is chosen', () => {
+    expect(scheduleMatchesRegion(schedule({ regionId: 'r1' }), null)).toBe(true)
+  })
+
+  it('matches on the schedule region, not the raw region filter input', () => {
+    expect(scheduleMatchesRegion(schedule({ unitId: '', regionId: 'r1' }), 'r1')).toBe(true)
+    expect(scheduleMatchesRegion(schedule({ unitId: '', regionId: 'r2' }), 'r1')).toBe(false)
+  })
+})
+
+describe('eventMatchesRegion', () => {
+  it('keeps everything when no region is chosen', () => {
+    expect(eventMatchesRegion(event({ targetRegionIds: ['r1'] }), null)).toBe(true)
+  })
+
+  it('always keeps an org-wide event but scopes a targeted one', () => {
+    expect(eventMatchesRegion(event({ targetRegionIds: [] }), 'r1')).toBe(true)
+    expect(eventMatchesRegion(event({ targetRegionIds: ['r1'] }), 'r1')).toBe(true)
+    expect(eventMatchesRegion(event({ targetRegionIds: ['r2'] }), 'r1')).toBe(false)
   })
 })
 
