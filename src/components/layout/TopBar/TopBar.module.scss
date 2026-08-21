@@ -197,53 +197,10 @@
   }
 }
 
-// 두 선택지를 항상 나란히 보여 주는 세그먼트 컨트롤.
-// 단일 토글은 라벨이 '현재 상태'인지 '누르면 될 상태'인지 구분되지 않아 대체했다.
+// SegmentedControl이 트랙/선택지 스타일을 그린다 — 여기서는 배치만 담당한다.
 .scopeSwitch {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid $color-border;
-  border-radius: $border-radius-full;
-  background: $color-bg;
   flex-shrink: 0;
-}
-
-.scopeOpt {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px $space-3;
-  border: none;
-  border-radius: $border-radius-full;
-  background: none;
-  color: $color-text-muted;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    background 0.12s,
-    color 0.12s;
-
-  &:hover {
-    color: $color-text;
-  }
-
-  @include mobile {
-    padding: 3px $space-2;
-  }
-}
-
-.scopeOptActive {
-  background: $color-primary;
-  color: $color-surface;
-
-  &:hover {
-    background: $color-primary-hover;
-    color: $color-surface;
-  }
+  margin-right: $space-1;
 }
 
 .helpBtn {

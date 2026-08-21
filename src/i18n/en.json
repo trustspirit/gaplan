@@ -14,7 +14,10 @@
     "schedules": "Schedules",
     "more": "More",
     "leaders": "Directory",
-    "accountMenu": "Account menu"
+    "accountMenu": "Account menu",
+    "sectionAdmin": "Admin",
+    "primaryLabel": "Main menu",
+    "tabBarLabel": "Bottom tabs"
   },
   "stats": {
     "pageTitle": "Visit Statistics",

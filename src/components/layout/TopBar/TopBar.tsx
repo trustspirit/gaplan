@@ -1,17 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
-import { LogOut, Pencil, Languages, HelpCircle, Globe, User } from 'lucide-react'
+import { LogOut, Pencil, Languages, HelpCircle } from 'lucide-react'
 import { useAtom, useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
-import { Badge, Avatar, Modal, BottomSheet } from '@/components/ui'
+import { Badge, Avatar, SegmentedControl, ResponsiveDialog } from '@/components/ui'
 import { signOut } from '@/services/authService'
 import { updateUserName } from '@/services/userService'
 import { authUserAtom } from '@/store/authAtom'
 import { seventyViewAtom } from '@/store/seventyViewAtom'
 import { SCOPE_ALL } from '@/utils/scope'
 import { LANGUAGES, type SupportedLang } from '@/i18n'
-import { useIsMobile } from '@/hooks/useIsMobile'
 import { RemindersBell } from '@/components/domain/Reminders/RemindersBell'
 import styles from './TopBar.module.scss'
 
@@ -67,7 +66,6 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
   const [open, setOpen] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
-  const isMobile = useIsMobile()
   const ref = useRef<HTMLDivElement>(null)
   const user = useAtomValue(authUserAtom)
   const [viewSeventyUid, setViewSeventyUid] = useAtom(seventyViewAtom)
@@ -100,28 +98,16 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
       </div>
       <div className={styles.right}>
         {canScopeToOwn && (
-          <div className={styles.scopeSwitch} role="radiogroup" aria-label={t('scope.label')}>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={!isShowingAll}
-              className={clsx(styles.scopeOpt, !isShowingAll && styles.scopeOptActive)}
-              onClick={() => setViewSeventyUid(null)}
-            >
-              <User size={13} />
-              <span>{t('scope.myAssigned')}</span>
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={isShowingAll}
-              className={clsx(styles.scopeOpt, isShowingAll && styles.scopeOptActive)}
-              onClick={() => setViewSeventyUid(SCOPE_ALL)}
-            >
-              <Globe size={13} />
-              <span>{t('scope.all')}</span>
-            </button>
-          </div>
+          <SegmentedControl
+            options={[
+              { value: 'mine', label: t('scope.myAssigned') },
+              { value: 'all', label: t('scope.all') },
+            ]}
+            value={isShowingAll ? 'all' : 'mine'}
+            onChange={(next) => setViewSeventyUid(next === 'all' ? SCOPE_ALL : null)}
+            aria-label={t('scope.label')}
+            className={styles.scopeSwitch}
+          />
         )}
         {pendingCount > 0 && (
           <Badge variant="warning">{t('task.pendingCount', { count: pendingCount })}</Badge>
@@ -207,25 +193,15 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
           )}
         </div>
       </div>
-      {helpInfoKey &&
-        helpOpen &&
-        (isMobile ? (
-          <BottomSheet
-            open={helpOpen}
-            onClose={() => setHelpOpen(false)}
-            title={t(`${helpInfoKey}.title`)}
-          >
-            <p className={styles.helpBody}>{t(`${helpInfoKey}.body`)}</p>
-          </BottomSheet>
-        ) : (
-          <Modal
-            open={helpOpen}
-            onClose={() => setHelpOpen(false)}
-            title={t(`${helpInfoKey}.title`)}
-          >
-            <p className={styles.helpBody}>{t(`${helpInfoKey}.body`)}</p>
-          </Modal>
-        ))}
+      {helpInfoKey && (
+        <ResponsiveDialog
+          open={helpOpen}
+          onClose={() => setHelpOpen(false)}
+          title={t(`${helpInfoKey}.title`)}
+        >
+          <p className={styles.helpBody}>{t(`${helpInfoKey}.body`)}</p>
+        </ResponsiveDialog>
+      )}
     </header>
   )
 }
