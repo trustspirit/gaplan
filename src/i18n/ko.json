@@ -7,6 +7,7 @@
     "visitPlans": "방문 계획",
     "projects": "프로젝트",
     "schedules": "일정",
+    "plans": "계획",
     "more": "더보기",
     "leaders": "주소록",
     "accountMenu": "계정 메뉴",
@@ -696,6 +697,14 @@
     "goHome": "홈으로"
   },
   "plans": {
+    "title": "계획",
+    "subtext": "방문 계획과 Task, 프로젝트",
+    "tabsLabel": "계획 화면 탭",
+    "tab": {
+      "visitPlans": "방문 계획",
+      "tasks": "Task",
+      "projects": "프로젝트"
+    },
     "createTask": "Task 만들기",
     "createTaskClose": "닫기"
   }

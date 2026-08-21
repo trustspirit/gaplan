@@ -7,6 +7,7 @@
     "visitPlans": "Visit Plans",
     "projects": "Projects",
     "schedules": "Schedules",
+    "plans": "Plans",
     "more": "More",
     "leaders": "Directory",
     "accountMenu": "Account menu",
@@ -696,6 +697,14 @@
     "goHome": "Go home"
   },
   "plans": {
+    "title": "Plans",
+    "subtext": "Visit plans, tasks and projects",
+    "tabsLabel": "Plans tabs",
+    "tab": {
+      "visitPlans": "Visit plans",
+      "tasks": "Tasks",
+      "projects": "Projects"
+    },
     "createTask": "New task",
     "createTaskClose": "Close"
   }

@@ -11,6 +11,7 @@ import { LastVisitList } from '@/components/domain/stats/LastVisitList'
 import { StaleWardsCard } from '@/components/domain/stats/StaleWardsCard'
 import { REGIONS } from '@/constants/regions'
 import { useEffectiveScope } from '@/hooks/useEffectiveScope'
+import { ROUTES } from '@/router/routes'
 import type { StatsFilters } from '@/utils/visitStats'
 import styles from './StatsPage.module.scss'
 
@@ -97,7 +98,7 @@ export function StatsPage() {
               <StaleWardsCard
                 entries={stats.staleTopN}
                 onSelect={(entry) =>
-                  navigate('/admin/visit-plans', { state: { wardName: entry.name } })
+                  navigate(ROUTES.planVisits, { state: { wardName: entry.name } })
                 }
               />
             </CardBody>

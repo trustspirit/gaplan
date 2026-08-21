@@ -8,7 +8,7 @@ import { RoleRoute } from './RoleRoute'
 import { Spinner } from '@/components/ui'
 import { AppShell, TopBar, ShellLayout } from '@/components/layout'
 import { authUserAtom } from '@/store/authAtom'
-import { ROUTES, LEGACY_REDIRECTS } from './routes'
+import { ROUTES, LEGACY_REDIRECTS, PLAN_VISIT_DETAIL, PLAN_PROJECT_DETAIL } from './routes'
 import styles from './Router.module.scss'
 
 // Outer Suspense fallback — only reached by lazy routes outside ShellLayout
@@ -69,6 +69,9 @@ const DashboardPage = lazyRetry(() =>
 )
 const SchedulesPage = lazyRetry(() =>
   import('@/pages/schedules/SchedulesPage').then((m) => ({ default: m.SchedulesPage })),
+)
+const PlansPage = lazyRetry(() =>
+  import('@/pages/plans/PlansPage').then((m) => ({ default: m.PlansPage })),
 )
 const AdminDashboard = lazyRetry(() =>
   import('@/pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })),
@@ -133,6 +136,16 @@ export function AppRouter() {
               <Route path={ROUTES.home} element={<DashboardPage />} />
               <Route path={ROUTES.schedules} element={<SchedulesPage />} />
 
+              <Route element={<RoleRoute allow={['admin', 'exec_secretary', 'seventy']} />}>
+                <Route path={ROUTES.plans} element={<PlansPage />} />
+                <Route path={`${ROUTES.plans}/:tab`} element={<PlansPage />} />
+              </Route>
+
+              <Route element={<RoleRoute allow={['admin', 'exec_secretary']} />}>
+                <Route path={PLAN_VISIT_DETAIL} element={<VisitPlanBoardPage />} />
+                <Route path={PLAN_PROJECT_DETAIL} element={<ProjectDetailPage />} />
+              </Route>
+
               <Route element={<RoleRoute allow={['admin']} />}>
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/users" element={<UserManagement />} />
@@ -147,7 +160,7 @@ export function AppRouter() {
                 <Route path="/admin/visit-plans" element={<VisitPlanListPage />} />
                 <Route path="/admin/visit-plans/:planId" element={<VisitPlanBoardPage />} />
                 <Route path="/admin/projects" element={<ProjectListPage />} />
-                <Route path="/admin/projects/:id" element={<ProjectDetailPage />} />
+                <Route path="/admin/projects/:projectId" element={<ProjectDetailPage />} />
               </Route>
 
               <Route element={<RoleRoute allow={['admin', 'exec_secretary', 'seventy']} />}>
