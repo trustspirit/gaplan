@@ -9,14 +9,22 @@ import { useVisitPlans } from '@/hooks/useVisitPlans'
 import { useUsers } from '@/hooks/useUsers'
 import { createVisitPlan } from '@/services/visitPlanService'
 import { ROLE } from '@/constants/roles'
-import { useTopBar } from '@/hooks/useTopBar'
-import { Card, CardHeader, CardBody, Button, Input, Select, Badge, Skeleton } from '@/components/ui'
-// 옛 화면은 Task 11에서 지운다. 그때까지 옮겨간 스타일시트를 빌려 쓴다.
-import styles from '@/pages/plans/VisitPlanPanel.module.scss'
+import { planVisitDetailPath } from '@/router/routes'
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  Button,
+  Input,
+  Select,
+  Badge,
+  EmptyState,
+  LoadingState,
+} from '@/components/ui'
+import styles from './VisitPlanPanel.module.scss'
 
-export function VisitPlanListPage() {
+export function VisitPlanPanel() {
   const { t } = useTranslation()
-  useTopBar({ subtext: t('visitPlan.listSubtext'), helpInfoKey: 'pageHelp.visitPlans' })
   const navigate = useNavigate()
   const location = useLocation()
   const user = useAtomValue(authUserAtom)!
@@ -24,6 +32,7 @@ export function VisitPlanListPage() {
   const { users } = useUsers()
   const seventies = users.filter((u) => u.role === ROLE.SEVENTY)
 
+  // 통계 화면이 "이 와드 방문 계획 잡기"로 보낼 때 제목을 미리 채워 준다.
   const [title, setTitle] = useState(
     (location.state as { wardName?: string } | null)?.wardName ?? '',
   )
@@ -35,9 +44,9 @@ export function VisitPlanListPage() {
     setCreating(true)
     try {
       const id = await createVisitPlan(title.trim(), seventyUid, user.uid)
-      navigate(`/admin/visit-plans/${id}`)
+      navigate(planVisitDetailPath(id))
     } catch {
-      toast.error('생성에 실패했습니다.')
+      toast.error(t('visitPlan.createFailed'))
       setCreating(false)
     }
   }
@@ -76,28 +85,29 @@ export function VisitPlanListPage() {
       <Card>
         <CardHeader title={t('visitPlan.listTitle')} />
         <CardBody>
-          {loading && [1, 2, 3].map((i) => <Skeleton key={i} height="52px" />)}
-          {!loading && plans.length === 0 && <p className={styles.empty}>{t('visitPlan.empty')}</p>}
-          {plans.map((p) => {
-            const seventy = seventies.find((s) => s.uid === p.seventyUid)
-            return (
-              <button
-                key={p.id}
-                type="button"
-                className={styles.row}
-                onClick={() => navigate(`/admin/visit-plans/${p.id}`)}
-              >
-                <span className={styles.rowTitle}>{p.title}</span>
-                <span className={styles.rowMeta}>
-                  {seventy?.name ?? '—'} · {p.items.length} ·{' '}
-                  {dayjs(p.createdAt).isValid() ? dayjs(p.createdAt).format('YYYY.M.D') : ''}
-                </span>
-                <Badge variant={p.status === 'published' ? 'success' : 'default'}>
-                  {p.status === 'published' ? t('visitPlan.published') : t('visitPlan.draft')}
-                </Badge>
-              </button>
-            )
-          })}
+          {loading && <LoadingState shape="list" rows={3} />}
+          {!loading && plans.length === 0 && <EmptyState title={t('visitPlan.empty')} />}
+          {!loading &&
+            plans.map((p) => {
+              const seventy = seventies.find((s) => s.uid === p.seventyUid)
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={styles.row}
+                  onClick={() => navigate(planVisitDetailPath(p.id))}
+                >
+                  <span className={styles.rowTitle}>{p.title}</span>
+                  <span className={styles.rowMeta}>
+                    {seventy?.name ?? '—'} · {p.items.length} ·{' '}
+                    {dayjs(p.createdAt).isValid() ? dayjs(p.createdAt).format('YYYY.M.D') : ''}
+                  </span>
+                  <Badge variant={p.status === 'published' ? 'success' : 'default'}>
+                    {p.status === 'published' ? t('visitPlan.published') : t('visitPlan.draft')}
+                  </Badge>
+                </button>
+              )
+            })}
         </CardBody>
       </Card>
     </div>

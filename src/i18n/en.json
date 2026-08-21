@@ -87,6 +87,7 @@
     "publishSuccess": "Published",
     "saveSuccess": "Saved",
     "saveFailed": "Save failed.",
+    "createFailed": "Could not create the plan.",
     "addVisit": "Add visit",
     "wardStaleFirst": "Ward (most overdue first)",
     "searchWard": "Search wards",
