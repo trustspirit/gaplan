@@ -20,9 +20,7 @@ export function MobileTabs({ role, pendingTaskCount = 0 }: MobileTabsProps) {
   const [moreOpen, setMoreOpen] = useState(false)
   const { primary, overflow } = splitMobileTabs(navItemsFor(role))
 
-  const overflowActive = overflow.some(
-    (i) => pathname === i.to || pathname.startsWith(i.to + '/'),
-  )
+  const overflowActive = overflow.some((i) => pathname === i.to || pathname.startsWith(i.to + '/'))
 
   const renderTab = (item: NavItemDef) => (
     <NavLink
@@ -38,9 +36,7 @@ export function MobileTabs({ role, pendingTaskCount = 0 }: MobileTabsProps) {
       </span>
       <span className={styles.tabLabel}>{t(item.labelKey)}</span>
       {item.badge === 'pendingTasks' && pendingTaskCount > 0 && (
-        <span className={styles.srOnly}>
-          {t('task.pendingCount', { count: pendingTaskCount })}
-        </span>
+        <span className={styles.srOnly}>{t('task.pendingCount', { count: pendingTaskCount })}</span>
       )}
     </NavLink>
   )

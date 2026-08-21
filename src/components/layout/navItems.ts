@@ -36,9 +36,21 @@ interface Entry extends NavItemDef {
 
 // 경로는 오늘의 값 그대로다. 일정/계획 통합과 리다이렉트는 계획 3에서 한다.
 const ENTRIES: Entry[] = [
-  { id: 'dashboard', to: '/dashboard', labelKey: 'nav.dashboard', section: 'main', roles: ALL_ROLES },
+  {
+    id: 'dashboard',
+    to: '/dashboard',
+    labelKey: 'nav.dashboard',
+    section: 'main',
+    roles: ALL_ROLES,
+  },
   { id: 'calendar', to: '/calendar', labelKey: 'nav.calendar', section: 'main', roles: ALL_ROLES },
-  { id: 'schedules', to: '/schedules', labelKey: 'nav.schedules', section: 'main', roles: ALL_ROLES },
+  {
+    id: 'schedules',
+    to: '/schedules',
+    labelKey: 'nav.schedules',
+    section: 'main',
+    roles: ALL_ROLES,
+  },
   {
     id: 'tasks',
     to: '/tasks',
@@ -47,11 +59,35 @@ const ENTRIES: Entry[] = [
     roles: [ROLE.PRESIDENT],
     badge: 'pendingTasks',
   },
-  { id: 'taskProgress', to: '/admin/task-progress', labelKey: 'nav.taskProgress', section: 'admin', roles: ADMIN_STAFF },
+  {
+    id: 'taskProgress',
+    to: '/admin/task-progress',
+    labelKey: 'nav.taskProgress',
+    section: 'admin',
+    roles: ADMIN_STAFF,
+  },
   { id: 'stats', to: '/admin/stats', labelKey: 'nav.stats', section: 'admin', roles: ADMIN_STAFF },
-  { id: 'visitPlans', to: '/admin/visit-plans', labelKey: 'nav.visitPlans', section: 'admin', roles: ADMIN_EXEC },
-  { id: 'projects', to: '/admin/projects', labelKey: 'nav.projects', section: 'admin', roles: ADMIN_EXEC },
-  { id: 'leaders', to: '/admin/leaders', labelKey: 'nav.leaders', section: 'admin', roles: [ROLE.ADMIN] },
+  {
+    id: 'visitPlans',
+    to: '/admin/visit-plans',
+    labelKey: 'nav.visitPlans',
+    section: 'admin',
+    roles: ADMIN_EXEC,
+  },
+  {
+    id: 'projects',
+    to: '/admin/projects',
+    labelKey: 'nav.projects',
+    section: 'admin',
+    roles: ADMIN_EXEC,
+  },
+  {
+    id: 'leaders',
+    to: '/admin/leaders',
+    labelKey: 'nav.leaders',
+    section: 'admin',
+    roles: [ROLE.ADMIN],
+  },
   { id: 'admin', to: '/admin', labelKey: 'nav.admin', section: 'admin', roles: [ROLE.ADMIN] },
 ]
 

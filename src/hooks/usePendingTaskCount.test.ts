@@ -25,8 +25,7 @@ function makeUser(over: Partial<AppUser>): AppUser {
 function wrapperFor(user: AppUser | null) {
   const store = createStore()
   store.set(authUserAtom, user)
-  return ({ children }: { children: ReactNode }) =>
-    createElement(Provider, { store }, children)
+  return ({ children }: { children: ReactNode }) => createElement(Provider, { store }, children)
 }
 
 describe('usePendingTaskCount', () => {

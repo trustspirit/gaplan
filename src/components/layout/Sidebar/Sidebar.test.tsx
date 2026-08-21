@@ -9,7 +9,10 @@ import { ROLE } from '@/constants/roles'
 // it is given to both of its children. SidebarNav.test.tsx / MobileTabs.test.tsx
 // already pin the prop -> rendered badge half.
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (k: string) => k, i18n: { language: 'ko', changeLanguage: vi.fn() } }),
+  useTranslation: () => ({
+    t: (k: string) => k,
+    i18n: { language: 'ko', changeLanguage: vi.fn() },
+  }),
   initReactI18next: { type: '3rdParty', init: () => {} },
 }))
 vi.mock('@/services/authService', () => ({ signOut: vi.fn() }))
@@ -17,7 +20,12 @@ vi.mock('@/services/authService', () => ({ signOut: vi.fn() }))
 function renderSidebar(pendingTaskCount: number | undefined, mobile: boolean) {
   return render(
     <MemoryRouter initialEntries={['/dashboard']}>
-      <Sidebar role={ROLE.PRESIDENT} name="홍길동" mobile={mobile} pendingTaskCount={pendingTaskCount} />
+      <Sidebar
+        role={ROLE.PRESIDENT}
+        name="홍길동"
+        mobile={mobile}
+        pendingTaskCount={pendingTaskCount}
+      />
     </MemoryRouter>,
   )
 }

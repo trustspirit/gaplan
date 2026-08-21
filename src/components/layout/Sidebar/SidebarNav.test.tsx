@@ -50,10 +50,7 @@ describe('SidebarNav', () => {
 
   it('marks the current route with aria-current', () => {
     renderNav(ROLE.ADMIN, undefined, '/admin/stats')
-    expect(screen.getByRole('link', { name: /nav.stats/ })).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
+    expect(screen.getByRole('link', { name: /nav.stats/ })).toHaveAttribute('aria-current', 'page')
   })
 
   // NavLink는 기본이 접두사 매칭이라 to="/admin"이 /admin/stats에서도 활성이 된다.

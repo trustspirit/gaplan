@@ -9,7 +9,10 @@ import { SCOPE_ALL } from '@/utils/scope'
 import type { AppUser } from '@/types'
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (k: string) => k, i18n: { language: 'ko', changeLanguage: vi.fn() } }),
+  useTranslation: () => ({
+    t: (k: string) => k,
+    i18n: { language: 'ko', changeLanguage: vi.fn() },
+  }),
   initReactI18next: { type: '3rdParty', init: vi.fn() },
 }))
 vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
