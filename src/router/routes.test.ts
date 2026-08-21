@@ -29,4 +29,8 @@ describe('LEGACY_REDIRECTS', () => {
   it('keeps the old landing path working', () => {
     expect(LEGACY_REDIRECTS['/dashboard']).toBe(ROUTES.home)
   })
+
+  it('keeps the retired president task screen working', () => {
+    expect(LEGACY_REDIRECTS['/tasks']).toBe(ROUTES.home)
+  })
 })

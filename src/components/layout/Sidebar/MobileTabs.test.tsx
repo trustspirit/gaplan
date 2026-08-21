@@ -86,7 +86,7 @@ describe('MobileTabs', () => {
   // 알림은 숫자 배지가 아니라 점으로 — 탭 칸이 좁다
   it('marks a badged tab with a dot rather than a number', () => {
     const { container } = renderTabs(ROLE.PRESIDENT, 3)
-    expect(screen.getByRole('link', { name: /nav.tasks/ })).not.toHaveTextContent('3')
+    expect(screen.getByRole('link', { name: /nav.home/ })).not.toHaveTextContent('3')
     expect(container.querySelector('[data-tab-dot]')).toBeInTheDocument()
   })
 
@@ -98,9 +98,7 @@ describe('MobileTabs', () => {
   // 점은 눈에만 보인다 — 스크린리더에는 별도로 알려야 한다
   it('announces the pending count to assistive tech, not just the dot', () => {
     renderTabs(ROLE.PRESIDENT, 3)
-    expect(screen.getByRole('link', { name: /nav.tasks/ })).toHaveAccessibleName(
-      /task.pendingCount/,
-    )
+    expect(screen.getByRole('link', { name: /nav.home/ })).toHaveAccessibleName(/task.pendingCount/)
   })
 
   // 스펙 §3의 금지 규칙은 데스크톱 사이드바만이 아니라 탭바에도 걸린다 —
@@ -116,7 +114,7 @@ describe('MobileTabs', () => {
 
   it('does not announce a pending count when there is nothing pending', () => {
     renderTabs(ROLE.PRESIDENT, 0)
-    expect(screen.getByRole('link', { name: /nav.tasks/ })).not.toHaveAccessibleName(
+    expect(screen.getByRole('link', { name: /nav.home/ })).not.toHaveAccessibleName(
       /task.pendingCount/,
     )
   })

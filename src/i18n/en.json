@@ -5,7 +5,6 @@
     "calendar": "Calendar",
     "visits": "Visits",
     "interviews": "Interviews",
-    "tasks": "Tasks",
     "taskProgress": "Task Progress",
     "admin": "Admin",
     "generalSchedules": "Events",
@@ -651,10 +650,6 @@
     "taskProgress": {
       "title": "Task Progress",
       "body": "Track the status of tasks sent to stake/district presidents.\n• Check response status and submitted content\n• Confirm schedules after reviewing responses\n• Use the expire button to close a task"
-    },
-    "tasks": {
-      "title": "Tasks",
-      "body": "Respond to tasks assigned to you.\n• Select available dates and submit\n• For ward assignment tasks, assign dates per ward\n• You can resubmit as long as the task is still open"
     },
     "users": {
       "title": "User Management",

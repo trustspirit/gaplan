@@ -10,7 +10,6 @@ export type NavItemId =
   | 'home'
   | 'calendar'
   | 'schedules'
-  | 'tasks'
   | 'taskProgress'
   | 'stats'
   | 'visitPlans'
@@ -33,6 +32,8 @@ const ADMIN_EXEC: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY]
 
 interface Entry extends NavItemDef {
   roles: UserRole[]
+  /** 배지를 실제로 보는 역할. 생략하면 roles 전원. */
+  badgeRoles?: UserRole[]
 }
 
 // 경로는 오늘의 값 그대로다. 일정/계획 통합과 리다이렉트는 계획 3에서 한다.
@@ -43,6 +44,8 @@ const ENTRIES: Entry[] = [
     labelKey: 'nav.home',
     section: 'main',
     roles: ALL_ROLES,
+    badge: 'pendingTasks',
+    badgeRoles: [ROLE.PRESIDENT],
   },
   { id: 'calendar', to: '/calendar', labelKey: 'nav.calendar', section: 'main', roles: ALL_ROLES },
   {
@@ -51,14 +54,6 @@ const ENTRIES: Entry[] = [
     labelKey: 'nav.schedules',
     section: 'main',
     roles: ALL_ROLES,
-  },
-  {
-    id: 'tasks',
-    to: '/tasks',
-    labelKey: 'nav.tasks',
-    section: 'main',
-    roles: [ROLE.PRESIDENT],
-    badge: 'pendingTasks',
   },
   {
     id: 'taskProgress',
@@ -93,8 +88,20 @@ const ENTRIES: Entry[] = [
 ]
 
 export function navItemsFor(role: UserRole): NavItemDef[] {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  return ENTRIES.filter((e) => e.roles.includes(role)).map(({ roles, ...item }) => item)
+  return ENTRIES.filter((entry) => entry.roles.includes(role)).map((entry) => {
+    const item: NavItemDef = {
+      id: entry.id,
+      to: entry.to,
+      labelKey: entry.labelKey,
+      section: entry.section,
+    }
+    // 배지는 그것을 실제로 보는 역할에만 붙인다. usePendingTaskCount가 이 필드를
+    // 보고 구독 여부를 정하므로, 전원에게 붙이면 배지가 늘 0인 역할에도 구독이 열린다.
+    if (entry.badge && (entry.badgeRoles ?? entry.roles).includes(role)) {
+      item.badge = entry.badge
+    }
+    return item
+  })
 }
 
 /**

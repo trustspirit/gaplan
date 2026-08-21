@@ -19,7 +19,7 @@ function item(id: NavItemId): NavItemDef {
 describe('navItemsFor', () => {
   it('gives a president only the screens they can reach', () => {
     const ids = navItemsFor(ROLE.PRESIDENT).map((i) => i.id)
-    expect(ids).toEqual(['home', 'calendar', 'schedules', 'tasks'])
+    expect(ids).toEqual(['home', 'calendar', 'schedules'])
   })
 
   it('gives a seventy the read-only management screens but no settings', () => {
@@ -56,11 +56,31 @@ describe('navItemsFor', () => {
     expect(lastMain).toBeLessThan(firstAdmin)
   })
 
-  it('marks only the president task screen with the pending badge', () => {
+  it('marks the president home screen with the pending badge', () => {
     const items = navItemsFor(ROLE.PRESIDENT)
     const badged = items.filter((i) => i.badge)
-    expect(badged.map((i) => i.id)).toEqual(['tasks'])
+    expect(badged.map((i) => i.id)).toEqual(['home'])
     expect(items[0]).not.toHaveProperty('roles')
+  })
+
+  // 홈은 전 역할이 갖는 항목이다. 배지를 조건 없이 붙이면 usePendingTaskCount가
+  // 배지를 그릴 곳이 없는 역할에도 Firestore 구독을 연다.
+  it('gives no role but the president a pending badge', () => {
+    for (const role of [ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY]) {
+      expect(
+        navItemsFor(role).some((i) => i.badge),
+        role,
+      ).toBe(false)
+    }
+  })
+
+  it('no longer offers a separate task screen', () => {
+    for (const role of [ROLE.PRESIDENT, ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY]) {
+      expect(
+        navItemsFor(role).map((i) => i.id),
+        role,
+      ).not.toContain('tasks')
+    }
   })
 
   // 경로가 바뀌면 이 테스트가 의도적으로 깨진다 — 리다이렉트를 같이 넣었는지

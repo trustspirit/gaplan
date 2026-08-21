@@ -73,9 +73,6 @@ const CalendarPage = lazyRetry(() =>
 const SchedulesPage = lazyRetry(() =>
   import('@/pages/schedules/SchedulesPage').then((m) => ({ default: m.SchedulesPage })),
 )
-const TasksPage = lazyRetry(() =>
-  import('@/pages/tasks/TasksPage').then((m) => ({ default: m.TasksPage })),
-)
 const AdminDashboard = lazyRetry(() =>
   import('@/pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })),
 )
@@ -146,10 +143,6 @@ export function AppRouter() {
                 path="/general-schedules"
                 element={<Navigate to="/schedules/events" replace />}
               />
-
-              <Route element={<RoleRoute allow={['president']} />}>
-                <Route path="/tasks" element={<TasksPage />} />
-              </Route>
 
               <Route element={<RoleRoute allow={['admin']} />}>
                 <Route path="/admin" element={<AdminDashboard />} />

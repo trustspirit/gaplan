@@ -120,11 +120,13 @@ function PresidentDashboard() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { tasks, loading: tasksLoading } = useTasks(user.uid)
+  // useTasks는 pending + responded를 함께 준다. 「처리 필요」는 아직 답하지 않은
+  // 것만 — 사이드바 배지와 같은 기준이다.
+  const pendingTasks = tasks.filter((task) => task.status === 'pending')
+  const respondedTasks = tasks.filter((task) => task.status === 'responded')
   useTopBar({
     subtext: dayjs().format(t('calendar.monthTitleFormat')),
-    // useTasks는 pending + responded를 함께 준다. "처리 필요"는 아직 답하지 않은
-    // 것만 — 사이드바 배지·TasksPage 상단 배지와 같은 기준이다.
-    pendingCount: tasks.filter((task) => task.status === 'pending').length,
+    pendingCount: pendingTasks.length,
     helpInfoKey: 'pageHelp.dashboardPresident',
   })
   const { schedules, loading: schedulesLoading } = useSchedules({ presidentUid: user.uid })
@@ -175,13 +177,32 @@ function PresidentDashboard() {
                 [1, 2].map((i) => (
                   <Skeleton key={i} height="44px" className={styles.skeletonItem} />
                 ))
-              ) : tasks.length === 0 ? (
+              ) : pendingTasks.length === 0 ? (
                 <p className={styles.empty}>{t('task.noTasks')}</p>
               ) : (
-                tasks.map((t) => <TaskCard key={t.id} task={t} onAction={openTask} />)
+                pendingTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} onAction={openTask} />
+                ))
               )}
             </CardBody>
           </Card>
+
+          {!tasksLoading && respondedTasks.length > 0 && (
+            <Card>
+              <CardHeader title={t('task.responded')} />
+              <CardBody>
+                {respondedTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    // 답한 뒤에도 방문 Task는 와드별 날짜를 고쳐 낼 수 있다.
+                    // 접견 Task는 다시 열지 않는다 — TasksPage가 쓰던 규칙 그대로다.
+                    onAction={task.type === 'select_visit' ? openTask : undefined}
+                  />
+                ))}
+              </CardBody>
+            </Card>
+          )}
 
           <ScheduleListCard
             schedules={upcoming}

@@ -31,4 +31,6 @@ export const ROUTES = {
  */
 export const LEGACY_REDIRECTS: Record<string, string> = {
   '/dashboard': ROUTES.home,
+  // 회장 전용 Task 화면은 홈이 흡수했다(스펙 §4.2).
+  '/tasks': ROUTES.home,
 }

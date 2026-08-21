@@ -5,7 +5,6 @@
     "calendar": "캘린더",
     "visits": "방문",
     "interviews": "접견",
-    "tasks": "Task",
     "taskProgress": "Task 현황",
     "admin": "관리",
     "generalSchedules": "행사 일정",
@@ -651,10 +650,6 @@
     "taskProgress": {
       "title": "Task 진행 현황",
       "body": "스테이크/지방부 회장에게 보낸 Task의 진행 현황을 확인합니다.\n• 응답 여부와 제출 내용을 확인할 수 있습니다\n• 응답을 검토 후 일정을 확정할 수 있습니다\n• 만료 버튼으로 Task를 닫을 수 있습니다"
-    },
-    "tasks": {
-      "title": "Task",
-      "body": "나에게 배정된 Task에 응답합니다.\n• 가능한 날짜를 선택해 제출할 수 있습니다\n• 와드/지부 배정 Task에는 와드별 날짜를 배정합니다\n• 제출 후에도 Task가 열려 있으면 재응답이 가능합니다"
     },
     "users": {
       "title": "사용자 관리",
