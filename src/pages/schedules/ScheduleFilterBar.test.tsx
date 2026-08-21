@@ -71,6 +71,26 @@ describe('ScheduleFilterBar', () => {
     expect(props.onKindsChange).not.toHaveBeenCalled()
   })
 
+  // disabled 속성만으로는 안 된다 — 위 테스트는 핸들러 내부 가드가 없어도 통과한다(disabled
+  // 버튼은 클릭 자체가 안 가니까). 나중에 disabled 속성이 리팩터로 빠지거나 호출자가 핸들러를
+  // 직접 호출하는 경로가 생겨도 배열이 비어선 안 되므로, 핸들러 가드 자체를 따로 검증한다.
+  it('guards the last kind in the handler, not just with the disabled attribute', () => {
+    const props = renderBar({ kinds: ['visit'] })
+    const chip = screen.getByRole('button', { name: 'schedules.kind.visit' }) as HTMLButtonElement
+    // `chip.disabled = false` + fireEvent.click doesn't work either: React reads its own
+    // last-rendered `disabled` prop (still true) when deciding whether to dispatch a
+    // synthetic click, not the live DOM property, so the handler still never runs. Instead
+    // we grab the onClick React attached to this node (via its internal `__reactProps$...`
+    // key) and call it directly — the same path a future direct caller of the handler would
+    // take — to prove the guard lives in the handler itself, not only in the disabled attribute.
+    const propsKey = Object.keys(chip).find((key) => key.startsWith('__reactProps$'))
+    const onClick = propsKey
+      ? (chip as unknown as Record<string, { onClick?: () => void }>)[propsKey].onClick
+      : undefined
+    onClick?.()
+    expect(props.onKindsChange).not.toHaveBeenCalled()
+  })
+
   it('renders no region chips when there is nothing to choose between', () => {
     renderBar({ regions: [{ id: 'r1', name: '서울' }] })
     expect(screen.queryByRole('group', { name: 'schedules.regionFilterLabel' })).toBeNull()
