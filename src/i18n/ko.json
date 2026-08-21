@@ -374,7 +374,9 @@
       "filterActive": "활성만",
       "summary": "활성 {{active}}개 / 전체 {{total}}개",
       "noMatch": "찾는 이름이 없습니다.",
-      "copied": "링크를 복사했습니다."
+      "copied": "링크를 복사했습니다.",
+      "collapseRegion": "{{region}} 접기",
+      "expandRegion": "{{region}} 펼치기"
     }
   },
   "admin": {

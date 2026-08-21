@@ -82,6 +82,26 @@ describe('MobileTabs', () => {
     expect(screen.queryByRole('button', { name: /nav.more/ })).not.toBeInTheDocument()
   })
 
+  // 최종 리뷰(FIX 3) — 칠십인은 6개 항목(홈·일정·계획·통계·주소록·계정)을 받아 5탭
+  // 예산을 넘긴다. account를 ENTRIES 맨 뒤로 옮긴 뒤에는 최소한 통계가 더보기 밖으로
+  // 나온다 — 주소록·계정 두 개만 더보기에 남는다(navItems.ts 상단 주석 참고).
+  it('gives a seventy this exact primary/overflow split', () => {
+    renderTabs(ROLE.SEVENTY)
+    const nav = within(screen.getByRole('navigation'))
+    const primaryLabels = nav.getAllByRole('link').map((el) => el.textContent)
+    expect(primaryLabels).toEqual(['nav.home', 'nav.schedules', 'nav.plans', 'nav.stats'])
+    expect(screen.getByRole('button', { name: /nav.more/ })).toBeInTheDocument()
+  })
+
+  it('puts the seventy leaders and account entries behind the more button', async () => {
+    renderTabs(ROLE.SEVENTY)
+    await userEvent.click(screen.getByRole('button', { name: /nav.more/ }))
+    const overflowLabels = within(overlay())
+      .getAllByRole('link')
+      .map((el) => el.textContent)
+    expect(overflowLabels).toEqual(['nav.leaders', 'nav.account'])
+  })
+
   // 셸은 데스크톱에서도 MobileTabs를 마운트해 둔다. 오버플로가 없는 역할에서까지
   // 시트를 그리면 position:fixed 오버레이가 매 세션 document.body에 남는다.
   it('mounts no overflow sheet at all when every item fits', () => {

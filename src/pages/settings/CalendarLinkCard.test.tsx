@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { setDoc } from 'firebase/firestore'
+import { getDoc, setDoc } from 'firebase/firestore'
+import { toast } from 'sonner'
 import { manualCalendarSync } from '@/services/scheduleService'
 import { CalendarLinkCard } from './CalendarLinkCard'
 
@@ -14,6 +15,9 @@ beforeEach(() => {
   vi.mocked(manualCalendarSync)
     .mockClear()
     .mockResolvedValue({ synced: 3 } as never)
+  vi.mocked(getDoc)
+    .mockReset()
+    .mockImplementation(() => Promise.resolve({ data: () => ({ calendars: stored }) }) as never)
 })
 
 vi.mock('react-i18next', () => ({
@@ -76,5 +80,13 @@ describe('CalendarLinkCard', () => {
   it('shows no result before the sync has ever run', () => {
     render(<CalendarLinkCard />)
     expect(screen.queryByTestId('sync-result')).not.toBeInTheDocument()
+  })
+
+  // FIX 4 — 실패해도 안 걸면 빈 폼이 조용히 뜬다. 저장을 누르면 있던 캘린더 ID를
+  // 지워버릴 수 있으므로 실패는 반드시 알려야 한다.
+  it('reports when the initial read fails instead of rendering an empty form silently', async () => {
+    vi.mocked(getDoc).mockRejectedValue(new Error('offline'))
+    render(<CalendarLinkCard />)
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('common.loadFailed'))
   })
 })

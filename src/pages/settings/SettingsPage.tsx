@@ -17,6 +17,14 @@ const HELP_KEY: Partial<Record<SettingsTabId, string>> = {
   system: 'pageHelp.users',
 }
 
+// 최종 리뷰 FIX 7 — 세 하위 화면 전부 'settings.title'("설정") 하나만 보여줬다.
+// 로케일에 이미 있던 title 키를 여기서 처음 쓴다.
+const SUB_TITLE_KEY: Record<SettingsTabId, string> = {
+  system: 'settings.system.title',
+  sharing: 'settings.sharing.title',
+  account: 'settings.account.title',
+}
+
 /**
  * 설정. 스펙 §4.2 — 좌측 하위 내비를 가진 섹션이고, 각 항목은 카드가 아니라
  * 독립 화면이다. 역할마다 보이는 화면이 다르다(판정 R47).
@@ -42,7 +50,7 @@ export function SettingsPage() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title={t('settings.title')} />
+      <PageHeader title={t('settings.title')} description={t(SUB_TITLE_KEY[active.id])} />
 
       {/* 판정 R34 — 화면이 하나뿐인 역할에게는 내비를 그리지 않는다. */}
       {tabs.length > 1 && (

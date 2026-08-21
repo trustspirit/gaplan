@@ -35,6 +35,19 @@ interface Entry extends NavItemDef {
 }
 
 // 경로는 오늘의 값 그대로다. 일정/계획 통합과 리다이렉트는 계획 3에서 한다.
+//
+// 순서가 곧 모바일 하단 탭의 primary/overflow 경계다(splitMobileTabs). 데스크톱
+// 사이드바(SidebarNav)는 section으로 다시 나눠 그리므로 순서에 영향받지 않지만,
+// MobileTabs는 이 배열 순서를 그대로 슬라이스한다 — 최종 리뷰(FIX 3)가 찾아낸
+// 지점이다: account가 plans/stats/leaders보다 앞에 있으면 칠십인의 6개 항목 중
+// 뒤 두 개(통계·주소록)가 항상 더보기 뒤로 밀린다(스펙 §4.6은 그 둘을 묻지 않는다).
+// account를 맨 뒤로 옮기면 칠십인은 최소한 통계까지는 primary에 들어온다. 주소록
+// 하나는 여전히 더보기에 남는다 — 칠십인의 항목 수(6)가 MAX_MOBILE_TABS(5)를
+// 넘는 한 4자리 primary에 5개(홈·일정·계획·통계·주소록)를 다 욱여넣을 수는 없다.
+// 스펙 §4.2 표가 칠십인에게 원래 5개(계정 제외)만 주는 것과 이 배열이 칠십인에게
+// account까지 6번째로 주는 것 사이의 불일치이며, account를 칠십인 roles에서
+// 빼는 것은 판정 R48("칠십인의 카카오 연동은 내 계정에만 있다")을 깨므로 이
+// 수정의 범위 밖이다. 최종 리포트에 남긴다.
 const ENTRIES: Entry[] = [
   {
     id: 'home',
@@ -51,16 +64,6 @@ const ENTRIES: Entry[] = [
     labelKey: 'nav.schedules',
     section: 'main',
     roles: ALL_ROLES,
-  },
-  // 판정 R47 — 회장·칠십인은 관리 구역을 아예 볼 수 없으니(스펙 §4.2), 계정 항목이
-  // section: 'admin'이면 그들에게 항목 하나짜리 '관리' 그룹 헤딩이 뜬다. main으로
-  // 두어 홈·일정과 나란한 평범한 탭이 되게 한다.
-  {
-    id: 'account',
-    to: ROUTES.settingsAccount,
-    labelKey: 'nav.account',
-    section: 'main',
-    roles: [ROLE.SEVENTY, ROLE.PRESIDENT],
   },
   {
     id: 'plans',
@@ -83,6 +86,18 @@ const ENTRIES: Entry[] = [
     labelKey: 'nav.settings',
     section: 'admin',
     roles: ADMIN_EXEC,
+  },
+  // 판정 R47 — 회장·칠십인은 설정 화면 자체를 볼 수 없으니(스펙 §4.2), 계정 항목이
+  // section: 'admin'이면 그들에게 항목 하나짜리 '관리' 그룹 헤딩이 뜬다. main으로
+  // 두어 홈·일정과 나란한 평범한 탭이 되게 한다. SidebarNav는 main/admin을 다시
+  // 나눠서 그리므로 배열 안에서 admin 항목들보다 뒤에 있어도 데스크톱에는 영향이
+  // 없다(main이 먼저, admin 그룹이 나중) — 영향받는 것은 모바일 탭바뿐이다.
+  {
+    id: 'account',
+    to: ROUTES.settingsAccount,
+    labelKey: 'nav.account',
+    section: 'main',
+    roles: [ROLE.SEVENTY, ROLE.PRESIDENT],
   },
 ]
 

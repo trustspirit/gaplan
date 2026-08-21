@@ -8,6 +8,9 @@ import { AccountPanel } from './AccountPanel'
 let currentUser: AppUser
 
 beforeEach(() => {
+  // 칠십인 본인에게는 assignedSeventyUid가 없다 — 그 필드는 집행서기가 담당
+  // 칠십인을 가리킬 때만 쓰인다(src/types/user.ts). 카카오 카드는 그 필드가 있는
+  // 사용자에게만 뜨므로, 기본 픽스처는 의도적으로 없는 상태로 둔다.
   currentUser = {
     uid: 'u1',
     name: '홍길동',
@@ -29,7 +32,7 @@ vi.mock('jotai', () => ({
   atom: vi.fn(),
 }))
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (k: string) => k, i18n: { language: 'ko' } }),
+  useTranslation: () => ({ t: (k: string) => k, i18n: { language: 'ko', changeLanguage: vi.fn() } }),
   initReactI18next: { type: '3rdParty', init: () => {} },
 }))
 vi.mock('@/services/userService', () => ({ updateUserName: vi.fn() }))
@@ -73,16 +76,42 @@ describe('AccountPanel', () => {
     expect(screen.getByTestId('calendar-banner')).toBeInTheDocument()
   })
 
+  it('offers a language switch', () => {
+    render(<AccountPanel />)
+    expect(
+      screen.getByRole('radiogroup', { name: 'settings.account.languageTitle' }),
+    ).toBeInTheDocument()
+  })
+
   it('offers to connect kakao when it is not connected', () => {
+    currentUser = { ...currentUser, assignedSeventyUid: 'seventy-1' } as AppUser
     render(<AccountPanel />)
     expect(screen.getByRole('button', { name: 'kakao.connect' })).toBeInTheDocument()
   })
 
   it('offers to disconnect kakao once it is connected', async () => {
-    currentUser = { ...currentUser, kakaoConnected: true } as AppUser
+    currentUser = {
+      ...currentUser,
+      assignedSeventyUid: 'seventy-1',
+      kakaoConnected: true,
+    } as AppUser
     render(<AccountPanel />)
 
     await userEvent.click(screen.getByRole('button', { name: 'kakao.disconnect' }))
     await waitFor(() => expect(disconnectKakao).toHaveBeenCalled())
+  })
+
+  // functions/src/kakaoCalendarSync.ts가 실제로 동기화하는 대상은
+  // assignedSeventyUid가 있는 사용자뿐이다(kakaoTargets.ts). 그 필드가 없으면
+  // OAuth를 완료해도 이벤트를 영원히 받지 못하므로, 카드 자체를 감춘다.
+  it('shows the kakao card for a user with an assigned seventy', () => {
+    currentUser = { ...currentUser, assignedSeventyUid: 'seventy-1' } as AppUser
+    render(<AccountPanel />)
+    expect(screen.getByText('settings.account.kakaoTitle')).toBeInTheDocument()
+  })
+
+  it('hides the kakao card for a user with no assigned seventy', () => {
+    render(<AccountPanel />)
+    expect(screen.queryByText('settings.account.kakaoTitle')).not.toBeInTheDocument()
   })
 })

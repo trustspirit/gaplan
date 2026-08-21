@@ -25,8 +25,11 @@ export function CalendarLinkCard() {
         const data = snap.data()
         if (data?.calendars) setCalendarIds(data.calendars as Record<string, string>)
       })
+      // 안 걸면 실패해도 빈 폼이 조용히 뜬다 — 저장을 누르면 있던 캘린더 ID를
+      // 전부 지워버릴 수 있다.
+      .catch(() => toast.error(t('common.loadFailed')))
       .finally(() => setFetching(false))
-  }, [])
+  }, [t])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()

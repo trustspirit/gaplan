@@ -79,7 +79,7 @@ export function UserListCard() {
   return (
     <>
       <Card>
-        <CardHeader title={t('user.allUsers')} />
+        <CardHeader title={t('settings.system.usersTitle')} />
         <CardBody>
           {usersLoading
             ? [1, 2, 3].map((i) => (

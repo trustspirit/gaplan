@@ -99,4 +99,18 @@ describe('SettingsPage', () => {
       expect.objectContaining({ helpInfoKey: undefined }),
     )
   })
+
+  // FIX 7 (최종 리뷰) — 세 하위 화면 전부 'settings.title' 하나만 보여줬다. 로케일에
+  // 이미 있던 각 화면 title 키가 이제야 쓰인다.
+  it('names each sub-screen with its own title', () => {
+    renderAt('/settings/system')
+    expect(screen.getByText('settings.system.title')).toBeInTheDocument()
+
+    renderAt('/settings/sharing')
+    expect(screen.getByText('settings.sharing.title')).toBeInTheDocument()
+
+    currentUser = { uid: 'p1', role: ROLE.PRESIDENT, name: '회장' } as AppUser
+    renderAt('/settings/account')
+    expect(screen.getByText('settings.account.title')).toBeInTheDocument()
+  })
 })

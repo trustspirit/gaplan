@@ -349,7 +349,7 @@
       "calendarDesc": "The Google Calendar ID that confirmed schedules go to, per region.",
       "syncTitle": "Sync now",
       "syncDesc": "Re-send confirmed schedules that never reached the calendar.",
-      "syncResult": "Sent {{synced}}.",
+      "syncResult": "Sent {{synced}} schedules.",
       "availabilityTitle": "Default availability",
       "usersTitle": "Users & permissions"
     },
@@ -374,7 +374,9 @@
       "filterActive": "Active only",
       "summary": "{{active}} active of {{total}}",
       "noMatch": "No name matches.",
-      "copied": "Link copied."
+      "copied": "Link copied.",
+      "collapseRegion": "Collapse {{region}}",
+      "expandRegion": "Expand {{region}}"
     }
   },
   "admin": {
