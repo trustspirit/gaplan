@@ -18,6 +18,10 @@ export const ROUTES = {
   availability: '/admin/availability',
   calendarSettings: '/admin/calendar',
   admin: '/admin',
+  settings: '/settings',
+  settingsSystem: '/settings/system',
+  settingsSharing: '/settings/sharing',
+  settingsAccount: '/settings/account',
 } as const
 
 /**
