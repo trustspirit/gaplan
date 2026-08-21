@@ -71,8 +71,8 @@ const OnboardingPage = lazyRetry(() =>
 const PendingPage = lazyRetry(() =>
   import('@/pages/auth/PendingPage').then((m) => ({ default: m.PendingPage })),
 )
-const DashboardPage = lazyRetry(() =>
-  import('@/pages/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+const HomePage = lazyRetry(() =>
+  import('@/pages/home/HomePage').then((m) => ({ default: m.HomePage })),
 )
 const SchedulesPage = lazyRetry(() =>
   import('@/pages/schedules/SchedulesPage').then((m) => ({ default: m.SchedulesPage })),
@@ -129,7 +129,7 @@ export function AppRouter() {
                 <Route key={from} path={from} element={<LegacyParamRedirect to={to} />} />
               ))}
 
-              <Route path={ROUTES.home} element={<DashboardPage />} />
+              <Route path={ROUTES.home} element={<HomePage />} />
               <Route path={ROUTES.schedules} element={<SchedulesPage />} />
 
               <Route element={<RoleRoute allow={['admin', 'exec_secretary', 'seventy']} />}>
