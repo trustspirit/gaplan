@@ -9,7 +9,8 @@
   },
   "nav": {
     "home": "Home",
-    "admin": "Admin",
+    "settings": "Settings",
+    "account": "My account",
     "stats": "Statistics",
     "schedules": "Schedules",
     "plans": "Plans",

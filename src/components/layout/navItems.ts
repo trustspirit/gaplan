@@ -6,7 +6,14 @@ export type NavSection = 'main' | 'admin'
 
 // NAV_ICONS(navIcons.tsx)가 이 유니언으로 Record를 채워야 하므로, 항목을 추가하고
 // 아이콘을 빼먹으면 tsc가 잡아낸다 — id: string이었을 때는 그냥 빈칸으로 렌더됐다.
-export type NavItemId = 'home' | 'schedules' | 'plans' | 'stats' | 'leaders' | 'admin'
+export type NavItemId =
+  | 'home'
+  | 'schedules'
+  | 'plans'
+  | 'stats'
+  | 'leaders'
+  | 'settings'
+  | 'account'
 
 export interface NavItemDef {
   id: NavItemId
@@ -19,6 +26,7 @@ export interface NavItemDef {
 
 const ALL_ROLES: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY, ROLE.PRESIDENT]
 const ADMIN_STAFF: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY]
+const ADMIN_EXEC: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY]
 
 interface Entry extends NavItemDef {
   roles: UserRole[]
@@ -59,7 +67,22 @@ const ENTRIES: Entry[] = [
     section: 'admin',
     roles: ADMIN_STAFF,
   },
-  { id: 'admin', to: ROUTES.admin, labelKey: 'nav.admin', section: 'admin', roles: [ROLE.ADMIN] },
+  {
+    id: 'settings',
+    to: ROUTES.settings,
+    labelKey: 'nav.settings',
+    section: 'admin',
+    roles: ADMIN_EXEC,
+  },
+  // 판정 R47 — 회장·칠십인은 자기 계정 하나만 볼 수 있으므로, 「설정」이라는
+  // 이름으로 보내면 눌렀을 때 갈 곳이 하나뿐인 섹션에 도착한다. 곧장 계정으로 보낸다.
+  {
+    id: 'account',
+    to: ROUTES.settingsAccount,
+    labelKey: 'nav.account',
+    section: 'admin',
+    roles: [ROLE.SEVENTY, ROLE.PRESIDENT],
+  },
 ]
 
 export function navItemsFor(role: UserRole): NavItemDef[] {

@@ -9,7 +9,8 @@
   },
   "nav": {
     "home": "홈",
-    "admin": "관리",
+    "settings": "설정",
+    "account": "내 계정",
     "stats": "통계",
     "schedules": "일정",
     "plans": "계획",

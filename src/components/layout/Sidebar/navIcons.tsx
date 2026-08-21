@@ -7,6 +7,7 @@ import {
   BarChart3,
   BookUser,
   Settings,
+  CircleUser,
 } from 'lucide-react'
 
 // navItems.ts는 JSX 없는 순수 모듈로 유지하려고 아이콘을 분리했다.
@@ -17,5 +18,6 @@ export const NAV_ICONS: Record<NavItemId, ReactNode> = {
   plans: <ClipboardList size={18} />,
   stats: <BarChart3 size={18} />,
   leaders: <BookUser size={18} />,
-  admin: <Settings size={18} />,
+  settings: <Settings size={18} />,
+  account: <CircleUser size={18} />,
 }

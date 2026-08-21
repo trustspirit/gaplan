@@ -17,29 +17,57 @@ function item(id: NavItemId): NavItemDef {
 }
 
 describe('navItemsFor', () => {
+  // 회장은 자기 계정 하나만 볼 수 있는 화면 조합이라, 설정 대신 계정으로 곧장
+  // 보내는 항목 하나를 더 받는다(판정 R47).
   it('gives a president only the screens they can reach', () => {
     const ids = navItemsFor(ROLE.PRESIDENT).map((i) => i.id)
-    expect(ids).toEqual(['home', 'schedules'])
+    expect(ids).toEqual(['home', 'schedules', 'account'])
   })
 
   it('gives a seventy the read-only management screens but no settings', () => {
     const ids = navItemsFor(ROLE.SEVENTY).map((i) => i.id)
     expect(ids).toContain('plans')
     expect(ids).toContain('stats')
-    expect(ids).not.toContain('admin')
+    expect(ids).not.toContain('settings')
   })
 
-  it('gives an exec secretary the planning screens but not user administration', () => {
+  // 집행서기는 관리 직원이라 회장·칠십인과 달리 설정 항목을 그대로 받는다
+  // (판정 R47) — admin 전용이던 옛 'admin' 항목과 달리 설정은 admin·집행서기
+  // 공용이다.
+  it('gives an exec secretary the planning screens and the settings entry', () => {
     const ids = navItemsFor(ROLE.EXEC_SECRETARY).map((i) => i.id)
     expect(ids).toContain('plans')
-    expect(ids).not.toContain('admin')
+    expect(ids).toContain('settings')
   })
 
   it('gives an admin everything', () => {
     const ids = navItemsFor(ROLE.ADMIN).map((i) => i.id)
-    expect(ids).toContain('admin')
+    expect(ids).toContain('settings')
     expect(ids).toContain('leaders')
     expect(ids).toContain('plans')
+  })
+
+  // 판정 R47 — 설정과 계정은 서로 다른 항목이고 역할이 겹치지 않는다.
+  it('gives the admin staff a settings item and no separate account item', () => {
+    for (const role of [ROLE.ADMIN, ROLE.EXEC_SECRETARY]) {
+      const ids = navItemsFor(role).map((i) => i.id)
+      expect(ids, role).toContain('settings')
+      expect(ids, role).not.toContain('account')
+    }
+  })
+
+  // 판정 R48 — 칠십인의 카카오 연동은 내 계정에만 있다.
+  it('gives the seventy and the president an account item instead', () => {
+    for (const role of [ROLE.SEVENTY, ROLE.PRESIDENT]) {
+      const ids = navItemsFor(role).map((i) => i.id)
+      expect(ids, role).toContain('account')
+      expect(ids, role).not.toContain('settings')
+    }
+  })
+
+  it('sends the account item straight to the account screen', () => {
+    const account = navItemsFor(ROLE.PRESIDENT).find((i) => i.id === 'account')!
+    expect(account.to).toBe('/settings/account')
   })
 
   it('gives a pending user nothing', () => {
@@ -100,7 +128,7 @@ describe('navItemsFor', () => {
       plans: '/plans',
       stats: '/stats',
       leaders: '/leaders',
-      admin: '/admin',
+      settings: '/settings',
     })
   })
 
@@ -122,13 +150,13 @@ describe('navItemsFor', () => {
     }
   })
 
-  // 스펙 §4.2의 표는 관리자·집행서기를 함께 6개(홈·일정·계획·통계·주소록·설정)로
-  // 묶는다. 주소록이 열리며 집행서기·칠십인이 5개가 됐고, 남은 차이는 설정
-  // 하나뿐이다 — 그건 이후 계획의 설정 개편에서 다룬다.
+  // 설정 개편(판정 R47·R48) 이후의 실제 개수. 회장은 홈·일정·계정 3개, 칠십인은
+  // 거기에 계획·통계·주소록이 더해져 6개, 집행서기·관리자는 계정 대신 설정이
+  // 붙어 역시 6개다.
   it('gives each role the item count this build currently supports', () => {
-    expect(navItemsFor(ROLE.PRESIDENT)).toHaveLength(2)
-    expect(navItemsFor(ROLE.SEVENTY)).toHaveLength(5)
-    expect(navItemsFor(ROLE.EXEC_SECRETARY)).toHaveLength(5)
+    expect(navItemsFor(ROLE.PRESIDENT)).toHaveLength(3)
+    expect(navItemsFor(ROLE.SEVENTY)).toHaveLength(6)
+    expect(navItemsFor(ROLE.EXEC_SECRETARY)).toHaveLength(6)
     expect(navItemsFor(ROLE.ADMIN)).toHaveLength(6)
   })
 })
@@ -169,7 +197,7 @@ describe('splitMobileTabs', () => {
 // 통계·주소록이 /admin/ 밖으로 나가면서 실제 네비 목록에는 다른 항목의 부모
 // 경로인 항목이 하나도 남지 않았다. 함수의 계약 자체는 합성 목록으로 지키고,
 // 오늘의 목록이 어떤 상태인지는 따로 못박는다.
-const NESTED: NavItemDef[] = [item('admin'), { ...item('leaders'), to: '/admin/users' }]
+const NESTED: NavItemDef[] = [item('settings'), { ...item('leaders'), to: '/settings/system' }]
 
 describe('navItemIsExact', () => {
   it('is true for an item that is the parent path of another item', () => {
@@ -181,7 +209,7 @@ describe('navItemIsExact', () => {
     expect(navItemIsExact(ADMIN_ITEMS, item('home'))).toBe(false)
   })
 
-  // 판정 R45의 결과. 설정('/admin')마저 더는 다른 네비 항목의 부모가 아니다.
+  // 판정 R45의 결과. 설정('/settings')마저 더는 다른 네비 항목의 부모가 아니다.
   it('is false for every item in the current admin list', () => {
     for (const i of ADMIN_ITEMS) {
       expect(navItemIsExact(ADMIN_ITEMS, i), i.id).toBe(false)
@@ -207,14 +235,14 @@ describe('navItemMatches', () => {
   })
 
   it('matches a parent item only on its exact path', () => {
-    expect(navItemMatches(NESTED, NESTED[0], '/admin')).toBe(true)
-    expect(navItemMatches(NESTED, NESTED[0], '/admin/users')).toBe(false)
+    expect(navItemMatches(NESTED, NESTED[0], '/settings')).toBe(true)
+    expect(navItemMatches(NESTED, NESTED[0], '/settings/system')).toBe(false)
   })
 
   // 설정 아래에 남은 화면들(사용자·가용시간·캘린더)은 네비 항목이 아니다. 그래서
   // 설정은 이제 접두사 매칭으로 켜지고, 그 자식 화면에서도 설정이 활성으로 남는다.
   it('keeps the settings tab lit on the screens that live under it', () => {
-    expect(navItemMatches(ADMIN_ITEMS, item('admin'), '/admin')).toBe(true)
-    expect(navItemMatches(ADMIN_ITEMS, item('admin'), '/admin/users')).toBe(true)
+    expect(navItemMatches(ADMIN_ITEMS, item('settings'), '/settings')).toBe(true)
+    expect(navItemMatches(ADMIN_ITEMS, item('settings'), '/settings/system')).toBe(true)
   })
 })

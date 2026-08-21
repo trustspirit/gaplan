@@ -31,8 +31,11 @@ describe('SidebarNav', () => {
     expect(screen.getByText('nav.sectionAdmin')).toBeInTheDocument()
   })
 
+  // 설정 개편(판정 R47) 이후 회장·칠십인도 admin 섹션의 계정 항목을 하나씩
+  // 받아서, 승인 대기(항목이 아예 없는 유일한 역할) 말고는 "admin 섹션이 없는
+  // 역할"이 더는 없다.
   it('omits the section heading when a role has no admin screens', () => {
-    renderNav(ROLE.PRESIDENT)
+    renderNav(ROLE.PENDING)
     expect(screen.queryByText('nav.sectionAdmin')).not.toBeInTheDocument()
   })
 
@@ -44,7 +47,7 @@ describe('SidebarNav', () => {
   })
 
   it('renders no group wrapper at all when a role has no admin screens', () => {
-    renderNav(ROLE.PRESIDENT)
+    renderNav(ROLE.PENDING)
     expect(screen.queryByRole('group', { name: 'nav.sectionAdmin' })).not.toBeInTheDocument()
     expect(screen.queryByRole('group')).not.toBeInTheDocument()
   })
@@ -54,15 +57,15 @@ describe('SidebarNav', () => {
     expect(screen.getByRole('link', { name: /nav.stats/ })).toHaveAttribute('aria-current', 'page')
   })
 
-  // 통계·주소록이 /admin/ 밖으로 나가면서 설정('/admin') 아래에는 네비 항목이
+  // 통계·주소록이 /admin/ 밖으로 나가면서 설정('/settings') 아래에는 네비 항목이
   // 하나도 남지 않았다. 겹쳐 켜질 상대가 없으니 접두사 매칭이 그대로 맞는 답이 된다
   // — 사용자 관리 화면에서 설정이 켜져 있는 것이 지금 어디인지 알려 준다.
   it('keeps the settings item current on the screens that live under it', () => {
-    renderNav(ROLE.ADMIN, undefined, '/admin/users')
+    renderNav(ROLE.ADMIN, undefined, '/settings/system')
     const current = screen
       .getAllByRole('link')
       .filter((el) => el.getAttribute('aria-current') === 'page')
-    expect(current.map((el) => el.textContent)).toEqual(['nav.admin'])
+    expect(current.map((el) => el.textContent)).toEqual(['nav.settings'])
   })
 
   it('shows the pending count on the badged item', () => {
