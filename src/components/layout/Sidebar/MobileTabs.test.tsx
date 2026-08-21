@@ -55,4 +55,19 @@ describe('MobileTabs', () => {
     const { container } = renderTabs(ROLE.PRESIDENT, 0)
     expect(container.querySelector('[data-tab-dot]')).not.toBeInTheDocument()
   })
+
+  // 점은 눈에만 보인다 — 스크린리더에는 별도로 알려야 한다
+  it('announces the pending count to assistive tech, not just the dot', () => {
+    renderTabs(ROLE.PRESIDENT, 3)
+    expect(screen.getByRole('link', { name: /nav.tasks/ })).toHaveAccessibleName(
+      /task.pendingCount/,
+    )
+  })
+
+  it('does not announce a pending count when there is nothing pending', () => {
+    renderTabs(ROLE.PRESIDENT, 0)
+    expect(screen.getByRole('link', { name: /nav.tasks/ })).not.toHaveAccessibleName(
+      /task.pendingCount/,
+    )
+  })
 })

@@ -46,6 +46,9 @@
   @include truncate;
   max-width: 100%;
 }
+.srOnly {
+  @include visually-hidden;
+}
 .moreList {
   display: flex;
   flex-direction: column;

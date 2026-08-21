@@ -37,6 +37,11 @@ export function MobileTabs({ role, pendingTaskCount = 0 }: MobileTabsProps) {
         )}
       </span>
       <span className={styles.tabLabel}>{t(item.labelKey)}</span>
+      {item.badge === 'pendingTasks' && pendingTaskCount > 0 && (
+        <span className={styles.srOnly}>
+          {t('task.pendingCount', { count: pendingTaskCount })}
+        </span>
+      )}
     </NavLink>
   )
 
