@@ -505,6 +505,29 @@ describe('EditScheduleModal payload 고정(pin-down) — Task 7', () => {
   })
 })
 
+// end-time-autofill-brief.md §4 회귀 테스트 3: 편집 모달도 WhenSection을 공유하므로 같은
+// 자동 채움을 따라와야 한다 — 단, 저장된 90분 간격은 시작을 옮겨도 보존돼야 한다.
+describe('EditScheduleModal 시작 시간 자동 종료 채움', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    editSpy.mockReset()
+    editSpy.mockResolvedValue({ data: {} })
+  })
+
+  it('09:00-10:30 일정을 열고 시작을 10:00으로 바꾸면 종료가 11:30으로 유지된다(90분 보존)', () => {
+    render(
+      <EditScheduleModal
+        schedule={{ ...MEETING_SCHEDULE, startTime: '09:00', endTime: '10:30' }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
+    expect(screen.getByLabelText('common.endTime')).toHaveValue('11:30')
+  })
+})
+
 // I2 (2026-08-22): 편집 모달은 대상의 '종류'를 바꿀 수단이 없다 — TargetSection에는
 // 단위(스테이크) select 하나만 남기고 유형/와드/CC/자유입력 select는 통째로 숨긴다
 // (askOnlyUnit). 예전 이름 fixedKind는 실제로는 대상 유형을 고정하는 게 아니라 이

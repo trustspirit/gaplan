@@ -930,6 +930,42 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
 // because ward_visit's stake/ward fields happen to use the same labels/values
 // before and after Task 3.
 // ---------------------------------------------------------------------------
+// end-time-autofill-brief.md §4 회귀 테스트 1, 2: 순수 함수(scheduleTimeRules.test.ts)만으로는
+// WhenSection의 배선이 검증되지 않는다 — 실제로 시작 Input에 값을 넣으면 종료 Input이 채워지는지
+// 모달 레벨에서 핀으로 박는다.
+describe('ScheduleFormModal 시작 시간 자동 종료 채움', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.currentUser = {
+      uid: 'test-uid',
+      email: 'test@test.com',
+      role: 'seventy',
+      name: '테스트',
+      unitId: 'seoul-stake',
+      createdAt: '2026-01-01',
+    }
+    mocks.users = []
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: [],
+      loading: false,
+      getLeaderByUnitName: vi.fn().mockReturnValue(undefined),
+    })
+  })
+
+  it('모임에서 시작을 19:00으로 입력하면 종료가 20:00으로 채워진다(기본 1시간)', () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '19:00' } })
+    expect(screen.getByLabelText('common.endTime')).toHaveValue('20:00')
+  })
+
+  it('와드 방문에서 시작을 09:00으로 입력하면 종료가 11:00으로 채워진다(기본 2시간)', () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '09:00' } })
+    expect(screen.getByLabelText('common.endTime')).toHaveValue('11:00')
+  })
+})
+
 describe('ScheduleFormModal 핀다운: adminCreateSchedule payload 계약', () => {
   const SEVENTY_USER: AppUser = {
     uid: 'test-uid',

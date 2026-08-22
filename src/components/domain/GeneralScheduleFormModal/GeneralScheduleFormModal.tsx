@@ -14,6 +14,7 @@ import type { GeneralSchedule, GeneralScheduleCategory } from '@/types'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { nextEndTime, DEFAULT_DURATION_MINUTES } from '@/components/domain/scheduleForm/scheduleTimeRules'
 import styles from './GeneralScheduleFormModal.module.scss'
 
 interface Props {
@@ -151,7 +152,16 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
               label={t('generalSchedule.startTimeLabel')}
               type="time"
               value={startTime}
-              onChange={e => setStartTime(e.target.value)}
+              onChange={e => {
+                const v = e.target.value
+                setStartTime(v)
+                setEndTime(nextEndTime({
+                  nextStart: v,
+                  previousStart: startTime,
+                  previousEnd: endTime,
+                  defaultMinutes: DEFAULT_DURATION_MINUTES.general_schedule,
+                }))
+              }}
             />
             <Input
               label={t('generalSchedule.endTimeLabel')}

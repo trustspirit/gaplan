@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import type { ScheduleType, GeneralSchedule } from '@/types'
 import { Input } from '@/components/ui'
 import type { ScheduleFormState } from './useScheduleForm'
+import { nextEndTime, DEFAULT_DURATION_MINUTES } from './scheduleTimeRules'
 import styles from '../ScheduleFormModal/ScheduleFormModal.module.scss'
 
 export interface WhenSectionProps {
@@ -82,7 +83,18 @@ export function WhenSection({ type, state, onChange, conflictingEvent, hideSabba
           type="time"
           label={t('common.startTime')}
           value={startTime}
-          onChange={(e) => onChange({ startTime: e.target.value })}
+          onChange={(e) => {
+            const v = e.target.value
+            onChange({
+              startTime: v,
+              endTime: nextEndTime({
+                nextStart: v,
+                previousStart: startTime,
+                previousEnd: endTime,
+                defaultMinutes: DEFAULT_DURATION_MINUTES[type],
+              }),
+            })
+          }}
         />
         <Input
           type="time"
