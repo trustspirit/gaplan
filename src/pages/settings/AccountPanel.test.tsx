@@ -126,4 +126,23 @@ describe('AccountPanel', () => {
     render(<AccountPanel />)
     expect(screen.getByText('settings.account.zoomLinksTitle')).toBeInTheDocument()
   })
+
+  // 판정 — 카드 5장이 각각 한 줄짜리 설정 하나만 담아 chrome이 내용보다 컸다.
+  // 이름·언어를 프로필 카드로, 구글·카카오를 연동 카드로 묶는다.
+  it('groups name and language under a profile card', () => {
+    render(<AccountPanel />)
+    expect(screen.getByText('settings.account.profileTitle')).toBeInTheDocument()
+    expect(screen.getByLabelText('settings.account.nameTitle')).toBeInTheDocument()
+    expect(
+      screen.getByRole('radiogroup', { name: 'settings.account.languageTitle' }),
+    ).toBeInTheDocument()
+  })
+
+  it('groups google calendar and kakao under an integrations card', () => {
+    currentUser = { ...currentUser, assignedSeventyUid: 'seventy-1' } as AppUser
+    render(<AccountPanel />)
+    expect(screen.getByText('settings.account.integrationsTitle')).toBeInTheDocument()
+    expect(screen.getByTestId('calendar-banner')).toBeInTheDocument()
+    expect(screen.getByText('settings.account.kakaoTitle')).toBeInTheDocument()
+  })
 })

@@ -1,0 +1,15 @@
+@use '@/styles/variables' as *;
+
+// 카드 하나에 여러 항목(이름+언어, 구글+카카오)을 묶을 때 항목 사이의 구분.
+.item + .item {
+  margin-top: $space-4;
+  padding-top: $space-4;
+  border-top: 1px solid $color-border;
+}
+
+.itemTitle {
+  margin: 0 0 $space-2;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}

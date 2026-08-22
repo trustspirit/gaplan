@@ -395,6 +395,8 @@
     },
     "account": {
       "title": "My account",
+      "profileTitle": "Profile",
+      "integrationsTitle": "Integrations",
       "nameTitle": "Name",
       "nameDesc": "The name other people see.",
       "nameSaved": "Name changed.",

@@ -395,6 +395,8 @@
     },
     "account": {
       "title": "내 계정",
+      "profileTitle": "프로필",
+      "integrationsTitle": "연동",
       "nameTitle": "이름",
       "nameDesc": "다른 사람에게 보이는 이름입니다.",
       "nameSaved": "이름을 바꿨습니다.",
