@@ -378,6 +378,7 @@ export default function PublicSchedulePage() {
                       } as const
                       const GIcon = ICONS[gs.category]
                       const gDate = dayjs(gs.date)
+                      const gIsPast = gDate.isBefore(dayjs(), 'day')
                       const catLabel =
                         gs.category === 'conference'
                           ? lang === 'ko'
@@ -393,32 +394,36 @@ export default function PublicSchedulePage() {
                       return (
                         <Fragment key={`gs-${gs.id}`}>
                           {renderTodayMarker(monthKey, entryIndex)}
-                          <div className={styles.scheduleRow}>
-                            <div
-                              className={clsx(styles.colorBar, styles[`general_${gs.category}`])}
-                            />
-                            <div className={clsx(styles.dateCol, styles[`general_${gs.category}`])}>
-                              <span className={styles.date}>{gDate.format('M.D')}</span>
-                              <span className={styles.dow}>{dowLabels[gDate.day()]}</span>
-                            </div>
-                            <div className={styles.itemBody}>
-                              <span className={styles.typeBadge}>
-                                <GIcon
-                                  size={11}
-                                  style={{
-                                    display: 'inline',
-                                    marginRight: 3,
-                                    verticalAlign: 'middle',
-                                  }}
-                                />
-                                {catLabel}
-                              </span>
-                              <p className={styles.title}>{gs.title}</p>
-                              {gs.startTime && gs.endTime && (
-                                <p className={styles.time}>
-                                  {gs.startTime} – {gs.endTime}
-                                </p>
-                              )}
+                          <div
+                            className={styles.scheduleRow}
+                            data-past={gIsPast}
+                            data-kind="general"
+                          >
+                            <div className={styles.scheduleRowMain}>
+                              <div className={styles.colorBar} data-type={gs.category} />
+                              <div className={styles.dateCol} data-type={gs.category}>
+                                <span className={styles.date}>{gDate.format('M.D')}</span>
+                                <span className={styles.dow}>{dowLabels[gDate.day()]}</span>
+                              </div>
+                              <div className={styles.itemBody}>
+                                <span className={styles.typeBadge}>
+                                  <GIcon
+                                    size={11}
+                                    style={{
+                                      display: 'inline',
+                                      marginRight: 3,
+                                      verticalAlign: 'middle',
+                                    }}
+                                  />
+                                  {catLabel}
+                                </span>
+                                <p className={styles.title}>{gs.title}</p>
+                                {gs.startTime && gs.endTime && (
+                                  <p className={styles.time}>
+                                    {gs.startTime} – {gs.endTime}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </Fragment>
