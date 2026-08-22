@@ -114,6 +114,30 @@ export function ScheduleFormModal({
       : ''
   const effectiveSeventyUid = seventyUid || autoSeventyUid
 
+  // 담당 칠십인 범위로 스테이크/지방부·CC 목록을 미리 거른다(Controller ruling R2,
+  // 2026-08-22 — TargetSection은 users 목록이 없어 스스로 이 범위를 계산할 수 없으므로
+  // 모달이 계산해 read-only 데이터로 내려준다). 예전 ScheduleFormModal의 unitPool/
+  // unitSelectDisabled/ccRegionOptions 계산을 그대로 옮긴 것이다.
+  const selectedSeventy = users.find((u) => u.uid === effectiveSeventyUid)
+  const seventyRegionIds =
+    selectedSeventy?.regionIds ?? (selectedSeventy?.regionId ? [selectedSeventy.regionId] : [])
+  const waitingForSeventyScope = !!effectiveSeventyUid && !selectedSeventy
+  const unitPool =
+    !effectiveSeventyUid
+      ? ALL_UNITS
+      : waitingForSeventyScope
+        ? []
+        : seventyRegionIds.length > 0
+      ? ALL_UNITS.filter((u) => seventyRegionIds.includes(u.regionId ?? ''))
+      : []
+  const unitOptions = unitPool.map((u) => ({ value: u.id, label: u.name.ko }))
+  const unitSelectDisabled = waitingForSeventyScope || (!!effectiveSeventyUid && unitOptions.length === 0)
+  const ccRegionOptions = (
+    seventyRegionIds.length > 0
+      ? REGIONS.filter((r) => seventyRegionIds.includes(r.id))
+      : effectiveSeventyUid ? [] : REGIONS
+  ).map((r) => ({ value: r.id, label: r.name }))
+
   const { visits: upcomingVisits, loading: upcomingVisitsLoading } = useUpcomingVisits(
     type === 'interview' || type === 'meeting' ? effectiveSeventyUid : '',
     date || dayjs().format('YYYY-MM-DD'),
@@ -348,6 +372,9 @@ export function ScheduleFormModal({
               leaders={leaders}
               users={users}
               upcomingVisits={upcomingVisits}
+              unitOptions={unitOptions}
+              unitSelectDisabled={unitSelectDisabled}
+              ccRegionOptions={ccRegionOptions}
             />
             {purpose === 'pre_visit' && relatedVisit && (
               <p className={styles.hint}>
