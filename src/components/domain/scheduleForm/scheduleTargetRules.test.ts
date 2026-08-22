@@ -23,9 +23,12 @@ describe('questionsFor', () => {
     })
   })
 
-  it('직접 입력은 자유 텍스트만 묻는다', () => {
+  // Controller ruling R5 (2026-08-22): 예전 폼은 대상을 '기타'로 골라도 그때까지 고른
+  // 스테이크를 payload에 그대로 실었다 — 그 소속 정보(및 그로부터 유도되는 제목·장소)가
+  // 사라지면 안 되므로 '기타'도 스테이크는 묻는다.
+  it('직접 입력은 스테이크와 자유 텍스트를 묻는다', () => {
     expect(questionsFor('other')).toEqual({
-      asksUnit: false, asksWard: false, asksCc: false, asksFreeText: true,
+      asksUnit: true, asksWard: false, asksCc: false, asksFreeText: true,
     })
   })
 
@@ -65,6 +68,18 @@ describe('toTargetPayload', () => {
 
   it('고르지 않았으면 targetKind는 null이다', () => {
     expect(toTargetPayload(EMPTY).targetKind).toBeNull()
+  })
+
+  // Controller ruling R5: 스테이크를 고른 뒤 대상을 '기타'로 고르면(ab3ad67의
+  // "서울 스테이크" 선택 → targetSelect='other' 흐름과 같은 값) 그 스테이크가
+  // payload에 실려야 한다 — 예전 폼이 항상 그랬다.
+  it('직접 입력(기타)은 스테이크를 실은 채 targetKind만 other로 싣는다', () => {
+    const p = toTargetPayload({ ...EMPTY, kind: 'other', unitId: 'seoul-stake', freeText: '홍길순' })
+    expect(p.unitId).toBe('seoul-stake')
+    expect(p.targetKind).toBe('other')
+    expect(p.wardName).toBe('')
+    expect(p.regionId).toBe('')
+    expect(p.wardId).toBeUndefined()
   })
 })
 

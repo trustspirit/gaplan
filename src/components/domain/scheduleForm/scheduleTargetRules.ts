@@ -46,8 +46,13 @@ const KIND_RULES: Record<TargetKindChoice | '', TargetQuestions> = {
     asksCc: true,
     asksFreeText: false,
   },
+  // 직접 입력(other)도 스테이크는 묻는다 — 예전 폼은 대상을 '기타'로 골라도 그때까지
+  // 고른 스테이크(unitId)를 그대로 payload에 실었다(ab3ad67:ScheduleFormModal.tsx:306).
+  // 이 유형만 스테이크를 안 물으면 그 소속 정보가 사라지고 제목·장소도 "접견"/null로
+  // 퇴화한다(Controller ruling R5, 2026-08-22). kind는 여전히 무엇을 물을지 결정하고,
+  // 스테이크는 그 아래에서 묻는다 — 역방향 의존이 되살아나는 게 아니다.
   other: {
-    asksUnit: false,
+    asksUnit: true,
     asksWard: false,
     asksCc: false,
     asksFreeText: true,
