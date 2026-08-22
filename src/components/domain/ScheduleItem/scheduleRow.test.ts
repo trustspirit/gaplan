@@ -178,6 +178,53 @@ describe('toScheduleRow', () => {
     expect(row.subtitle).toBeUndefined()
   })
 
+  // Controller amendment to Fix 1: when there is NO candidate at all (no
+  // location, no wardLabel), falling further back to unitName is not a
+  // repeat — it's the subtitle doing its one job, saying something the
+  // title left out. A user-typed customTitle never mentions the unit, so
+  // the unit name is worth surfacing below it, not worth hiding.
+  it('제목에 유닛도 장소도 없으면(직접 입력한 제목) 부제로 유닛 이름을 보여준다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'meeting', customTitle: '특별 모임' }),
+      unitName: '서울동 스테이크',
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('특별 모임')
+    expect(row.subtitle).toBe('서울동 스테이크')
+  })
+
+  // Same "no candidate" shape, but this time the custom title happens to
+  // already say the unit name itself — so there is nothing left for the
+  // subtitle to add, and it stays empty rather than repeating.
+  it('직접 입력한 제목이 이미 유닛 이름을 말했으면 부제가 없다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'meeting', customTitle: '서울동 스테이크 특별 모임' }),
+      unitName: '서울동 스테이크',
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('서울동 스테이크 특별 모임')
+    expect(row.subtitle).toBeUndefined()
+  })
+
+  // cc_council-style row: buildScheduleTitle's cc_council branch normally
+  // takes ccName as its subject, but toScheduleRow doesn't thread a resolved
+  // ccName through (out of this task's scope), so it falls to the generic
+  // '협의 평의회' — itself a "no candidate" title, same as a custom title:
+  // it names neither the unit nor a place, so the subtitle still earns its
+  // keep by naming the unit.
+  it('CC 협의 평의회처럼 제목이 유닛을 말하지 않으면 부제로 유닛 이름을 보여준다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'meeting', targetKind: 'cc_council' }),
+      unitName: '서울동 스테이크',
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('협의 평의회')
+    expect(row.subtitle).toBe('서울동 스테이크')
+  })
+
   // 지난 일정은 흐리게 — 지금 .past 클래스가 하는 일을 행 데이터로 옮긴다.
   // dimmed, not highlighted: .highlighted fills a background (adds emphasis)
   // while .past mutes text (removes emphasis) — opposite mechanisms, so a
