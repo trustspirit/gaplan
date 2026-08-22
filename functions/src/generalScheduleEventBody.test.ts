@@ -48,3 +48,17 @@ describe('generalScheduleEventBody', () => {
     expect(body.end).toEqual({ date: '2026-09-01' })
   })
 })
+
+// 행사는 endTime이 선택이다. 시작만 있는 문서를 그대로 내보내면 길이 0짜리 이벤트가 되어
+// 구글 캘린더에 점처럼 그려진다 — 폼이 자동으로 채우는 2시간과 같은 길이가 나와야 한다.
+describe('a general schedule with a start time but no end time', () => {
+  it('lasts the same two hours the form fills in, not zero minutes', () => {
+    const body = generalScheduleEventBody({
+      title: '스테이크 대회',
+      date: '2026-09-03',
+      startTime: '09:00',
+    })
+    expect(body.start).toEqual({ dateTime: '2026-09-03T09:00:00+09:00', timeZone: 'Asia/Seoul' })
+    expect(body.end).toEqual({ dateTime: '2026-09-03T11:00:00+09:00', timeZone: 'Asia/Seoul' })
+  })
+})

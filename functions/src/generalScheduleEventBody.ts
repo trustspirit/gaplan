@@ -7,6 +7,7 @@
  * 시간대는 `calendarSync.ts`와 동일하게 KST(+09:00, Asia/Seoul)로 맞춘다.
  */
 import dayjs from 'dayjs'
+import { resolveGeneralScheduleEndTime } from './generalScheduleDefaults'
 
 export interface GeneralScheduleForCalendar {
   title: string
@@ -31,9 +32,10 @@ export function generalScheduleEventBody(gs: GeneralScheduleForCalendar): Genera
   const description = gs.description ?? undefined
 
   if (gs.startTime) {
-    // endTime이 없는 경우는 브리프에 명시되지 않은 경계 상황이다 — 구글 캘린더 API는 end를 필수로
-    // 요구하므로, 시작 시각과 같은 시각으로 채워 0분짜리 이벤트를 만든다(누락보다는 안전한 폴백).
-    const endTime = gs.endTime ?? gs.startTime
+    // 행사는 endTime이 선택이라 시작만 있는 문서가 실제로 존재한다. 같은 시각으로 채우면
+    // 길이 0짜리 이벤트가 되어 구글 캘린더에 점처럼 그려지므로, 폼이 자동으로 채우는 것과
+    // 같은 기본 길이를 쓴다(generalScheduleDefaults.ts).
+    const endTime = resolveGeneralScheduleEndTime(gs.startTime, gs.endTime ?? undefined)
     return {
       summary: gs.title,
       ...(description ? { description } : {}),

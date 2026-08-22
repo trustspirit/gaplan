@@ -5,8 +5,10 @@
  * 행사는 startTime/endTime이 없을 수 있어(스테이크 대회처럼 하루 종일인 경우) 종일(all-day)
  * 표현이 필요하다 — 기존 `toIcsDateTime`은 시간이 있다고 가정해서 재사용할 수 없다.
  *
- * import가 하나도 없다 — `scheduleRules.ts`와 같은 방식으로 CF와 브라우저 양쪽에서 쓸 수 있게.
+ * 같은 폴더의 무의존 모듈 하나만 import한다 — `scheduleRules.ts`와 같은 방식으로 CF와
+ * 브라우저 양쪽에서 쓸 수 있는 성질은 그대로다.
  */
+import { resolveGeneralScheduleEndTime } from './generalScheduleDefaults'
 
 export interface GeneralScheduleForIcs {
   id: string
@@ -44,9 +46,11 @@ export function buildGeneralScheduleVEvent(gs: GeneralScheduleForIcs, dtstamp: s
 
   if (gs.startTime) {
     lines.push(`DTSTART;TZID=Asia/Seoul:${toIcsDateTime(gs.date, gs.startTime)}`)
-    if (gs.endTime) {
-      lines.push(`DTEND;TZID=Asia/Seoul:${toIcsDateTime(gs.date, gs.endTime)}`)
-    }
+    // DTEND를 빼면 RFC 5545상 길이 0인 이벤트가 되고, 클라이언트마다 다르게 그려진다.
+    // 종료 시각이 없으면 폼이 자동으로 채우는 것과 같은 기본 길이를 쓴다.
+    lines.push(
+      `DTEND;TZID=Asia/Seoul:${toIcsDateTime(gs.date, resolveGeneralScheduleEndTime(gs.startTime, gs.endTime))}`,
+    )
   } else {
     // 종일 이벤트: DTEND를 생략하면 RFC5545 기본 규칙에 따라 하루짜리로 해석된다.
     lines.push(`DTSTART;VALUE=DATE:${toIcsDate(gs.date)}`)

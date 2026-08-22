@@ -59,3 +59,15 @@ describe('buildGeneralScheduleVEvent', () => {
     expect(vevent.endsWith('END:VEVENT')).toBe(true)
   })
 })
+
+// DTEND가 없으면 RFC 5545상 길이 0인 이벤트가 되고 클라이언트마다 다르게 그려진다.
+describe('a general schedule with a start time but no end time', () => {
+  it('still emits a DTEND, two hours after the start', () => {
+    const text = buildGeneralScheduleVEvent(
+      { id: 'e1', title: '스테이크 대회', date: '2026-09-03', startTime: '09:00' },
+      '20260901T000000Z',
+    )
+    expect(text).toContain('DTSTART;TZID=Asia/Seoul:20260903T090000')
+    expect(text).toContain('DTEND;TZID=Asia/Seoul:20260903T110000')
+  })
+})
