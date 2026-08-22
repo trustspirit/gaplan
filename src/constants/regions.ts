@@ -230,5 +230,8 @@ export const getWardsByUnit = (unitId: string): WardUnit[] =>
 export const getWardById = (wardId: string): WardUnit | undefined =>
   WARDS.find(w => w.id === wardId)
 
-export const getWardIdByName = (wardNameKo: string): string | undefined =>
-  WARDS.find(w => w.name.ko === wardNameKo)?.id
+// M4 (2026-08-22): unitId 없이 전역 검색하면 서로 다른 스테이크에 동명 와드가 있을 때
+// 엉뚱한 와드 id를 돌려줄 수 있다. unitId를 주면 그 단위 안에서만 찾는다 — 없으면
+// 예전처럼 전역에서 찾는다(하위 호환, 호출부가 단위를 모르는 자리가 아직 있다).
+export const getWardIdByName = (wardNameKo: string, unitId?: string): string | undefined =>
+  WARDS.find(w => w.name.ko === wardNameKo && (unitId === undefined || w.unitId === unitId))?.id

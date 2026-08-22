@@ -86,7 +86,7 @@ export function toTargetPayload(sel: TargetSelection): TargetPayloadFields {
 
   // Only add wardId if we're asking for ward and have a ward name
   if (questions.asksWard && sel.wardName) {
-    payload.wardId = getWardIdByName(sel.wardName)
+    payload.wardId = getWardIdByName(sel.wardName, sel.unitId)
   }
 
   return payload

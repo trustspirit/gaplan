@@ -67,7 +67,7 @@ export interface TargetSectionProps {
  * (Controller ruling R10, 2026-08-22).
  */
 function targetForVisit(visit: UpcomingVisit): TargetSelection | null {
-  const wardId = visit.wardId ?? getWardIdByName(visit.wardName)
+  const wardId = visit.wardId ?? getWardIdByName(visit.wardName, visit.unitId)
   if (!wardId) return null
   return { kind: 'ward_bishop', unitId: visit.unitId, wardName: visit.wardName, ccRegionId: '', freeText: '' }
 }
