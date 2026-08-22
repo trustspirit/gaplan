@@ -150,11 +150,11 @@ describe('TargetSection', () => {
   it('협의 평의회를 고르면 목적·관련 방문 칸이 사라지고, 값도 지워진다', async () => {
     const onChange = vi.fn()
     renderSection({ type: 'meeting', purpose: 'pre_visit', relatedVisitId: 'v1', onChange })
-    expect(screen.getByLabelText('schedule.purposeLabel')).toBeInTheDocument()
+    expect(screen.getByLabelText('schedule.purposePreVisitCheckbox')).toBeInTheDocument()
 
     await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'cc_council')
 
-    expect(screen.queryByLabelText('schedule.purposeLabel')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('schedule.purposePreVisitCheckbox')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('schedule.relatedVisitLabel')).not.toBeInTheDocument()
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ purpose: 'general', relatedVisitId: '' }),
@@ -330,12 +330,37 @@ describe('TargetSection', () => {
     renderSection({ type: 'meeting', purpose: 'pre_visit', relatedVisitId: 'v1', upcomingVisits: visits })
 
     await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'ward_bishop')
-    expect((screen.getByLabelText('schedule.purposeLabel') as HTMLSelectElement).value).toBe('pre_visit')
+    expect(screen.getByLabelText('schedule.purposePreVisitCheckbox')).toBeChecked()
     expect((screen.getByLabelText('schedule.relatedVisitLabel') as HTMLSelectElement).value).toBe('v1')
 
     // 유형을 한 번 더 바꾼다 — 여전히 협의 평의회가 아니다
     await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'other')
-    expect((screen.getByLabelText('schedule.purposeLabel') as HTMLSelectElement).value).toBe('pre_visit')
+    expect(screen.getByLabelText('schedule.purposePreVisitCheckbox')).toBeChecked()
     expect((screen.getByLabelText('schedule.relatedVisitLabel') as HTMLSelectElement).value).toBe('v1')
+  })
+
+  // Task 3 (스케줄 폼 레이아웃 개선, 2026-08-22): 목적 select은 실질 선택지가 하나뿐이라
+  // 체크박스로 바꾼다. 체크 → 관련 방문 select이 나타나고, 체크 해제 → 사라지고
+  // relatedVisitId가 비워진다(숨겨진 값이 저장되지 않도록).
+  describe('사전 일정 체크박스', () => {
+    it('체크하면 관련 방문 select이 나타난다', async () => {
+      renderSection({ type: 'meeting' })
+      expect(screen.queryByLabelText('schedule.relatedVisitLabel')).not.toBeInTheDocument()
+
+      await userEvent.click(screen.getByLabelText('schedule.purposePreVisitCheckbox'))
+
+      expect(screen.getByLabelText('schedule.relatedVisitLabel')).toBeInTheDocument()
+    })
+
+    it('체크 해제하면 관련 방문 select이 사라지고 relatedVisitId가 비워진다', async () => {
+      const onChange = vi.fn()
+      renderSection({ type: 'meeting', purpose: 'pre_visit', relatedVisitId: 'v1', onChange })
+      expect(screen.getByLabelText('schedule.relatedVisitLabel')).toBeInTheDocument()
+
+      await userEvent.click(screen.getByLabelText('schedule.purposePreVisitCheckbox'))
+
+      expect(screen.queryByLabelText('schedule.relatedVisitLabel')).not.toBeInTheDocument()
+      expect(onChange).toHaveBeenCalledWith({ purpose: 'general', relatedVisitId: '' })
+    })
   })
 })

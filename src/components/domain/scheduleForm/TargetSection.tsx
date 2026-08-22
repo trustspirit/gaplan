@@ -143,16 +143,24 @@ export function TargetSection({
           지운다(대상 유형 select의 onChange 참고). 대상 유형이 고정된 편집 모달에는 애초에
           '목적'이라는 개념 자체가 없으므로 이 블록 전체를 숨긴다. */}
       {!askOnlyUnit && !isCcCouncil && (
-        <Select
-          label={t('schedule.purposeLabel')}
-          value={purpose === 'general' ? '' : purpose}
-          placeholder={t('schedule.purposeGeneral')}
-          onChange={(e) => {
-            const next = (e.target.value || 'general') as 'general' | 'pre_visit'
-            onChange(next === 'general' ? { purpose: next, relatedVisitId: '' } : { purpose: next })
-          }}
-          options={[{ value: 'pre_visit', label: t('schedule.purposePreVisit') }]}
-        />
+        // 실질 선택지가 하나뿐인 select은 체크박스를 위장한 것이다 — WhenSection의
+        // 체크박스와 같은 마크업(styles.checkRow/checkbox/checkLabel, accentColor)을
+        // 그대로 따른다(Controller ruling, 2026-08-22: 스케줄 폼 레이아웃 개선 Task 3).
+        <label className={styles.checkRow}>
+          <input
+            type="checkbox"
+            checked={purpose === 'pre_visit'}
+            onChange={(e) => {
+              const checked = e.target.checked
+              // 체크 해제 시 관련 방문도 함께 비운다 — 예전 select의 onChange와 동일하게,
+              // 숨겨진 relatedVisitId가 저장되지 않도록 한다.
+              onChange(checked ? { purpose: 'pre_visit' } : { purpose: 'general', relatedVisitId: '' })
+            }}
+            className={styles.checkbox}
+            style={{ accentColor: 'var(--color-primary, #177C9C)' }}
+          />
+          <span className={styles.checkLabel}>{t('schedule.purposePreVisitCheckbox')}</span>
+        </label>
       )}
 
       {!askOnlyUnit && !isCcCouncil && purpose === 'pre_visit' && (

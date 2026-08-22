@@ -546,9 +546,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
 
   it('사전 모임 목적인데 대상 방문을 안 고르면 저장을 막는다', async () => {
     render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
-      target: { value: 'pre_visit' },
-    })
+    fireEvent.click(screen.getByLabelText('schedule.purposePreVisitCheckbox'))
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), {
       target: { value: 'ward_bishop' },
     })
@@ -571,9 +569,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
   // driven through the new DOM (purpose + related-visit selection, same as before).
   it('대상 방문을 고르면 relatedVisitId를 payload에 포함한다', async () => {
     render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
-      target: { value: 'pre_visit' },
-    })
+    fireEvent.click(screen.getByLabelText('schedule.purposePreVisitCheckbox'))
     fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), {
       target: { value: 'v1' },
     })
@@ -616,16 +612,15 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
     expect(createSpy.mock.calls[0][0]).not.toHaveProperty('relatedVisitId')
   })
 
-  // Finding 1: Select가 항상 placeholder 옵션을 렌더하는데 목적 Select의 options에도
-  // 'general' 항목을 넣어서 "일반"이 두 번(placeholder + 옵션) 나타나던 버그의 회귀 테스트.
-  it('목적 Select에 "일반" 라벨이 한 번만 나타난다', () => {
+  // Finding 1의 회귀 테스트("Select가 항상 렌더하는 placeholder 옵션에 더해 목적 Select의
+  // options에도 'general' 항목을 넣어서 '일반'이 두 번 나타나던 버그")는 Task 3(스케줄
+  // 폼 레이아웃 개선, 2026-08-22)에서 목적 select을 체크박스로 바꾸며 지워졌다 —
+  // 체크박스는 옵션 목록이라는 개념 자체가 없어 이 버그가 재발할 통로가 없다. 대신 그
+  // 자리에 있던 "기본값이 맞는가"라는 취지는 체크박스가 기본적으로 unchecked(=일반)로
+  // 시작하는지로 이식한다.
+  it('목적 체크박스는 기본적으로 체크되어 있지 않다(일반)', () => {
     render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
-
-    const purposeSelect = screen.getByLabelText('schedule.purposeLabel') as HTMLSelectElement
-    const generalOptions = Array.from(purposeSelect.options).filter(
-      (o) => o.textContent === 'schedule.purposeGeneral',
-    )
-    expect(generalOptions).toHaveLength(1)
+    expect(screen.getByLabelText('schedule.purposePreVisitCheckbox')).not.toBeChecked()
   })
 
   // Finding 1의 회귀 테스트("종류를 바꿔도 relatedVisitId가 남아 payload를 오염시키던 버그")는
@@ -638,9 +633,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
   // 방문일(dates.visit)보다 늦으면 빈 목록을 돌려준다.
   it('선택한 방문이 목록에서 사라지면(모임 날짜를 방문 이후로 변경) 저장 시 대상 방문을 다시 요구한다', async () => {
     render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
-      target: { value: 'pre_visit' },
-    })
+    fireEvent.click(screen.getByLabelText('schedule.purposePreVisitCheckbox'))
     fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), {
       target: { value: 'v1' },
     })
@@ -688,9 +681,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
 
     // 자동 경로: 목적=사전 모임 + 대상 방문 선택만으로 같은 와드가 잡혀야 한다
     render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
-      target: { value: 'pre_visit' },
-    })
+    fireEvent.click(screen.getByLabelText('schedule.purposePreVisitCheckbox'))
     fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), {
       target: { value: 'v1' },
     })
@@ -862,7 +853,7 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
 
   it('협의 평의회에는 사전 준비 모임 목적을 노출하지 않는다', () => {
     openCcCouncilForm()
-    expect(screen.queryByLabelText('schedule.purposeLabel')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('schedule.purposePreVisitCheckbox')).not.toBeInTheDocument()
   })
 
   // Controller ruling R4 (2026-08-22): 스테이크/지방부 회장 대상은 접견에만 있다 —
