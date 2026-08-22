@@ -2,6 +2,7 @@ export interface RelatedVisitDoc {
   type?: string
   seventyUid?: string
   date?: string
+  wardName?: string   // 사전 모임 제목이 "<와드> 방문 사전 모임"을 만들 때 쓴다
 }
 
 /**

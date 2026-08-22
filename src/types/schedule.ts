@@ -22,6 +22,7 @@ export interface Schedule {
   taskId?: string     // ward visit: links schedule back to source task (for re-confirmation cleanup)
   notes?: string
   zoomLink?: string | null
+  location?: string | null    // 표시용 장소. 비우고 저장하면 CF가 유닛/와드/Zoom에서 유도한다
   customTitle?: string | null
   generalScheduleId?: string   // general_attendance일 때만 사용
   visitPlanId?: string        // 방문 계획에서 발행된 경우

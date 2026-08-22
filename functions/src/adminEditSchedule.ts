@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin'
 import { DATE_RE, TIME_RE, isValidUrl } from './validators'
 import { validateRelatedVisit } from './relatedVisit'
 import { CC_COUNCIL_TARGET_KIND } from './ccCouncil'
+import { resolveScheduleLocation } from './adminScheduleFields'
 
 interface AdminEditScheduleRequest {
   scheduleId: string
@@ -15,6 +16,7 @@ interface AdminEditScheduleRequest {
     wardName?: string | null
     presidentUid?: string | null
     zoomLink?: string | null
+    location?: string | null
     customTitle?: string | null
     projectId?: string | null
     presidentAccompanied?: boolean | null
@@ -107,6 +109,14 @@ export const adminEditSchedule = functions
         allowed.customTitle = trimmed
       } else {
         allowed.customTitle = null
+      }
+    }
+    if (updates.location !== undefined) {
+      if (updates.location !== null) {
+        const trimmed = updates.location.trim()
+        if (trimmed.length > 100) {
+          throw new functions.https.HttpsError('invalid-argument', 'location max 100 chars')
+        }
       }
     }
     if (updates.projectId !== undefined) {
@@ -216,6 +226,19 @@ export const adminEditSchedule = functions
       if (conflict) {
         throw new functions.https.HttpsError('already-exists', '해당 시간에 이미 확정된 일정이 있습니다.')
       }
+    }
+
+    if (updates.location !== undefined) {
+      const current = snap.data()!
+      allowed.location = resolveScheduleLocation({
+        type: current.type,
+        unitId: (allowed.unitId as string | undefined) ?? current.unitId,
+        regionId: current.regionId,
+        targetKind: allowed.targetKind !== undefined ? (allowed.targetKind as string | null) : current.targetKind,
+        wardName: allowed.wardName !== undefined ? (allowed.wardName as string | null) : current.wardName,
+        zoomLink: allowed.zoomLink !== undefined ? (allowed.zoomLink as string | null) : current.zoomLink,
+        location: updates.location,
+      })
     }
 
     await scheduleRef.update({
