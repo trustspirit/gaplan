@@ -39,11 +39,20 @@ export function toScheduleRow({
   // 이름마저 이미 제목에 있으면(또는 애초에 후보가 없으면) 부제를 아예
   // 비운다. 이 두 번째 단계가 없으면 장소 없는 기존 일정 전부가 — 제목이
   // 이제 `${와드} 방문`이므로 — 부제에서 와드 이름을 그대로 되풀이하게 된다.
+  //
+  // unitName은 schedule.unitId가 실제로 있을 때만 "유닛 후보"로 친다(Fix 2,
+  // controller ruling). cc_council/general_attendance는 unitId: ''로 저장되고,
+  // 호출부(SchedulesPage)는 그런 일정에 표시용 타입 라벨("모임")을 unitName
+  // 자리에 채워 넘긴다 — 실제 유닛 이름이 아니라 placeholder다. 이 함수는
+  // 순수 함수라 그 문자열이 진짜 유닛명인지 라벨인지 스스로 구분할 수 없으니,
+  // schedule.unitId 유무로 판단한다. 그렇지 않으면 CC 협의 평의회/참석 행이
+  // 부제로 "모임"이라는 의미 없는 타입 라벨을 그대로 되풀이한다.
+  const hasUnit = !!schedule.unitId
   const candidate = schedule.location?.trim() || wardLabel
   const subtitle =
     candidate && !title.includes(candidate)
       ? candidate
-      : !title.includes(unitName)
+      : hasUnit && !title.includes(unitName)
         ? unitName
         : undefined
 

@@ -225,6 +225,36 @@ describe('toScheduleRow', () => {
     expect(row.subtitle).toBe('서울동 스테이크')
   })
 
+  // Fix 2 (controller ruling): a REAL cc_council row — unitId: '' (adminEditSchedule.ts
+  // stores it empty; a stake can't own a whole CC), customTitle filled in by the CF at
+  // creation time (adminCreateSchedule.ts's resolvedCustomTitle). SchedulesPage falls
+  // back to the translated type label ("schedule.type.meeting") for unitName when
+  // getUnitName(schedule.unitId) can't resolve an empty unitId — that label is not a
+  // real unit name, so it must not surface as a repeated, meaningless subtitle.
+  it('실제 CC 협의 평의회 행(unitId 없음)은 타입 라벨을 부제로 되풀이하지 않는다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'meeting', unitId: '', targetKind: 'cc_council', customTitle: '서울 CC 협의 평의회' }),
+      unitName: 'schedule.type.meeting', // caller's placeholder fallback for an unresolvable unitId
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('서울 CC 협의 평의회')
+    expect(row.subtitle).toBeUndefined()
+  })
+
+  // Same shape for a general_attendance row (registerGeneralAttendance.ts also stores
+  // unitId: '' and fills customTitle with the attendee's name).
+  it('참석 등록 행(unitId 없음)도 타입 라벨을 부제로 되풀이하지 않는다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'general_attendance', unitId: '', customTitle: '김철수' }),
+      unitName: 'schedule.type.meeting',
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('김철수')
+    expect(row.subtitle).toBeUndefined()
+  })
+
   // 지난 일정은 흐리게 — 지금 .past 클래스가 하는 일을 행 데이터로 옮긴다.
   // dimmed, not highlighted: .highlighted fills a background (adds emphasis)
   // while .past mutes text (removes emphasis) — opposite mechanisms, so a
