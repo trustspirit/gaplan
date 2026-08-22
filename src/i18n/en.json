@@ -136,6 +136,7 @@
     "none": "None",
     "select": "Select",
     "add": "Add",
+    "back": "Back",
     "remove": "Remove",
     "complete": "Complete",
     "yes": "Yes",
@@ -262,6 +263,7 @@
     "submitAvailabilityEmpty": "Submit Availability",
     "savedSuccess": "Schedule saved.",
     "newTitle": "New Schedule",
+    "addChooserTitle": "What would you like to add?",
     "editTitle": "Edit Schedule",
     "saveBtn": "Save Schedule",
     "dateLabel": "Date",
@@ -334,6 +336,21 @@
       "interview": "Interview",
       "meeting": "Sacrament Meeting",
       "general_attendance": "Event Attendance"
+    },
+    "addChoice": {
+      "ward_visit": {
+        "desc": "A visit to a ward"
+      },
+      "interview": {
+        "desc": "A one-on-one interview"
+      },
+      "meeting": {
+        "desc": "A council or other meeting"
+      },
+      "general_schedule": {
+        "label": "Event",
+        "desc": "A conference, fast, or other announcement"
+      }
     },
     "ccRegionLabel": "Coordinating Council",
     "errorCcRegionRequired": "Select the CC for this coordinating council meeting.",
