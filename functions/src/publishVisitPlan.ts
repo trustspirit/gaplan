@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
+import { resolveScheduleLocation } from './adminScheduleFields'
 
 interface PublishRequest { planId: string }
 
@@ -11,6 +12,50 @@ interface PlanItem {
   startTime: string
   endTime: string
   scheduleId?: string
+}
+
+/**
+ * 방문 계획의 한 항목을 schedule 문서 payload로 바꾼다. 발행/재발행 모두 이 함수를
+ * 쓴다 — 재발행이 `ref.update({ ...payload })`로 명시한 필드만 덮어쓰므로, location을
+ * 여기서 매번 새로 유도해 넣지 않으면 와드/유닛이 바뀌어도 예전 location이 그대로
+ * 남는다. 편집 경로의 같은 구멍을 막은 헬퍼(resolveScheduleLocation)를 그대로 쓴다.
+ */
+export function buildVisitPlanSchedulePayload(
+  item: Pick<PlanItem, 'unitId' | 'wardName' | 'date' | 'startTime' | 'endTime'>,
+  opts: {
+    seventyUid: string
+    presidentUid: string | null
+    planId: string
+    itemId: string
+    projectId: string | null
+    createdBy: string
+  },
+) {
+  return {
+    type: 'ward_visit' as const,
+    seventyUid: opts.seventyUid,
+    unitId: item.unitId,
+    wardName: item.wardName,
+    presidentUid: opts.presidentUid,
+    date: item.date,
+    startTime: item.startTime,
+    endTime: item.endTime,
+    status: 'confirmed' as const,
+    notes: null,
+    zoomLink: null,
+    customTitle: null,
+    location: resolveScheduleLocation({
+      type: 'ward_visit',
+      unitId: item.unitId,
+      wardName: item.wardName,
+      zoomLink: null,
+      location: null,
+    }),
+    visitPlanId: opts.planId,
+    visitPlanItemId: opts.itemId,
+    projectId: opts.projectId,
+    createdBy: opts.createdBy,
+  }
 }
 
 export const publishVisitPlan = functions
@@ -56,24 +101,14 @@ export const publishVisitPlan = functions
     const updatedItems: PlanItem[] = []
     for (const item of items) {
       const presidentUid = await resolvePresident(item.unitId)
-      const payload = {
-        type: 'ward_visit',
+      const payload = buildVisitPlanSchedulePayload(item, {
         seventyUid,
-        unitId: item.unitId,
-        wardName: item.wardName,
         presidentUid,
-        date: item.date,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        status: 'confirmed',
-        notes: null,
-        zoomLink: null,
-        customTitle: null,
-        visitPlanId: planId,
-        visitPlanItemId: item.itemId,
+        planId,
+        itemId: item.itemId,
         projectId: plan.projectId ?? null,
         createdBy: context.auth.uid,
-      }
+      })
 
       if (item.scheduleId) {
         const ref = db.collection('schedules').doc(item.scheduleId)
