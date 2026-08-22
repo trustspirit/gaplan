@@ -487,7 +487,6 @@
       "upcoming": "예정",
       "completed": "완료"
     },
-    "addEvent": "행사 추가",
     "emptyTitle": "일정이 없습니다",
     "emptyDesc": "선택한 종류와 기간에 해당하는 일정이 없습니다.",
     "thisMonth": "이번 달",
@@ -556,7 +555,6 @@
     "syncCardDesc": "캘린더 등록이 실패한 확정 일정들을 Google Calendar에 다시 동기화합니다.",
     "moreEvents": "일정 {{count}}개 더 보기",
     "monthTitleFormat": "YYYY년 M월",
-    "addSchedule": "일정 추가",
     "exportCsv": "CSV 내보내기",
     "csv": {
       "date": "날짜",

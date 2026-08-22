@@ -487,7 +487,6 @@
       "upcoming": "Upcoming",
       "completed": "Completed"
     },
-    "addEvent": "Add event",
     "emptyTitle": "No schedules",
     "emptyDesc": "Nothing matches the selected kinds and date range.",
     "thisMonth": "This month",
@@ -556,7 +555,6 @@
     "syncCardDesc": "Re-sync confirmed schedules that failed to sync to Google Calendar.",
     "moreEvents": "Show {{count}} more events",
     "monthTitleFormat": "MMMM YYYY",
-    "addSchedule": "Add schedule",
     "exportCsv": "Export CSV",
     "csv": {
       "date": "Date",

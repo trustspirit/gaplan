@@ -28,10 +28,11 @@ import {
 } from '@/components/ui'
 import { ScheduleItem } from '@/components/domain/ScheduleItem/ScheduleItem'
 import { GeneralEventItem } from '@/components/domain/GeneralEventItem/GeneralEventItem'
-import { ScheduleFormModal } from '@/components/domain/ScheduleFormModal/ScheduleFormModal'
 import { EditScheduleModal } from '@/components/domain/EditScheduleModal/EditScheduleModal'
 import { GeneralScheduleFormModal } from '@/components/domain/GeneralScheduleFormModal/GeneralScheduleFormModal'
 import { GeneralScheduleDetailSheet } from '@/components/domain/GeneralScheduleDetailSheet/GeneralScheduleDetailSheet'
+import { AddScheduleFlow } from '@/components/domain/addSchedule/AddScheduleFlow'
+import { addScheduleChoicesFor } from '@/components/domain/addSchedule/addScheduleChoices'
 import { REGIONS } from '@/constants/regions'
 import { canUseAdminTools } from '@/utils/permissions'
 import type { GeneralSchedule, Schedule } from '@/types'
@@ -69,8 +70,7 @@ export function SchedulesPage() {
   const [regionId, setRegionId] = useState<string | null>(null)
   const [status, setStatus] = useState<ScheduleStatusFilter>('all')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [formOpen, setFormOpen] = useState(false)
-  const [eventFormOpen, setEventFormOpen] = useState(false)
+  const [addFlowOpen, setAddFlowOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const [detailTarget, setDetailTarget] = useState<GeneralSchedule | null>(null)
   // 상세 시트에서 「수정」을 누르면 같은 폼을 initialData와 함께 연다.
@@ -323,14 +323,9 @@ export function SchedulesPage() {
                   <RefreshCw size={14} />
                 </Button>
               )}
-              {(canManage || user.role === 'seventy') && (
-                <Button variant="secondary" size="sm" onClick={() => setEventFormOpen(true)}>
-                  + {t('schedules.addEvent')}
-                </Button>
-              )}
-              {canManage && (
-                <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
-                  + {t('calendar.addSchedule')}
+              {addScheduleChoicesFor(user).length > 0 && (
+                <Button variant="primary" size="sm" onClick={() => setAddFlowOpen(true)}>
+                  + {t('common.add')}
                 </Button>
               )}
             </div>
@@ -374,28 +369,26 @@ export function SchedulesPage() {
           />
         )}
 
-        {formOpen && (
-          <ScheduleFormModal
+        {addFlowOpen && (
+          <AddScheduleFlow
+            user={user}
             initialDate={selectedDate ?? undefined}
             generalSchedules={generalSchedules}
-            currentUser={user}
-            onClose={() => setFormOpen(false)}
+            onClose={() => setAddFlowOpen(false)}
             onSaved={() => {
-              setFormOpen(false)
+              setAddFlowOpen(false)
               toast.success(t('schedule.savedSuccess'))
             }}
           />
         )}
-        {(eventFormOpen || eventEditTarget) && (
+        {/* 행사 편집은 생성 플로우(AddScheduleFlow)와 별개다 — chooser/뒤로 버튼 없이
+            지금까지처럼 GeneralScheduleFormModal을 곧바로 연다. */}
+        {eventEditTarget && (
           <GeneralScheduleFormModal
-            initialData={eventEditTarget ?? undefined}
+            initialData={eventEditTarget}
             initialDate={selectedDate ?? undefined}
-            onClose={() => {
-              setEventFormOpen(false)
-              setEventEditTarget(null)
-            }}
+            onClose={() => setEventEditTarget(null)}
             onSaved={() => {
-              setEventFormOpen(false)
               setEventEditTarget(null)
               toast.success(t('schedule.savedSuccess'))
             }}

@@ -242,15 +242,23 @@ describe('SchedulesPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('lets an admin open the schedule form', async () => {
+  // 버튼 하나가 chooser를 연다 — 종류별 폼은 addSchedule 쪽(AddScheduleFlow/
+  // ScheduleTypeChooser) 자체 테스트가 이미 덮는다. 여기서는 페이지가 그 상태
+  // 기계를 실제로 붙였는지(고른 종류가 올바른 폼으로 이어지는지)만 본다.
+  it('lets an admin open the add-schedule chooser and pick a schedule kind', async () => {
     render(<SchedulesPage />)
-    await userEvent.click(screen.getByRole('button', { name: /calendar.addSchedule/ }))
+    await userEvent.click(screen.getByRole('button', { name: /common\.add/ }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /schedule\.type\.ward_visit/ }))
     expect(screen.getByTestId('schedule-form')).toBeInTheDocument()
   })
 
-  it('lets an admin open the event form', async () => {
+  it('lets an admin pick the event kind from the chooser', async () => {
     render(<SchedulesPage />)
-    await userEvent.click(screen.getByRole('button', { name: /schedules.addEvent/ }))
+    await userEvent.click(screen.getByRole('button', { name: /common\.add/ }))
+    await userEvent.click(
+      screen.getByRole('button', { name: /schedule\.addChoice\.general_schedule\.label/ }),
+    )
     expect(screen.getByTestId('event-form')).toBeInTheDocument()
   })
 
