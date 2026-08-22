@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { expectNoAccentStripe } from '@/components/ui/testing/bannedPatterns'
+import { expectNoViewportWidthQuery } from '@/components/ui/testing/responsiveScope'
 import type { Schedule } from '@/types'
 import { ScheduleItem } from './ScheduleItem'
 
@@ -168,5 +169,12 @@ describe('ScheduleItem', () => {
   // 판정 R57 — 행 앞의 색 막대 금지.
   it('never puts a colour bar in front of the row', () => {
     expectNoAccentStripe(readFileSync(resolve(__dirname, 'ScheduleItem.module.scss'), 'utf8'))
+  })
+
+  // 배지 글자('회장 동행'·'완료')를 숨길지는 화면 크기가 아니라 이 행이 놓인
+  // 자리의 폭이 정한다 — 같은 행이 일정 화면의 420px 우측 열에도 들어간다.
+  it('hides the badge labels by container width, not by viewport', () => {
+    const scss = readFileSync(resolve(__dirname, 'ScheduleItem.module.scss'), 'utf8')
+    expectNoViewportWidthQuery(scss)
   })
 })

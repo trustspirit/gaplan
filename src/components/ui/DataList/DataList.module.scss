@@ -3,6 +3,8 @@
 
 .wrap {
   min-width: 0;
+  // 행의 축약 기준점. 이 상자의 폭이 곧 @include datalist-narrow의 판정 대상이다.
+  container: datalist / inline-size;
 }
 .list {
   display: flex;
@@ -17,7 +19,7 @@
     border-bottom: none;
   }
 
-  @include mobile {
+  @include datalist-narrow {
     // let content wrap instead of overflowing horizontally once a row
     // carries lead + title/subtitle + meta + tag + badges + actions
     flex-wrap: wrap;
@@ -49,9 +51,47 @@
   padding: $space-3 $space-4;
   text-align: left;
 
-  @include mobile {
-    flex-wrap: wrap;
-    row-gap: $space-1;
+  // 좁은 자리에서는 flex 줄바꿈에 맡기지 않고 2줄을 명시적으로 짠다. 줄바꿈에
+  // 맡기면 어떤 항목이 어디로 내려갈지가 글자 길이에 따라 매번 달라져(배지가
+  // 날짜 밑으로 가는 등) 행마다 다른 모양이 된다.
+  //   1줄: 제목 · 부제
+  //   2줄: 시간 · 종류 · 배지
+  // 날짜(lead)는 두 줄에 걸쳐 왼쪽에 서고, 액션은 바깥 .row가 오른쪽에 붙인다.
+  @include datalist-narrow {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'lead main'
+      'lead detail';
+    align-items: center;
+    column-gap: $space-3;
+    row-gap: 2px;
+
+    .lead {
+      grid-area: lead;
+    }
+    .main {
+      grid-area: main;
+      // 제목과 부제를 한 줄에 나란히 — 좁을수록 줄 수가 곧 밀도다.
+      display: flex;
+      align-items: baseline;
+      gap: $space-1;
+      min-width: 0;
+    }
+    .subtitle::before {
+      content: '·';
+      margin-right: $space-1;
+      color: var(--text-subtle);
+    }
+    // 넓을 때 사라져 있던 상자가 여기서 살아나 둘째 줄이 된다.
+    .detail {
+      grid-area: detail;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 2px $space-2;
+      min-width: 0;
+    }
   }
 }
 .rowButton {
@@ -97,6 +137,11 @@
   font-size: $font-size-sm;
   color: var(--text-muted);
   @include truncate;
+}
+// 넓을 때는 이 상자가 없는 것처럼 행동해 meta·tag·badges가 행의 직계
+// flex 자식이 된다. 좁아지면 위 datalist-narrow 블록이 진짜 상자로 되살린다.
+.detail {
+  display: contents;
 }
 .meta {
   flex: none;

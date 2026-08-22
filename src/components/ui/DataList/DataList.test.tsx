@@ -3,6 +3,10 @@ import userEvent from '@testing-library/user-event'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { expectNoAccentStripe } from '../testing/bannedPatterns'
+import {
+  expectDeclaresInlineSizeContainer,
+  expectNoViewportWidthQuery,
+} from '../testing/responsiveScope'
 import { DataList, type DataListRow } from './DataList'
 
 const ROWS: DataListRow[] = [
@@ -191,5 +195,30 @@ describe('DataList', () => {
     expect(rowButton).toHaveAccessibleName(/역삼 와드 방문/)
     expect(rowButton).toHaveAccessibleName(/강남 스테이크/)
     expect(rowButton).toHaveAccessibleName(/접견/)
+  })
+
+  // 행은 전체 폭 목록에도, 일정 화면의 420px 우측 열에도 놓인다. 좁고 넓음을
+  // 뷰포트로 판정하면 데스크톱의 그 좁은 열에서 축약이 켜지지 않아 meta·tag·
+  // badges가 actions 위로 흘러넘친다. 판정 기준은 제 컨테이너 폭이어야 한다.
+  it('decides narrow by its own container, not the viewport', () => {
+    const scss = readFileSync(resolve(__dirname, 'DataList.module.scss'), 'utf8')
+    expectDeclaresInlineSizeContainer(scss)
+    expectNoViewportWidthQuery(scss)
+  })
+
+  // 좁은 자리(420px 열·휴대폰)에서 시간·종류·배지는 제목 아래 한 줄로 함께
+  // 접힌다. 셋이 각각 행의 직계 자식이면 접힐 때 서로 다른 줄로 흩어지고,
+  // 배지가 날짜 밑으로 내려가는 식으로 행마다 모양이 달라진다.
+  it('groups meta, tag, and badges into one foldable detail line', () => {
+    render(
+      <DataList
+        rows={[{ ...ROWS[0], badges: <span data-testid="row-badge">확인됨</span> }]}
+        aria-label="다가오는 일정"
+      />,
+    )
+    const detail = screen.getByText('09:00').parentElement!
+    expect(detail.className).toMatch(/detail/)
+    expect(screen.getByText('방문').parentElement).toBe(detail)
+    expect(screen.getByTestId('row-badge').parentElement!.parentElement).toBe(detail)
   })
 })

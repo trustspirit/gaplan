@@ -22,6 +22,20 @@ $breakpoint-tablet: 1024px;
   }
 }
 
+// 목록 행이 좁은지는 뷰포트가 아니라 **행이 놓인 상자**가 정한다. 같은 DataList
+// 행이 전체 폭 목록에도, 일정 화면의 420px 우측 열(ScheduleCalendarPanel의
+// .listCol)에도 들어가기 때문이다. 미디어 쿼리로 판정하면 데스크톱의 그 좁은
+// 열에서 축약이 켜지지 않아, 줄어들 수 없는 meta·tag·badges가 상자 밖으로
+// 흘러 actions 위에 겹쳐 그려진다.
+$datalist-container: datalist;
+$datalist-narrow: 560px;
+
+@mixin datalist-narrow {
+  @container #{$datalist-container} (max-width: #{$datalist-narrow}) {
+    @content;
+  }
+}
+
 // 토큰을 CSS 커스텀 프로퍼티로 읽는다 — 여기서는 값이 순수한 CSS 속성값이라
 // Sass 함수 인자가 아니므로 var()가 안전하다 (rgba()/color.adjust() 호출부와 다르다).
 // 이 두 믹스인을 쓰는 프리미티브가 여섯 개라, 리터럴로 두면 테마를 바꿀 때

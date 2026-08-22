@@ -40,13 +40,21 @@ function RowBody({ row }: { row: DataListRow }) {
         <b className={styles.title}>{row.title}</b>
         {row.subtitle && <span className={styles.subtitle}>{row.subtitle}</span>}
       </div>
-      {row.meta && <span className={styles.meta}>{row.meta}</span>}
-      {row.tag && (
-        <span className={clsx(styles.tag, row.tagTone === 'accent' && styles.tagAccent)}>
-          {row.tag}
-        </span>
-      )}
-      {row.badges && <div className={styles.badges}>{row.badges}</div>}
+      {/*
+        시간·종류·배지는 한 덩어리다. 넓을 때는 `display: contents`로 이 상자가
+        사라져 셋이 행의 직계 flex 자식처럼 놓이고, 좁아지면 상자가 살아나
+        제목 아래 한 줄로 함께 접힌다. 감싸지 않으면 접힐 때 셋이 서로 다른
+        줄로 흩어진다.
+      */}
+      <div className={styles.detail}>
+        {row.meta && <span className={styles.meta}>{row.meta}</span>}
+        {row.tag && (
+          <span className={clsx(styles.tag, row.tagTone === 'accent' && styles.tagAccent)}>
+            {row.tag}
+          </span>
+        )}
+        {row.badges && <div className={styles.badges}>{row.badges}</div>}
+      </div>
     </>
   )
 }
