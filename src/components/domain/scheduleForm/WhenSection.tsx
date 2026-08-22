@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import type { ScheduleType, GeneralSchedule } from '@/types'
-import { Input, Switch } from '@/components/ui'
+import { Input } from '@/components/ui'
 import type { ScheduleFormState } from './useScheduleForm'
+import styles from '../ScheduleFormModal/ScheduleFormModal.module.scss'
 
 export interface WhenSectionProps {
   type: ScheduleType
@@ -15,6 +16,10 @@ export interface WhenSectionProps {
  * (ScheduleFormModal의 handleSabbathToggle)을 그대로 옮긴 것 — 끌 때는 시간을 건드리지
  * 않는다. 안식일·회장 동행 체크는 방문(ward_visit)에만 있는 개념이라 그때만 보인다.
  * 충돌 경고는 날짜 바로 아래에 둔다.
+ *
+ * 체크박스는 폼 값이라 저장 전에는 아무 효과가 없다 — 즉시 반영을 뜻하는 Switch가 아니라
+ * ScheduleFormModal의 원래 체크박스 마크업(같은 클래스·같은 accentColor)을 그대로 옮겼다
+ * (Controller ruling: 이 계획은 구조만 바꾼다, 겉모습은 그대로).
  */
 export function WhenSection({ type, state, onChange, conflictingEvent }: WhenSectionProps) {
   const { t } = useTranslation()
@@ -27,19 +32,29 @@ export function WhenSection({ type, state, onChange, conflictingEvent }: WhenSec
   return (
     <>
       {type === 'ward_visit' && (
-        <Switch
-          checked={isSabbath}
-          onChange={handleSabbathToggle}
-          label={t('schedule.sabbathVisit')}
-        />
+        <label className={styles.checkRow}>
+          <input
+            type="checkbox"
+            checked={isSabbath}
+            onChange={e => handleSabbathToggle(e.target.checked)}
+            className={styles.checkbox}
+            style={{ accentColor: 'var(--color-primary, #177C9C)' }}
+          />
+          <span className={styles.checkLabel}>{t('schedule.sabbathVisit')}</span>
+        </label>
       )}
 
       {type === 'ward_visit' && (
-        <Switch
-          checked={presidentAccompanied}
-          onChange={(checked) => onChange({ presidentAccompanied: checked })}
-          label={t('schedule.presidentAccompanied')}
-        />
+        <label className={styles.checkRow}>
+          <input
+            type="checkbox"
+            checked={presidentAccompanied}
+            onChange={e => onChange({ presidentAccompanied: e.target.checked })}
+            className={styles.checkbox}
+            style={{ accentColor: 'var(--color-primary, #177C9C)' }}
+          />
+          <span className={styles.checkLabel}>{t('schedule.presidentAccompanied')}</span>
+        </label>
       )}
 
       <Input
@@ -50,7 +65,9 @@ export function WhenSection({ type, state, onChange, conflictingEvent }: WhenSec
       />
 
       {conflictingEvent && (
-        <p>{t('generalSchedule.conflictWarning', { title: conflictingEvent.title })}</p>
+        <div className={styles.conflictWarning}>
+          {t('generalSchedule.conflictWarning', { title: conflictingEvent.title })}
+        </div>
       )}
 
       <Input
