@@ -1,4 +1,4 @@
-import { ALL_UNITS, getWardIdByName } from '@/constants/regions'
+import { getWardIdByName } from '@/constants/regions'
 
 export type TargetKindChoice = 'stake_president' | 'ward_bishop' | 'cc_council' | 'other'
 
