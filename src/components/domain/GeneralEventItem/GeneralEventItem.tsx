@@ -1,4 +1,4 @@
-import { Building2, MoonStar, CalendarDays, Check, Eye, EyeOff } from 'lucide-react'
+import { Building2, MoonStar, CalendarDays, Eye, EyeOff } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
@@ -15,22 +15,14 @@ const CATEGORY_ICONS = {
 
 interface GeneralEventItemProps {
   event: GeneralSchedule
-  isAttending: boolean
-  canAttend: boolean
   canToggleVisibility?: boolean
-  onAttend: () => void
-  onCancelAttend: () => void
   onToggleVisibility?: () => void
   onClick: () => void
 }
 
 export function GeneralEventItem({
   event,
-  isAttending,
-  canAttend,
   canToggleVisibility,
-  onAttend,
-  onCancelAttend,
   onToggleVisibility,
   onClick,
 }: GeneralEventItemProps) {
@@ -62,26 +54,6 @@ export function GeneralEventItem({
           }
         >
           {event.isPublic ? <Eye size={14} /> : <EyeOff size={14} />}
-        </button>
-      )}
-      {canAttend && (
-        <button
-          type="button"
-          className={clsx(styles.attendBtn, isAttending && styles.attending)}
-          onClick={(e) => {
-            e.stopPropagation()
-            if (isAttending) onCancelAttend()
-            else onAttend()
-          }}
-          aria-label={isAttending ? t('generalSchedule.cancelAttend') : t('generalSchedule.attend')}
-        >
-          {isAttending ? (
-            <>
-              <Check size={12} strokeWidth={3} /> {t('generalSchedule.attending')}
-            </>
-          ) : (
-            t('generalSchedule.attend')
-          )}
         </button>
       )}
     </>

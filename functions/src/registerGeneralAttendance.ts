@@ -1,3 +1,4 @@
+// 이제 UI에서 호출되지 않는다 — 기존 데이터 때문에 남겨 둔다.
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 

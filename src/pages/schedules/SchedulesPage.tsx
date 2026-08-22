@@ -14,8 +14,6 @@ import { useEffectiveScope } from '@/hooks/useEffectiveScope'
 import { useTopBar } from '@/hooks/useTopBar'
 import { manualCalendarSync, deleteScheduleViaCF } from '@/services/scheduleService'
 import {
-  registerAttendance,
-  cancelAttendance,
   updateGeneralSchedule,
   deleteGeneralSchedule,
 } from '@/services/generalScheduleService'
@@ -147,28 +145,6 @@ export function SchedulesPage() {
     [generalSchedules, kinds, deletingIds, regionId],
   )
 
-  const myAttendances = schedules.filter(
-    (s) => s.type === 'general_attendance' && s.seventyUid === user.uid,
-  )
-
-  const handleAttend = async (eventId: string) => {
-    try {
-      await registerAttendance(eventId)
-      toast.success(t('generalSchedule.attendSuccess'))
-    } catch (e: unknown) {
-      toast.error((e as { message?: string })?.message ?? t('generalSchedule.attendFailed'))
-    }
-  }
-
-  const handleCancelAttend = async (scheduleId: string) => {
-    try {
-      await cancelAttendance(scheduleId)
-      toast.success(t('generalSchedule.cancelSuccess'))
-    } catch (e: unknown) {
-      toast.error((e as { message?: string })?.message ?? t('generalSchedule.cancelFailed'))
-    }
-  }
-
   const handleToggleVisibility = async (event: GeneralSchedule) => {
     try {
       await updateGeneralSchedule(event.id, { isPublic: !event.isPublic })
@@ -205,16 +181,11 @@ export function SchedulesPage() {
   const renderItem = (item: BoardItem) => {
     if (item.entry.source === 'event') {
       const event = item.entry.event
-      const attendance = myAttendances.find((a) => a.generalScheduleId === event.id)
       return (
         <GeneralEventItem
           key={item.key}
           event={event}
-          isAttending={!!attendance}
-          canAttend={user.role === 'admin' || user.role === 'seventy'}
           canToggleVisibility={user.role === 'admin'}
-          onAttend={() => handleAttend(event.id)}
-          onCancelAttend={() => attendance && handleCancelAttend(attendance.id)}
           onToggleVisibility={() => handleToggleVisibility(event)}
           onClick={() => setDetailTarget(event)}
         />
@@ -424,13 +395,6 @@ export function SchedulesPage() {
           currentUid={user.uid}
           currentRole={user.role}
           onClose={() => setDetailTarget(null)}
-          onAttend={async () => {
-            if (detailTarget) await handleAttend(detailTarget.id)
-          }}
-          onCancelAttend={async () => {
-            const attendance = myAttendances.find((x) => x.generalScheduleId === detailTarget?.id)
-            if (attendance) await handleCancelAttend(attendance.id)
-          }}
           onEdit={() => {
             const target = detailTarget
             setDetailTarget(null)

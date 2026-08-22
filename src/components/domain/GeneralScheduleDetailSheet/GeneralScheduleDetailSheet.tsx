@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { Building2, MoonStar, CalendarDays, Clock, Globe, GlobeLock, Check, Pencil, Trash2 } from 'lucide-react'
+import { Building2, MoonStar, CalendarDays, Clock, Globe, GlobeLock, Pencil, Trash2 } from 'lucide-react'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { BottomSheet } from '@/components/ui/BottomSheet/BottomSheet'
 import { Modal } from '@/components/ui/Modal/Modal'
-import { Button, DeleteConfirmSheet } from '@/components/ui'
+import { DeleteConfirmSheet } from '@/components/ui'
 import type { GeneralSchedule, Schedule } from '@/types'
 import styles from './GeneralScheduleDetailSheet.module.scss'
 
@@ -22,8 +22,6 @@ interface GeneralScheduleDetailSheetProps {
   currentUid: string
   currentRole: string
   onClose: () => void
-  onAttend: () => void | Promise<void>
-  onCancelAttend: () => void | Promise<void>
   onEdit: () => void
   onDelete: () => void
 }
@@ -34,21 +32,16 @@ export function GeneralScheduleDetailSheet({
   currentUid,
   currentRole,
   onClose,
-  onAttend,
-  onCancelAttend,
   onEdit,
   onDelete,
 }: GeneralScheduleDetailSheetProps) {
   const { t } = useTranslation()
   const isMobile = useIsMobile()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [attendPending, setAttendPending] = useState(false)
 
   if (!event) return null
 
-  const isAttending = attendances.some(a => a.seventyUid === currentUid)
   const canManage = currentRole === 'admin' || event.createdBy === currentUid
-  const canAttend = currentRole === 'admin' || currentRole === 'seventy'
   const date = dayjs(event.date)
   const Icon = CATEGORY_ICONS[event.category]
 
@@ -111,30 +104,6 @@ export function GeneralScheduleDetailSheet({
           </div>
         )}
       </div>
-
-      {canAttend && (
-        <div className={styles.attendRow}>
-          <Button
-            variant={isAttending ? 'secondary' : 'primary'}
-            loading={attendPending}
-            onClick={async () => {
-              // block double-taps while the mutation is in flight
-              setAttendPending(true)
-              try {
-                await (isAttending ? onCancelAttend() : onAttend())
-              } finally {
-                setAttendPending(false)
-              }
-            }}
-          >
-            {isAttending ? (
-              <><Check size={14} /> {t('generalSchedule.attending')} · {t('generalSchedule.cancelAttend')}</>
-            ) : (
-              t('generalSchedule.attend')
-            )}
-          </Button>
-        </div>
-      )}
     </div>
   )
 

@@ -122,8 +122,6 @@ vi.mock('@/services/scheduleService', () => ({
   deleteScheduleViaCF: vi.fn(async () => {}),
 }))
 vi.mock('@/services/generalScheduleService', () => ({
-  registerAttendance: vi.fn(async () => {}),
-  cancelAttendance: vi.fn(async () => {}),
   updateGeneralSchedule: vi.fn(async () => {}),
   deleteGeneralSchedule: vi.fn(async () => {}),
 }))

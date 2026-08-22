@@ -4,9 +4,8 @@ import {
   doc, getDocs, serverTimestamp, writeBatch,
   type Unsubscribe,
 } from 'firebase/firestore'
-import { httpsCallable } from 'firebase/functions'
 import dayjs from 'dayjs'
-import { db, functions } from '@/firebase'
+import { db } from '@/firebase'
 import type { GeneralSchedule } from '@/types'
 import { mapDocs, snapshotErrHandler, stripUndefined } from './_utils'
 
@@ -69,13 +68,3 @@ export async function fetchPublicGeneralSchedules(): Promise<GeneralSchedule[]> 
   const snap = await getDocs(q)
   return mapDocs<GeneralSchedule>(snap)
 }
-
-export async function registerAttendance(generalScheduleId: string): Promise<void> {
-  const fn = httpsCallable<{ generalScheduleId: string }, { success: boolean }>(
-    functions,
-    'registerGeneralAttendance',
-  )
-  await fn({ generalScheduleId })
-}
-
-export { deleteScheduleViaCF as cancelAttendance } from './scheduleService'
