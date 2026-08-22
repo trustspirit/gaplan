@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { X } from 'lucide-react'
+import { ChevronLeft, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { useAtomValue } from 'jotai'
@@ -20,11 +20,18 @@ import styles from './GeneralScheduleFormModal.module.scss'
 interface Props {
   initialData?: GeneralSchedule
   initialDate?: string
+  onBack?: () => void
   onClose: () => void
   onSaved: () => void
 }
 
-export function GeneralScheduleFormModal({ initialData, initialDate, onClose, onSaved }: Props) {
+export function GeneralScheduleFormModal({
+  initialData,
+  initialDate,
+  onBack,
+  onClose,
+  onSaved,
+}: Props) {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
 
@@ -64,6 +71,13 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
   const requestClose = () => {
     if (isDirty && !window.confirm(t('common.discardChanges'))) return
     onClose()
+  }
+
+  // 뒤로 가기도 닫기와 같은 dirty 확인을 태운다 — 입력을 조용히 버리지 않는다.
+  const requestBack = () => {
+    if (!onBack) return
+    if (isDirty && !window.confirm(t('common.discardChanges'))) return
+    onBack()
   }
 
   const modalRef = useRef<HTMLDivElement>(null)
@@ -120,9 +134,21 @@ export function GeneralScheduleFormModal({ initialData, initialDate, onClose, on
         onClick={e => e.stopPropagation()}
       >
         <div className={styles.header}>
-          <h2 className={styles.title}>
-            {initialData ? t('generalSchedule.editTitle') : t('generalSchedule.newTitle')}
-          </h2>
+          <div className={styles.headerLeft}>
+            {onBack && (
+              <button
+                type="button"
+                className={styles.backBtn}
+                onClick={requestBack}
+                aria-label={t('common.back')}
+              >
+                <ChevronLeft size={18} />
+              </button>
+            )}
+            <h2 className={styles.title}>
+              {initialData ? t('generalSchedule.editTitle') : t('generalSchedule.newTitle')}
+            </h2>
+          </div>
           <button type="button" className={styles.closeBtn} onClick={requestClose} aria-label={t('common.close')}><X size={18} /></button>
         </div>
 

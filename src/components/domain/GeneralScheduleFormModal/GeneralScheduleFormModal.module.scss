@@ -40,6 +40,13 @@
   border-bottom: 1px solid $color-border;
 }
 
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  min-width: 0;
+}
+
 .title {
   font-size: $font-size-md;
   font-weight: $font-weight-semibold;
@@ -47,7 +54,8 @@
   margin: 0;
 }
 
-.closeBtn {
+.closeBtn,
+.backBtn {
   background: none;
   border: none;
   cursor: pointer;
