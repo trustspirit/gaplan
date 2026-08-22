@@ -281,9 +281,13 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
     fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
   }
 
-  function expandDetails() {
-    fireEvent.click(screen.getByRole('button', { name: /schedule.detailSectionLabel/ }))
-  }
+  // Task 2 (스케줄 폼 레이아웃 개선, 2026-08-22): 접기를 완전히 없앤다 — 열자마자
+  // Zoom 링크와 장소 입력칸이 클릭 없이 보인다.
+  it('접견 폼을 열자마자 Zoom 링크와 장소 입력칸이 클릭 없이 보인다', () => {
+    render(<ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.getByLabelText('schedule.zoomLinkOptional')).toBeInTheDocument()
+    expect(screen.getByLabelText('schedule.locationOptional')).toBeInTheDocument()
+  })
 
   it('와드 대상 선택 시 targetKind=ward_bishop, wardId를 payload에 포함한다', async () => {
     render(<ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />)
@@ -322,7 +326,6 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
   // old compound "대상" select, which no longer exists.
   it('와드 감독 접견 대상을 고르면 payload에 wardName이 실리고, 그 payload로 접견 제목이 와드를 밝힌다', async () => {
     render(<ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />)
-    expandDetails()
 
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), {
       target: { value: 'ward_bishop' },
@@ -402,7 +405,6 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
   // the two-line "대상: <name>\n<notes>" concatenation), driven through the new DOM.
   it('스테이크/지방부를 선택하지 않아도(옵션널) 대상을 기타로 직접 입력하면 저장할 수 있다', async () => {
     render(<ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />)
-    expandDetails()
 
     // No stake/unit selected — 대상 유형만 '기타'로 고른다
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), { target: { value: 'other' } })
@@ -436,7 +438,6 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
   // "서울 스테이크"). 스테이크를 안 물으면 이 소속 정보와 제목·장소가 사라진다.
   it('스테이크를 고르고 대상을 기타로 골라도 그 스테이크가 payload와 제목·장소에 남는다', async () => {
     render(<ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />)
-    expandDetails()
 
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), { target: { value: 'other' } })
     fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
@@ -496,7 +497,6 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
   // 비워 두면 뭐가 될지 알 수 있어야 비워 둘 수 있다.
   it('제목 칸 placeholder에 자동 생성될 제목을 보여준다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} fixedType="interview" />)
-    expandDetails()
     await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'ward_bishop')
     await userEvent.selectOptions(screen.getByLabelText('schedule.stakeLabel'), 'seoul-east-stake')
     expect(screen.getByLabelText('schedule.customTitleOptional')).toHaveAttribute(

@@ -84,43 +84,50 @@ function renderDetail(props: Parameters<typeof Harness>[0]) {
 }
 
 describe('DetailSection', () => {
-  it('기본은 접혀 있다', () => {
-    renderDetail({})
-    expect(screen.queryByLabelText('schedule.locationOptional')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /schedule.detailSectionLabel/ })).toHaveAttribute('aria-expanded', 'false')
-  })
-
-  it('펼치면 장소·제목·Zoom·메모가 나온다', async () => {
-    renderDetail({})
-    await userEvent.click(screen.getByRole('button', { name: /schedule.detailSectionLabel/ }))
+  // Task 2 (스케줄 폼 레이아웃 개선, 2026-08-22): 접기를 완전히 없앤다. 온라인 모임에서
+  // Zoom 링크가 "상세 정보"라는 선택적으로 들리는 라벨 뒤 두 번의 클릭 거리에 있었고,
+  // 장소도 사용자가 직접 표시해 달라던 값이었다 — 열자마자(클릭 없이) 다섯 칸이 모두 보인다.
+  it('열자마자 장소·제목·Zoom·메모가 클릭 없이 보인다', () => {
+    renderDetail({ type: 'meeting' })
     expect(screen.getByLabelText('schedule.locationOptional')).toBeInTheDocument()
     expect(screen.getByLabelText('schedule.customTitleOptional')).toBeInTheDocument()
+    expect(screen.getByLabelText('schedule.zoomLinkOptional')).toBeInTheDocument()
+    expect(screen.getByLabelText('schedule.notesLabelOptional')).toBeInTheDocument()
   })
 
-  // 접힌 채로 저장하면 사용자는 자기가 뭘 안 채웠는지 모른다. 자동값을 요약으로 보여준다.
-  it('접혀 있어도 자동 생성될 제목과 장소를 요약으로 보여준다', () => {
+  // 접기와 함께 요약 줄도 없어졌다 — 대신 각 입력칸의 placeholder가 자동값을 보여준다
+  // (locationOptional은 autoLocation, customTitleOptional은 autoTitle).
+  it('자동 생성될 제목·장소는 각 입력칸의 placeholder로 보여준다', () => {
     renderDetail({ autoTitle: '교문 와드 방문', autoLocation: '교문 와드' })
+    expect(screen.getByLabelText('schedule.locationOptional')).toHaveAttribute('placeholder', '교문 와드')
+    expect(screen.getByLabelText('schedule.customTitleOptional')).toHaveAttribute('placeholder', '교문 와드 방문')
+  })
+
+  // ward_visit은 제목 입력칸 자체가 렌더되지 않는다 — placeholder로 자동 제목을 볼 방법이
+  // 없으므로, 그때만 한 줄 힌트로 알려준다.
+  it('ward_visit일 때는 제목 칸이 없는 대신 자동 제목 힌트가 뜬다', () => {
+    renderDetail({ type: 'ward_visit', autoTitle: '교문 와드 방문' })
+    expect(screen.queryByLabelText('schedule.customTitleOptional')).not.toBeInTheDocument()
     expect(screen.getByText(/교문 와드 방문/)).toBeInTheDocument()
   })
 
-  // 이미 값이 들어 있는데 접혀 있으면 사용자가 그 값의 존재를 모른 채 저장한다.
-  it('값이 이미 채워져 있으면 처음부터 펼쳐진다', () => {
-    renderDetail({ initialLocation: '스테이크 센터 2층' })
-    expect(screen.getByLabelText('schedule.locationOptional')).toBeInTheDocument()
+  // ward_visit이 아닌 유형은 제목 입력칸의 placeholder가 이미 그 값을 보여주므로 힌트가
+  // 따로 필요 없다 — 중복해서 보여주지 않는다.
+  it('ward_visit이 아니면 자동 제목 힌트를 따로 보여주지 않는다', () => {
+    renderDetail({ type: 'meeting', autoTitle: '교문 와드 모임' })
+    expect(screen.queryByText('schedule.autoTitleHint {"title":"교문 와드 모임"}')).not.toBeInTheDocument()
   })
 
   // Zoom 링크 칸이 있는 유형(ward_visit 제외)에서는 그 입력칸 위에 저장된 링크
   // picker가 함께 뜬다.
-  it('Zoom 링크 칸이 있는 유형에서는 picker도 함께 뜬다', async () => {
+  it('Zoom 링크 칸이 있는 유형에서는 picker도 함께 뜬다', () => {
     renderDetail({ type: 'meeting' })
-    await userEvent.click(screen.getByRole('button', { name: /schedule.detailSectionLabel/ }))
     expect(screen.getByTestId('zoom-link-picker')).toBeInTheDocument()
   })
 
   // ward_visit은 애초에 Zoom 링크 입력칸 자체가 없다 — picker도 함께 없어야 한다.
-  it('ward_visit 유형에서는 picker가 뜨지 않는다', async () => {
+  it('ward_visit 유형에서는 picker가 뜨지 않는다', () => {
     renderDetail({ type: 'ward_visit' })
-    await userEvent.click(screen.getByRole('button', { name: /schedule.detailSectionLabel/ }))
     expect(screen.queryByTestId('zoom-link-picker')).not.toBeInTheDocument()
   })
 
@@ -129,7 +136,6 @@ describe('DetailSection', () => {
   it('picker에서 고르면 zoomLink onChange가 그 URL로 불린다', async () => {
     const onChange = vi.fn()
     renderDetail({ type: 'meeting', onChange })
-    await userEvent.click(screen.getByRole('button', { name: /schedule.detailSectionLabel/ }))
     await userEvent.click(screen.getByTestId('zoom-link-picker'))
     expect(onChange).toHaveBeenCalledWith({ zoomLink: 'https://zoom.us/j/picked' })
   })
@@ -139,7 +145,6 @@ describe('DetailSection', () => {
   it('picker가 있어도 URL 입력칸에 직접 타이핑할 수 있다', async () => {
     const onChange = vi.fn()
     renderDetail({ type: 'meeting', onChange })
-    await userEvent.click(screen.getByRole('button', { name: /schedule.detailSectionLabel/ }))
     await userEvent.type(screen.getByLabelText('schedule.zoomLinkOptional'), 'x')
     expect(onChange).toHaveBeenCalledWith({ zoomLink: 'x' })
   })

@@ -288,7 +288,7 @@
       "limit_reached": "You can save up to 10 links."
     },
     "customTitleOptional": "Title (Optional)",
-    "detailSectionLabel": "Details (Optional)",
+    "autoTitleHint": "Auto-generated title: {{title}}",
     "errorDateTimeRequired": "Date and time are required.",
     "errorSeventyRequired": "Please select an Area Seventy.",
     "errorStakeWardRequired": "Please select a Stake/District and Ward/Branch.",

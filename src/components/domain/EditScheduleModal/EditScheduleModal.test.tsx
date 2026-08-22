@@ -280,6 +280,16 @@ describe('EditScheduleModal 장소 프리필', () => {
     expect(screen.getByLabelText('schedule.locationOptional')).toHaveValue('2층 회의실')
   })
 
+  // Task 2 (스케줄 폼 레이아웃 개선, 2026-08-22): 접기를 완전히 없앤다 — 생성 모달과
+  // 마찬가지로 편집 모달도 열자마자 Zoom 링크와 장소 입력칸이 클릭 없이 보인다.
+  it('편집 모달을 열자마자 Zoom 링크와 장소 입력칸이 클릭 없이 보인다', () => {
+    const schedule: Schedule = { ...MEETING_SCHEDULE, type: 'interview', unitId: 'seoul-east-stake' }
+    render(<EditScheduleModal schedule={schedule} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    expect(screen.getByLabelText('schedule.zoomLinkOptional')).toBeInTheDocument()
+    expect(screen.getByLabelText('schedule.locationOptional')).toBeInTheDocument()
+  })
+
   it('프리필된 장소를 건드리지 않고 저장하면 저장된 장소가 그대로 payload에 담긴다', async () => {
     const scheduleWithCustomLocation: Schedule = {
       ...MEETING_SCHEDULE,

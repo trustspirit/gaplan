@@ -371,32 +371,41 @@ export function ScheduleFormModal({
               />
             )}
 
-            <TargetSection
-              type={type}
-              state={state}
-              onChange={applyPartial}
-              upcomingVisits={upcomingVisits}
-              unitOptions={unitOptionsForTargetSection}
-              unitSelectDisabled={unitSelectDisabled}
-              wardOptions={wardOptionsForTargetSection}
-              ccRegionOptions={ccRegionOptions}
-            />
+            {/* 세 조각(TargetSection/WhenSection/DetailSection) 사이 여백을 넓혀 훑기 쉽게 한다 —
+                섹션 제목이나 구분선 대신 여백만으로 구획을 나눈다(.sectionGroup, 기존 spacing
+                토큰만 사용). */}
+            <div className={styles.sectionGroup}>
+              <TargetSection
+                type={type}
+                state={state}
+                onChange={applyPartial}
+                upcomingVisits={upcomingVisits}
+                unitOptions={unitOptionsForTargetSection}
+                unitSelectDisabled={unitSelectDisabled}
+                wardOptions={wardOptionsForTargetSection}
+                ccRegionOptions={ccRegionOptions}
+              />
+            </div>
 
-            <WhenSection
-              type={type}
-              state={state}
-              onChange={applyPartial}
-              conflictingEvent={conflictingEvent}
-            />
+            <div className={styles.sectionGroup}>
+              <WhenSection
+                type={type}
+                state={state}
+                onChange={applyPartial}
+                conflictingEvent={conflictingEvent}
+              />
+            </div>
 
-            <DetailSection
-              type={type}
-              state={state}
-              onChange={applyPartial}
-              autoTitle={autoTitle}
-              autoLocation={autoLocation}
-              canPickProject={user.role === 'admin' || user.role === 'exec_secretary'}
-            />
+            <div className={styles.sectionGroup}>
+              <DetailSection
+                type={type}
+                state={state}
+                onChange={applyPartial}
+                autoTitle={autoTitle}
+                autoLocation={autoLocation}
+                canPickProject={user.role === 'admin' || user.role === 'exec_secretary'}
+              />
+            </div>
           </div>
 
           <div className={styles.footer}>

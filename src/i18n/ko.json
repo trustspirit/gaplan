@@ -288,7 +288,7 @@
       "limit_reached": "저장할 수 있는 링크는 최대 10개입니다."
     },
     "customTitleOptional": "제목 (선택)",
-    "detailSectionLabel": "상세 정보 (선택)",
+    "autoTitleHint": "자동으로 생성될 제목: {{title}}",
     "errorDateTimeRequired": "날짜와 시간을 입력해주세요.",
     "errorSeventyRequired": "담당 칠십인을 선택해주세요.",
     "errorStakeWardRequired": "스테이크/지방부와 와드/지부를 선택해주세요.",

@@ -212,6 +212,20 @@ form :global(textarea) {
   margin-left: 0;
 }
 
+// TargetSection/WhenSection/DetailSection은 각각 여러 개의 flat한 필드를 형제로 렌더한다
+// (Fragment, 래퍼 div 없음) — .fields의 gap만으로는 "한 조각 안"과 "조각 사이"를 구분할
+// 수 없다. 이 래퍼로 조각 하나를 한 단위로 묶고, 조각 사이에만 기존 spacing 토큰으로
+// 여백을 조금 더 준다(섹션 제목·구분선은 넣지 않는다 — Controller ruling, 2026-08-22).
+.sectionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.sectionGroup + .sectionGroup {
+  margin-top: $space-2;
+}
+
 .checkRow {
   display: flex;
   align-items: center;
