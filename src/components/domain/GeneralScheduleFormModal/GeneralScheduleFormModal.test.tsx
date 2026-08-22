@@ -113,3 +113,44 @@ describe('GeneralScheduleFormModal 뒤로 가기', () => {
     confirmSpy.mockRestore()
   })
 })
+
+// public-general-schedules brief §2: 공개설정 권한은 canUseAdminTools(admin + exec_secretary)로
+// 통일한다. 문자열로 'admin'만 비교하면 집행서기가 조용히 빠진다.
+describe('GeneralScheduleFormModal 공개설정 권한', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('집행서기는 공개 체크박스와 지역 타겟을 볼 수 있다', () => {
+    mocks.currentUser = {
+      uid: 'exec-uid', email: 'exec@test.com', role: 'exec_secretary',
+      name: '집행서기', createdAt: '2026-01-01',
+    }
+    render(<GeneralScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.getByLabelText('generalSchedule.isPublicLabel')).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: '서울 CC' })).toBeInTheDocument()
+  })
+
+  it('칠십인은 공개 체크박스와 지역 타겟을 볼 수 없고, 저장 payload도 강제로 비공개다', async () => {
+    mocks.currentUser = {
+      uid: 'seventy-uid', email: 'seventy@test.com', role: 'seventy',
+      name: '칠십인', regionId: 'seoul', createdAt: '2026-01-01',
+    }
+    const { createGeneralSchedule } = await import('@/services/generalScheduleService')
+    render(<GeneralScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.queryByLabelText('generalSchedule.isPublicLabel')).toBeNull()
+    expect(screen.queryByRole('checkbox', { name: '서울 CC' })).toBeNull()
+
+    fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), {
+      target: { value: '지역 모임' },
+    })
+    fireEvent.change(screen.getByLabelText('generalSchedule.dateLabel'), {
+      target: { value: '2026-09-01' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
+
+    expect(createGeneralSchedule).toHaveBeenCalledWith(
+      expect.objectContaining({ isPublic: false, targetRegionIds: [] }),
+    )
+  })
+})

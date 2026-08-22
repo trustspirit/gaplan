@@ -12,6 +12,7 @@ import {
 import { Button, Input, Select, Textarea } from '@/components/ui'
 import type { GeneralSchedule, GeneralScheduleCategory } from '@/types'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
+import { canUseAdminTools } from '@/utils/permissions'
 import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { nextEndTime, DEFAULT_DURATION_MINUTES } from '@/components/domain/scheduleForm/scheduleTimeRules'
@@ -104,8 +105,8 @@ export function GeneralScheduleFormModal({
         startTime:   startTime || undefined,
         endTime:     endTime || undefined,
         description: description.trim() || undefined,
-        isPublic:    user.role === 'admin' ? isPublic : false,
-        targetRegionIds: user.role === 'admin' ? targetRegionIds : [],
+        isPublic:    canUseAdminTools(user) ? isPublic : false,
+        targetRegionIds: canUseAdminTools(user) ? targetRegionIds : [],
         targetUnitIds,
         createdBy:   user.uid,
       }
@@ -203,7 +204,7 @@ export function GeneralScheduleFormModal({
             rows={3}
             maxLength={500}
           />
-          {user.role === 'admin' && (
+          {canUseAdminTools(user) && (
             <label className={styles.checkboxRow}>
               <input
                 type="checkbox"
@@ -213,8 +214,8 @@ export function GeneralScheduleFormModal({
               <span>{t('generalSchedule.isPublicLabel')}</span>
             </label>
           )}
-          {/* 지역 타겟 (admin만) */}
-          {user.role === 'admin' && (
+          {/* 지역 타겟 (공개설정 권한자만: admin + exec_secretary) */}
+          {canUseAdminTools(user) && (
             <div className={styles.targetSection}>
               <p className={styles.targetLabel}>
                 {t('generalSchedule.targetRegionLabel')} <span className={styles.targetHint}>{t('generalSchedule.targetHint')}</span>
