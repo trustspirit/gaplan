@@ -24,6 +24,14 @@ describe('isBookkeepingOnlyWrite', () => {
     ).toBe(true)
   })
 
+  // generalScheduleCalendarSync가 되쓰는 필드. 이 목록에 없으면 그 트리거가 자기
+  // 자신의 되쓰기로 무한히 재호출된다.
+  it('generalScheduleCalendarSync의 googleCalendarEventIds(복수형)만 바뀌어도 true', () => {
+    expect(
+      isBookkeepingOnlyWrite(SCHEDULE, { ...SCHEDULE, googleCalendarEventIds: { seoul: 'e1' } }),
+    ).toBe(true)
+  })
+
   it('동기화 대상 필드가 함께 바뀌면 false', () => {
     expect(
       isBookkeepingOnlyWrite(SCHEDULE, {

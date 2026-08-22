@@ -7,7 +7,12 @@
 // 해결: 장부(bookkeeping) 필드만 바뀐 write는 두 트리거 모두 무시한다.
 // 이 필드들은 동기화의 "결과"일 뿐 입력이 아니므로, 이것만 바뀐 write에는
 // 캘린더 쪽에서 할 일이 아무것도 없다.
-const BOOKKEEPING_FIELDS = ['googleCalendarEventId', 'kakaoEventIds']
+//
+// generalSchedules/{id}의 generalScheduleCalendarSync도 같은 문제를 겪는다 —
+// 그 트리거가 googleCalendarEventIds(복수형)를 되쓰면 스스로를 재호출한다.
+// schedules 컬렉션 문서에는 이 필드가 존재하지 않으므로 목록에 같이 둬도
+// 기존 두 트리거의 판단에는 영향이 없다.
+const BOOKKEEPING_FIELDS = ['googleCalendarEventId', 'kakaoEventIds', 'googleCalendarEventIds']
 
 export function isBookkeepingOnlyWrite(
   before: Record<string, unknown> | undefined,
