@@ -10,6 +10,7 @@ import { resolveScheduleRegionId } from './scheduleRegion'
 import { buildScheduleTitle } from './scheduleTitle'
 import { isBookkeepingOnlyWrite } from './bookkeepingWrite'
 import { buildCalendarEventFields } from './calendarEventBody'
+import { calendarSyncNeedsUpdate } from './calendarSyncNeedsUpdate'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -68,15 +69,7 @@ export const calendarSync = functions
     if (!after || after.status !== 'confirmed') return
 
     // Re-sync whenever any field that affects the GCal event changes
-    const needsUpdate =
-      before?.date !== after.date ||
-      before?.startTime !== after.startTime ||
-      before?.endTime !== after.endTime ||
-      (before?.zoomLink ?? null) !== (after.zoomLink ?? null) ||
-      (before?.customTitle ?? null) !== (after.customTitle ?? null) ||
-      (before?.unitId ?? '') !== (after.unitId ?? '') ||
-      (before?.wardName ?? null) !== (after.wardName ?? null) ||
-      (before?.notes ?? null) !== (after.notes ?? null)
+    const needsUpdate = calendarSyncNeedsUpdate(before, after)
     if (after.googleCalendarEventId && !needsUpdate) return
 
     const startDateTime = `${after.date}T${after.startTime}:00+09:00`
