@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin'
 import { DATE_RE, TIME_RE, isValidUrl } from './validators'
 import { validateRelatedVisit } from './relatedVisit'
 import { CC_COUNCIL_TARGET_KIND } from './ccCouncil'
-import { resolveScheduleLocation } from './adminScheduleFields'
+import { resolveScheduleLocationForEdit } from './adminScheduleFields'
 
 interface AdminEditScheduleRequest {
   scheduleId: string
@@ -228,15 +228,23 @@ export const adminEditSchedule = functions
       }
     }
 
-    if (updates.location !== undefined) {
+    // location은 write time에 다시 확정한다 — customTitle과 달리 사용자가 쓴 문구를
+    // 다음 수정에서도 지켜주는 필드가 아니므로, 이번 요청이 명시하지 않았으면 매 수정마다
+    // (기존 문서 + 이번 업데이트)를 합쳐 다시 유도해 오래된 값이 남지 않게 한다.
+    {
       const current = snap.data()!
-      allowed.location = resolveScheduleLocation({
-        type: current.type,
-        unitId: (allowed.unitId as string | undefined) ?? current.unitId,
-        regionId: current.regionId,
-        targetKind: allowed.targetKind !== undefined ? (allowed.targetKind as string | null) : current.targetKind,
-        wardName: allowed.wardName !== undefined ? (allowed.wardName as string | null) : current.wardName,
-        zoomLink: allowed.zoomLink !== undefined ? (allowed.zoomLink as string | null) : current.zoomLink,
+      allowed.location = resolveScheduleLocationForEdit(current as {
+        type?: string
+        unitId?: string
+        regionId?: string | null
+        targetKind?: string | null
+        wardName?: string | null
+        zoomLink?: string | null
+      }, {
+        unitId: allowed.unitId as string | undefined,
+        targetKind: allowed.targetKind as string | null | undefined,
+        wardName: allowed.wardName as string | null | undefined,
+        zoomLink: allowed.zoomLink as string | null | undefined,
         location: updates.location,
       })
     }
