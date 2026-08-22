@@ -2,6 +2,7 @@ import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/
 import * as admin from 'firebase-admin'
 import { getScopeUnitIds, getScopeDisplayName } from './regions'
 import { CC_COUNCIL_TARGET_KIND, isCcCouncilForScope } from './ccCouncil'
+import { generalScheduleInScope } from './generalScheduleScope'
 
 interface PublicSchedule {
   id: string
@@ -148,18 +149,22 @@ export const getPublicSchedules = onCall(
         }
       })
 
-    const generalSchedules: PublicGeneralSchedule[] = generalSnap.docs.map((d) => {
-      const data = d.data()
-      return {
-        id: d.id,
-        title: data.title,
-        date: data.date,
-        ...(data.startTime ? { startTime: data.startTime } : {}),
-        ...(data.endTime ? { endTime: data.endTime } : {}),
-        category: data.category,
-        isPublic: true,
-      }
-    })
+    const generalSchedules: PublicGeneralSchedule[] = generalSnap.docs
+      // 로그인 사용자용 관련성 판단은 isGeneralScheduleRelevant(src/types/generalSchedule.ts)를 쓴다 —
+      // 이건 공개 스코프(전체 공유 vs 특정 CC 링크)에 실려야 하는지를 판단하는 별개의 규칙이다.
+      .filter((d) => generalScheduleInScope(d.data(), unitIds === null ? null : scopeValue, unitIds))
+      .map((d) => {
+        const data = d.data()
+        return {
+          id: d.id,
+          title: data.title,
+          date: data.date,
+          ...(data.startTime ? { startTime: data.startTime } : {}),
+          ...(data.endTime ? { endTime: data.endTime } : {}),
+          category: data.category,
+          isPublic: true,
+        }
+      })
 
     return { schedules, generalSchedules, scopeDisplayName }
   },
