@@ -8,6 +8,7 @@ const LINK_B = { id: '2', label: '모임B', url: 'https://zoom.us/j/222' }
 const zoomLinksMock = vi.hoisted(() => ({
   links: [] as { id: string; label: string; url: string }[],
   loading: false,
+  add: vi.fn(),
   rename: vi.fn(),
   remove: vi.fn(),
 }))
@@ -26,6 +27,7 @@ vi.mock('@/hooks/useZoomLinks', () => ({
   useZoomLinks: () => ({
     links: zoomLinksMock.links,
     loading: zoomLinksMock.loading,
+    add: zoomLinksMock.add,
     rename: zoomLinksMock.rename,
     remove: zoomLinksMock.remove,
   }),
@@ -34,6 +36,7 @@ vi.mock('@/hooks/useZoomLinks', () => ({
 beforeEach(() => {
   zoomLinksMock.links = []
   zoomLinksMock.loading = false
+  zoomLinksMock.add.mockReset()
   zoomLinksMock.rename.mockReset()
   zoomLinksMock.remove.mockReset().mockResolvedValue(undefined)
   toastMock.success.mockClear()
@@ -44,6 +47,48 @@ describe('ZoomLinksCard', () => {
   it('shows an empty message when there are no saved links', () => {
     render(<ZoomLinksCard />)
     expect(screen.getByText('settings.account.zoomLinksEmpty')).toBeInTheDocument()
+  })
+
+  // 판정 — 빈 상태에서 추가할 방법이 아예 없던 결함. 빈 상태가 다음 행동을 제시해야 한다.
+  it('offers an add action when there are no saved links', () => {
+    render(<ZoomLinksCard />)
+    expect(screen.getAllByRole('button', { name: 'common.add' }).length).toBeGreaterThan(0)
+  })
+
+  it('offers an add action in the card header even when links exist', () => {
+    zoomLinksMock.links = [LINK_A]
+    render(<ZoomLinksCard />)
+    expect(screen.getByRole('button', { name: 'common.add' })).toBeInTheDocument()
+  })
+
+  it('adds a link through the add dialog', async () => {
+    zoomLinksMock.add.mockResolvedValue({ ok: true, link: { id: '3', label: '새 모임', url: 'https://zoom.us/j/333' } })
+    render(<ZoomLinksCard />)
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'common.add' })[0])
+    await userEvent.type(screen.getByLabelText('settings.account.zoomLinkLabelField'), '새 모임')
+    await userEvent.type(screen.getByLabelText('settings.account.zoomLinkUrlField'), 'https://zoom.us/j/333')
+    await userEvent.click(screen.getByRole('button', { name: 'common.save' }))
+
+    await waitFor(() =>
+      expect(zoomLinksMock.add).toHaveBeenCalledWith({ label: '새 모임', url: 'https://zoom.us/j/333' }),
+    )
+    expect(toastMock.success).toHaveBeenCalled()
+  })
+
+  it('shows an error and keeps the add dialog open when the url is invalid', async () => {
+    zoomLinksMock.add.mockResolvedValue({ ok: false, reason: 'invalid_url' })
+    render(<ZoomLinksCard />)
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'common.add' })[0])
+    await userEvent.type(screen.getByLabelText('settings.account.zoomLinkLabelField'), '새 모임')
+    await userEvent.type(screen.getByLabelText('settings.account.zoomLinkUrlField'), 'not-a-url')
+    await userEvent.click(screen.getByRole('button', { name: 'common.save' }))
+
+    await waitFor(() =>
+      expect(toastMock.error).toHaveBeenCalledWith('schedule.zoomLinkError.invalid_url'),
+    )
+    expect(screen.getByLabelText('settings.account.zoomLinkUrlField')).toBeInTheDocument()
   })
 
   it('lists saved links by label and URL', () => {

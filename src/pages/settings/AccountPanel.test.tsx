@@ -48,7 +48,7 @@ vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 // 저장된 Zoom 링크 카드는 useZoomLinks()(Firestore)에 의존한다 — 그 자체 동작은
 // ZoomLinksCard.test.tsx가 고정하므로, 여기서는 자리만 확인한다.
 vi.mock('@/hooks/useZoomLinks', () => ({
-  useZoomLinks: () => ({ links: [], loading: false, rename: vi.fn(), remove: vi.fn() }),
+  useZoomLinks: () => ({ links: [], loading: false, add: vi.fn(), rename: vi.fn(), remove: vi.fn() }),
 }))
 // jsdom has no matchMedia — ZoomLinksCard's dialogs call useIsMobile() even while closed.
 vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))

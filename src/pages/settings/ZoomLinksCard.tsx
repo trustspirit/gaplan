@@ -10,18 +10,47 @@ import { Card, CardHeader, CardBody, DataList, Input, Button, ResponsiveDialog, 
 import styles from './ZoomLinksCard.module.scss'
 
 /**
- * 저장된 Zoom 링크 관리 카드. 추가는 여기서 하지 않는다 — 일정 폼(ZoomLinkPicker)에서만
- * 새 링크를 만들 수 있다(스펙). 여기서는 이름 바꾸기·삭제만 한다.
+ * 저장된 Zoom 링크 관리 카드. 추가·이름 바꾸기·삭제를 모두 여기서 한다 — 일정
+ * 폼(ZoomLinkPicker)에도 같은 add()로 저장하는 별도의 진입점이 있지만, 설정에
+ * 들어온 사용자가 여기서 아무것도 못 하고 막다른 골목에 몰려서는 안 된다.
  */
 export function ZoomLinksCard() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)
-  const { links, rename, remove } = useZoomLinks(user?.uid)
+  const { links, add, rename, remove } = useZoomLinks(user?.uid)
 
+  const [adding, setAdding] = useState(false)
+  const [addLabel, setAddLabel] = useState('')
+  const [addUrl, setAddUrl] = useState('')
+  const [addSaving, setAddSaving] = useState(false)
   const [renaming, setRenaming] = useState<ZoomLink | null>(null)
   const [renameLabel, setRenameLabel] = useState('')
   const [renameSaving, setRenameSaving] = useState(false)
   const [deleting, setDeleting] = useState<ZoomLink | null>(null)
+
+  const openAdd = () => {
+    setAddLabel('')
+    setAddUrl('')
+    setAdding(true)
+  }
+  const closeAdd = () => setAdding(false)
+
+  const confirmAdd = async () => {
+    setAddSaving(true)
+    try {
+      const result = await add({ label: addLabel, url: addUrl })
+      if (result.ok) {
+        toast.success(t('settings.account.zoomLinkAdded'))
+        setAdding(false)
+      } else {
+        toast.error(t(`schedule.zoomLinkError.${result.reason}`))
+      }
+    } catch {
+      toast.error(t('common.saveFailed'))
+    } finally {
+      setAddSaving(false)
+    }
+  }
 
   const openRename = (link: ZoomLink) => {
     setRenaming(link)
@@ -61,11 +90,23 @@ export function ZoomLinksCard() {
   return (
     <>
       <Card>
-        <CardHeader title={t('settings.account.zoomLinksTitle')} />
+        <CardHeader
+          title={t('settings.account.zoomLinksTitle')}
+          action={
+            <Button variant="ghost" size="sm" onClick={openAdd}>
+              {t('common.add')}
+            </Button>
+          }
+        />
         <CardBody>
           <p className={styles.desc}>{t('settings.account.zoomLinksDesc')}</p>
           {links.length === 0 ? (
-            <p>{t('settings.account.zoomLinksEmpty')}</p>
+            <div className={styles.empty}>
+              <p>{t('settings.account.zoomLinksEmpty')}</p>
+              <Button variant="secondary" size="sm" onClick={openAdd}>
+                {t('common.add')}
+              </Button>
+            </div>
           ) : (
             <DataList
               aria-label={t('settings.account.zoomLinksTitle')}
@@ -100,6 +141,27 @@ export function ZoomLinksCard() {
           )}
         </CardBody>
       </Card>
+
+      <ResponsiveDialog open={adding} onClose={closeAdd} title={t('settings.account.zoomLinkAddTitle')}>
+        <Input
+          label={t('settings.account.zoomLinkLabelField')}
+          value={addLabel}
+          onChange={(e) => setAddLabel(e.target.value)}
+        />
+        <Input
+          label={t('settings.account.zoomLinkUrlField')}
+          value={addUrl}
+          onChange={(e) => setAddUrl(e.target.value)}
+        />
+        <div className={styles.dialogActions}>
+          <Button variant="ghost" onClick={closeAdd} disabled={addSaving}>
+            {t('common.cancel')}
+          </Button>
+          <Button onClick={confirmAdd} loading={addSaving}>
+            {t('common.save')}
+          </Button>
+        </div>
+      </ResponsiveDialog>
 
       <ResponsiveDialog
         open={renaming !== null}

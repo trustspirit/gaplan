@@ -6,6 +6,13 @@
   margin-bottom: $space-3;
 }
 
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $space-2;
+}
+
 .iconBtn {
   display: inline-flex;
   align-items: center;
