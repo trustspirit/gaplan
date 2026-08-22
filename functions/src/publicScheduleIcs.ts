@@ -1,6 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
-import { getScopeUnitIds, getScopeDisplayName } from './regions'
+import { getScopeUnitIds, getScopeDisplayName, getScopeRegionId } from './regions'
 import { isCcCouncilForScope } from './ccCouncil'
 import { buildScheduleTitle } from './scheduleTitle'
 import { generalScheduleInScope } from './generalScheduleScope'
@@ -73,6 +73,8 @@ export const publicScheduleIcs = functions
 
       let unitIds: string[] | null = null
       let calName = '일정표'
+      // 행사 스코프 판정은 유닛 링크에서도 그 유닛의 CC 기준으로 해야 한다.
+      let scopeRegionId: string | null = null
 
       if (scopeValue !== '__all__') {
         const unitEnabled = unitsSnap.exists && unitsSnap.data()?.[scopeValue]?.enabled === true
@@ -88,6 +90,7 @@ export const publicScheduleIcs = functions
           return
         }
         calName = getScopeDisplayName(scopeValue) || '일정표'
+        scopeRegionId = getScopeRegionId(scopeValue)
       }
 
       // Date cutoff: 7 days ago — same window as the web view
@@ -183,7 +186,7 @@ export const publicScheduleIcs = functions
       // 행사(generalSchedules)도 같은 스코프 규칙(generalScheduleInScope)으로 걸러 VEVENT로 싣는다.
       // getPublicSchedules.ts의 웹 뷰와 이 ICS 피드가 서로 다른 행사 목록을 보여주면 안 된다.
       generalSnap.docs
-        .filter((d) => generalScheduleInScope(d.data(), unitIds === null ? null : scopeValue, unitIds))
+        .filter((d) => generalScheduleInScope(d.data(), scopeRegionId, unitIds))
         .forEach((d) => {
           const data = d.data()
           events.push(buildGeneralScheduleVEvent({

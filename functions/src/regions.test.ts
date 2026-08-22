@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getScopeUnitIds, getScopeDisplayName } from './regions'
+import { getScopeUnitIds, getScopeDisplayName, getScopeRegionId } from './regions'
 
 describe('regions', () => {
   describe('getScopeUnitIds', () => {
@@ -44,6 +44,24 @@ describe('regions', () => {
     it('returns empty array for unknown scopeId', () => {
       const result = getScopeUnitIds('unknown-id')
       expect(result).toEqual([])
+    })
+  })
+
+  describe('getScopeRegionId', () => {
+    it('returns the region itself for a region scopeId', () => {
+      expect(getScopeRegionId('seoul')).toBe('seoul')
+    })
+
+    it('returns the parent CC for a stake scopeId', () => {
+      expect(getScopeRegionId('gyeonggi-stake')).toBe('seoul-south')
+    })
+
+    it('returns the parent CC for a district scopeId', () => {
+      expect(getScopeRegionId('gangneung-district')).toBe('seoul')
+    })
+
+    it('returns empty string for unknown scopeId', () => {
+      expect(getScopeRegionId('unknown-id')).toBe('')
     })
   })
 

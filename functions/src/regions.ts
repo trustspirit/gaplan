@@ -1,6 +1,6 @@
 // IMPORTANT: This data is duplicated from src/constants/regions.ts (no shared package).
 // Keep in sync when adding/removing stakes or districts.
-const REGION_UNITS: Record<string, string[]> = {
+export const REGION_UNITS: Record<string, string[]> = {
   'seoul': ['seoul-stake', 'seoul-east-stake', 'seoul-south-stake', 'seoul-west-stake', 'gangneung-district', 'military-district'],
   'seoul-south': ['gyeonggi-stake', 'daejeon-stake', 'cheongju-stake', 'jeonju-stake'],
   'busan': ['gwangju-stake', 'busan-stake', 'daegu-stake', 'changwon-stake', 'ulsan-district'],
@@ -38,6 +38,20 @@ export function getScopeUnitIds(scopeId: string): string[] {
   if (REGION_UNITS[scopeId]) return REGION_UNITS[scopeId]
   if (SCOPE_NAMES[scopeId]) return [scopeId]
   return []
+}
+
+/**
+ * Returns the CC (region) a scope belongs to.
+ * - For a region scopeId: returns it unchanged.
+ * - For a unit scopeId: returns the region that contains the unit.
+ * - Unknown scopeId: returns ''.
+ *
+ * 유닛 하나만 공개한 링크에서도 "이 링크는 어느 CC 것인가"를 알아야 행사의
+ * targetRegionIds와 비교할 수 있다(generalScheduleInScope).
+ */
+export function getScopeRegionId(scopeId: string): string {
+  if (REGION_UNITS[scopeId]) return scopeId
+  return Object.keys(REGION_UNITS).find((r) => REGION_UNITS[r].includes(scopeId)) ?? ''
 }
 
 /**
