@@ -28,7 +28,10 @@
 
 .monthGrid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  // `1fr`은 `minmax(auto, 1fr)`이라 트랙이 내용의 min-content 아래로 못 줄어든다.
+  // 칩 글자가 nowrap이므로 그 min-content가 곧 제목 전체 폭이 되고, 7열 합계가
+  // 컨테이너를 넘겨 마지막 열(토)이 overflow:hidden에 잘려 나갔다.
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 1px;
   background: $color-border;
   border: 1px solid $color-border;
@@ -48,6 +51,9 @@
 
 .cell {
   background: $color-surface;
+  // 트랙이 좁아지면 칸도 같이 좁아져야 한다 — 칩은 ellipsis로 줄어든다.
+  min-width: 0;
+  overflow: hidden;
   min-height: 80px;
   padding: 5px 4px 4px;
   cursor: pointer;
