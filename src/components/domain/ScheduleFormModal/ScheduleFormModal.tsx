@@ -10,13 +10,13 @@ import { functions } from '@/firebase'
 import { useUsers } from '@/hooks/useUsers'
 import { useLeaders } from '@/hooks/useLeaders'
 import { useUpcomingVisits } from '@/hooks/useUpcomingVisits'
-import { ALL_UNITS, REGIONS } from '@/constants/regions'
+import { ALL_UNITS, REGIONS, getWardsByUnit } from '@/constants/regions'
 import { isGeneralScheduleRelevant } from '@/types'
 import type { ScheduleType, GeneralSchedule, AppUser } from '@/types'
 import { Button, Select, Input } from '@/components/ui'
 import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
-import { buildNotesWithLeaderContact } from './leaderContactNotes'
+import { buildNotesWithLeaderContact, stakeTargetLabel, wardTargetLabel } from './leaderContactNotes'
 import { buildScheduleTitle, buildScheduleLocation } from '../../../../functions/src/scheduleRules'
 import { useScheduleForm } from '../scheduleForm/useScheduleForm'
 import type { ScheduleFormState } from '../scheduleForm/useScheduleForm'
@@ -137,6 +137,27 @@ export function ScheduleFormModal({
       ? REGIONS.filter((r) => seventyRegionIds.includes(r.id))
       : effectiveSeventyUid ? [] : REGIONS
   ).map((r) => ({ value: r.id, label: r.name }))
+
+  // TargetSection은 leaders/users를 갖지 않는다 — 라벨을 붙이는 계산은 모두 여기서 한다
+  // (Controller ruling R8/R9, 2026-08-22). 두 select 모두 "무엇을 고르든 같은 목록"이
+  // 아니라, 고른 대상 유형에 따라 그 옵션이 실제 대상(=연락처가 붙을 리더)인지 아닌지가
+  // 갈린다 — 대상 유형이 stake_president일 때만 스테이크 select 자체가 대상이므로
+  // 그때만 리더 역할 라벨("서울 스테이크 · 스테이크 회장")을 붙인다. ward_visit이나
+  // ward_bishop 선택 중 와드를 좁히기 위한 스테이크 select는 예전에도 늘 평범한 이름만
+  // 보여줬으므로 그대로 둔다.
+  const unitOptionsForTargetSection =
+    target.kind === 'stake_president'
+      ? unitOptions.map((o) => ({ value: o.value, label: stakeTargetLabel(o.label, leaders) }))
+      : unitOptions
+  // 와드 select는 ward_bishop 대상을 고를 때만 나타나므로(questionsFor), 나타날 때는
+  // 항상 "그 와드가 곧 대상"이다 — 늘 리더 역할 라벨을 붙인다. ward_visit의 와드
+  // select는 이 목록을 쓰지 않는 별개 렌더 분기라 영향받지 않는다(TargetSection.tsx).
+  const wardOptionsForTargetSection = target.unitId
+    ? getWardsByUnit(target.unitId).map((w) => ({
+        value: w.name.ko,
+        label: type === 'ward_visit' ? w.name.ko : wardTargetLabel(w.name.ko, leaders),
+      }))
+    : []
 
   const { visits: upcomingVisits, loading: upcomingVisitsLoading } = useUpcomingVisits(
     type === 'interview' || type === 'meeting' ? effectiveSeventyUid : '',
@@ -369,20 +390,12 @@ export function ScheduleFormModal({
               type={type}
               state={state}
               onChange={applyPartial}
-              leaders={leaders}
-              users={users}
               upcomingVisits={upcomingVisits}
-              unitOptions={unitOptions}
+              unitOptions={unitOptionsForTargetSection}
               unitSelectDisabled={unitSelectDisabled}
+              wardOptions={wardOptionsForTargetSection}
               ccRegionOptions={ccRegionOptions}
             />
-            {purpose === 'pre_visit' && relatedVisit && (
-              <p className={styles.hint}>
-                {t('schedule.relatedVisitRecommendedBy', {
-                  date: dayjs(relatedVisit.date).subtract(14, 'day').format('M/D'),
-                })}
-              </p>
-            )}
 
             <WhenSection
               type={type}
