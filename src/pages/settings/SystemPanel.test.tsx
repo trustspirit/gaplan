@@ -33,4 +33,11 @@ describe('SystemPanel', () => {
     expect(screen.getByTestId('invite')).toBeInTheDocument()
     expect(screen.getByTestId('prereg')).toBeInTheDocument()
   })
+
+  // 판정 — UserListCard·InviteCard·PreRegisterCard 셋 다 구성원 관리라는 같은 주제인데
+  // 시각적으로 그룹이 드러나지 않았다. 감싸는 층에서 라벨을 붙인다.
+  it('labels the member management cards as a group', () => {
+    render(<SystemPanel />)
+    expect(screen.getByText('settings.system.membersTitle')).toBeInTheDocument()
+  })
 })

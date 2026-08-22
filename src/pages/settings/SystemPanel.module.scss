@@ -1,0 +1,22 @@
+@use '@/styles/variables' as *;
+
+// UserListCard·InviteCard·PreRegisterCard는 각각 독립된 <Card>다(뜯어고치지 않는다) —
+// 이 래퍼는 셋을 구성원 관리라는 한 그룹으로만 시각적으로 묶는다.
+.memberGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-3;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-xl;
+}
+
+.memberGroupTitle {
+  margin: 0;
+  padding: 0 $space-1;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: $color-text-muted;
+}

@@ -391,7 +391,8 @@
       "syncDesc": "캘린더에 올라가지 않은 확정 일정을 다시 보냅니다.",
       "syncResult": "{{synced}}건을 보냈습니다.",
       "availabilityTitle": "가용 시간 기본값",
-      "usersTitle": "사용자 & 권한"
+      "usersTitle": "사용자 & 권한",
+      "membersTitle": "구성원"
     },
     "account": {
       "title": "내 계정",

@@ -391,7 +391,8 @@
       "syncDesc": "Re-send confirmed schedules that never reached the calendar.",
       "syncResult": "Sent {{synced}} schedules.",
       "availabilityTitle": "Default availability",
-      "usersTitle": "Users & permissions"
+      "usersTitle": "Users & permissions",
+      "membersTitle": "Members"
     },
     "account": {
       "title": "My account",
