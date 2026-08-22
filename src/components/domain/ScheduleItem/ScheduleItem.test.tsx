@@ -181,4 +181,20 @@ describe('ScheduleItem', () => {
     const scss = readFileSync(resolve(__dirname, 'ScheduleItem.module.scss'), 'utf8')
     expectNoViewportWidthQuery(scss)
   })
+
+  // 좁은 자리에서는 "Zoom" 글자를 숨겨 .actions가 제목의 폭을 덜 빼앗도록
+  // 한다(다른 배지 글자와 같은 처리). 하지만 링크는 아이콘 하나만 남을 뿐
+  // 여전히 클릭 가능한 링크이므로, 접근 가능한 이름을 별도로 갖고 있어야
+  // 한다 — 시각적 텍스트를 숨겼다고 이름까지 사라지면 스크린리더 사용자에게
+  // "이름 없는 링크"만 남는다.
+  it('keeps an accessible name on the zoom link once its visible text is hidden', () => {
+    render(
+      <ScheduleItem
+        schedule={schedule({ zoomLink: 'https://zoom.us/j/123' })}
+        unitName="서울 스테이크"
+      />,
+    )
+    const zoomLink = screen.getByRole('link', { name: 'schedule.joinZoom' })
+    expect(zoomLink).toHaveAttribute('href', 'https://zoom.us/j/123')
+  })
 })

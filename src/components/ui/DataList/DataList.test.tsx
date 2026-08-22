@@ -206,6 +206,22 @@ describe('DataList', () => {
     expectNoViewportWidthQuery(scss)
   })
 
+  // 제목과 부제가 좁은 자리에서 한 줄에 다 안 들어가면(예: Zoom 링크 +
+  // 메모 버튼까지 붙어 .actions가 넓어진 행) flex가 줄바꿈 없이 둘 다
+  // 욱여넣으려 하면서 둘 다 줄임표로 잘린다 — 제목마저 못 읽게 되는 최악의
+  // 결과다. 부제가 자기 줄로 내려가야 제목만은 온전히 남는다. 글자가 짧아
+  // 한 줄에 들어가는 행은 flex-wrap이 있어도 줄바꿈이 일어나지 않으므로
+  // 그대로 한 줄 높이를 유지한다 — 이건 소스로만 검증 가능하다(jsdom은
+  // 실제 줄바꿈 여부를 계산하지 않는다).
+  it('lets the title wrap to its own line instead of sharing with the subtitle', () => {
+    const scss = readFileSync(resolve(__dirname, 'DataList.module.scss'), 'utf8')
+    const narrowBlockStart = scss.indexOf('@include datalist-narrow {', scss.indexOf('.rowButton'))
+    expect(narrowBlockStart).toBeGreaterThan(-1)
+    const mainRule = /\.main\s*\{[^}]*\}/s.exec(scss.slice(narrowBlockStart))
+    expect(mainRule, 'narrow 블록 안에 .main 규칙을 찾지 못했다').not.toBeNull()
+    expect(mainRule![0]).toMatch(/flex-wrap:\s*wrap/)
+  })
+
   // 좁은 자리(420px 열·휴대폰)에서 시간·종류·배지는 제목 아래 한 줄로 함께
   // 접힌다. 셋이 각각 행의 직계 자식이면 접힐 때 서로 다른 줄로 흩어지고,
   // 배지가 날짜 밑으로 내려가는 식으로 행마다 모양이 달라진다.

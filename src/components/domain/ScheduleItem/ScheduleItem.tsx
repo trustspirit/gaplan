@@ -172,9 +172,10 @@ export function ScheduleItem({
           rel="noopener noreferrer"
           className={styles.zoomLink}
           onClick={(e) => e.stopPropagation()}
+          aria-label={t('schedule.joinZoom')}
         >
           <Video size={11} />
-          <span>Zoom</span>
+          <span className={styles.zoomLinkText}>Zoom</span>
         </a>
       )}
 

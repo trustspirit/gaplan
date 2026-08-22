@@ -299,6 +299,7 @@
     "noSlots": "No available slots.",
     "noDates": "No available dates.",
     "notesToggle": "View notes",
+    "joinZoom": "Join Zoom",
     "addToMyCalendar": "Add to my calendar",
     "upcoming": "Upcoming Schedule",
     "thisMonth": "{{count}} this month",
