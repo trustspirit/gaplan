@@ -213,13 +213,31 @@ describe('DataList', () => {
   // 한 줄에 들어가는 행은 flex-wrap이 있어도 줄바꿈이 일어나지 않으므로
   // 그대로 한 줄 높이를 유지한다 — 이건 소스로만 검증 가능하다(jsdom은
   // 실제 줄바꿈 여부를 계산하지 않는다).
-  it('lets the title wrap to its own line instead of sharing with the subtitle', () => {
+  // 줄바꿈은 쓰지 않는다 — 행 높이가 늘어나는 대신, 제목과 부제가 한 줄을
+  // 다툴 때 부제가 먼저(더 크게) 줄어들도록 해 제목이 오른쪽 끝(actions가
+  // 시작하는 지점)까지 폭을 최대한 쓰게 한다. flex-shrink 기본값(둘 다 1)은
+  // 콘텐츠 크기에 비례해 줄어들어, 보통 더 긴 제목이 절대 픽셀 기준으로
+  // 더 많이 깎이는 역효과를 낸다 — 부제 쪽 shrink 가중치를 키워 뒤집는다.
+  it('keeps title and subtitle on one line, but shrinks the subtitle before the title', () => {
     const scss = readFileSync(resolve(__dirname, 'DataList.module.scss'), 'utf8')
     const narrowBlockStart = scss.indexOf('@include datalist-narrow {', scss.indexOf('.rowButton'))
     expect(narrowBlockStart).toBeGreaterThan(-1)
-    const mainRule = /\.main\s*\{[^}]*\}/s.exec(scss.slice(narrowBlockStart))
+    const narrowBlock = scss.slice(narrowBlockStart)
+
+    const mainRule = /\.main\s*\{[^}]*\}/s.exec(narrowBlock)
     expect(mainRule, 'narrow 블록 안에 .main 규칙을 찾지 못했다').not.toBeNull()
-    expect(mainRule![0]).toMatch(/flex-wrap:\s*wrap/)
+    expect(mainRule![0]).not.toMatch(/flex-wrap:\s*wrap/)
+
+    const titleRule = /\.title\s*\{([^}]*)\}/s.exec(narrowBlock)
+    const subtitleRule = /\.subtitle\s*\{([^}]*)\}/s.exec(narrowBlock)
+    expect(titleRule, 'narrow 블록 안에 .title 규칙을 찾지 못했다').not.toBeNull()
+    expect(subtitleRule, 'narrow 블록 안에 .subtitle 규칙을 찾지 못했다').not.toBeNull()
+
+    const titleShrink = Number(/flex-shrink:\s*(\d+(?:\.\d+)?)/.exec(titleRule![1])?.[1])
+    const subtitleShrink = Number(/flex-shrink:\s*(\d+(?:\.\d+)?)/.exec(subtitleRule![1])?.[1])
+    expect(Number.isNaN(titleShrink), '.title에 flex-shrink가 없다').toBe(false)
+    expect(Number.isNaN(subtitleShrink), '.subtitle에 flex-shrink가 없다').toBe(false)
+    expect(subtitleShrink).toBeGreaterThan(titleShrink)
   })
 
   // 좁은 자리(420px 열·휴대폰)에서 시간·종류·배지는 제목 아래 한 줄로 함께
