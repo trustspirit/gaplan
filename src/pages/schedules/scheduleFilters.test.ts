@@ -1,5 +1,6 @@
 import type { GeneralSchedule, Schedule } from '@/types'
 import {
+  activeFilterCount,
   buildBoardItems,
   countBoardItems,
   eventMatchesRegion,
@@ -283,6 +284,33 @@ describe('toggleScheduleKind', () => {
     const kinds: ScheduleKind[] = ['visit', 'interview', 'event']
     toggleScheduleKind(kinds, 'interview')
     expect(kinds).toEqual(['visit', 'interview', 'event'])
+  })
+})
+
+describe('activeFilterCount', () => {
+  it('counts nothing when region is unset and status is all', () => {
+    expect(activeFilterCount({ regionId: null, status: 'all', hideStatus: false })).toBe(0)
+  })
+
+  it('counts a chosen region', () => {
+    expect(activeFilterCount({ regionId: 'r1', status: 'all', hideStatus: false })).toBe(1)
+  })
+
+  it('counts a non-default status', () => {
+    expect(activeFilterCount({ regionId: null, status: 'upcoming', hideStatus: false })).toBe(1)
+  })
+
+  it('counts both a region and a non-default status', () => {
+    expect(activeFilterCount({ regionId: 'r1', status: 'completed', hideStatus: false })).toBe(2)
+  })
+
+  // 상태 필터가 화면에서 감춰져 있으면(달력 뷰) 셀 것이 없다 — 사용자가 바꿀 수도 없는 값이다.
+  it('excludes status from the count when it is hidden, even if not all', () => {
+    expect(activeFilterCount({ regionId: null, status: 'upcoming', hideStatus: true })).toBe(0)
+  })
+
+  it('still counts the region when status is hidden', () => {
+    expect(activeFilterCount({ regionId: 'r1', status: 'upcoming', hideStatus: true })).toBe(1)
   })
 })
 
