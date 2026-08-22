@@ -271,6 +271,7 @@
     "wardLabel": "Ward/Branch",
     "presidentLabelOptional": "President (Optional)",
     "notesLabelOptional": "Notes (Optional)",
+    "locationOptional": "Location (Optional)",
     "zoomLinkOptional": "Zoom Link (Optional)",
     "customTitleOptional": "Title (Optional)",
     "customTitlePlaceholder": "Leave blank to auto-generate",

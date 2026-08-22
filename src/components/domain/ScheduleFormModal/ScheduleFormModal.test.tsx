@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import React from 'react'
 import type { AppUser } from '@/types/user'
 
@@ -377,6 +378,16 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
 
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
     expect(createSpy).not.toHaveBeenCalled()
+  })
+
+  // 비워 두면 뭐가 될지 알 수 있어야 비워 둘 수 있다.
+  it('제목 칸 placeholder에 자동 생성될 제목을 보여준다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} initialType="interview" />)
+    await userEvent.selectOptions(screen.getByLabelText('schedule.stakeLabelOptional'), 'seoul-east-stake')
+    expect(screen.getByLabelText('schedule.customTitleOptional')).toHaveAttribute(
+      'placeholder',
+      '서울동 스테이크 접견',
+    )
   })
 })
 

@@ -271,6 +271,7 @@
     "wardLabel": "와드/지부",
     "presidentLabelOptional": "회장 (선택)",
     "notesLabelOptional": "메모 (선택)",
+    "locationOptional": "장소 (선택)",
     "zoomLinkOptional": "줌 링크 (선택)",
     "customTitleOptional": "제목 (선택)",
     "customTitlePlaceholder": "비워두면 자동 생성됩니다",
