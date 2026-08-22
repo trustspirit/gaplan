@@ -85,7 +85,7 @@ describe('스테이크 라벨 규칙 — 생성/편집 모달 일치', () => {
   // 선택으로 서로 달랐다. 이 테스트는 그 어긋남을 직접 마운트해서 고정한다.
   it('모임(ward_bishop) 대상의 스테이크 라벨이 생성 모달과 편집 모달에서 같다', () => {
     const created = render(
-      <ScheduleFormModal initialType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />,
+      <ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />,
     )
     const kindSelect = created.getByLabelText('schedule.targetKindLabel') as HTMLSelectElement
     fireEvent.change(kindSelect, { target: { value: 'ward_bishop' } })

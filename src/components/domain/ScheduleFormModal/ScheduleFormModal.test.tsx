@@ -145,7 +145,7 @@ describe('ScheduleFormModal 메모 자동 입력', () => {
       loading: false,
       getLeaderByUnitName: vi.fn().mockReturnValue(undefined),
     })
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<ScheduleFormModal fixedType="ward_visit" onClose={vi.fn()} onSaved={vi.fn()} />)
     // notes 영역이 비어있어야 함 (sabbathVisitNotes 자동 입력 없음)
     const notesElements = screen.queryAllByRole('textbox')
     const notesField = notesElements.find(
@@ -165,7 +165,7 @@ describe('ScheduleFormModal 메모 자동 입력', () => {
       loading: false,
       getLeaderByUnitName,
     })
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<ScheduleFormModal fixedType="ward_visit" onClose={vi.fn()} onSaved={vi.fn()} />)
     expect(getLeaderByUnitName).toBeDefined()
   })
 })
@@ -236,7 +236,7 @@ describe('ScheduleFormModal 담당 칠십인 범위', () => {
   // stake/district select must stay disabled so it never briefly offers
   // out-of-scope units.
   it('담당 칠십인 지역 정보가 로딩되기 전에는 전체 단위를 열지 않는다', () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<ScheduleFormModal fixedType="ward_visit" onClose={vi.fn()} onSaved={vi.fn()} />)
     expect(screen.getByLabelText('schedule.stakeLabel')).toBeDisabled()
   })
 })
@@ -286,9 +286,8 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
   }
 
   it('와드 대상 선택 시 targetKind=ward_bishop, wardId를 payload에 포함한다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />)
 
-    fireEvent.click(screen.getByText('schedule.type.interview'))
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), {
       target: { value: 'ward_bishop' },
     })
@@ -322,10 +321,9 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
   // exact payload object, driven through the new (post-Task-3) DOM instead of the
   // old compound "대상" select, which no longer exists.
   it('와드 감독 접견 대상을 고르면 payload에 wardName이 실리고, 그 payload로 접견 제목이 와드를 밝힌다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />)
     expandDetails()
 
-    fireEvent.click(screen.getByText('schedule.type.interview'))
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), {
       target: { value: 'ward_bishop' },
     })
@@ -373,9 +371,8 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
   // task-6-report.md) — that stake_president notes come from ALL_UNITS, not a
   // stale selectedContactTarget label.
   it('스테이크 대상 선택 시 targetKind=stake_president, presidentUid를 payload에 포함하고 회장 연락처를 노트에 남긴다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />)
 
-    fireEvent.click(screen.getByText('schedule.type.interview'))
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), {
       target: { value: 'stake_president' },
     })
@@ -404,10 +401,9 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
   // "a free-text target (other)" (commit d033e2e) — same exact payload (including
   // the two-line "대상: <name>\n<notes>" concatenation), driven through the new DOM.
   it('스테이크/지방부를 선택하지 않아도(옵션널) 대상을 기타로 직접 입력하면 저장할 수 있다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />)
     expandDetails()
 
-    fireEvent.click(screen.getByText('schedule.type.interview'))
     // No stake/unit selected — 대상 유형만 '기타'로 고른다
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), { target: { value: 'other' } })
     fireEvent.change(screen.getByLabelText('schedule.targetFreeTextLabel'), {
@@ -439,10 +435,9 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
   // {targetKind:'other', unitId:'seoul-stake'}, 제목 "서울 스테이크 접견", 장소
   // "서울 스테이크"). 스테이크를 안 물으면 이 소속 정보와 제목·장소가 사라진다.
   it('스테이크를 고르고 대상을 기타로 골라도 그 스테이크가 payload와 제목·장소에 남는다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />)
     expandDetails()
 
-    fireEvent.click(screen.getByText('schedule.type.interview'))
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), { target: { value: 'other' } })
     fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
       target: { value: 'seoul-stake' },
@@ -472,9 +467,8 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
   // Controller ruling R9 (2026-08-22): 대상을 고르면 그 리더의 연락처가 노트에 붙는다는
   // 게 이 select의 요점이므로, 저장 전에 누가 그 대상인지(리더의 역할) 보여야 한다.
   it('스테이크/와드 대상 옵션에 리더 역할이 라벨로 붙는다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />)
 
-    fireEvent.click(screen.getByText('schedule.type.interview'))
     await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'stake_president')
     const stakeSelect = screen.getByLabelText('schedule.stakeLabel') as HTMLSelectElement
     expect(
@@ -490,9 +484,8 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
   })
 
   it('접견에서 대상을 아무것도 선택하지 않으면 저장되지 않는다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />)
 
-    fireEvent.click(screen.getByText('schedule.type.interview'))
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
 
@@ -502,7 +495,7 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
 
   // 비워 두면 뭐가 될지 알 수 있어야 비워 둘 수 있다.
   it('제목 칸 placeholder에 자동 생성될 제목을 보여준다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} initialType="interview" />)
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} fixedType="interview" />)
     expandDetails()
     await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'ward_bishop')
     await userEvent.selectOptions(screen.getByLabelText('schedule.stakeLabel'), 'seoul-east-stake')
@@ -552,8 +545,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
   }
 
   it('사전 모임 목적인데 대상 방문을 안 고르면 저장을 막는다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
       target: { value: 'pre_visit' },
     })
@@ -578,8 +570,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
   // pin-down case "a pre-visit meeting" (commit d033e2e) — same exact payload,
   // driven through the new DOM (purpose + related-visit selection, same as before).
   it('대상 방문을 고르면 relatedVisitId를 payload에 포함한다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
       target: { value: 'pre_visit' },
     })
@@ -607,8 +598,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
   })
 
   it('일반 목적이면 relatedVisitId 없이 저장된다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), {
       target: { value: 'ward_bishop' },
     })
@@ -629,8 +619,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
   // Finding 1: Select가 항상 placeholder 옵션을 렌더하는데 목적 Select의 options에도
   // 'general' 항목을 넣어서 "일반"이 두 번(placeholder + 옵션) 나타나던 버그의 회귀 테스트.
   it('목적 Select에 "일반" 라벨이 한 번만 나타난다', () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
 
     const purposeSelect = screen.getByLabelText('schedule.purposeLabel') as HTMLSelectElement
     const generalOptions = Array.from(purposeSelect.options).filter(
@@ -639,39 +628,16 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
     expect(generalOptions).toHaveLength(1)
   })
 
-  // Finding 1: 종류를 바꿔도 relatedVisitId가 남아 payload를 오염시키던 버그의 회귀 테스트
-  it('대상 방문을 고른 뒤 종류를 구역 방문으로 바꾸면 relatedVisitId가 초기화되어 payload에 남지 않는다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
-    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
-      target: { value: 'pre_visit' },
-    })
-    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), {
-      target: { value: 'v1' },
-    })
-
-    fireEvent.click(screen.getByText('schedule.type.ward_visit'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabel'), {
-      target: { value: 'seoul-stake' },
-    })
-    fireEvent.change(screen.getByLabelText('schedule.wardLabel'), {
-      target: { value: '녹번 와드' },
-    })
-
-    fillDateTime()
-    fireEvent.click(screen.getByText('schedule.saveBtn'))
-
-    await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('relatedVisitId')
-    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'ward_visit' }))
-  })
+  // Finding 1의 회귀 테스트("종류를 바꿔도 relatedVisitId가 남아 payload를 오염시키던 버그")는
+  // Task 6(add-schedule-chooser)에서 지워졌다 — chooser가 종류를 고정해서 넘기므로
+  // 폼 하나의 생애주기 안에서 종류가 바뀌는 경로 자체가 없어졌다(handleTypeChange 삭제).
+  // 그 버그가 다시 날 수 있는 통로가 없으므로 이 케이스는 이식 대상이 아니다.
 
   // Finding 2: 고른 방문이 목록에서 사라져도(예: 모임 날짜를 방문 이후로 변경) stale id가
   // 그대로 서버로 전송되던 버그의 회귀 테스트. mock된 useUpcomingVisits는 fromDate가
   // 방문일(dates.visit)보다 늦으면 빈 목록을 돌려준다.
   it('선택한 방문이 목록에서 사라지면(모임 날짜를 방문 이후로 변경) 저장 시 대상 방문을 다시 요구한다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
       target: { value: 'pre_visit' },
     })
@@ -702,8 +668,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
     })
 
     // 수동 경로: 대상 유형에서 같은 와드를 직접 골라 선택
-    const { unmount } = render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    const { unmount } = render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), {
       target: { value: 'ward_bishop' },
     })
@@ -722,8 +687,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
     createSpy.mockClear()
 
     // 자동 경로: 목적=사전 모임 + 대상 방문 선택만으로 같은 와드가 잡혀야 한다
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
       target: { value: 'pre_visit' },
     })
@@ -770,28 +734,30 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
   }
 
   function openCcCouncilForm() {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), {
       target: { value: 'cc_council' },
     })
   }
 
   it('모임에서만 협의 평의회 대상을 제공한다', () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.interview'))
+    // 종류가 폼 하나의 생애주기 동안 고정되므로(chooser가 고정해서 연다), 두 종류를
+    // 한 렌더 안에서 클릭으로 오가며 비교하던 예전 방식 대신 각 종류를 따로 마운트한다.
+    const { unmount: unmountInterview } = render(
+      <ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />,
+    )
     const interviewTarget = screen.getByLabelText('schedule.targetKindLabel') as HTMLSelectElement
     expect(Array.from(interviewTarget.options).map((o) => o.value)).not.toContain('cc_council')
+    unmountInterview()
 
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     const meetingTarget = screen.getByLabelText('schedule.targetKindLabel') as HTMLSelectElement
     expect(Array.from(meetingTarget.options).map((o) => o.value)).toContain('cc_council')
   })
 
   // 협의 평의회는 CC 전체가 대상이므로 스테이크를 먼저 고르지 않아도 선택할 수 있어야 한다
   it('스테이크를 고르지 않아도 협의 평의회를 선택할 수 있다', () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     expect(screen.queryByLabelText('schedule.stakeLabel')).not.toBeInTheDocument()
     const target = screen.getByLabelText('schedule.targetKindLabel') as HTMLSelectElement
     expect(Array.from(target.options).map((o) => o.value)).toContain('cc_council')
@@ -833,8 +799,7 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
     mocks.currentUser = SINGLE_CC_SEVENTY
     mocks.users = [SINGLE_CC_SEVENTY]
 
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), {
       target: { value: 'cc_council' },
     })
@@ -875,8 +840,7 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
   // 스테이크를 먼저 고른 뒤 협의 평의회로 바꾸면 남은 unitId가 payload로 새어 나가면 안 된다.
   // (모임은 스테이크 회장 대상을 제공하지 않으므로(R4) 여기서는 ward_bishop으로 unitId를 채운다.)
   it('스테이크를 골랐다가 협의 평의회로 바꿔도 unitId가 남지 않는다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), {
       target: { value: 'ward_bishop' },
     })
@@ -905,8 +869,7 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
   // CF가 한 번도 받아본 적 없는 `type: 'meeting'` + `targetKind: 'stake_president'`
   // 조합을 이 리팩터가 새로 열면 안 된다.
   it('모임 대상 유형에는 스테이크/지방부 회장이 없다', () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     const kindSelect = screen.getByLabelText('schedule.targetKindLabel') as HTMLSelectElement
     expect(Array.from(kindSelect.options).map((o) => o.value)).not.toContain('stake_president')
   })
@@ -953,14 +916,13 @@ describe('ScheduleFormModal 시작 시간 자동 종료 채움', () => {
   })
 
   it('모임에서 시작을 19:00으로 입력하면 종료가 20:00으로 채워진다(기본 1시간)', () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '19:00' } })
     expect(screen.getByLabelText('common.endTime')).toHaveValue('20:00')
   })
 
   it('와드 방문에서 시작을 09:00으로 입력하면 종료가 11:00으로 채워진다(기본 2시간)', () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<ScheduleFormModal fixedType="ward_visit" onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '09:00' } })
     expect(screen.getByLabelText('common.endTime')).toHaveValue('11:00')
   })
@@ -1006,7 +968,7 @@ describe('ScheduleFormModal 핀다운: adminCreateSchedule payload 계약', () =
 
   it('ward_visit with stake + ward', async () => {
     mocks.currentUser = { ...(mocks.currentUser as AppUser), role: 'seventy' }
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<ScheduleFormModal fixedType="ward_visit" onClose={vi.fn()} onSaved={vi.fn()} />)
 
     fireEvent.change(screen.getByLabelText('schedule.stakeLabel'), {
       target: { value: 'seoul-stake' },
@@ -1029,5 +991,76 @@ describe('ScheduleFormModal 핀다운: adminCreateSchedule payload 계약', () =
       notes: '스테이크 회장: 홍길동 (010-1111-2222)',
       presidentAccompanied: false,
     })
+  })
+})
+
+// add-schedule-chooser Task 4: 종류가 fixedType 하나로 고정되니 세그먼트 컨트롤
+// 자체가 없어져야 하고, onBack이 주어지면 그 dirty 확인이 requestClose와 같아야 한다.
+describe('ScheduleFormModal 뒤로 가기 · 세그먼트 제거', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.currentUser = {
+      uid: 'test-uid',
+      email: 'test@test.com',
+      role: 'seventy',
+      name: '테스트',
+      unitId: 'seoul-stake',
+      createdAt: '2026-01-01',
+    }
+    mocks.users = []
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: [],
+      loading: false,
+      getLeaderByUnitName: vi.fn().mockReturnValue(undefined),
+    })
+  })
+
+  it('종류를 고르는 세그먼트 컨트롤이 없다', () => {
+    render(<ScheduleFormModal fixedType="ward_visit" onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.queryByRole('button', { name: /^schedule\.type\./ })).toBeNull()
+  })
+
+  it('onBack이 없으면 뒤로 버튼을 렌더하지 않는다', () => {
+    render(<ScheduleFormModal fixedType="ward_visit" onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.queryByRole('button', { name: 'common.back' })).toBeNull()
+  })
+
+  it('입력이 없으면 뒤로를 눌러 바로 onBack이 불린다', () => {
+    const onBack = vi.fn()
+    render(
+      <ScheduleFormModal fixedType="ward_visit" onBack={onBack} onClose={vi.fn()} onSaved={vi.fn()} />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'common.back' }))
+    expect(onBack).toHaveBeenCalled()
+  })
+
+  // 뒤로 가기는 닫기와 같은 dirty 확인을 태워야 한다 — 입력을 조용히 버리지 않는다.
+  it('입력이 있는 상태에서 뒤로를 누르면 확인을 묻고, 취소하면 onBack을 부르지 않는다', () => {
+    const onBack = vi.fn()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(
+      <ScheduleFormModal fixedType="ward_visit" onBack={onBack} onClose={vi.fn()} onSaved={vi.fn()} />,
+    )
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), {
+      target: { value: '2026-09-01' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'common.back' }))
+    expect(confirmSpy).toHaveBeenCalledWith('common.discardChanges')
+    expect(onBack).not.toHaveBeenCalled()
+    confirmSpy.mockRestore()
+  })
+
+  it('확인 대화상자에서 승인하면 onBack이 불린다', () => {
+    const onBack = vi.fn()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(
+      <ScheduleFormModal fixedType="ward_visit" onBack={onBack} onClose={vi.fn()} onSaved={vi.fn()} />,
+    )
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), {
+      target: { value: '2026-09-01' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'common.back' }))
+    expect(onBack).toHaveBeenCalled()
+    confirmSpy.mockRestore()
   })
 })

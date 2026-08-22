@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { httpsCallable } from 'firebase/functions'
 import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
-import { X } from 'lucide-react'
+import { ChevronLeft, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { functions } from '@/firebase'
@@ -30,20 +30,20 @@ const adminCreateScheduleFn = httpsCallable(functions, 'adminCreateSchedule')
 
 interface ScheduleFormModalProps {
   initialDate?: string
-  initialType?: ScheduleType
-  allowedTypes?: ScheduleType[]
+  fixedType: ScheduleType
   generalSchedules?: GeneralSchedule[]
   currentUser?: AppUser
+  onBack?: () => void
   onClose: () => void
   onSaved: () => void
 }
 
 export function ScheduleFormModal({
   initialDate,
-  initialType,
-  allowedTypes,
+  fixedType,
   generalSchedules,
   currentUser,
+  onBack,
   onClose,
   onSaved,
 }: ScheduleFormModalProps) {
@@ -52,8 +52,8 @@ export function ScheduleFormModal({
   const { users } = useUsers()
   const { leaders } = useLeaders()
 
-  const { state, set, setTargetKind, setType, isDirty } = useScheduleForm({
-    type: initialType ?? allowedTypes?.[0] ?? 'ward_visit',
+  const { state, set, setTargetKind, isDirty } = useScheduleForm({
+    type: fixedType,
     date: initialDate ?? '',
   })
   const { type, target, date, startTime, endTime, purpose, relatedVisitId, notes, zoomLink, customTitle, location, projectId } = state
@@ -81,24 +81,19 @@ export function ScheduleFormModal({
     onClose()
   }
 
+  // 뒤로 가기도 닫기와 같은 dirty 확인을 태운다 — 입력을 조용히 버리지 않는다.
+  const requestBack = () => {
+    if (!onBack) return
+    if (isDirty && !window.confirm(t('common.discardChanges'))) return
+    onBack()
+  }
+
   const sheetRef = useRef<HTMLDivElement>(null)
   useFocusTrap(sheetRef, true, requestClose)
   useEffect(() => {
     acquireScrollLock()
     return releaseScrollLock
   }, [])
-
-  // 종류를 바꾸면 대상(target)·목적(purpose)은 useScheduleForm의 규칙이 알아서 지운다.
-  // 여기서는 그 규칙이 모르는, 종류에 딸린 나머지 선택 칸(제목/장소/Zoom/메모/대상 방문)만 비운다 —
-  // 예전 handleTypeChange가 지우던 목록과 정확히 같다.
-  const handleTypeChange = (nextType: ScheduleType) => {
-    setType(nextType)
-    set('zoomLink', '')
-    set('customTitle', '')
-    set('location', '')
-    set('notes', '')
-    set('relatedVisitId', '')
-  }
 
   // 담당 칠십인이 바뀌면 그 사람 담당 범위 밖일 수 있는 대상 선택을 지운다(예전과 동일).
   const handleSeventyChange = (nextSeventyUid: string) => {
@@ -319,13 +314,6 @@ export function ScheduleFormModal({
       })
     : undefined
 
-  const TYPE_TABS: Array<{ value: ScheduleType; label: string }> = [
-    { value: 'ward_visit', label: t('schedule.type.ward_visit') },
-    { value: 'interview', label: t('schedule.type.interview') },
-    { value: 'meeting', label: t('schedule.type.meeting') },
-  ]
-  const typeTabs = allowedTypes ? TYPE_TABS.filter(tab => allowedTypes.includes(tab.value)) : TYPE_TABS
-
   return createPortal(
     <div className={styles.overlay} onClick={requestClose}>
       <div
@@ -337,7 +325,19 @@ export function ScheduleFormModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.header}>
-          <h3 className={styles.title}>{t('schedule.newTitle')}</h3>
+          <div className={styles.headerLeft}>
+            {onBack && (
+              <button
+                type="button"
+                onClick={requestBack}
+                className={styles.backBtn}
+                aria-label={t('common.back')}
+              >
+                <ChevronLeft size={18} />
+              </button>
+            )}
+            <h3 className={styles.title}>{t('schedule.newTitle')}</h3>
+          </div>
           <button
             type="button"
             onClick={requestClose}
@@ -347,22 +347,6 @@ export function ScheduleFormModal({
             <X size={18} />
           </button>
         </div>
-
-        {/* Type segmented control — hidden when initialType is locked */}
-        {!initialType && (
-          <div className={styles.segmented}>
-            {typeTabs.map((tab) => (
-              <button
-                key={tab.value}
-                type="button"
-                className={type === tab.value ? styles.segBtnActive : styles.segBtn}
-                onClick={() => handleTypeChange(tab.value)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        )}
 
         {error && <div className={styles.errorBanner}>{error}</div>}
 
