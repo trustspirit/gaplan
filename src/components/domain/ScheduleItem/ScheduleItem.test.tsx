@@ -46,10 +46,11 @@ function schedule(over: Partial<Schedule> = {}): Schedule {
 describe('ScheduleItem', () => {
   it('renders the ward name and the type badge', () => {
     render(<ScheduleItem schedule={schedule({ wardName: '녹번 와드' })} unitName="서울 스테이크" />)
-    // Task 7: the row title now takes the ward as its subject ("녹번 와드 방문"),
-    // and the subtitle (no explicit location) falls back to the same ward
-    // label — so the ward name shows up twice, not once.
-    expect(screen.getAllByText('녹번 와드', { exact: false }).length).toBeGreaterThan(0)
+    // Task 7: the row title takes the ward as its subject ("녹번 와드 방문").
+    // Fix 1 (controller ruling): the subtitle dedup means the ward name is
+    // NOT repeated below it — the subtitle falls back to the unit name
+    // instead, so "녹번 와드" appears exactly once on the row.
+    expect(screen.getByText('녹번 와드', { exact: false })).toBeInTheDocument()
     expect(screen.getByText('schedule.type.ward_visit')).toBeInTheDocument()
   })
 
