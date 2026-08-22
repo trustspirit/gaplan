@@ -23,6 +23,10 @@ const DEFAULT_UNIT_OPTIONS = [
   { value: 'seoul-stake', label: '서울 스테이크' },
   { value: 'seoul-east-stake', label: '서울동 스테이크' },
 ]
+const DEFAULT_WARD_OPTIONS = [
+  { value: '녹번 와드', label: '녹번 와드 · 감독' },
+  { value: '교문 와드', label: '교문 와드 · 감독' },
+]
 const DEFAULT_CC_REGION_OPTIONS = [
   { value: 'seoul', label: '서울 CC' },
   { value: 'busan', label: '부산 CC' },
@@ -36,6 +40,7 @@ function Harness(props: {
   upcomingVisits?: UpcomingVisit[]
   unitOptions?: { value: string; label: string }[]
   unitSelectDisabled?: boolean
+  wardOptions?: { value: string; label: string }[]
   ccRegionOptions?: { value: string; label: string }[]
   onChange?: (partial: Partial<ScheduleFormState>) => void
 }) {
@@ -73,11 +78,10 @@ function Harness(props: {
       type={props.type}
       state={state}
       onChange={handleChange}
-      leaders={[]}
-      users={[]}
       upcomingVisits={props.upcomingVisits ?? []}
       unitOptions={props.unitOptions ?? DEFAULT_UNIT_OPTIONS}
       unitSelectDisabled={props.unitSelectDisabled}
+      wardOptions={props.wardOptions ?? DEFAULT_WARD_OPTIONS}
       ccRegionOptions={props.ccRegionOptions ?? DEFAULT_CC_REGION_OPTIONS}
     />
   )
@@ -170,5 +174,86 @@ describe('TargetSection', () => {
     renderSection({ type: 'interview' })
     const kindSelect = screen.getByLabelText('schedule.targetKindLabel') as HTMLSelectElement
     expect(Array.from(kindSelect.options).map((o) => o.value)).toContain('stake_president')
+  })
+
+  // Controller ruling R5 (2026-08-22): 직접 입력(기타)을 골라도 스테이크는 계속 물어야
+  // 한다 — 예전 폼은 대상을 '기타'로 골라도 그때까지 고른 스테이크를 payload에 실었다.
+  it('직접 입력을 고르면 스테이크와 텍스트 칸을 함께 묻는다', async () => {
+    renderSection({ type: 'interview' })
+    await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'other')
+    expect(screen.getByLabelText('schedule.stakeLabel')).toBeInTheDocument()
+    expect(screen.getByLabelText('schedule.targetFreeTextLabel')).toBeInTheDocument()
+  })
+
+  // Controller ruling R6 (2026-08-22): 담당 CC 정보가 아직 로딩 중이거나 없으면(빈 목록)
+  // 예전 모달처럼 CC select를 비활성화한다 — 텅 빈 채로 활성화된 select를 보여주지 않는다.
+  it('ccRegionOptions가 비어 있으면 CC select가 비활성화된다', async () => {
+    renderSection({ type: 'meeting', ccRegionOptions: [] })
+    await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'cc_council')
+    expect(screen.getByLabelText('schedule.ccRegionLabel')).toBeDisabled()
+  })
+
+  // Controller ruling R6: 담당 CC가 하나뿐이면 예전 모달처럼 자동으로 그 CC를 고른다
+  // ("담당 CC가 하나뿐이면 굳이 고르게 하지 않는다").
+  it('담당 CC가 하나뿐이면 협의 평의회를 고를 때 자동으로 그 CC가 선택된다', async () => {
+    const onChange = vi.fn()
+    renderSection({ type: 'meeting', ccRegionOptions: [{ value: 'seoul', label: '서울 CC' }], onChange })
+    await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'cc_council')
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ target: expect.objectContaining({ ccRegionId: 'seoul' }) }),
+    )
+    expect((screen.getByLabelText('schedule.ccRegionLabel') as HTMLSelectElement).value).toBe('seoul')
+  })
+
+  // Controller ruling R7 (2026-08-22): 예전 폼처럼 안내문은 관련 방문 select 바로
+  // 아래, 대상 유형 select보다 위에 나온다 — 대상 유형 select 뒤로 옮겨가면 안 된다.
+  it('대상 방문을 고르면 안내문이 관련 방문 select 바로 아래, 대상 유형 select보다 위에 나온다', async () => {
+    const visits: UpcomingVisit[] = [
+      { id: 'v1', date: '2026-08-01', wardName: '녹번 와드', unitId: 'seoul-stake', wardId: 'seoul-nokbeon' },
+    ]
+    renderSection({ type: 'meeting', purpose: 'pre_visit', upcomingVisits: visits })
+    await userEvent.selectOptions(screen.getByLabelText('schedule.relatedVisitLabel'), 'v1')
+
+    const hint = screen.getByText(/relatedVisitRecommendedBy/)
+    const relatedVisitSelect = screen.getByLabelText('schedule.relatedVisitLabel')
+    const targetKindSelect = screen.getByLabelText('schedule.targetKindLabel')
+    // hint comes after the related-visit select...
+    expect(
+      relatedVisitSelect.compareDocumentPosition(hint) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    // ...and before the target-kind select.
+    expect(
+      hint.compareDocumentPosition(targetKindSelect) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  // Controller ruling R10 (2026-08-22): visit.wardId를 우선하고, 없으면 이름으로 찾는다
+  // (예전 폼: `v.wardId ?? getWardIdByName(v.wardName)`). 와드 id를 알 수 없으면(이름
+  // 테이블에 없는 와드) 대상을 채우지 않는다 — relatedVisitId만 반영하고 target은
+  // 그대로 둔다. 존재하지 않는 이름을 써서 실제 이름 테이블과 무관하게 실패를 재현한다.
+  it('방문의 와드 id를 알 수 없으면 대상 방문만 반영하고 대상은 채우지 않는다', async () => {
+    const onChange = vi.fn()
+    const visits: UpcomingVisit[] = [
+      { id: 'v-unknown', date: '2026-08-01', wardName: '존재하지-않는-와드', unitId: 'seoul-stake' },
+    ]
+    renderSection({ type: 'meeting', purpose: 'pre_visit', upcomingVisits: visits, onChange })
+    await userEvent.selectOptions(screen.getByLabelText('schedule.relatedVisitLabel'), 'v-unknown')
+
+    expect(onChange).toHaveBeenCalledWith({ relatedVisitId: 'v-unknown' })
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ target: expect.anything() }))
+  })
+
+  it('방문에 wardId가 실려 있으면 이름 테이블을 거치지 않고도 대상을 채운다', async () => {
+    const onChange = vi.fn()
+    const visits: UpcomingVisit[] = [
+      { id: 'v-known', date: '2026-08-01', wardName: '녹번 와드', unitId: 'seoul-stake', wardId: 'seoul-nokbeon' },
+    ]
+    renderSection({ type: 'meeting', purpose: 'pre_visit', upcomingVisits: visits, onChange })
+    await userEvent.selectOptions(screen.getByLabelText('schedule.relatedVisitLabel'), 'v-known')
+
+    expect(onChange).toHaveBeenCalledWith({
+      relatedVisitId: 'v-known',
+      target: { kind: 'ward_bishop', unitId: 'seoul-stake', wardName: '녹번 와드', ccRegionId: '', freeText: '' },
+    })
   })
 })

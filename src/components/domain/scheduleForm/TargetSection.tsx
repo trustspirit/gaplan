@@ -1,14 +1,15 @@
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import type { ScheduleType } from '@/types'
-import type { Leader } from '@/types/leader'
-import type { AppUser } from '@/types/user'
 import type { UpcomingVisit } from '@/hooks/useUpcomingVisits'
-import { getWardsByUnit } from '@/constants/regions'
+import { getWardIdByName } from '@/constants/regions'
 import { Select, Input } from '@/components/ui'
 import type { ScheduleFormState } from './useScheduleForm'
 import type { TargetKindChoice, TargetSelection } from './scheduleTargetRules'
 import { questionsFor, resetForKind } from './scheduleTargetRules'
+// .hint는 ScheduleFormModal의 related-visit 안내문과 같은 클래스다 — 위치만 이 조각
+// 안으로 옮겼을 뿐 마크업은 그대로다(Controller ruling R7, 2026-08-22).
+import styles from '../ScheduleFormModal/ScheduleFormModal.module.scss'
 
 const TARGET_KIND_CHOICES: TargetKindChoice[] = ['stake_president', 'ward_bishop', 'cc_council', 'other']
 
@@ -21,24 +22,36 @@ export interface TargetSectionProps {
   type: ScheduleType
   state: ScheduleFormState
   onChange: (partial: Partial<ScheduleFormState>) => void
-  leaders: Leader[]
-  users: AppUser[]
   upcomingVisits: UpcomingVisit[]
   /**
    * 스테이크/지방부 목록 — 담당 칠십인 범위로 이미 걸러진 것을 그대로 받는다(read-only
    * data, Controller ruling 1: `WhenSection`의 `conflictingEvent`, `DetailSection`의
-   * `canPickProject`와 같은 자리). 이 조각은 users 목록이 없어 스스로 범위를 계산할 수
-   * 없다 — 계산은 모달이 하고, 이 조각은 받은 대로 그린다.
+   * `canPickProject`와 같은 자리). 대상 유형이 stake_president일 때는 모달이 그 자리에
+   * 리더 역할이 붙은 라벨(Controller ruling R9)을 이미 실어 보낸다 — 이 조각은 받은 대로
+   * 그릴 뿐, 누가 라벨을 붙였는지는 모른다.
    */
   unitOptions: SelectOption[]
   /** 담당 칠십인 범위 정보가 아직 로딩 중이거나(레코드 미도착) 범위 밖이면 true. */
   unitSelectDisabled?: boolean
+  /**
+   * 와드/지부 목록 — 이미 target.unitId로 좁혀진 것을 그대로 받는다. ward_bishop 대상
+   * select일 때는 모달이 리더 역할 라벨(Controller ruling R9)을 실어 보낸다.
+   */
+  wardOptions: SelectOption[]
   /** 협의 평의회 CC 목록 — 마찬가지로 담당 칠십인 범위로 이미 걸러진 것. */
   ccRegionOptions: SelectOption[]
 }
 
-/** 방문을 골랐을 때 채워 넣을 대상 — 방문은 항상 와드 감독이 대상인 셈이다. */
-function targetForVisit(visit: UpcomingVisit): TargetSelection {
+/** 방문을 골랐을 때 채워 넣을 대상 — 방문은 항상 와드 감독이 대상인 셈이다.
+ * visit.wardId를 먼저 쓰고, 없으면 이름으로 찾는다(예전 폼과 같은 우선순위,
+ * ab3ad67:ScheduleFormModal.tsx:480-489: `v.wardId ?? getWardIdByName(v.wardName)`).
+ * 어느 쪽으로도 와드 id가 안 풀리면(이름 테이블에 없는 와드 등) 대상을 채우지 않는다 —
+ * 예전 폼도 그때는 targetSelect를 비워둔 채로 두어(=대상 미지정) 저장을 막았다
+ * (Controller ruling R10, 2026-08-22).
+ */
+function targetForVisit(visit: UpcomingVisit): TargetSelection | null {
+  const wardId = visit.wardId ?? getWardIdByName(visit.wardName)
+  if (!wardId) return null
   return { kind: 'ward_bishop', unitId: visit.unitId, wardName: visit.wardName, ccRegionId: '', freeText: '' }
 }
 
@@ -59,14 +72,12 @@ export function TargetSection({
   upcomingVisits,
   unitOptions,
   unitSelectDisabled,
+  wardOptions,
   ccRegionOptions,
 }: TargetSectionProps) {
   const { t } = useTranslation()
   const { target, purpose, relatedVisitId } = state
-
-  const wardOptions = target.unitId
-    ? getWardsByUnit(target.unitId).map((w) => ({ value: w.name.ko, label: w.name.ko }))
-    : []
+  const relatedVisit = upcomingVisits.find((v) => v.id === relatedVisitId)
 
   const changeTarget = (next: Partial<TargetSelection>) => {
     onChange({ target: { ...target, ...next } })
@@ -124,31 +135,43 @@ export function TargetSection({
       )}
 
       {!isCcCouncil && purpose === 'pre_visit' && (
-        <Select
-          label={t('schedule.relatedVisitLabel')}
-          value={relatedVisitId}
-          placeholder={
-            upcomingVisits.length === 0
-              ? t('schedule.relatedVisitNone')
-              : t('schedule.relatedVisitPlaceholder')
-          }
-          onChange={(e) => {
-            const id = e.target.value
-            const visit = upcomingVisits.find((v) => v.id === id)
-            onChange({
-              relatedVisitId: id,
-              ...(visit ? { target: targetForVisit(visit) } : {}),
-            })
-          }}
-          options={upcomingVisits.map((v) => ({
-            value: v.id,
-            label: t('schedule.relatedVisitOption', {
-              date: dayjs(v.date).format('M/D(ddd)'),
-              ward: v.wardName,
-            }),
-          }))}
-          disabled={upcomingVisits.length === 0}
-        />
+        <>
+          <Select
+            label={t('schedule.relatedVisitLabel')}
+            value={relatedVisitId}
+            placeholder={
+              upcomingVisits.length === 0
+                ? t('schedule.relatedVisitNone')
+                : t('schedule.relatedVisitPlaceholder')
+            }
+            onChange={(e) => {
+              const id = e.target.value
+              const visit = upcomingVisits.find((v) => v.id === id)
+              const nextTarget = visit ? targetForVisit(visit) : null
+              onChange({
+                relatedVisitId: id,
+                ...(nextTarget ? { target: nextTarget } : {}),
+              })
+            }}
+            options={upcomingVisits.map((v) => ({
+              value: v.id,
+              label: t('schedule.relatedVisitOption', {
+                date: dayjs(v.date).format('M/D(ddd)'),
+                ward: v.wardName,
+              }),
+            }))}
+            disabled={upcomingVisits.length === 0}
+          />
+          {/* 예전 위치 그대로 — 관련 방문 select 바로 아래, 대상 유형 select보다 위
+              (Controller ruling R7, 2026-08-22). */}
+          {relatedVisit && (
+            <p className={styles.hint}>
+              {t('schedule.relatedVisitRecommendedBy', {
+                date: dayjs(relatedVisit.date).subtract(14, 'day').format('M/D'),
+              })}
+            </p>
+          )}
+        </>
       )}
 
       <Select
@@ -156,8 +179,15 @@ export function TargetSection({
         value={target.kind}
         onChange={(e) => {
           const nextKind = e.target.value as TargetKindChoice | ''
+          const resetTarget = resetForKind(target, nextKind)
+          // 담당 CC가 하나뿐이면 굳이 고르게 하지 않는다 — 예전 모달의 자동 선택
+          // (Controller ruling R6, 2026-08-22).
+          const nextTarget =
+            nextKind === 'cc_council' && ccRegionOptions.length === 1
+              ? { ...resetTarget, ccRegionId: ccRegionOptions[0].value }
+              : resetTarget
           onChange({
-            target: resetForKind(target, nextKind),
+            target: nextTarget,
             // 협의 평의회로 바꾸면 목적·관련 방문도 함께 지운다 — 그 두 칸을 숨기고 나서
             // 남은 값이 payload로 새어 나가면 안 된다(예전 targetSelect onChange와 동일).
             ...(nextKind === 'cc_council' ? { purpose: 'general' as const, relatedVisitId: '' } : {}),
@@ -192,6 +222,7 @@ export function TargetSection({
           value={target.ccRegionId}
           onChange={(e) => changeTarget({ ccRegionId: e.target.value })}
           options={ccRegionOptions}
+          disabled={ccRegionOptions.length === 0}
         />
       )}
 
