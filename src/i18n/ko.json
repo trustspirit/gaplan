@@ -326,7 +326,14 @@
     },
     "targetOptionCcCouncil": "CC 내 스테이크 회장들 (협의 평의회)",
     "ccRegionLabel": "협의 평의회 CC",
-    "errorCcRegionRequired": "협의 평의회를 진행할 CC를 선택해 주세요."
+    "errorCcRegionRequired": "협의 평의회를 진행할 CC를 선택해 주세요.",
+    "targetKindLabel": "대상 유형",
+    "targetKind": {
+      "stake_president": "스테이크/지방부 회장",
+      "ward_bishop": "와드/지부 감독",
+      "cc_council": "협의 평의회",
+      "other": "기타 (직접 입력)"
+    }
   },
   "ward": {
     "assignTitle": "와드/지부 방문 날짜 배정",

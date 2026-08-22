@@ -326,7 +326,14 @@
     },
     "targetOptionCcCouncil": "Stake presidents in the CC (Coordinating Council)",
     "ccRegionLabel": "Coordinating Council",
-    "errorCcRegionRequired": "Select the CC for this coordinating council meeting."
+    "errorCcRegionRequired": "Select the CC for this coordinating council meeting.",
+    "targetKindLabel": "Target type",
+    "targetKind": {
+      "stake_president": "Stake/District President",
+      "ward_bishop": "Ward/Branch Bishop",
+      "cc_council": "Coordinating Council",
+      "other": "Other (enter manually)"
+    }
   },
   "ward": {
     "assignTitle": "Assign Ward/Branch Visit Dates",
