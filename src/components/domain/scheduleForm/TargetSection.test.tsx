@@ -176,6 +176,20 @@ describe('TargetSection', () => {
     expect(Array.from(kindSelect.options).map((o) => o.value)).toContain('stake_president')
   })
 
+  // Task 1 (스케줄 폼 레이아웃 개선): 협의 평의회는 여러 명이 대상이라 개인 면담(접견)의
+  // 대상이 될 수 없다 — 접견 폼에는 아예 옵션으로 뜨지 않고, 모임 폼에는 뜬다.
+  it('접견의 대상 유형 select에는 협의 평의회 옵션이 없다', () => {
+    renderSection({ type: 'interview' })
+    const kindSelect = screen.getByLabelText('schedule.targetKindLabel') as HTMLSelectElement
+    expect(Array.from(kindSelect.options).map((o) => o.value)).not.toContain('cc_council')
+  })
+
+  it('모임의 대상 유형 select에는 협의 평의회 옵션이 있다', () => {
+    renderSection({ type: 'meeting' })
+    const kindSelect = screen.getByLabelText('schedule.targetKindLabel') as HTMLSelectElement
+    expect(Array.from(kindSelect.options).map((o) => o.value)).toContain('cc_council')
+  })
+
   // Controller ruling R5 (2026-08-22): 직접 입력(기타)을 골라도 스테이크는 계속 물어야
   // 한다 — 예전 폼은 대상을 '기타'로 골라도 그때까지 고른 스테이크를 payload에 실었다.
   // M2 (2026-08-22): 직접 입력은 스테이크가 필수가 아니므로 라벨도 선택 문구로 바뀐다

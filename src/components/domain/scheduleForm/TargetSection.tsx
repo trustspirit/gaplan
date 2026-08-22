@@ -6,12 +6,10 @@ import { getWardIdByName } from '@/constants/regions'
 import { Select, Input } from '@/components/ui'
 import type { ScheduleFormState } from './useScheduleForm'
 import type { TargetKindChoice, TargetSelection } from './scheduleTargetRules'
-import { questionsFor, resetForKind, stakeLabelKeyFor } from './scheduleTargetRules'
+import { questionsFor, resetForKind, stakeLabelKeyFor, targetKindChoicesFor } from './scheduleTargetRules'
 // .hint는 ScheduleFormModal의 related-visit 안내문과 같은 클래스다 — 위치만 이 조각
 // 안으로 옮겼을 뿐 마크업은 그대로다(Controller ruling R7, 2026-08-22).
 import styles from '../ScheduleFormModal/ScheduleFormModal.module.scss'
-
-const TARGET_KIND_CHOICES: TargetKindChoice[] = ['stake_president', 'ward_bishop', 'cc_council', 'other']
 
 export interface SelectOption {
   value: string
@@ -133,12 +131,9 @@ export function TargetSection({
     ? { asksUnit: true, asksWard: false, asksCc: false, asksFreeText: false }
     : questionsFor(effectiveKind)
   const isCcCouncil = effectiveKind === 'cc_council'
-  // 협의 평의회는 모임에만 있는 개념이다(접견 하나에 CC 전체가 대상일 수 없다).
-  // 스테이크/지방부 회장 대상은 반대로 접견에만 있다 — CF가 지금까지 한 번도 받아본 적
-  // 없는 `type: 'meeting'` + `targetKind: 'stake_president'` 조합을 새로 열지 않는다.
-  const kindOptions = TARGET_KIND_CHOICES
-    .filter((kind) => kind !== 'cc_council' || type === 'meeting')
-    .filter((kind) => kind !== 'stake_president' || type === 'interview')
+  // 어떤 대상 유형을 보여줄지는 이 조각이 직접 판정하지 않는다 — 종류(type)에 따른
+  // 선택지는 scheduleTargetRules.ts의 targetKindChoicesFor 하나로 정해진다.
+  const kindOptions = targetKindChoicesFor(type)
     .map((kind) => ({ value: kind, label: t(`schedule.targetKind.${kind}`) }))
 
   return (

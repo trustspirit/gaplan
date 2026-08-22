@@ -1,4 +1,5 @@
 import { getWardIdByName } from '@/constants/regions'
+import type { ScheduleType } from '@/types'
 
 export type TargetKindChoice = 'stake_president' | 'ward_bishop' | 'cc_council' | 'other'
 
@@ -90,6 +91,28 @@ export function toTargetPayload(sel: TargetSelection): TargetPayloadFields {
   }
 
   return payload
+}
+
+/**
+ * 일정 종류(type)에 따라 대상 유형 select에 어떤 선택지를 보여줄지 정한다. 이 판정을
+ * TargetSection이 직접 하면 나중에 편집 모달과 어긋난다(M2에서 같은 병을 고쳤다) —
+ * 이 파일에 순수 함수 하나로 모아둔다.
+ *
+ * 협의 평의회(cc_council)는 CC 전체가 대상이라 개인 면담(접견)의 대상이 될 수 없으므로
+ * 모임에만 남긴다. 스테이크/지방부 회장 대상은 반대로 접견에만 있다 — CF가 지금까지
+ * 한 번도 받아본 적 없는 `type: 'meeting'` + `targetKind: 'stake_president'` 조합을
+ * 새로 열지 않는다(Controller ruling R4, 2026-08-22).
+ */
+export function targetKindChoicesFor(type: ScheduleType): TargetKindChoice[] {
+  switch (type) {
+    case 'interview':
+      return ['stake_president', 'ward_bishop', 'other']
+    case 'meeting':
+      return ['ward_bishop', 'cc_council', 'other']
+    default:
+      // ward_visit·general_attendance는 대상 유형이라는 개념이 없다 — 이 select 자체가 안 뜬다.
+      return []
+  }
 }
 
 /**

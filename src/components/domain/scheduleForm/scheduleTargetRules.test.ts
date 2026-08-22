@@ -1,4 +1,4 @@
-import { questionsFor, toTargetPayload, resetForKind, stakeLabelKeyFor } from './scheduleTargetRules'
+import { questionsFor, toTargetPayload, resetForKind, stakeLabelKeyFor, targetKindChoicesFor } from './scheduleTargetRules'
 
 const EMPTY = { kind: '' as const, unitId: '', wardName: '', ccRegionId: '', freeText: '' }
 
@@ -104,6 +104,36 @@ describe('stakeLabelKeyFor', () => {
   // 기본값 일관성을 위해 필수 라벨과 같은 값을 쓴다).
   it('협의 평의회는 스테이크를 묻지 않지만, 함수는 필수 라벨을 기본값으로 돌려준다', () => {
     expect(stakeLabelKeyFor('cc_council')).toBe('schedule.stakeLabel')
+  })
+})
+
+// Task 1 (스케줄 폼 레이아웃 개선, 2026-08-22): 대상 유형 select이 무엇을 보여줄지는
+// TargetSection이 직접 판정하지 않는다 — 편집 모달과 어긋나는 병을 M2에서 이미 겪었으므로
+// 하나의 순수 함수로 정리한다. 협의 평의회(cc_council)는 CC 전체가 대상이라 개인 면담
+// (접견)의 대상이 될 수 없으므로 모임에만 남긴다.
+//
+// 브리프(schedule-form-layout/brief.md)는 meeting에 stake_president도 포함해야 한다고
+// 적었지만, 이는 이미 자리 잡은 Controller ruling R4(2026-08-22, TargetSection.test.tsx/
+// ScheduleFormModal.test.tsx에 회귀 테스트로 고정됨: "CF가 지금까지 한 번도 받아본 적
+// 없는 `type: 'meeting'` + `targetKind: 'stake_president'` 조합을 새로 열지 않는다")와
+// 정면으로 어긋난다. 이 함수는 R4를 지키는 쪽으로 구현했다 — report.md에 이 불일치를
+// 남긴다.
+describe('targetKindChoicesFor', () => {
+  it('접견은 스테이크/지방부 회장·와드 감독·기타를 제공하고, 협의 평의회는 제공하지 않는다', () => {
+    expect(targetKindChoicesFor('interview')).toEqual(['stake_president', 'ward_bishop', 'other'])
+  })
+
+  // R4를 지킨다 — 모임에는 스테이크/지방부 회장 대상을 열지 않는다.
+  it('모임은 와드 감독·협의 평의회·기타를 제공하고, 스테이크/지방부 회장은 제공하지 않는다', () => {
+    expect(targetKindChoicesFor('meeting')).toEqual(['ward_bishop', 'cc_council', 'other'])
+  })
+
+  it('와드 방문은 대상 유형 select 자체가 없으므로 빈 배열이다', () => {
+    expect(targetKindChoicesFor('ward_visit')).toEqual([])
+  })
+
+  it('일반 참석도 대상 유형 select이 없으므로 빈 배열이다', () => {
+    expect(targetKindChoicesFor('general_attendance')).toEqual([])
   })
 })
 
