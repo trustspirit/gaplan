@@ -1,11 +1,11 @@
 @use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
 
 .textarea {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: 44px;
-  padding: $space-3;
+  @include control-metrics;
   box-sizing: border-box;
   border: 1px solid $color-border;
   border-radius: $border-radius-md;

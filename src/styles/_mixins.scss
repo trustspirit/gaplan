@@ -22,6 +22,20 @@ $breakpoint-tablet: 1024px;
   }
 }
 
+// Input/Select/Textarea의 높이와 패딩. 세 프리미티브가 각자 적어 두면 모바일 조정을
+// 세 번 해야 하고 한 곳을 빠뜨리면 같은 폼 안에서 컨트롤 높이가 어긋난다.
+// 모바일에서 줄이는 것은 높이와 패딩뿐이다 — 폰트를 16px 아래로 내리면 iOS Safari가
+// 포커스할 때 화면을 확대한다.
+@mixin control-metrics {
+  min-height: $control-min-height;
+  padding: $control-padding-y $control-padding-x;
+
+  @include mobile {
+    min-height: $control-min-height-mobile;
+    padding: $control-padding-y-mobile $control-padding-x-mobile;
+  }
+}
+
 // 목록 행이 좁은지는 뷰포트가 아니라 **행이 놓인 상자**가 정한다. 같은 DataList
 // 행이 전체 폭 목록에도, 일정 화면의 420px 우측 열(ScheduleCalendarPanel의
 // .listCol)에도 들어가기 때문이다. 미디어 쿼리로 판정하면 데스크톱의 그 좁은

@@ -82,6 +82,16 @@ $space-6: 1.5rem;
 $space-8: 2rem;
 $space-12: 3rem;
 
+// Form controls — Input/Select/Textarea가 같은 높이·패딩을 쓰도록 한 곳에 모은다
+// (mixins의 control-metrics가 이 값들을 쓴다). 폰트 크기는 여기 없다: 모바일에서도
+// 16px($font-size-base)을 유지해야 iOS Safari가 포커스할 때 화면을 확대하지 않는다.
+$control-min-height: 44px;
+$control-min-height-mobile: 38px;
+$control-padding-y: $space-2;
+$control-padding-x: $space-3;
+$control-padding-y-mobile: $space-1;
+$control-padding-x-mobile: $space-2;
+
 // Border
 $border-radius-sm: 4px;
 $border-radius-md: 6px;
