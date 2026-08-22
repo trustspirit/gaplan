@@ -240,6 +240,52 @@ describe('DataList', () => {
     expect(subtitleShrink).toBeGreaterThan(titleShrink)
   })
 
+  // Zoom·메모·케밥까지 붙은 좁은 행은 이전엔 actions가 제목줄과 detail줄
+  // 둘 다에서 폭을 뺏어갔다(actions가 두 줄 공통 폭에서 빠지므로). 이제는
+  // .row 자체가 좁을 때 3열(lead·content·actions) 2행 그리드가 되고,
+  // 본문(.rowButton/.rowStatic)이 그 그리드를 subgrid로 물려받아 제목줄만
+  // actions 칸까지 걸친다 — detail줄은 actions와 나란히 선다. 클릭 가능한
+  // 행은 진짜 <button>이라 본문에 display:contents를 쓸 수 없어 DOM 구조는
+  // 그대로 둔 채(actions는 여전히 행 버튼 밖의 형제) 이 배치만 CSS로 바꾼
+  // 것이므로, 소스에서 그리드 라인 배치가 실제로 그렇게 되어 있는지 잠근다.
+  it('lets the title line span into the actions column via subgrid, while detail stays in the content column', () => {
+    const scss = readFileSync(resolve(__dirname, 'DataList.module.scss'), 'utf8')
+
+    // 바깥 .row: 좁을 때 lead · content · actions 3열 그리드.
+    const rowNarrowMatch = /\.row\s*\{[\s\S]*?@include datalist-narrow \{([\s\S]*?)\n {2}\}/.exec(
+      scss,
+    )
+    expect(rowNarrowMatch, '.row의 narrow 블록을 찾지 못했다').not.toBeNull()
+    expect(rowNarrowMatch![1]).toMatch(/grid-template-columns:\s*auto minmax\(0,\s*1fr\)\s*auto/)
+
+    // 본문은 이 3열을 subgrid로 그대로 물려받아야 안의 .main이 actions
+    // 칸까지 걸칠 수 있다(그리드가 다르면 서로의 칸을 참조할 수 없다).
+    const bodyNarrowStart = scss.indexOf('@include datalist-narrow {', scss.indexOf('.rowButton'))
+    expect(bodyNarrowStart).toBeGreaterThan(-1)
+    const bodyNarrowBlock = scss.slice(bodyNarrowStart)
+    expect(bodyNarrowBlock).toMatch(/grid-template-columns:\s*subgrid/)
+    expect(bodyNarrowBlock).toMatch(/grid-column:\s*1\s*\/\s*-1/)
+
+    // 제목줄(.main)은 content+actions 두 칸에 걸친다 — 이번 변경의 핵심.
+    const mainRule = /\.main\s*\{([^}]*)\}/s.exec(bodyNarrowBlock)
+    expect(mainRule, 'narrow 블록 안에 .main 규칙을 찾지 못했다').not.toBeNull()
+    expect(mainRule![1]).toMatch(/grid-column:\s*2\s*\/\s*-1/)
+
+    // detail줄은 content 칸에만 머문다 — actions 칸으로 넘어가지 않는다.
+    const detailRule = /\.detail\s*\{([^}]*)\}/s.exec(bodyNarrowBlock)
+    expect(detailRule, 'narrow 블록 안에 .detail 규칙을 찾지 못했다').not.toBeNull()
+    expect(detailRule![1]).toMatch(/grid-column:\s*2\s*\/\s*3/)
+
+    // actions는 .row의 3번째 칸, detail과 같은 행에 명시적으로 놓인다 —
+    // 안 그러면 본문이 이미 전체 칸(1/-1, 1/3)을 차지하고 있어 그리드 자동
+    // 배치가 겹치지 않는 빈 칸을 못 찾고 새 행을 만들어버린다.
+    const actionsNarrowMatch =
+      /\.actions\s*\{[\s\S]*?@include datalist-narrow \{([\s\S]*?)\n {2}\}/.exec(scss)
+    expect(actionsNarrowMatch, '.actions의 narrow 블록을 찾지 못했다').not.toBeNull()
+    expect(actionsNarrowMatch![1]).toMatch(/grid-column:\s*3/)
+    expect(actionsNarrowMatch![1]).toMatch(/grid-row:\s*2/)
+  })
+
   // 좁은 자리(420px 열·휴대폰)에서 시간·종류·배지는 제목 아래 한 줄로 함께
   // 접힌다. 셋이 각각 행의 직계 자식이면 접힐 때 서로 다른 줄로 흩어지고,
   // 배지가 날짜 밑으로 내려가는 식으로 행마다 모양이 달라진다.
