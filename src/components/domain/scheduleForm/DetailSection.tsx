@@ -6,6 +6,10 @@ import { Input, Textarea } from '@/components/ui'
 import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
 import type { ScheduleFormState } from './useScheduleForm'
 import styles from './DetailSection.module.scss'
+// .fieldGroup/.textarea are the exact classes ScheduleFormModal's notes Textarea used — shared
+// from there (the same pattern WhenSection.tsx uses) rather than duplicated, so the two can't
+// silently drift apart.
+import sharedStyles from '../ScheduleFormModal/ScheduleFormModal.module.scss'
 
 export interface DetailSectionProps {
   type: ScheduleType
@@ -89,8 +93,8 @@ export function DetailSection({
 
           <Textarea
             label={t('schedule.notesLabelOptional')}
-            className={styles.textarea}
-            wrapperClassName={styles.fieldGroup}
+            className={sharedStyles.textarea}
+            wrapperClassName={sharedStyles.fieldGroup}
             value={notes}
             onChange={(e) => onChange({ notes: e.target.value })}
             placeholder={t('schedule.notesLabelOptional')}

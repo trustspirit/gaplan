@@ -48,32 +48,6 @@
   margin-top: $space-4;
 }
 
-// 원본 ScheduleFormModal.module.scss의 .fieldGroup/.textarea를 그대로 옮겼다 — 메모
-// Textarea의 외형은 이 계획이 바꾸지 않는다.
-.fieldGroup {
-  display: flex;
-  flex-direction: column;
-  gap: $space-1;
-}
-
-.textarea {
-  width: 100%;
-  min-width: 0;
-  padding: $space-2 $space-3;
-  border: 1px solid $color-border;
-  border-radius: $border-radius-md;
-  font-size: $font-size-sm;
-  font-family: inherit;
-  color: $color-text;
-  background: $color-surface;
-  resize: vertical;
-  outline: none;
-  line-height: $line-height-loose;
-  min-height: 44px;
-  &:focus {
-    border-color: $color-primary;
-  }
-  &::placeholder {
-    color: $color-text-muted;
-  }
-}
+// .fieldGroup/.textarea are NOT defined here — the notes Textarea imports them straight from
+// ScheduleFormModal.module.scss (see DetailSection.tsx) so there's exactly one copy of those
+// rules to keep in sync, the same pattern WhenSection.tsx already uses for its own styles.
