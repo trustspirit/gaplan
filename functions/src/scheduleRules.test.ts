@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import { buildScheduleTitle, buildScheduleLocation } from './scheduleRules'
 
@@ -110,5 +112,36 @@ describe('buildScheduleLocation', () => {
 
   it('아무것도 모르면 null을 준다 — 표시하지 않는다', () => {
     expect(buildScheduleLocation({ type: 'meeting' })).toBeNull()
+  })
+})
+
+// Fix 5 (controller ruling): scheduleRules.ts is bundled into BOTH the Cloud
+// Functions deploy and the browser bundle (see the file's own header comment),
+// so it must never gain an import — pulling in firebase-admin/firebase-functions
+// (or anything else) would leak the server SDK into the web bundle. That rule
+// used to live only as a comment, with no lint rule and no test enforcing it.
+// Reads the raw source (same idiom as src/components/ui/testing/bannedPatterns.ts
+// and responsiveScope.ts) so this catches an added import regardless of whether
+// anything actually uses it.
+//
+// Matches only real import syntax (a quoted module specifier, or a dynamic
+// import() call) — a naive /import/ substring check would false-positive on
+// this very file's own header comment ("...이 파일을 import한다", "...import가
+// 하나도 없어야 한다"), since \b treats Hangul as a non-word boundary.
+describe('scheduleRules.ts has zero imports (bundled into CF and the browser)', () => {
+  const source = readFileSync(resolve(__dirname, 'scheduleRules.ts'), 'utf8')
+
+  it('has no static import statement', () => {
+    // The quoted-specifier part must stay on one line ([^'"\n]) — otherwise it
+    // can jump the closing quote past this file's own multi-line block comment
+    // and match all the way out to an unrelated string literal further down
+    // (e.g. inside the ScheduleKindForTitle union type).
+    const staticImport = /^\s*import\b[^\n]*?['"][^'"\n]*['"]/m
+    const offense = staticImport.exec(source)
+    expect(offense?.[0], offense ? `found: ${offense[0].trim()}` : undefined).toBeUndefined()
+  })
+
+  it('has no dynamic import() call', () => {
+    expect(/\bimport\s*\(/.test(source)).toBe(false)
   })
 })
