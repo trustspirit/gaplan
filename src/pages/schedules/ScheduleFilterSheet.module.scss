@@ -1,0 +1,48 @@
+@use '@/styles/variables' as *;
+
+.section + .section {
+  margin-top: $space-4;
+}
+
+.sectionTitle {
+  margin: 0 0 $space-2;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: var(--text);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: 44px;
+  padding: 0 $space-2;
+  border-radius: $border-radius-md;
+  color: var(--text);
+  font-size: $font-size-sm;
+  cursor: pointer;
+
+  &:has(.input:checked) {
+    background: var(--accent-weak);
+    color: var(--accent);
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.actions {
+  display: flex;
+  gap: $space-2;
+  margin-top: $space-4;
+}
