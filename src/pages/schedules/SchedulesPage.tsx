@@ -348,7 +348,6 @@ export function SchedulesPage() {
             onClose={() => setAddFlowOpen(false)}
             onSaved={() => {
               setAddFlowOpen(false)
-              toast.success(t('schedule.savedSuccess'))
             }}
           />
         )}
@@ -361,7 +360,6 @@ export function SchedulesPage() {
             onClose={() => setEventEditTarget(null)}
             onSaved={() => {
               setEventEditTarget(null)
-              toast.success(t('schedule.savedSuccess'))
             }}
           />
         )}
@@ -371,7 +369,6 @@ export function SchedulesPage() {
             onClose={() => setEditTarget(null)}
             onSaved={() => {
               setEditTarget(null)
-              toast.success(t('admin.scheduleEditSuccess'))
             }}
             onDelete={() => {
               scheduleDelete(

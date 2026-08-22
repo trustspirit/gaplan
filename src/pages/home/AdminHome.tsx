@@ -123,7 +123,6 @@ export function AdminHome() {
           onClose={() => setAddFlowOpen(false)}
           onSaved={() => {
             setAddFlowOpen(false)
-            toast.success(t('schedule.savedSuccess'))
           }}
         />
       )}
@@ -131,7 +130,7 @@ export function AdminHome() {
         <EditScheduleModal
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
-          onSaved={() => toast.success(t('admin.scheduleEditSuccess'))}
+          onSaved={() => {}}
           onDelete={() => {
             scheduleDelete(
               editTarget.id,

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { httpsCallable } from 'firebase/functions'
+import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import { X } from 'lucide-react'
@@ -198,6 +199,9 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
           ...(isContact ? { relatedVisitId: relatedVisitId || null } : {}),
         },
       })
+      // 폼 모달이 자기 성공 토스트를 소유한다 — 생성이든 편집이든 같은 규칙
+      // (event-toast-and-multiday brief §1). 호출부는 더 이상 이 토스트를 띄우지 않는다.
+      toast.success(t('admin.scheduleEditSuccess'))
       onSaved()
       onClose()
     } catch (e: unknown) {

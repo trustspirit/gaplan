@@ -40,7 +40,9 @@ vi.mock('@/components/domain/scheduleForm/ZoomLinkPicker', () => ({
 vi.mock('react-dom', () => ({
   createPortal: (node: React.ReactNode) => node,
 }))
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
+import { toast } from 'sonner'
 import { EditScheduleModal } from './EditScheduleModal'
 
 const MEETING_SCHEDULE: Schedule = {
@@ -246,6 +248,33 @@ describe('EditScheduleModal 사전 모임 연결', () => {
 
     await waitFor(() => expect(editSpy).toHaveBeenCalled())
     expect(editSpy.mock.calls[0][0].updates).not.toHaveProperty('relatedVisitId')
+  })
+})
+
+// event-toast-and-multiday brief §1: 편집도 생성과 같은 규칙 — 폼 모달이 자기 성공
+// 토스트를 소유한다("생성이든 편집이든 규칙은 같아야 해"). 호출부는 더 이상 이 토스트를
+// 띄우지 않는다.
+describe('EditScheduleModal 토스트 소유권', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    editSpy.mockReset()
+    editSpy.mockResolvedValue({ data: {} })
+  })
+
+  it('저장에 성공하면 toast.success가 정확히 한 번 불린다', async () => {
+    render(
+      <EditScheduleModal
+        schedule={MEETING_SCHEDULE}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(toast.success).toHaveBeenCalledTimes(1)
+    expect(toast.success).toHaveBeenCalledWith('admin.scheduleEditSuccess')
   })
 })
 

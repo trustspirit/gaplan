@@ -4,6 +4,7 @@ import { httpsCallable } from 'firebase/functions'
 import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
 import { ChevronLeft, X } from 'lucide-react'
+import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { functions } from '@/firebase'
@@ -296,6 +297,9 @@ export function ScheduleFormModal({
         ...(projectId ? { projectId } : {}),
         ...(type === 'ward_visit' ? { presidentAccompanied: state.presidentAccompanied } : {}),
       })
+      // 폼 모달이 자기 성공 토스트를 소유한다 — 호출부(AddScheduleFlow의 onSaved)는
+      // 더 이상 이 토스트를 띄우지 않는다(event-toast-and-multiday brief §1).
+      toast.success(t('schedule.savedSuccess'))
       onSaved()
       onClose()
     } catch (e: unknown) {

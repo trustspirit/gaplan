@@ -79,7 +79,9 @@ vi.mock('@/components/domain/scheduleForm/ZoomLinkPicker', () => ({
 vi.mock('react-dom', () => ({
   createPortal: (node: React.ReactNode) => node,
 }))
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
+import { toast } from 'sonner'
 import { ScheduleFormModal } from './ScheduleFormModal'
 import { buildNotesWithLeaderContact } from './leaderContactNotes'
 import { buildScheduleTitle } from '../../../../functions/src/scheduleRules'
@@ -987,6 +989,61 @@ describe('ScheduleFormModal 핀다운: adminCreateSchedule payload 계약', () =
 
 // add-schedule-chooser Task 4: 종류가 fixedType 하나로 고정되니 세그먼트 컨트롤
 // 자체가 없어져야 하고, onBack이 주어지면 그 dirty 확인이 requestClose와 같아야 한다.
+// event-toast-and-multiday brief §1: 폼 모달이 자기 성공 토스트를 소유한다 — 호출부가
+// 또 한 번 띄우면 중복이 난다(사용자 신고: 행사 하나 추가에 토스트가 두 개 뜸). 일정
+// 저장도 같은 규칙을 따라야 한다.
+describe('ScheduleFormModal 토스트 소유권', () => {
+  const SEVENTY_USER: AppUser = {
+    uid: 'test-uid',
+    email: 'test@test.com',
+    name: '테스트',
+    role: 'seventy',
+    regionId: 'seoul',
+    createdAt: '2026-01-01',
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    createSpy.mockReset()
+    createSpy.mockResolvedValue({ data: {} })
+    mocks.currentUser = {
+      uid: 'test-uid',
+      email: 'test@test.com',
+      role: 'seventy',
+      name: '테스트',
+      unitId: 'seoul-stake',
+      createdAt: '2026-01-01',
+    }
+    mocks.users = [SEVENTY_USER, MOCK_PRESIDENT_USER]
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: [MOCK_STAKE_PRESIDENT, MOCK_LEADER_BISHOP, MOCK_GYOMUN_BISHOP],
+      loading: false,
+      getLeaderByUnitName: vi.fn().mockReturnValue(undefined),
+    })
+  })
+
+  it('저장에 성공하면 toast.success가 정확히 한 번 불린다', async () => {
+    render(<ScheduleFormModal fixedType="ward_visit" onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabel'), {
+      target: { value: 'seoul-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.wardLabel'), {
+      target: { value: '녹번 와드' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), {
+      target: { value: '2026-09-01' },
+    })
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(toast.success).toHaveBeenCalledTimes(1)
+    expect(toast.success).toHaveBeenCalledWith('schedule.savedSuccess')
+  })
+})
+
 describe('ScheduleFormModal 뒤로 가기 · 세그먼트 제거', () => {
   beforeEach(() => {
     vi.clearAllMocks()
