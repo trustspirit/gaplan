@@ -190,6 +190,7 @@ export const publicScheduleIcs = functions
             id: d.id,
             title: data.title,
             date: data.date,
+            endDate: data.endDate,
             startTime: data.startTime,
             endTime: data.endTime,
           }, dtstamp))

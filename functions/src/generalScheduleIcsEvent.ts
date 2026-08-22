@@ -16,6 +16,9 @@ export interface GeneralScheduleForIcs {
   date: string       // YYYY-MM-DD
   startTime?: string // HH:mm
   endTime?: string   // HH:mm
+  // 여러 날에 걸친 행사의 종료일. 없으면 date 하루짜리로 취급한다 —
+  // generalScheduleEventBody.ts(구글 캘린더 동기화)의 같은 필드와 나란히 간다.
+  endDate?: string    // YYYY-MM-DD
 }
 
 function escapeIcs(str: string): string {
@@ -30,6 +33,18 @@ function toIcsDateTime(date: string, time: string): string {
 
 function toIcsDate(date: string): string {
   return date.replace(/-/g, '')
+}
+
+// 의존 없이(다른 모듈은 generalScheduleDefaults.ts 하나뿐) 날짜 문자열에 하루를
+// 더한다. UTC로 계산해 로컬 타임존의 DST 등에 흔들리지 않는다.
+function addOneDay(date: string): string {
+  const [y, m, d] = date.split('-').map(Number)
+  const next = new Date(Date.UTC(y, m - 1, d))
+  next.setUTCDate(next.getUTCDate() + 1)
+  const yyyy = next.getUTCFullYear()
+  const mm = String(next.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(next.getUTCDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 /**
@@ -54,6 +69,12 @@ export function buildGeneralScheduleVEvent(gs: GeneralScheduleForIcs, dtstamp: s
   } else {
     // 종일 이벤트: DTEND를 생략하면 RFC5545 기본 규칙에 따라 하루짜리로 해석된다.
     lines.push(`DTSTART;VALUE=DATE:${toIcsDate(gs.date)}`)
+    // 여러 날에 걸친 행사만 DTEND를 명시한다 — VALUE=DATE의 DTEND는 배타적이라
+    // 종료일 다음 날을 넣어야 그 날까지 포함해 표시된다(generalScheduleEventBody.ts와
+    // 같은 규칙). endDate가 없거나 date 이하면(깨진 데이터) 예전처럼 생략한다.
+    if (gs.endDate && gs.endDate > gs.date) {
+      lines.push(`DTEND;VALUE=DATE:${toIcsDate(addOneDay(gs.endDate))}`)
+    }
   }
 
   lines.push(`SUMMARY:${escapeIcs(gs.title)}`)
