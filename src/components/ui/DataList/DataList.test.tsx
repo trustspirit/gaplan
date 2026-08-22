@@ -87,9 +87,83 @@ describe('DataList', () => {
     expect(onClick).not.toHaveBeenCalled()
   })
 
+  // badges are state (verified / accompanied / done, ...), not actions — they
+  // render next to the tag, not in the actions slot.
+  it('renders badges next to the tag', () => {
+    render(
+      <DataList
+        rows={[{ ...ROWS[0], badges: <span data-testid="row-badge">확인됨</span> }]}
+        aria-label="다가오는 일정"
+      />,
+    )
+    expect(screen.getByTestId('row-badge')).toBeInTheDocument()
+  })
+
+  // The mobile breakpoint used to hide `.meta` entirely, assuming every
+  // consumer folds the time into `subtitle` — ScheduleItem doesn't (it puts
+  // the ward name there and the time range in `meta`), so that rule made
+  // schedule times vanish on narrow screens. jsdom never evaluates media
+  // queries, so this only locks the source text — it can't confirm the row
+  // avoids horizontal overflow at narrow widths; that was checked by eye
+  // against the reflow rules (flex-wrap) added alongside this fix.
+  it('never hides meta on narrow screens', () => {
+    const scss = readFileSync(resolve(__dirname, 'DataList.module.scss'), 'utf8')
+    expect(scss).not.toMatch(/\.meta\s*\{[^}]*display:\s*none/s)
+  })
+
+  // `.dimmed` is applied on the <li>, which is also the parent of the
+  // sibling `.actions` div — a bare `.dimmed { opacity: ... }` rule would
+  // cascade into the action buttons (kebab, notes, calendar-add, zoom) too
+  // and make them look disabled even though they stay fully clickable.
+  // Real opacity can't be asserted in jsdom (styles aren't injected/applied
+  // there), so this checks the rule is scoped to the row content instead.
+  it('scopes the dimmed opacity to the row content, not the actions slot', () => {
+    const scss = readFileSync(resolve(__dirname, 'DataList.module.scss'), 'utf8')
+    const start = scss.search(/^\.dimmed\s*\{/m)
+    expect(start).toBeGreaterThan(-1)
+    let depth = 0
+    let end = start
+    for (; end < scss.length; end++) {
+      if (scss[end] === '{') depth++
+      else if (scss[end] === '}') {
+        depth--
+        if (depth === 0) {
+          end++
+          break
+        }
+      }
+    }
+    const dimmedRule = scss.slice(start, end)
+    expect(dimmedRule).toMatch(/\.rowButton/)
+    expect(dimmedRule).toMatch(/\.rowStatic/)
+    expect(dimmedRule).toMatch(/opacity/)
+    expect(dimmedRule).not.toMatch(/\.actions/)
+    // must not be a bare `.dimmed { opacity: ... }` rule either
+    expect(dimmedRule).not.toMatch(/^\.dimmed\s*\{\s*opacity/)
+  })
+
   it('renders the footer', () => {
     render(<DataList rows={ROWS} aria-label="다가오는 일정" footer={<span>모두 보기</span>} />)
     expect(screen.getByText('모두 보기')).toBeInTheDocument()
+  })
+
+  // dimmed and highlighted are opposite mechanisms (mute text vs. fill
+  // background), so they must be independent classes, not the same field.
+  it('marks a dimmed row with its own class, independent of highlighted', () => {
+    render(
+      <DataList
+        rows={[
+          { ...ROWS[0], dimmed: true },
+          { ...ROWS[1], highlighted: true },
+        ]}
+        aria-label="다가오는 일정"
+      />,
+    )
+    const items = screen.getAllByRole('listitem')
+    expect(items[0].className).toMatch(/dimmed/)
+    expect(items[0].className).not.toMatch(/highlighted/)
+    expect(items[1].className).toMatch(/highlighted/)
+    expect(items[1].className).not.toMatch(/dimmed/)
   })
 
   // 스펙 §3: 행 앞의 색 막대 금지. 종류는 우측 라벨 하나로만 말한다

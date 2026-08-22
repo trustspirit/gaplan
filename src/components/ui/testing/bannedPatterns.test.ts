@@ -11,10 +11,12 @@ describe('expectNoAccentStripe', () => {
     expectNoAccentStripe(read('../DataList/DataList.module.scss'))
   })
 
-  // 실제 위반 픽스처. TaskCard는 뒤 플랜 소관이라 고치지 않는다 —
-  // 여기서는 헬퍼가 진짜 스트라이프를 잡는지 확인하는 레드 케이스로만 쓴다.
-  it('rejects the real left stripe in TaskCard', () => {
-    expect(() => expectNoAccentStripe(read('../../domain/TaskCard/TaskCard.module.scss'))).toThrow()
+  // 레드 케이스 — 헬퍼가 진짜 스트라이프를 잡는지 확인한다. TaskCard 자체는
+  // 더 이상 이 패턴을 갖지 않으므로(스트라이프를 지웠다), 인라인 문자열로 고정한다.
+  it('rejects a real left stripe', () => {
+    expect(() =>
+      expectNoAccentStripe('.responded { border-left: 3px solid $color-primary; }'),
+    ).toThrow()
   })
 
   it('rejects a logical-property stripe', () => {

@@ -40,10 +40,18 @@
   text-align: left;
 }
 
-.chipActive { outline: 2px solid $color-primary; }
-.green { color: #16a34a; }
-.amber { color: #d97706; }
-.red   { color: #dc2626; }
+.chipActive {
+  outline: 2px solid $color-primary;
+}
+.green {
+  color: #16a34a;
+}
+.amber {
+  color: #d97706;
+}
+.red {
+  color: #dc2626;
+}
 
 .empty {
   margin: 0;

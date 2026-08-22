@@ -10,9 +10,14 @@ export interface DataListRow {
   meta?: string
   tag?: string
   tagTone?: 'neutral' | 'accent'
+  // Small state indicators (verified / accompanied / done, ...) — not
+  // actions. Rendered next to the tag. `actions` means "things you can do";
+  // these are just facts about the row, so they don't belong there.
+  badges?: ReactNode
   actions?: ReactNode
   onClick?: () => void
   highlighted?: boolean
+  dimmed?: boolean
 }
 
 interface DataListProps {
@@ -41,6 +46,7 @@ function RowBody({ row }: { row: DataListRow }) {
           {row.tag}
         </span>
       )}
+      {row.badges && <div className={styles.badges}>{row.badges}</div>}
     </>
   )
 }
@@ -50,7 +56,14 @@ export function DataList({ rows, 'aria-label': ariaLabel, footer, className }: D
     <div className={clsx(styles.wrap, className)}>
       <ul className={styles.list} aria-label={ariaLabel}>
         {rows.map((row) => (
-          <li key={row.id} className={clsx(styles.row, row.highlighted && styles.highlighted)}>
+          <li
+            key={row.id}
+            className={clsx(
+              styles.row,
+              row.highlighted && styles.highlighted,
+              row.dimmed && styles.dimmed,
+            )}
+          >
             {row.onClick ? (
               <button type="button" className={styles.rowButton} onClick={row.onClick}>
                 <RowBody row={row} />

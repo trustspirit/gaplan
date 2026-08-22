@@ -1,22 +1,35 @@
 import { useState, useRef, useEffect } from 'react'
-import { MapPin, Users, CalendarPlus, Coffee, MoreVertical, Video, Building2, Check, FileText, ChevronUp, UserCheck } from 'lucide-react'
+import {
+  MapPin,
+  Users,
+  CalendarPlus,
+  Coffee,
+  MoreVertical,
+  Video,
+  Building2,
+  Check,
+  FileText,
+  ChevronUp,
+  UserCheck,
+} from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
 import type { Schedule } from '@/types'
 import { useUnits } from '@/hooks/useUnits'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import { DeleteConfirmSheet, BottomSheet } from '@/components/ui'
-import { DOW_LABELS } from '@/utils/date'
+import { DeleteConfirmSheet, BottomSheet, DataList, type DataListRow } from '@/components/ui'
+import { toScheduleRow } from './scheduleRow'
 import styles from './ScheduleItem.module.scss'
 
 function buildGCalUrl(schedule: Schedule, unitName: string): string {
   const locationLabel = schedule.wardName ? `${unitName} ${schedule.wardName}` : unitName
-  const title = schedule.type === 'ward_visit'
-    ? `와드 방문 - ${locationLabel}`
-    : schedule.type === 'interview'
-      ? `접견 - ${unitName}`
-      : `모임 - ${unitName}`
+  const title =
+    schedule.type === 'ward_visit'
+      ? `와드 방문 - ${locationLabel}`
+      : schedule.type === 'interview'
+        ? `접견 - ${unitName}`
+        : `모임 - ${unitName}`
   const start = `${schedule.date.replace(/-/g, '')}T${schedule.startTime.replace(':', '')}00`
   const end = `${schedule.date.replace(/-/g, '')}T${schedule.endTime.replace(':', '')}00`
   const params = new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${start}/${end}` })
@@ -32,9 +45,15 @@ function NotesContent({ text }: { text: string }) {
     if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
     const url = match[0]
     parts.push(
-      <a key={match.index} href={url} target="_blank" rel="noopener noreferrer" className={styles.notesLink}>
+      <a
+        key={match.index}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={styles.notesLink}
+      >
         {url}
-      </a>
+      </a>,
     )
     lastIndex = match.index + url.length
   }
@@ -87,163 +106,214 @@ export function ScheduleItem({
   const isMeeting = schedule.type === 'meeting'
   const isAttendance = schedule.type === 'general_attendance'
   const date = dayjs(schedule.date)
-  const dow = DOW_LABELS[date.day()]
   const isPast = past ?? date.isBefore(dayjs(), 'day')
   const hasNotes = !!schedule.notes?.trim()
   const deleteDescription = schedule.customTitle ?? unitName
+  const wardLabel = schedule.wardName ? getWardName(schedule.wardName) : undefined
 
-  const typeClass = isVisit ? styles.visit : isMeeting ? styles.meeting : isAttendance ? styles.attendance : styles.interview
+  const typeIcon = isVisit ? (
+    <MapPin size={11} />
+  ) : isMeeting ? (
+    <Coffee size={11} />
+  ) : isAttendance ? (
+    <Building2 size={11} />
+  ) : (
+    <Users size={11} />
+  )
+  const typeIconClass = isVisit
+    ? styles.typeBadgeVisit
+    : isMeeting
+      ? styles.typeBadgeMeeting
+      : isAttendance
+        ? styles.typeBadgeAttendance
+        : styles.typeBadgeInterview
+
+  const badges = (
+    <>
+      <span className={clsx(styles.typeBadge, typeIconClass)}>{typeIcon}</span>
+      {isAttendance && (
+        <span className={styles.verifiedBadge} aria-label={t('schedule.attendanceVerified')}>
+          <Check size={9} strokeWidth={3.5} />
+        </span>
+      )}
+      {isVisit && schedule.presidentAccompanied && (
+        <span className={styles.presidentBadge} title={t('schedule.presidentAccompanied')}>
+          <UserCheck size={11} />
+          <span className={styles.presidentBadgeText}>
+            {t('schedule.presidentAccompaniedShort')}
+          </span>
+        </span>
+      )}
+      {isPast && (
+        <span className={styles.pastBadge}>
+          <Check size={10} strokeWidth={2.5} />
+          <span className={styles.pastBadgeText}>{t('common.complete')}</span>
+        </span>
+      )}
+    </>
+  )
+
+  const actions = (
+    <>
+      {schedule.zoomLink && (
+        <a
+          href={schedule.zoomLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.zoomLink}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Video size={11} />
+          <span>Zoom</span>
+        </a>
+      )}
+
+      {hasNotes && (
+        <button
+          type="button"
+          className={clsx(styles.notesBtn, notesOpen && styles.notesBtnOpen)}
+          onClick={(e) => {
+            e.stopPropagation()
+            setNotesOpen((v) => !v)
+          }}
+          title="메모 보기"
+          aria-expanded={notesOpen}
+        >
+          {notesOpen ? <ChevronUp size={14} /> : <FileText size={14} />}
+        </button>
+      )}
+
+      {showCalendarAdd && !isPast && (
+        <a
+          href={buildGCalUrl(schedule, unitName)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.calendarAddBtn}
+          title="내 캘린더에 추가"
+        >
+          <CalendarPlus size={15} />
+        </a>
+      )}
+
+      {canEdit && (
+        <div className={styles.kebabWrapper}>
+          <button
+            ref={btnRef}
+            type="button"
+            className={styles.kebabBtn}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (isMobile) {
+                setSheetEverOpen(true)
+                setMenuOpen((prev) => !prev)
+                return
+              }
+              if (!menuOpen && btnRef.current) {
+                const rect = btnRef.current.getBoundingClientRect()
+                setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+              }
+              setMenuOpen((prev) => !prev)
+            }}
+            aria-label={t('common.more')}
+          >
+            <MoreVertical size={16} />
+          </button>
+          {!isMobile && menuOpen && menuPos && (
+            <>
+              <div className={styles.menuOverlay} onClick={() => setMenuOpen(false)} />
+              <div className={styles.menu} style={{ top: menuPos.top, right: menuPos.right }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    onEdit?.()
+                  }}
+                >
+                  {t('common.edit')}
+                </button>
+                {onDelete && (
+                  <button
+                    type="button"
+                    className={styles.deleteMenuItem}
+                    onClick={() => {
+                      setMenuOpen(false)
+                      setShowDeleteConfirm(true)
+                    }}
+                  >
+                    {t('common.delete')}
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+          {isMobile && (sheetEverOpen || menuOpen) && (
+            // mobile: actions in a bottom sheet instead of a scroll-fragile popover
+            <BottomSheet
+              open={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              title={deleteDescription}
+            >
+              <div className={styles.sheetActions}>
+                <button
+                  type="button"
+                  className={styles.sheetActionBtn}
+                  onClick={() => {
+                    setMenuOpen(false)
+                    onEdit?.()
+                  }}
+                >
+                  {t('common.edit')}
+                </button>
+                {onDelete && (
+                  <button
+                    type="button"
+                    className={clsx(styles.sheetActionBtn, styles.sheetActionDanger)}
+                    onClick={() => {
+                      setMenuOpen(false)
+                      setShowDeleteConfirm(true)
+                    }}
+                  >
+                    {t('common.delete')}
+                  </button>
+                )}
+              </div>
+            </BottomSheet>
+          )}
+        </div>
+      )}
+    </>
+  )
+
+  const row: DataListRow = {
+    ...toScheduleRow({ schedule, unitName, wardLabel, today: dayjs().format('YYYY-MM-DD'), t }),
+    dimmed: isPast,
+    badges,
+    actions,
+  }
 
   return (
     <>
-    <div className={styles.wrapper}>
-      {/* ── Main row ── */}
-      <div className={styles.row}>
-        <div className={clsx(styles.colorBar, isVisit ? styles.visitBar : isMeeting ? styles.meetingBar : isAttendance ? styles.attendanceBar : styles.interviewBar)} />
+      <div className={styles.wrapper}>
+        <DataList rows={[row]} aria-label={row.title} />
 
-        <div className={clsx(styles.dateCol, typeClass, isPast && styles.past)}>
-          <span className={styles.date}>{date.format('M.D')}</span>
-          <span className={styles.dow}>{dow}</span>
-        </div>
-
-        <div className={clsx(styles.item, typeClass, isPast && styles.past)}>
-          <div className={styles.info}>
-            <div className={styles.typeBadge}>
-              {isVisit ? <MapPin size={11} />
-              : isMeeting ? <Coffee size={11} />
-              : isAttendance ? <Building2 size={11} />
-              : <Users size={11} />}
-              <span>{t(`schedule.type.${schedule.type}`)}</span>
-            </div>
-            <p className={styles.unit}>
-              {schedule.customTitle ?? unitName}
-              {!schedule.customTitle && schedule.wardName && <span className={styles.wardName}> · {getWardName(schedule.wardName)}</span>}
-              {isAttendance && (
-                <span className={styles.verifiedBadge} aria-label="참석 확인됨">
-                  <Check size={9} strokeWidth={3.5} />
-                </span>
-              )}
-            </p>
-            <p className={styles.time}>{schedule.startTime} – {schedule.endTime}</p>
-            {isVisit && schedule.presidentAccompanied && (
-              <span className={styles.presidentBadge} title="스테이크 회장 동행">
-                <UserCheck size={11} />
-                <span className={styles.presidentBadgeText}>회장 동행</span>
-              </span>
-            )}
-            {schedule.zoomLink && (
-              <a
-                href={schedule.zoomLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.zoomLink}
-                onClick={e => e.stopPropagation()}
-              >
-                <Video size={11} />
-                <span>Zoom</span>
-              </a>
-            )}
-          </div>
-
-          {hasNotes && (
-            <button
-              type="button"
-              className={clsx(styles.notesBtn, notesOpen && styles.notesBtnOpen)}
-              onClick={e => { e.stopPropagation(); setNotesOpen(v => !v) }}
-              title="메모 보기"
-              aria-expanded={notesOpen}
-            >
-              {notesOpen ? <ChevronUp size={14} /> : <FileText size={14} />}
-            </button>
-          )}
-
-          {isPast && (
-            <span className={styles.pastBadge}>
-              <Check size={10} strokeWidth={2.5} />
-              <span className={styles.pastBadgeText}>{t('common.complete')}</span>
-            </span>
-          )}
-          {showCalendarAdd && !isPast && (
-            <a
-              href={buildGCalUrl(schedule, unitName)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.calendarAddBtn}
-              title="내 캘린더에 추가"
-            >
-              <CalendarPlus size={15} />
-            </a>
-          )}
-        </div>
-
-        {canEdit && (
-          <div className={styles.kebabWrapper}>
-            <button
-              ref={btnRef}
-              type="button"
-              className={styles.kebabBtn}
-              onClick={e => {
-                e.stopPropagation()
-                if (isMobile) {
-                  setSheetEverOpen(true)
-                  setMenuOpen(prev => !prev)
-                  return
-                }
-                if (!menuOpen && btnRef.current) {
-                  const rect = btnRef.current.getBoundingClientRect()
-                  setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
-                }
-                setMenuOpen(prev => !prev)
-              }}
-              aria-label={t('common.more')}
-            >
-              <MoreVertical size={16} />
-            </button>
-            {!isMobile && menuOpen && menuPos && (
-              <>
-                <div className={styles.menuOverlay} onClick={() => setMenuOpen(false)} />
-                <div className={styles.menu} style={{ top: menuPos.top, right: menuPos.right }}>
-                  <button type="button" onClick={() => { setMenuOpen(false); onEdit?.() }}>{t('common.edit')}</button>
-                  {onDelete && (
-                    <button type="button" className={styles.deleteMenuItem} onClick={() => { setMenuOpen(false); setShowDeleteConfirm(true) }}>{t('common.delete')}</button>
-                  )}
-                </div>
-              </>
-            )}
-            {isMobile && (sheetEverOpen || menuOpen) && (
-              // mobile: actions in a bottom sheet instead of a scroll-fragile popover
-              <BottomSheet open={menuOpen} onClose={() => setMenuOpen(false)} title={deleteDescription}>
-                <div className={styles.sheetActions}>
-                  <button type="button" className={styles.sheetActionBtn} onClick={() => { setMenuOpen(false); onEdit?.() }}>
-                    {t('common.edit')}
-                  </button>
-                  {onDelete && (
-                    <button type="button" className={clsx(styles.sheetActionBtn, styles.sheetActionDanger)} onClick={() => { setMenuOpen(false); setShowDeleteConfirm(true) }}>
-                      {t('common.delete')}
-                    </button>
-                  )}
-                </div>
-              </BottomSheet>
-            )}
+        {/* ── Notes panel ── */}
+        {notesOpen && hasNotes && (
+          <div className={styles.notesPanel}>
+            <NotesContent text={schedule.notes!} />
           </div>
         )}
       </div>
-
-      {/* ── Notes panel ── */}
-      {notesOpen && hasNotes && (
-        <div className={styles.notesPanel}>
-          <NotesContent text={schedule.notes!} />
-        </div>
+      {onDelete && (
+        <DeleteConfirmSheet
+          open={showDeleteConfirm}
+          description={deleteDescription}
+          onConfirm={() => {
+            setShowDeleteConfirm(false)
+            onDelete()
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
       )}
-    </div>
-    {onDelete && (
-      <DeleteConfirmSheet
-        open={showDeleteConfirm}
-        description={deleteDescription}
-        onConfirm={() => { setShowDeleteConfirm(false); onDelete() }}
-        onCancel={() => setShowDeleteConfirm(false)}
-      />
-    )}
     </>
   )
 }

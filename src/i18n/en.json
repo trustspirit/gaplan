@@ -46,7 +46,12 @@
     "neverVisited": "Never visited",
     "daysAgo_one": "{{count}} day ago",
     "daysAgo_other": "{{count}} days ago",
-    "selectHint": "Visit planning coming soon"
+    "selectHint": "Visit planning coming soon",
+    "severity": {
+      "green": "On track",
+      "amber": "Needs attention",
+      "red": "Overdue"
+    }
   },
   "project": {
     "listTitle": "Projects",
@@ -308,6 +313,8 @@
     "filterCustom": "Custom",
     "periodSchedules": "Schedules in Period",
     "presidentAccompanied": "Stake President Accompanies",
+    "presidentAccompaniedShort": "President Accompanies",
+    "attendanceVerified": "Attendance confirmed",
     "sabbathVisit": "Sabbath Visit",
     "sabbathVisitNotes": "Sacrament meeting visit",
     "type": {
