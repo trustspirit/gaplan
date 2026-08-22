@@ -465,6 +465,62 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
     expect(createSpy.mock.calls[0][0]).not.toHaveProperty('unitId')
   })
 
+  // Controller ruling R5 (2026-08-22): 대상을 '기타'로 골라도 스테이크는 계속 물어야
+  // 한다 — 예전 폼(ab3ad67:ScheduleFormModal.tsx:306)은 대상이 '기타'여도 그때까지
+  // 고른 스테이크를 그대로 payload에 실었다("서울 스테이크" 선택 → 대상=기타 →
+  // {targetKind:'other', unitId:'seoul-stake'}, 제목 "서울 스테이크 접견", 장소
+  // "서울 스테이크"). 스테이크를 안 물으면 이 소속 정보와 제목·장소가 사라진다.
+  it('스테이크를 고르고 대상을 기타로 골라도 그 스테이크가 payload와 제목·장소에 남는다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    expandDetails()
+
+    fireEvent.click(screen.getByText('schedule.type.interview'))
+    fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), { target: { value: 'other' } })
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabel'), {
+      target: { value: 'seoul-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.targetFreeTextLabel'), {
+      target: { value: '홍길순' },
+    })
+    expect(screen.getByLabelText('schedule.customTitleOptional')).toHaveAttribute(
+      'placeholder',
+      '서울 스테이크 접견',
+    )
+    expect(screen.getByLabelText('schedule.locationOptional')).toHaveAttribute(
+      'placeholder',
+      '서울 스테이크',
+    )
+
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy.mock.calls[0][0]).toMatchObject({
+      targetKind: 'other',
+      unitId: 'seoul-stake',
+    })
+  })
+
+  // Controller ruling R9 (2026-08-22): 대상을 고르면 그 리더의 연락처가 노트에 붙는다는
+  // 게 이 select의 요점이므로, 저장 전에 누가 그 대상인지(리더의 역할) 보여야 한다.
+  it('스테이크/와드 대상 옵션에 리더 역할이 라벨로 붙는다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('schedule.type.interview'))
+    await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'stake_president')
+    const stakeSelect = screen.getByLabelText('schedule.stakeLabel') as HTMLSelectElement
+    expect(
+      Array.from(stakeSelect.options).find((o) => o.value === 'seoul-stake')?.label,
+    ).toBe('서울 스테이크 · 스테이크 회장')
+
+    await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'ward_bishop')
+    await userEvent.selectOptions(screen.getByLabelText('schedule.stakeLabel'), 'seoul-stake')
+    const wardSelect = screen.getByLabelText('schedule.wardLabel') as HTMLSelectElement
+    expect(
+      Array.from(wardSelect.options).find((o) => o.value === '녹번 와드')?.label,
+    ).toBe('녹번 와드 · 감독')
+  })
+
   it('접견에서 대상을 아무것도 선택하지 않으면 저장되지 않는다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
 
@@ -791,6 +847,36 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
 
     expect(await screen.findByText('schedule.errorCcRegionRequired')).toBeInTheDocument()
     expect(createSpy).not.toHaveBeenCalled()
+  })
+
+  // Controller ruling R6 (2026-08-22): 담당 CC가 하나뿐인 칠십인(아마 흔한 경우)이 협의
+  // 평의회를 고르면 예전 모달처럼 그 CC를 자동으로 채운다 — "담당 CC가 하나뿐이면 굳이
+  // 고르게 하지 않는다"(ab3ad67:ScheduleFormModal.tsx:525). 자동 선택 없이는 CC를
+  // 일부러 다시 고르지 않는 한 errorCcRegionRequired에 걸린다.
+  it('담당 CC가 하나뿐이면 협의 평의회를 고를 때 자동으로 채워져 저장된다', async () => {
+    const SINGLE_CC_SEVENTY: AppUser = {
+      uid: 'test-uid',
+      email: 'test@test.com',
+      name: '테스트',
+      role: 'seventy',
+      regionId: 'seoul',
+      createdAt: '2026-01-01',
+    }
+    mocks.currentUser = SINGLE_CC_SEVENTY
+    mocks.users = [SINGLE_CC_SEVENTY]
+
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), {
+      target: { value: 'cc_council' },
+    })
+    expect((screen.getByLabelText('schedule.ccRegionLabel') as HTMLSelectElement).value).toBe('seoul')
+
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy.mock.calls[0][0]).toMatchObject({ targetKind: 'cc_council', regionId: 'seoul' })
   })
 
   // Controller ruling R1 (2026-08-22): payload-level replacement for the retired
