@@ -50,4 +50,39 @@ describe('useScheduleForm', () => {
     expect(result.current.state.date).toBe('2026-09-01')
     expect(result.current.state.startTime).toBe('10:00')
   })
+
+  // Task 7 리뷰 Finding: set()이 값이 안 바뀌었는데도 매번 새 state 객체를 만들면, 매
+  // 렌더 새 참조를 돌려주는 값(예: 목 훅)에 의존하는 effect가 무한 루프에 빠질 수 있다
+  // (EditScheduleModal의 relatedVisitId 복구 effect에서 실제로 재현됨). set()은 바뀐
+  // 값이 없으면 이전 state 객체를 그대로 돌려줘야 한다(bail-out).
+  it('바뀌지 않은 원시값으로 set()을 불러도 state 객체 참조가 그대로다', () => {
+    const { result } = renderHook(() => useScheduleForm({ date: '2026-09-01' }))
+    const before = result.current.state
+    act(() => result.current.set('date', '2026-09-01'))
+    expect(result.current.state).toBe(before)
+  })
+
+  it('바뀐 원시값으로 set()을 부르면 새 state와 새 값이 반영된다', () => {
+    const { result } = renderHook(() => useScheduleForm({ date: '2026-09-01' }))
+    const before = result.current.state
+    act(() => result.current.set('date', '2026-09-02'))
+    expect(result.current.state).not.toBe(before)
+    expect(result.current.state.date).toBe('2026-09-02')
+  })
+
+  // 나중에 누군가 이 bail-out을 "최적화"해서 얕은 비교가 아니라 깊은 비교로 바꾸면, 호출부가
+  // 매번 새 객체를 스프레드해서 넘기는 target 같은 필드는 값이 실제로 바뀌어도 조용히
+  // 업데이트를 놓치게 된다. Object.is(원시값/참조 비교)만 써야 한다는 걸 못박는 회귀 테스트.
+  it("target처럼 호출부가 매번 새 객체를 넘기는 필드는, 값이 바뀌면 그 새 객체로 그대로 갱신된다", () => {
+    const { result } = renderHook(() => useScheduleForm())
+    act(() => result.current.set('target', { ...result.current.state.target, unitId: 'x' }))
+    expect(result.current.state.target.unitId).toBe('x')
+  })
+
+  it('바뀌지 않은 값으로 set()을 불러도 isDirty는 그대로다', () => {
+    const { result } = renderHook(() => useScheduleForm({ date: '2026-09-01' }))
+    expect(result.current.isDirty).toBe(false)
+    act(() => result.current.set('date', '2026-09-01'))
+    expect(result.current.isDirty).toBe(false)
+  })
 })
