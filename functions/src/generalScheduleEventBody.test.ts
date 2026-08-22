@@ -1,0 +1,50 @@
+import { describe, it, expect } from 'vitest'
+import { generalScheduleEventBody } from './generalScheduleEventBody'
+
+describe('generalScheduleEventBody', () => {
+  it('시간이 있으면 dateTime으로 만든다', () => {
+    const body = generalScheduleEventBody({
+      title: '지역 대회',
+      date: '2026-09-01',
+      startTime: '10:00',
+      endTime: '12:00',
+    })
+    expect(body.summary).toBe('지역 대회')
+    expect(body.start).toEqual({ dateTime: '2026-09-01T10:00:00+09:00', timeZone: 'Asia/Seoul' })
+    expect(body.end).toEqual({ dateTime: '2026-09-01T12:00:00+09:00', timeZone: 'Asia/Seoul' })
+  })
+
+  it('설명이 있으면 그대로 싣는다', () => {
+    const body = generalScheduleEventBody({
+      title: '지역 대회',
+      description: '준비물: 경전',
+      date: '2026-09-01',
+      startTime: '10:00',
+      endTime: '12:00',
+    })
+    expect(body.description).toBe('준비물: 경전')
+  })
+
+  it('설명이 없으면 description을 아예 넣지 않는다', () => {
+    const body = generalScheduleEventBody({ title: '금식 주일', date: '2026-09-06' })
+    expect(body.description).toBeUndefined()
+  })
+
+  it('시간이 없으면 종일 이벤트(date)로 만들고 endDate가 없으면 하루짜리다', () => {
+    const body = generalScheduleEventBody({ title: '금식 주일', date: '2026-09-06' })
+    expect(body.start).toEqual({ date: '2026-09-06' })
+    // 종일 이벤트의 end.date는 배타적이라 다음 날짜여야 그 날까지 표시된다.
+    expect(body.end).toEqual({ date: '2026-09-07' })
+  })
+
+  it('endDate가 있으면 종료일 다음 날을 end.date로 쓴다(여러 날짜에 걸친 행사)', () => {
+    const body = generalScheduleEventBody({ title: '스테이크 대회', date: '2026-09-01', endDate: '2026-09-03' })
+    expect(body.start).toEqual({ date: '2026-09-01' })
+    expect(body.end).toEqual({ date: '2026-09-04' })
+  })
+
+  it('월 경계를 넘는 endDate도 올바르게 다음 날로 넘어간다', () => {
+    const body = generalScheduleEventBody({ title: '행사', date: '2026-08-30', endDate: '2026-08-31' })
+    expect(body.end).toEqual({ date: '2026-09-01' })
+  })
+})
