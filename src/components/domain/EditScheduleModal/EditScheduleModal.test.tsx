@@ -504,3 +504,53 @@ describe('EditScheduleModal payload 고정(pin-down) — Task 7', () => {
     })
   })
 })
+
+// I2 (2026-08-22): 편집 모달은 대상의 '종류'를 바꿀 수단이 없다 — TargetSection에는
+// 단위(스테이크) select 하나만 남기고 유형/와드/CC/자유입력 select는 통째로 숨긴다
+// (askOnlyUnit). 예전 이름 fixedKind는 실제로는 대상 유형을 고정하는 게 아니라 이
+// 스위치였다 — 이름을 바로잡고, 그 스위치가 real target.kind(=schedule.targetKind)를
+// 밀어내지 않는다는 것도 함께 고정한다: 실제 kind가 'other'인 일정을 열면 스테이크
+// select 라벨이 (선택)으로 뜬다 — dummy 'stake_president'를 쓰던 예전에는 항상
+// (필수)로만 떴다.
+describe('EditScheduleModal 대상 select — askOnlyUnit', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    editSpy.mockReset()
+    editSpy.mockResolvedValue({ data: {} })
+  })
+
+  it('비-방문 일정을 열면 대상 관련 select가 스테이크 하나만 렌더링된다', () => {
+    render(
+      <EditScheduleModal
+        schedule={{ ...MEETING_SCHEDULE, targetKind: 'ward_bishop', wardName: '녹번 와드' }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+
+    const targetFields = screen.queryAllByLabelText(
+      /^schedule\.(targetKindLabel|stakeLabel|stakeLabelOptional|wardLabel|ccRegionLabel|targetFreeTextLabel)$/,
+    )
+    expect(targetFields).toHaveLength(1)
+    expect(targetFields[0]).toHaveAccessibleName('schedule.stakeLabel')
+  })
+
+  // 실제 targetKind가 'other'면 스테이크는 선택 사항이다(M2 규칙) — askOnlyUnit이 real
+  // target.kind를 밀어내지 않아야만 이 라벨이 정확히 나온다. dummy 'stake_president'를
+  // 쓰던 예전 코드는 이 케이스에서도 늘 (필수) 라벨을 보여줬다.
+  it('실제 targetKind가 other면 스테이크 라벨이 선택 사항으로 뜬다', () => {
+    render(
+      <EditScheduleModal
+        schedule={{ ...MEETING_SCHEDULE, targetKind: 'other' }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+
+    const targetFields = screen.queryAllByLabelText(
+      /^schedule\.(targetKindLabel|stakeLabel|stakeLabelOptional|wardLabel|ccRegionLabel|targetFreeTextLabel)$/,
+    )
+    expect(targetFields).toHaveLength(1)
+    expect(targetFields[0]).toHaveAccessibleName('schedule.stakeLabelOptional')
+  })
+})

@@ -41,19 +41,22 @@ export interface TargetSectionProps {
   /** 협의 평의회 CC 목록 — 마찬가지로 담당 칠십인 범위로 이미 걸러진 것. */
   ccRegionOptions: SelectOption[]
   /**
-   * 편집 모달 전용 — 대상 유형을 이 값으로 고정하고, 유형 선택 select와 목적/관련 방문
-   * 칸을 아예 숨긴다(Controller ruling 1, 2026-08-22: 편집은 대상의 '종류'를 바꿀 수
-   * 없다 — 바꿀 수 없는 select를 보여주는 건 아예 안 보여주는 것보다 나쁘다).
+   * 편집 모달 전용 — 대상의 '종류'를 바꿀 수단을 통째로 숨긴다: 유형 선택 select와
+   * 목적/관련 방문 칸을 감추고, 아래쪽도 단위(스테이크/지방부) select 하나만 남긴다
+   * (Controller ruling 1, 2026-08-22: 편집은 대상의 '종류'를 바꿀 수 없다 — 바꿀 수
+   * 없는 select를 보여주는 건 아예 안 보여주는 것보다 나쁘다). 이름이 fixedKind이던
+   * 시절엔 "대상 유형을 이 값으로 고정한다"는 뜻으로 읽혔지만, 실제로는 유형이 무엇이든
+   * 상관없이 항상 단위 하나만 묻는 스위치였다 — 이름을 그 실제 동작에 맞춘 것.
    *
-   * 편집 모달은 이 값으로 실제 schedule.targetKind를 넘기지 않는다. 예전 편집 모달은
-   * ward_bishop/기타 대상이어도 와드·자유입력 칸을 편집하게 해준 적이 없다(오직 스테이크
-   * 하나였다) — 그런데도 실제 targetKind를 그대로 넘기면 asksWard/asksFreeText가 켜져
-   * 저장되지 않는(payload가 못 담는) 칸이 새로 생긴다. 그래서 편집은 늘 'stake_president'
-   * (asksUnit만 켜지는 유일한 값)를 넘겨 "스테이크만 묻는다"는 예전 동작을 재현한다.
-   * 협의 평의회는 대상 자체를 바꿀 수단이 없으므로(CF도 regionId 변경을 받지 않는다)
-   * 이 조각에 아예 넘기지 않고, 호출부가 읽기 전용 표시를 직접 그린다.
+   * 이 스위치는 state.target.kind(실제 schedule.targetKind)를 밀어내지 않는다 —
+   * 밀어내면 스테이크 select 라벨(stakeLabelKeyFor)이 실제 대상 유형과 어긋난다(M2).
+   * 예전 편집 모달은 ward_bishop/기타 대상이어도 와드·자유입력 칸을 편집하게 해준 적이
+   * 없다(오직 스테이크 하나였다) — 그 동작은 이 플래그가 asksWard/asksFreeText를 강제로
+   * 끄는 것으로 재현한다. 협의 평의회는 대상 자체를 바꿀 수단이 없으므로(CF도 regionId
+   * 변경을 받지 않는다) 이 조각에 아예 넘기지 않고, 호출부가 읽기 전용 표시를 직접
+   * 그린다.
    */
-  fixedKind?: TargetKindChoice
+  askOnlyUnit?: boolean
 }
 
 /** 방문을 골랐을 때 채워 넣을 대상 — 방문은 항상 와드 감독이 대상인 셈이다.
@@ -88,7 +91,7 @@ export function TargetSection({
   unitSelectDisabled,
   wardOptions,
   ccRegionOptions,
-  fixedKind,
+  askOnlyUnit,
 }: TargetSectionProps) {
   const { t } = useTranslation()
   const { target, purpose, relatedVisitId } = state
@@ -121,8 +124,14 @@ export function TargetSection({
     )
   }
 
-  const effectiveKind = fixedKind ?? target.kind
-  const questions = questionsFor(effectiveKind)
+  // askOnlyUnit(편집 모달)일 때도 effectiveKind는 실제 target.kind다 — 라벨(M2)이
+  // 어긋나면 안 되기 때문이다. 대신 questions는 asksUnit만 켜진 고정값으로 덮어써서
+  // 와드/CC/자유입력 칸은 실제 kind가 무엇이든 뜨지 않는다(예전 편집 모달이 스테이크
+  // 하나만 물었던 동작 재현).
+  const effectiveKind = target.kind
+  const questions = askOnlyUnit
+    ? { asksUnit: true, asksWard: false, asksCc: false, asksFreeText: false }
+    : questionsFor(effectiveKind)
   const isCcCouncil = effectiveKind === 'cc_council'
   // 협의 평의회는 모임에만 있는 개념이다(접견 하나에 CC 전체가 대상일 수 없다).
   // 스테이크/지방부 회장 대상은 반대로 접견에만 있다 — CF가 지금까지 한 번도 받아본 적
@@ -138,7 +147,7 @@ export function TargetSection({
           않는다 — 대상을 협의 평의회로 고르면 이 두 칸을 아예 숨기고, 이미 골라둔 값도
           지운다(대상 유형 select의 onChange 참고). 대상 유형이 고정된 편집 모달에는 애초에
           '목적'이라는 개념 자체가 없으므로 이 블록 전체를 숨긴다. */}
-      {!fixedKind && !isCcCouncil && (
+      {!askOnlyUnit && !isCcCouncil && (
         <Select
           label={t('schedule.purposeLabel')}
           value={purpose === 'general' ? '' : purpose}
@@ -151,7 +160,7 @@ export function TargetSection({
         />
       )}
 
-      {!fixedKind && !isCcCouncil && purpose === 'pre_visit' && (
+      {!askOnlyUnit && !isCcCouncil && purpose === 'pre_visit' && (
         <>
           <Select
             label={t('schedule.relatedVisitLabel')}
@@ -191,7 +200,7 @@ export function TargetSection({
         </>
       )}
 
-      {!fixedKind && (
+      {!askOnlyUnit && (
         <Select
           label={t('schedule.targetKindLabel')}
           value={target.kind}

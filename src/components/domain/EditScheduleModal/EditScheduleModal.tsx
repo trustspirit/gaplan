@@ -34,14 +34,16 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
   const { users } = useUsers()
 
   // 편집은 대상의 '종류'(targetKind)를 바꿀 수단이 없다(Controller ruling 1, 2026-08-22) —
-  // 그래서 useScheduleForm의 target에는 늘 초기값만 채우고, TargetSection에는 아래에서
-  // fixedKind를 넘겨 유형 select 자체를 숨긴다. 협의 평의회는 대상을 바꿀 수단이 CF에도
-  // 없으므로(regionId는 updates 계약에 없다) TargetSection에 넘기지 않고 읽기 전용
-  // 표시를 이 모달이 직접 그린다(아래 참고).
+  // 그래서 useScheduleForm의 target.kind는 저장된 schedule.targetKind를 그대로 초기값으로
+  // 싣고, TargetSection에는 아래에서 askOnlyUnit을 넘겨 유형/와드/CC/자유입력 select를
+  // 통째로 숨기고 단위 select만 남긴다 — 실제 kind는 그대로 흘려보내야 스테이크 select
+  // 라벨(stakeLabelKeyFor, M2)이 실제 대상 유형과 어긋나지 않는다. 협의 평의회는 대상을
+  // 바꿀 수단이 CF에도 없으므로(regionId는 updates 계약에 없다) TargetSection에 넘기지
+  // 않고 읽기 전용 표시를 이 모달이 직접 그린다(아래 참고).
   const { state, set, isDirty: formIsDirty } = useScheduleForm({
     type: schedule.type,
     target: {
-      kind: schedule.type === 'ward_visit' ? '' : 'stake_president',
+      kind: schedule.type === 'ward_visit' ? '' : (schedule.targetKind ?? 'stake_president'),
       unitId: schedule.unitId ?? '',
       wardName: schedule.wardName ?? '',
       ccRegionId: '',
@@ -246,7 +248,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                   unitOptions={unitOptions}
                   wardOptions={wardOptions}
                   ccRegionOptions={[]}
-                  fixedKind={isVisit ? undefined : 'stake_president'}
+                  askOnlyUnit={!isVisit}
                 />
               )}
 
