@@ -9,11 +9,15 @@ import { useUsers } from '@/hooks/useUsers'
 import { useUpcomingVisits } from '@/hooks/useUpcomingVisits'
 import { ALL_UNITS, REGIONS, getWardsByUnit } from '@/constants/regions'
 import type { Schedule } from '@/types'
-import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
-import { DeleteConfirmSheet, Input, Textarea, Select } from '@/components/ui'
+import { DeleteConfirmSheet, Input, Select } from '@/components/ui'
 import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { buildScheduleTitle, buildScheduleLocation } from '../../../../functions/src/scheduleRules'
+import { useScheduleForm } from '../scheduleForm/useScheduleForm'
+import type { ScheduleFormState } from '../scheduleForm/useScheduleForm'
+import { TargetSection } from '../scheduleForm/TargetSection'
+import { WhenSection } from '../scheduleForm/WhenSection'
+import { DetailSection } from '../scheduleForm/DetailSection'
 import styles from './EditScheduleModal.module.scss'
 
 const adminEditScheduleFn = httpsCallable(functions, 'adminEditSchedule')
@@ -29,22 +33,45 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
   const { t } = useTranslation()
   const { users } = useUsers()
 
-  const [date, setDate] = useState(schedule.date)
-  const [startTime, setStartTime] = useState(schedule.startTime)
-  const [endTime, setEndTime] = useState(schedule.endTime)
-  const [unitId, setUnitId] = useState(schedule.unitId ?? '')
-  const [wardName, setWardName] = useState(schedule.wardName ?? '')
+  // 편집은 대상의 '종류'(targetKind)를 바꿀 수단이 없다(Controller ruling 1, 2026-08-22) —
+  // 그래서 useScheduleForm의 target에는 늘 초기값만 채우고, TargetSection에는 아래에서
+  // fixedKind를 넘겨 유형 select 자체를 숨긴다. 협의 평의회는 대상을 바꿀 수단이 CF에도
+  // 없으므로(regionId는 updates 계약에 없다) TargetSection에 넘기지 않고 읽기 전용
+  // 표시를 이 모달이 직접 그린다(아래 참고).
+  const { state, set, isDirty: formIsDirty } = useScheduleForm({
+    type: schedule.type,
+    target: {
+      kind: schedule.type === 'ward_visit' ? '' : 'stake_president',
+      unitId: schedule.unitId ?? '',
+      wardName: schedule.wardName ?? '',
+      ccRegionId: '',
+      freeText: '',
+    },
+    date: schedule.date,
+    startTime: schedule.startTime,
+    endTime: schedule.endTime,
+    notes: schedule.notes ?? '',
+    zoomLink: schedule.zoomLink ?? '',
+    customTitle: schedule.customTitle ?? '',
+    // 편집 CF는 payload에 명시적 location이 없으면 저장된 값을 다시 유도해 버린다(비고정) —
+    // 그래서 여기서 반드시 schedule.location으로 프리필해야 사용자가 손으로 쓴 장소가
+    // 시간/대상만 바꾸는 편집에도 그대로 살아남는다.
+    location: schedule.location ?? '',
+    projectId: schedule.projectId ?? '',
+    presidentAccompanied: schedule.presidentAccompanied ?? false,
+    relatedVisitId: schedule.relatedVisitId ?? '',
+  })
+  const { target, date, startTime, endTime, notes, zoomLink, customTitle, location, projectId, presidentAccompanied, relatedVisitId } = state
+
+  // TargetSection/WhenSection/DetailSection은 { state, onChange } 계약을 쓴다 — onChange는
+  // 부분 병합. useScheduleForm의 set(key, value)를 그 모양으로 감싼다(생성 모달과 동일).
+  const applyPartial = (partial: Partial<ScheduleFormState>) => {
+    ;(Object.keys(partial) as Array<keyof ScheduleFormState>).forEach((key) => {
+      set(key, partial[key] as ScheduleFormState[typeof key])
+    })
+  }
+
   const [presidentUid, setPresidentUid] = useState(schedule.presidentUid ?? '')
-  const [note, setNote] = useState(schedule.notes ?? '')
-  const [zoomLink, setZoomLink] = useState(schedule.zoomLink ?? '')
-  const [customTitle, setCustomTitle] = useState(schedule.customTitle ?? '')
-  // 편집 CF는 payload에 명시적 location이 없으면 저장된 값을 다시 유도해 버린다(비고정) —
-  // 그래서 여기서 반드시 schedule.location으로 프리필해야 사용자가 손으로 쓴 장소가
-  // 시간/대상만 바꾸는 편집에도 그대로 살아남는다.
-  const [location, setLocation] = useState(schedule.location ?? '')
-  const [projectId, setProjectId] = useState(schedule.projectId ?? '')
-  const [presidentAccompanied, setPresidentAccompanied] = useState(schedule.presidentAccompanied ?? false)
-  const [relatedVisitId, setRelatedVisitId] = useState(schedule.relatedVisitId ?? '')
   const [saving, setSaving] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -54,28 +81,17 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
   const isCcCouncil = schedule.targetKind === 'cc_council'
   const ccRegionName = REGIONS.find(r => r.id === schedule.regionId)?.name ?? schedule.regionId ?? ''
 
+  // wardName은 TargetSection의 stake select onChange가 이미 unitId 변경과 한번에 지운다
+  // (changeTarget({ unitId, wardName: '' })) — 여기서는 TargetSection이 모르는 presidentUid만
+  // 마저 지운다(예전 effect의 두 몫 중 나머지 절반).
   const isFirstUnitChange = useRef(true)
   useEffect(() => {
     if (isFirstUnitChange.current) { isFirstUnitChange.current = false; return }
-    setWardName('')
     setPresidentUid('')
-  }, [unitId])
+  }, [target.unitId])
 
   // Guard against losing edits to a stray backdrop tap / Escape
-  const isDirty =
-    date !== schedule.date ||
-    startTime !== schedule.startTime ||
-    endTime !== schedule.endTime ||
-    unitId !== (schedule.unitId ?? '') ||
-    wardName !== (schedule.wardName ?? '') ||
-    presidentUid !== (schedule.presidentUid ?? '') ||
-    note !== (schedule.notes ?? '') ||
-    zoomLink !== (schedule.zoomLink ?? '') ||
-    customTitle !== (schedule.customTitle ?? '') ||
-    location !== (schedule.location ?? '') ||
-    projectId !== (schedule.projectId ?? '') ||
-    presidentAccompanied !== (schedule.presidentAccompanied ?? false) ||
-    relatedVisitId !== (schedule.relatedVisitId ?? '')
+  const isDirty = formIsDirty || presidentUid !== (schedule.presidentUid ?? '')
   const requestClose = () => {
     if (isDirty && !window.confirm(t('common.discardChanges'))) return
     onClose()
@@ -120,14 +136,15 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
   useEffect(() => {
     if (date === schedule.date) {
       if (!relatedVisitTouchedRef.current) {
-        setRelatedVisitId(schedule.relatedVisitId ?? '')
+        set('relatedVisitId', schedule.relatedVisitId ?? '')
       }
       return
     }
     if (!relatedVisitId || upcomingVisitsLoading) return
     if (!upcomingVisits.some(v => v.id === relatedVisitId)) {
-      setRelatedVisitId('')
+      set('relatedVisitId', '')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date, schedule.date, schedule.relatedVisitId, relatedVisitId, upcomingVisitsLoading, upcomingVisits])
 
   const deleteDescription = schedule.type === 'ward_visit' && schedule.wardName
@@ -140,17 +157,17 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
     ? ALL_UNITS.filter(u => seventyRegionIds.includes(u.regionId ?? ''))
     : ALL_UNITS
   const unitOptions = unitPool.map(u => ({ value: u.id, label: u.name.ko }))
-  const wardOptions = unitId ? getWardsByUnit(unitId).map(w => ({ value: w.name.ko, label: w.name.ko })) : []
+  const wardOptions = target.unitId ? getWardsByUnit(target.unitId).map(w => ({ value: w.name.ko, label: w.name.ko })) : []
   const presidentOptions = users
-    .filter(u => u.role === 'president' && u.unitId === unitId && !!unitId)
+    .filter(u => u.role === 'president' && u.unitId === target.unitId && !!target.unitId)
     .map(u => ({ value: u.uid, label: u.preRegistered ? u.name : `${u.name} ✓` }))
 
   // 지금까지 고친 값만으로 저장 시 유도될 제목·장소를 미리 보여준다. 대상(targetKind)은
   // 이 폼에 바꿀 수단이 없으므로 저장된 값을 그대로 쓴다.
   const autoParts = {
     type: schedule.type,
-    unitName: ALL_UNITS.find((u) => u.id === unitId)?.name.ko,
-    wardName: wardName || undefined,
+    unitName: ALL_UNITS.find((u) => u.id === target.unitId)?.name.ko,
+    wardName: target.wardName || undefined,
     targetKind: schedule.targetKind ?? null,
     ccName: REGIONS.find((r) => r.id === schedule.regionId)?.name,
   }
@@ -167,9 +184,9 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
           date,
           startTime,
           endTime,
-          notes: note || null,
-          ...(isCcCouncil ? {} : { unitId: unitId || undefined }),
-          ...(isVisit ? { wardName: wardName || null } : {}),
+          notes: notes || null,
+          ...(isCcCouncil ? {} : { unitId: target.unitId || undefined }),
+          ...(isVisit ? { wardName: target.wardName || null } : {}),
           ...(isInterview ? { presidentUid: presidentUid || null } : {}),
           ...(!isVisit ? { zoomLink: zoomLink.trim() || null } : {}),
           ...(!isVisit ? { customTitle: customTitle.trim() || null } : {}),
@@ -211,7 +228,8 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
             {error && <div className={styles.errorBanner}>{error}</div>}
 
             <div className={styles.fields}>
-              {/* Stake/District — 협의 평의회는 대상 CC를 읽기 전용으로 보여 준다 */}
+              {/* Stake/District — 협의 평의회는 대상 CC를 읽기 전용으로 보여 준다. TargetSection에는
+                  대상을 아예 넘기지 않는다 — CF도 regionId 변경을 받지 않으므로 바꿀 수단이 없다. */}
               {isCcCouncil ? (
                 <Input
                   label={t('schedule.ccRegionLabel')}
@@ -220,35 +238,17 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                   onChange={() => {}}
                 />
               ) : (
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>
-                    {t(schedule.type === 'meeting' ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel')}
-                  </label>
-                  <select
-                    className={styles.fieldSelect}
-                    value={unitId}
-                    onChange={e => setUnitId(e.target.value)}
-                  >
-                    <option value="">{t('common.select')}</option>
-                    {unitOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                </div>
-              )}
-
-              {/* Ward — ward_visit only */}
-              {isVisit && (
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>{t('schedule.wardLabel')}</label>
-                  <select
-                    className={styles.fieldSelect}
-                    value={wardName}
-                    onChange={e => setWardName(e.target.value)}
-                    disabled={!unitId}
-                  >
-                    <option value="">{t('common.select')}</option>
-                    {wardOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                </div>
+                <TargetSection
+                  type={schedule.type}
+                  state={state}
+                  onChange={applyPartial}
+                  upcomingVisits={upcomingVisits}
+                  unitOptions={unitOptions}
+                  wardOptions={wardOptions}
+                  ccRegionOptions={[]}
+                  fixedKind={isVisit ? undefined : 'stake_president'}
+                  stakeLabelKey={schedule.type === 'meeting' ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel'}
+                />
               )}
 
               {/* Related visit — interview/meeting only: link/unlink the pre-visit meeting reminder */}
@@ -263,7 +263,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                   }
                   onChange={(e) => {
                     relatedVisitTouchedRef.current = true
-                    setRelatedVisitId(e.target.value)
+                    set('relatedVisitId', e.target.value)
                   }}
                   options={upcomingVisits.map(v => ({
                     value: v.id,
@@ -276,20 +276,6 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                 />
               )}
 
-              {/* President accompanied — ward_visit only */}
-              {isVisit && (
-                <label className={styles.checkRow}>
-                  <input
-                    type="checkbox"
-                    checked={presidentAccompanied}
-                    onChange={e => setPresidentAccompanied(e.target.checked)}
-                    className={styles.checkbox}
-                    style={{ accentColor: 'var(--color-primary, #003057)' }}
-                  />
-                  <span className={styles.checkLabel}>{t('schedule.presidentAccompanied')}</span>
-                </label>
-              )}
-
               {/* President — interview only, optional */}
               {isInterview && (
                 <div className={styles.fieldGroup}>
@@ -298,7 +284,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                     className={styles.fieldSelect}
                     value={presidentUid}
                     onChange={e => setPresidentUid(e.target.value)}
-                    disabled={!unitId}
+                    disabled={!target.unitId}
                   >
                     <option value="">{t('common.select')}</option>
                     {presidentOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -306,84 +292,21 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                 </div>
               )}
 
-              {/* Date */}
-              <Input
-                label={t('schedule.dateLabel')}
-                type="date"
-                className={styles.fieldInput}
-                wrapperClassName={styles.fieldGroup}
-                value={date}
-                onChange={e => setDate(e.target.value)}
+              <WhenSection
+                type={schedule.type}
+                state={state}
+                onChange={applyPartial}
+                hideSabbathToggle
               />
 
-              {/* Start / End time */}
-              <div className={styles.timeRow}>
-                <Input
-                  label={t('common.startTime')}
-                  type="time"
-                  className={styles.fieldInput}
-                  wrapperClassName={styles.fieldGroup}
-                  value={startTime}
-                  onChange={e => setStartTime(e.target.value)}
-                />
-                <Input
-                  label={t('common.endTime')}
-                  type="time"
-                  className={styles.fieldInput}
-                  wrapperClassName={styles.fieldGroup}
-                  value={endTime}
-                  onChange={e => setEndTime(e.target.value)}
-                />
-              </div>
-
-              {/* Location — every type; prefilled from schedule.location because the edit CF
-                  re-derives it whenever the payload doesn't carry an explicit value */}
-              <Input
-                label={t('schedule.locationOptional')}
-                className={styles.fieldInput}
-                wrapperClassName={styles.fieldGroup}
-                value={location}
-                onChange={e => setLocation(e.target.value)}
-                placeholder={autoLocation ?? ''}
+              <DetailSection
+                type={schedule.type}
+                state={state}
+                onChange={applyPartial}
+                autoTitle={autoTitle}
+                autoLocation={autoLocation}
+                canPickProject
               />
-
-              {/* Custom title — non-visit only */}
-              {!isVisit && (
-                <Input
-                  label={t('schedule.customTitleOptional')}
-                  className={styles.fieldInput}
-                  wrapperClassName={styles.fieldGroup}
-                  value={customTitle}
-                  onChange={e => setCustomTitle(e.target.value)}
-                  placeholder={autoTitle}
-                />
-              )}
-
-              {/* Zoom link — non-visit only */}
-              {!isVisit && (
-                <Input
-                  label={t('schedule.zoomLinkOptional')}
-                  type="url"
-                  className={styles.fieldInput}
-                  wrapperClassName={styles.fieldGroup}
-                  value={zoomLink}
-                  onChange={e => setZoomLink(e.target.value)}
-                  placeholder="https://zoom.us/j/..."
-                />
-              )}
-
-              {/* Notes */}
-              <Textarea
-                label={t('schedule.notesLabelOptional')}
-                className={styles.fieldTextarea}
-                wrapperClassName={styles.fieldGroup}
-                value={note}
-                onChange={e => setNote(e.target.value)}
-                rows={3}
-              />
-
-              {/* Project */}
-              <ProjectPicker value={projectId} onChange={setProjectId} />
             </div>
 
             <div className={styles.actions}>

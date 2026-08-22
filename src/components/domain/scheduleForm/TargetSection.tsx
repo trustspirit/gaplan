@@ -40,6 +40,26 @@ export interface TargetSectionProps {
   wardOptions: SelectOption[]
   /** 협의 평의회 CC 목록 — 마찬가지로 담당 칠십인 범위로 이미 걸러진 것. */
   ccRegionOptions: SelectOption[]
+  /**
+   * 편집 모달 전용 — 대상 유형을 이 값으로 고정하고, 유형 선택 select와 목적/관련 방문
+   * 칸을 아예 숨긴다(Controller ruling 1, 2026-08-22: 편집은 대상의 '종류'를 바꿀 수
+   * 없다 — 바꿀 수 없는 select를 보여주는 건 아예 안 보여주는 것보다 나쁘다).
+   *
+   * 편집 모달은 이 값으로 실제 schedule.targetKind를 넘기지 않는다. 예전 편집 모달은
+   * ward_bishop/기타 대상이어도 와드·자유입력 칸을 편집하게 해준 적이 없다(오직 스테이크
+   * 하나였다) — 그런데도 실제 targetKind를 그대로 넘기면 asksWard/asksFreeText가 켜져
+   * 저장되지 않는(payload가 못 담는) 칸이 새로 생긴다. 그래서 편집은 늘 'stake_president'
+   * (asksUnit만 켜지는 유일한 값)를 넘겨 "스테이크만 묻는다"는 예전 동작을 재현한다.
+   * 협의 평의회는 대상 자체를 바꿀 수단이 없으므로(CF도 regionId 변경을 받지 않는다)
+   * 이 조각에 아예 넘기지 않고, 호출부가 읽기 전용 표시를 직접 그린다.
+   */
+  fixedKind?: TargetKindChoice
+  /**
+   * 스테이크 select 라벨의 번역 키를 덮어쓴다. 예전 편집 모달은 모임(meeting) 유형일
+   * 때만 "선택" 문구가 붙은 라벨을 썼다(schedule.stakeLabelOptional) — 그 문구 차이를
+   * 그대로 옮기기 위한 자리다. 넘기지 않으면 기존처럼 schedule.stakeLabel을 쓴다.
+   */
+  stakeLabelKey?: string
 }
 
 /** 방문을 골랐을 때 채워 넣을 대상 — 방문은 항상 와드 감독이 대상인 셈이다.
@@ -74,6 +94,8 @@ export function TargetSection({
   unitSelectDisabled,
   wardOptions,
   ccRegionOptions,
+  fixedKind,
+  stakeLabelKey,
 }: TargetSectionProps) {
   const { t } = useTranslation()
   const { target, purpose, relatedVisitId } = state
@@ -106,8 +128,9 @@ export function TargetSection({
     )
   }
 
-  const questions = questionsFor(target.kind)
-  const isCcCouncil = target.kind === 'cc_council'
+  const effectiveKind = fixedKind ?? target.kind
+  const questions = questionsFor(effectiveKind)
+  const isCcCouncil = effectiveKind === 'cc_council'
   // 협의 평의회는 모임에만 있는 개념이다(접견 하나에 CC 전체가 대상일 수 없다).
   // 스테이크/지방부 회장 대상은 반대로 접견에만 있다 — CF가 지금까지 한 번도 받아본 적
   // 없는 `type: 'meeting'` + `targetKind: 'stake_president'` 조합을 새로 열지 않는다.
@@ -120,8 +143,9 @@ export function TargetSection({
     <>
       {/* 협의 평의회는 CC 전체가 대상이라 특정 방문에 딸린 개념(목적·관련 방문)이 성립하지
           않는다 — 대상을 협의 평의회로 고르면 이 두 칸을 아예 숨기고, 이미 골라둔 값도
-          지운다(대상 유형 select의 onChange 참고). */}
-      {!isCcCouncil && (
+          지운다(대상 유형 select의 onChange 참고). 대상 유형이 고정된 편집 모달에는 애초에
+          '목적'이라는 개념 자체가 없으므로 이 블록 전체를 숨긴다. */}
+      {!fixedKind && !isCcCouncil && (
         <Select
           label={t('schedule.purposeLabel')}
           value={purpose === 'general' ? '' : purpose}
@@ -134,7 +158,7 @@ export function TargetSection({
         />
       )}
 
-      {!isCcCouncil && purpose === 'pre_visit' && (
+      {!fixedKind && !isCcCouncil && purpose === 'pre_visit' && (
         <>
           <Select
             label={t('schedule.relatedVisitLabel')}
@@ -174,31 +198,33 @@ export function TargetSection({
         </>
       )}
 
-      <Select
-        label={t('schedule.targetKindLabel')}
-        value={target.kind}
-        onChange={(e) => {
-          const nextKind = e.target.value as TargetKindChoice | ''
-          const resetTarget = resetForKind(target, nextKind)
-          // 담당 CC가 하나뿐이면 굳이 고르게 하지 않는다 — 예전 모달의 자동 선택
-          // (Controller ruling R6, 2026-08-22).
-          const nextTarget =
-            nextKind === 'cc_council' && ccRegionOptions.length === 1
-              ? { ...resetTarget, ccRegionId: ccRegionOptions[0].value }
-              : resetTarget
-          onChange({
-            target: nextTarget,
-            // 협의 평의회로 바꾸면 목적·관련 방문도 함께 지운다 — 그 두 칸을 숨기고 나서
-            // 남은 값이 payload로 새어 나가면 안 된다(예전 targetSelect onChange와 동일).
-            ...(nextKind === 'cc_council' ? { purpose: 'general' as const, relatedVisitId: '' } : {}),
-          })
-        }}
-        options={kindOptions}
-      />
+      {!fixedKind && (
+        <Select
+          label={t('schedule.targetKindLabel')}
+          value={target.kind}
+          onChange={(e) => {
+            const nextKind = e.target.value as TargetKindChoice | ''
+            const resetTarget = resetForKind(target, nextKind)
+            // 담당 CC가 하나뿐이면 굳이 고르게 하지 않는다 — 예전 모달의 자동 선택
+            // (Controller ruling R6, 2026-08-22).
+            const nextTarget =
+              nextKind === 'cc_council' && ccRegionOptions.length === 1
+                ? { ...resetTarget, ccRegionId: ccRegionOptions[0].value }
+                : resetTarget
+            onChange({
+              target: nextTarget,
+              // 협의 평의회로 바꾸면 목적·관련 방문도 함께 지운다 — 그 두 칸을 숨기고 나서
+              // 남은 값이 payload로 새어 나가면 안 된다(예전 targetSelect onChange와 동일).
+              ...(nextKind === 'cc_council' ? { purpose: 'general' as const, relatedVisitId: '' } : {}),
+            })
+          }}
+          options={kindOptions}
+        />
+      )}
 
       {questions.asksUnit && (
         <Select
-          label={t('schedule.stakeLabel')}
+          label={t(stakeLabelKey ?? 'schedule.stakeLabel')}
           value={target.unitId}
           onChange={(e) => changeTarget({ unitId: e.target.value, wardName: '' })}
           options={unitOptions}

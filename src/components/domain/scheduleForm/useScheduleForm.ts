@@ -58,7 +58,12 @@ export function useScheduleForm(initial?: Partial<ScheduleFormState>): {
   const [state, setState] = useState<ScheduleFormState>(initialState)
 
   const set = <K extends keyof ScheduleFormState>(key: K, value: ScheduleFormState[K]) => {
-    setState((prev) => ({ ...prev, [key]: value }))
+    // 값이 안 바뀌었으면 새 state 객체를 만들지 않는다. useState의 setter는 원시값이
+    // 같아도(Object.is) prev와 다른 객체 참조면 재렌더링을 막지 못한다 — 매번 새 참조로
+    // set을 부르는 effect(예: EditScheduleModal의 relatedVisitId 복구 effect)가 그 새
+    // 참조를 의존성으로 삼는 값(목 훅이 매 렌더 새 배열을 돌려주는 경우 등)과 만나면
+    // 무한 재렌더 루프가 된다.
+    setState((prev) => (Object.is(prev[key], value) ? prev : { ...prev, [key]: value }))
   }
 
   const setTargetKind = (kind: TargetKindChoice | '') => {

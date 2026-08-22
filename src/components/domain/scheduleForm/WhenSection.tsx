@@ -9,6 +9,13 @@ export interface WhenSectionProps {
   state: ScheduleFormState
   onChange: (partial: Partial<ScheduleFormState>) => void
   conflictingEvent?: Pick<GeneralSchedule, 'title'>
+  /**
+   * 편집 모달 전용 — 안식일 방문 토글을 숨긴다. 편집 모달은 이 칸을 가져 본 적이 없고
+   * (schedule.isSabbath라는 저장 필드 자체가 없다) adminEditSchedule의 updates 계약에도
+   * 없으므로, 그대로 보여주면 시간을 10:00-12:00으로 채워는 주지만 저장은 되지 않는
+   * 반쪽짜리 컨트롤이 된다(Controller ruling 1과 같은 이유).
+   */
+  hideSabbathToggle?: boolean
 }
 
 /**
@@ -21,7 +28,7 @@ export interface WhenSectionProps {
  * ScheduleFormModal의 원래 체크박스 마크업(같은 클래스·같은 accentColor)을 그대로 옮겼다
  * (Controller ruling: 이 계획은 구조만 바꾼다, 겉모습은 그대로).
  */
-export function WhenSection({ type, state, onChange, conflictingEvent }: WhenSectionProps) {
+export function WhenSection({ type, state, onChange, conflictingEvent, hideSabbathToggle }: WhenSectionProps) {
   const { t } = useTranslation()
   const { date, startTime, endTime, isSabbath, presidentAccompanied } = state
 
@@ -31,7 +38,7 @@ export function WhenSection({ type, state, onChange, conflictingEvent }: WhenSec
 
   return (
     <>
-      {type === 'ward_visit' && (
+      {type === 'ward_visit' && !hideSabbathToggle && (
         <label className={styles.checkRow}>
           <input
             type="checkbox"
