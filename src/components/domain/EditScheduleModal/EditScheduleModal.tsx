@@ -13,6 +13,7 @@ import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
 import { DeleteConfirmSheet, Input, Textarea, Select } from '@/components/ui'
 import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { buildScheduleTitle, buildScheduleLocation } from '../../../../functions/src/scheduleRules'
 import styles from './EditScheduleModal.module.scss'
 
 const adminEditScheduleFn = httpsCallable(functions, 'adminEditSchedule')
@@ -37,6 +38,10 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
   const [note, setNote] = useState(schedule.notes ?? '')
   const [zoomLink, setZoomLink] = useState(schedule.zoomLink ?? '')
   const [customTitle, setCustomTitle] = useState(schedule.customTitle ?? '')
+  // 편집 CF는 payload에 명시적 location이 없으면 저장된 값을 다시 유도해 버린다(비고정) —
+  // 그래서 여기서 반드시 schedule.location으로 프리필해야 사용자가 손으로 쓴 장소가
+  // 시간/대상만 바꾸는 편집에도 그대로 살아남는다.
+  const [location, setLocation] = useState(schedule.location ?? '')
   const [projectId, setProjectId] = useState(schedule.projectId ?? '')
   const [presidentAccompanied, setPresidentAccompanied] = useState(schedule.presidentAccompanied ?? false)
   const [relatedVisitId, setRelatedVisitId] = useState(schedule.relatedVisitId ?? '')
@@ -67,6 +72,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
     note !== (schedule.notes ?? '') ||
     zoomLink !== (schedule.zoomLink ?? '') ||
     customTitle !== (schedule.customTitle ?? '') ||
+    location !== (schedule.location ?? '') ||
     projectId !== (schedule.projectId ?? '') ||
     presidentAccompanied !== (schedule.presidentAccompanied ?? false) ||
     relatedVisitId !== (schedule.relatedVisitId ?? '')
@@ -139,6 +145,18 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
     .filter(u => u.role === 'president' && u.unitId === unitId && !!unitId)
     .map(u => ({ value: u.uid, label: u.preRegistered ? u.name : `${u.name} ✓` }))
 
+  // 지금까지 고친 값만으로 저장 시 유도될 제목·장소를 미리 보여준다. 대상(targetKind)은
+  // 이 폼에 바꿀 수단이 없으므로 저장된 값을 그대로 쓴다.
+  const autoParts = {
+    type: schedule.type,
+    unitName: ALL_UNITS.find((u) => u.id === unitId)?.name.ko,
+    wardName: wardName || undefined,
+    targetKind: schedule.targetKind ?? null,
+    ccName: REGIONS.find((r) => r.id === schedule.regionId)?.name,
+  }
+  const autoTitle = buildScheduleTitle(autoParts)
+  const autoLocation = buildScheduleLocation({ ...autoParts, zoomLink })
+
   const handleSave = async () => {
     setSaving(true)
     setError(null)
@@ -155,6 +173,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
           ...(isInterview ? { presidentUid: presidentUid || null } : {}),
           ...(!isVisit ? { zoomLink: zoomLink.trim() || null } : {}),
           ...(!isVisit ? { customTitle: customTitle.trim() || null } : {}),
+          ...(location.trim() ? { location: location.trim() } : {}),
           projectId: projectId || null,
           ...(isVisit ? { presidentAccompanied: presidentAccompanied || null } : {}),
           ...(isContact ? { relatedVisitId: relatedVisitId || null } : {}),
@@ -317,6 +336,17 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                 />
               </div>
 
+              {/* Location — every type; prefilled from schedule.location because the edit CF
+                  re-derives it whenever the payload doesn't carry an explicit value */}
+              <Input
+                label={t('schedule.locationOptional')}
+                className={styles.fieldInput}
+                wrapperClassName={styles.fieldGroup}
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                placeholder={autoLocation ?? ''}
+              />
+
               {/* Custom title — non-visit only */}
               {!isVisit && (
                 <Input
@@ -325,7 +355,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                   wrapperClassName={styles.fieldGroup}
                   value={customTitle}
                   onChange={e => setCustomTitle(e.target.value)}
-                  placeholder={t('schedule.customTitlePlaceholder')}
+                  placeholder={autoTitle}
                 />
               )}
 

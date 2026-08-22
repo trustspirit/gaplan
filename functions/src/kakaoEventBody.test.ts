@@ -77,6 +77,11 @@ describe('buildKakaoDescription', () => {
   it('앞뒤 공백을 잘라낸다', () => {
     expect(buildKakaoDescription({ zoomLink: '  https://z  ' })).toBe('줌: https://z')
   })
+
+  it('장소를 설명 맨 앞에 싣는다', () => {
+    const desc = buildKakaoDescription({ location: '교문 와드', zoomLink: null, notes: '준비물' })
+    expect(desc?.split('\n')[0]).toBe('장소: 교문 와드')
+  })
 })
 
 describe('buildKakaoEventBody', () => {
@@ -127,6 +132,7 @@ describe('needsKakaoUpdate', () => {
     unitId: 'seoul-east-stake',
     wardName: '교문 와드',
     notes: null,
+    location: '교문 와드',
   }
 
   it('before가 없으면 항상 true', () => {
@@ -150,6 +156,7 @@ describe('needsKakaoUpdate', () => {
     ['unitId', 'seoul-stake'],
     ['wardName', '녹번 와드'],
     ['notes', '새 메모'],
+    ['location', '녹번 와드'],
   ])('%s가 바뀌면 true', (field, value) => {
     expect(needsKakaoUpdate({ ...AFTER }, { ...AFTER, [field]: value })).toBe(true)
   })

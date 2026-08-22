@@ -243,3 +243,59 @@ describe('EditScheduleModal 사전 모임 연결', () => {
     expect(editSpy.mock.calls[0][0].updates).not.toHaveProperty('relatedVisitId')
   })
 })
+
+describe('EditScheduleModal 장소 프리필', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    editSpy.mockReset()
+    editSpy.mockResolvedValue({ data: {} })
+  })
+
+  // 편집 CF는 payload에 location이 없으면 저장된 장소를 다시 유도해 버린다(비고정) — 폼이
+  // schedule.location으로 프리필하지 않으면 시간만 바꾸는 편집이 사용자가 손으로 쓴 장소를
+  // 조용히 규칙 유도값으로 덮어써 버린다. 규칙으로 유도되는 값과 저장된 값이 다른 일정으로
+  // 프리필이 저장값(규칙 유도값이 아니라)을 쓰는지 못박는다.
+  it('규칙으로 유도되는 장소와 저장된 장소가 다르면 입력칸은 저장된 값을 보여준다', () => {
+    // 규칙대로라면 접견의 장소는 unitName('서울동 스테이크')이지만, 저장된 문서에는
+    // 사용자가 직접 쓴 다른 장소('2층 회의실')가 들어 있다.
+    const scheduleWithCustomLocation: Schedule = {
+      ...MEETING_SCHEDULE,
+      type: 'interview',
+      unitId: 'seoul-east-stake',
+      location: '2층 회의실',
+    }
+    render(
+      <EditScheduleModal
+        schedule={scheduleWithCustomLocation}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByLabelText('schedule.locationOptional')).toHaveValue('2층 회의실')
+  })
+
+  it('프리필된 장소를 건드리지 않고 저장하면 저장된 장소가 그대로 payload에 담긴다', async () => {
+    const scheduleWithCustomLocation: Schedule = {
+      ...MEETING_SCHEDULE,
+      type: 'interview',
+      unitId: 'seoul-east-stake',
+      location: '2층 회의실',
+    }
+    render(
+      <EditScheduleModal
+        schedule={scheduleWithCustomLocation}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(editSpy).toHaveBeenCalledWith(expect.objectContaining({
+      scheduleId: 'sched-1',
+      updates: expect.objectContaining({ location: '2층 회의실' }),
+    }))
+  })
+})

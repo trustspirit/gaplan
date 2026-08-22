@@ -33,11 +33,9 @@ describe('toScheduleRow', () => {
     expect(row.lead?.secondary).toBe(DOW_LABELS[date.day()])
   })
 
-  // Component wins over brief: the main text (styles.unit) is always
-  // customTitle ?? unitName. The ward name is never the title itself — it is
-  // appended as a suffix only when there is no customTitle, which maps to
-  // DataListRow.subtitle, not .title.
-  it('titles the row with the unit name (or custom title), never the ward name', () => {
+  // Title now comes from the shared buildScheduleTitle rule (Task 7): a ward
+  // visit takes the ward as its subject when a ward is known, not the unit.
+  it('titles a ward visit with the ward name, when there is one', () => {
     const row = toScheduleRow({
       schedule: schedule({ wardName: '녹번 와드' }),
       unitName: '서울 스테이크',
@@ -45,19 +43,25 @@ describe('toScheduleRow', () => {
       today: TODAY,
       t,
     })
-    expect(row.title).toBe('서울 스테이크')
+    expect(row.title).toBe('녹번 와드 방문')
   })
 
   it('falls back to the unit name when there is no ward', () => {
     const row = toScheduleRow({ schedule: schedule(), unitName: '서울 스테이크', today: TODAY, t })
-    expect(row.title).toBe('서울 스테이크')
+    expect(row.title).toBe('서울 스테이크 방문')
   })
 
   // wardLabel is the caller-resolved (locale-aware) display name — e.g. what
   // useUnits().getWardName(schedule.wardName) returns — not the raw
   // schedule.wardName. The function must be pure, so it never resolves this
   // itself; it just places whatever resolved label the caller hands it.
-  it('puts the resolved ward label in the subtitle when there is no custom title', () => {
+  //
+  // Controller ruling (Fix 1) supersedes this test's original expectation:
+  // for a ward visit, buildScheduleTitle always puts wardLabel INSIDE the
+  // title itself ("Nokbeon Ward 방문"), so the subtitle dedup always fires
+  // here and falls back to the unit name — the resolved ward label still
+  // drives the title, it just no longer repeats in the subtitle too.
+  it('lets the resolved ward label drive the title, and falls back to the unit name in the subtitle', () => {
     const row = toScheduleRow({
       schedule: schedule({ wardName: '녹번 와드' }),
       unitName: '서울 스테이크',
@@ -65,7 +69,8 @@ describe('toScheduleRow', () => {
       today: TODAY,
       t,
     })
-    expect(row.subtitle).toBe('Nokbeon Ward')
+    expect(row.title).toBe('Nokbeon Ward 방문')
+    expect(row.subtitle).toBe('서울 스테이크')
   })
 
   it('has no subtitle when the schedule has no ward', () => {
@@ -73,10 +78,11 @@ describe('toScheduleRow', () => {
     expect(row.subtitle).toBeUndefined()
   })
 
-  // Component wins: ScheduleItem.tsx only appends the ward suffix when there
-  // is no customTitle (`!schedule.customTitle && schedule.wardName`). A
-  // customTitle suppresses it even though wardLabel is present.
-  it('prefers the custom title over the unit name, and drops the ward subtitle', () => {
+  // buildScheduleTitle checks customTitle first, so it still wins over the
+  // ward-visit rule. But the subtitle rule (Task 7) no longer special-cases
+  // customTitle — it only asks whether the title already said the place. A
+  // custom title doesn't say the ward, so the ward still surfaces below it.
+  it('prefers the custom title over the unit name, but still surfaces the ward as subtitle', () => {
     const row = toScheduleRow({
       schedule: schedule({ customTitle: '특별 모임', wardName: '녹번 와드' }),
       unitName: '서울 스테이크',
@@ -85,7 +91,7 @@ describe('toScheduleRow', () => {
       t,
     })
     expect(row.title).toBe('특별 모임')
-    expect(row.subtitle).toBeUndefined()
+    expect(row.subtitle).toBe('녹번 와드')
   })
 
   // Exact match, not toContain — this task's guarantee is that the format
@@ -105,6 +111,148 @@ describe('toScheduleRow', () => {
     expect(
       toScheduleRow({ schedule: schedule({ id: 'abc' }), unitName: 'u', today: TODAY, t }).id,
     ).toBe('abc')
+  })
+
+  // 네 경로(앱·구글·카카오·ICS)의 제목이 한 규칙에서 나와야 한다.
+  it('와드 방문 제목은 와드를 주어로 쓴다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'ward_visit', wardName: '교문 와드' }),
+      unitName: '서울동 스테이크',
+      wardLabel: '교문 와드',
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('교문 와드 방문')
+  })
+
+  // 제목이 이미 장소를 말했으면 부제가 같은 말을 반복하지 않는다.
+  it('제목이 말한 장소는 부제에서 뺀다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'ward_visit', wardName: '교문 와드', location: '교문 와드' }),
+      unitName: '서울동 스테이크',
+      wardLabel: '교문 와드',
+      today: TODAY,
+      t,
+    })
+    expect(row.subtitle).toBe('서울동 스테이크')
+  })
+
+  it('접견은 장소를 부제로 보여준다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'interview', location: '온라인 (Zoom)' }),
+      unitName: '서울동 스테이크',
+      today: TODAY,
+      t,
+    })
+    expect(row.subtitle).toBe('온라인 (Zoom)')
+  })
+
+  // Controller ruling (Fix 1): every pre-existing schedule has no `location`,
+  // so they all take the wardLabel fallback — and since the title is now
+  // literally `${wardLabel} 방문`, the old naive fallback always repeated the
+  // ward name in the subtitle. The dedup applies to the wardLabel branch too:
+  // when the title already says the ward, the subtitle falls back to the
+  // stake (unit) name instead.
+  it('일정에 장소가 없으면(기존 데이터) 부제는 스테이크 이름으로 물러난다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'ward_visit', wardName: '교문 와드' }),
+      unitName: '서울동 스테이크',
+      wardLabel: '교문 와드',
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('교문 와드 방문')
+    expect(row.subtitle).toBe('서울동 스테이크')
+  })
+
+  // Controller ruling (Fix 1): if even the unit-name fallback is already said
+  // by the title, there is nothing left to say — no subtitle at all.
+  it('제목이 후보와 유닛 이름을 모두 이미 말했으면 부제가 없다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'meeting', location: '서울동 스테이크' }),
+      unitName: '서울동 스테이크',
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('서울동 스테이크 모임')
+    expect(row.subtitle).toBeUndefined()
+  })
+
+  // Controller amendment to Fix 1: when there is NO candidate at all (no
+  // location, no wardLabel), falling further back to unitName is not a
+  // repeat — it's the subtitle doing its one job, saying something the
+  // title left out. A user-typed customTitle never mentions the unit, so
+  // the unit name is worth surfacing below it, not worth hiding.
+  it('제목에 유닛도 장소도 없으면(직접 입력한 제목) 부제로 유닛 이름을 보여준다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'meeting', customTitle: '특별 모임' }),
+      unitName: '서울동 스테이크',
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('특별 모임')
+    expect(row.subtitle).toBe('서울동 스테이크')
+  })
+
+  // Same "no candidate" shape, but this time the custom title happens to
+  // already say the unit name itself — so there is nothing left for the
+  // subtitle to add, and it stays empty rather than repeating.
+  it('직접 입력한 제목이 이미 유닛 이름을 말했으면 부제가 없다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'meeting', customTitle: '서울동 스테이크 특별 모임' }),
+      unitName: '서울동 스테이크',
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('서울동 스테이크 특별 모임')
+    expect(row.subtitle).toBeUndefined()
+  })
+
+  // cc_council-style row: buildScheduleTitle's cc_council branch normally
+  // takes ccName as its subject, but toScheduleRow doesn't thread a resolved
+  // ccName through (out of this task's scope), so it falls to the generic
+  // '협의 평의회' — itself a "no candidate" title, same as a custom title:
+  // it names neither the unit nor a place, so the subtitle still earns its
+  // keep by naming the unit.
+  it('CC 협의 평의회처럼 제목이 유닛을 말하지 않으면 부제로 유닛 이름을 보여준다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'meeting', targetKind: 'cc_council' }),
+      unitName: '서울동 스테이크',
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('협의 평의회')
+    expect(row.subtitle).toBe('서울동 스테이크')
+  })
+
+  // Fix 2 (controller ruling): a REAL cc_council row — unitId: '' (adminEditSchedule.ts
+  // stores it empty; a stake can't own a whole CC), customTitle filled in by the CF at
+  // creation time (adminCreateSchedule.ts's resolvedCustomTitle). SchedulesPage falls
+  // back to the translated type label ("schedule.type.meeting") for unitName when
+  // getUnitName(schedule.unitId) can't resolve an empty unitId — that label is not a
+  // real unit name, so it must not surface as a repeated, meaningless subtitle.
+  it('실제 CC 협의 평의회 행(unitId 없음)은 타입 라벨을 부제로 되풀이하지 않는다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'meeting', unitId: '', targetKind: 'cc_council', customTitle: '서울 CC 협의 평의회' }),
+      unitName: 'schedule.type.meeting', // caller's placeholder fallback for an unresolvable unitId
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('서울 CC 협의 평의회')
+    expect(row.subtitle).toBeUndefined()
+  })
+
+  // Same shape for a general_attendance row (registerGeneralAttendance.ts also stores
+  // unitId: '' and fills customTitle with the attendee's name).
+  it('참석 등록 행(unitId 없음)도 타입 라벨을 부제로 되풀이하지 않는다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'general_attendance', unitId: '', customTitle: '김철수' }),
+      unitName: 'schedule.type.meeting',
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('김철수')
+    expect(row.subtitle).toBeUndefined()
   })
 
   // 지난 일정은 흐리게 — 지금 .past 클래스가 하는 일을 행 데이터로 옮긴다.

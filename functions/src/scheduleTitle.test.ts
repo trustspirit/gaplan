@@ -12,14 +12,31 @@ describe('buildScheduleTitle', () => {
     ).toBe('마스터 플랜 - 서울동')
   })
 
-  it('와드 방문은 단위명과 와드명을 조합한다', () => {
+  it('와드 방문은 와드를 주어로 쓴다', () => {
     expect(buildScheduleTitle({ type: 'ward_visit', unitId: STAKE, wardName: '교문 와드' })).toBe(
-      `${STAKE_NAME} - 교문 와드 방문`,
+      '교문 와드 방문',
     )
   })
 
   it('와드명이 없는 방문은 단위명만 쓴다', () => {
     expect(buildScheduleTitle({ type: 'ward_visit', unitId: STAKE })).toBe(`${STAKE_NAME} 방문`)
+  })
+
+  it('스테이크 회장 접견은 회장을 밝힌다', () => {
+    expect(
+      buildScheduleTitle({ type: 'interview', unitId: STAKE, targetKind: 'stake_president' }),
+    ).toBe(`${STAKE_NAME} 회장 접견`)
+  })
+
+  it('와드 감독 접견은 감독과 와드를 밝힌다', () => {
+    expect(
+      buildScheduleTitle({
+        type: 'interview',
+        unitId: STAKE,
+        wardName: '교문 와드',
+        targetKind: 'ward_bishop',
+      }),
+    ).toBe('교문 와드 감독 접견')
   })
 
   it('접견은 접견으로 끝난다', () => {

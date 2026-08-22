@@ -18,6 +18,7 @@ export interface KakaoScheduleInput extends ScheduleTitleInput {
   date: string
   startTime: string
   endTime: string
+  location?: string | null
   zoomLink?: string | null
   notes?: string | null
 }
@@ -42,11 +43,14 @@ export function truncateTitle(title: string): string {
 }
 
 export function buildKakaoDescription(p: {
+  location?: string | null
   seventyName?: string
   zoomLink?: string | null
   notes?: string | null
 }): string | undefined {
   const lines: string[] = []
+  const place = p.location?.trim()
+  if (place) lines.push(`장소: ${place}`)
   if (p.seventyName?.trim()) lines.push(`담당 칠십인: ${p.seventyName.trim()}`)
   const zoom = p.zoomLink?.trim()
   if (zoom) lines.push(`줌: ${zoom}`)
@@ -61,6 +65,7 @@ export function buildKakaoEventBody(p: {
 }): KakaoEventBody {
   const { schedule, seventyName } = p
   const description = buildKakaoDescription({
+    location: schedule.location,
     seventyName,
     zoomLink: schedule.zoomLink,
     notes: schedule.notes,
@@ -87,6 +92,7 @@ const SYNCED_FIELDS = [
   'unitId',
   'wardName',
   'notes',
+  'location',
 ] as const
 
 // unitId만 ''을 기본값으로 쓴다 — calendarSync.ts의 needsUpdate 블록이
@@ -101,6 +107,7 @@ const FIELD_DEFAULT: Record<(typeof SYNCED_FIELDS)[number], unknown> = {
   unitId: '',
   wardName: null,
   notes: null,
+  location: null,
 }
 
 export function needsKakaoUpdate(

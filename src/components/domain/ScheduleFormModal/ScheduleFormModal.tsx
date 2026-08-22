@@ -21,6 +21,7 @@ import {
   buildNotesWithLeaderContact,
   getContactTargetOptions,
 } from './leaderContactNotes'
+import { buildScheduleTitle, buildScheduleLocation } from '../../../../functions/src/scheduleRules'
 import styles from './ScheduleFormModal.module.scss'
 
 const adminCreateScheduleFn = httpsCallable(functions, 'adminCreateSchedule')
@@ -74,6 +75,7 @@ export function ScheduleFormModal({
   const [notes, setNotes] = useState('')
   const [zoomLink, setZoomLink] = useState('')
   const [customTitle, setCustomTitle] = useState('')
+  const [location, setLocation] = useState('')
   const [projectId, setProjectId] = useState('')
   const [isSabbath, setIsSabbath] = useState(false)
   const [presidentAccompanied, setPresidentAccompanied] = useState(false)
@@ -84,7 +86,7 @@ export function ScheduleFormModal({
   const isDirty =
     date !== (initialDate ?? '') ||
     startTime !== '' || endTime !== '' || notes !== '' || zoomLink !== '' ||
-    customTitle !== '' || projectId !== '' || unitId !== '' || wardName !== '' ||
+    customTitle !== '' || location !== '' || projectId !== '' || unitId !== '' || wardName !== '' ||
     contactTargetValue !== '' || targetSelect !== '' || ccRegionId !== '' ||
     isSabbath || presidentAccompanied
   const requestClose = () => {
@@ -109,6 +111,7 @@ export function ScheduleFormModal({
     setCcRegionId('')
     setZoomLink('')
     setCustomTitle('')
+    setLocation('')
     setNotes('')
     setPurpose('general')
     setRelatedVisitId('')
@@ -199,6 +202,31 @@ export function ScheduleFormModal({
     { value: 'other', label: t('schedule.targetOptionOther') },
   ]
 
+  // 접견/모임에서 대상으로 특정 와드(감독)를 골랐을 때의 그 와드 한글 이름. wardId만으로는
+  // CF가 이름을 못 붙인다(functions/에는 와드 이름 테이블이 없다) — 그래서 이 이름 자체를
+  // payload에 실어 보낸다(Controller ruling, Fix 1). ward_visit의 wardName Select와는
+  // 별개 값이다 — 둘은 type이 서로 배타적이라 섞이지 않는다.
+  const targetWardId = targetSelect.startsWith('ward:') ? targetSelect.slice('ward:'.length) : ''
+  const targetWardName = targetWardId
+    ? getWardsByUnit(unitId).find((w) => w.id === targetWardId)?.name.ko
+    : undefined
+
+  // 지금까지 채운 값만으로 실제 저장 시 생성될 제목·장소를 미리 보여준다
+  // (customTitle/location을 사용자가 직접 채우면 placeholder는 무시된다).
+  const autoParts = {
+    type,
+    unitName: ALL_UNITS.find((u) => u.id === unitId)?.name.ko,
+    wardName: type === 'ward_visit' ? (wardName || undefined) : targetWardName,
+    targetKind: targetSelect.startsWith('ward:') ? ('ward_bishop' as const)
+      : targetSelect.startsWith('unit:') ? ('stake_president' as const)
+      : targetSelect === CC_COUNCIL_TARGET ? ('cc_council' as const)
+      : null,
+    ccName: REGIONS.find((r) => r.id === ccRegionId)?.name,
+    preVisitWardName: purpose === 'pre_visit' ? relatedVisit?.wardName : undefined,
+  }
+  const autoTitle = buildScheduleTitle(autoParts)
+  const autoLocation = buildScheduleLocation({ ...autoParts, zoomLink })
+
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault()
     setError(null)
@@ -277,7 +305,9 @@ export function ScheduleFormModal({
         seventyUid: effectiveSeventyUid,
         ...(unitId && !isCcCouncil ? { unitId } : {}),
         ...(isCcCouncil ? { regionId: ccRegionId } : {}),
-        ...(wardName ? { wardName } : {}),
+        ...(type === 'ward_visit'
+          ? (wardName ? { wardName } : {})
+          : (targetWardName ? { wardName: targetWardName } : {})),
         ...(presidentUid && !isCcCouncil ? { presidentUid } : {}),
         ...(targetKind ? { targetKind } : {}),
         ...(wardId && !isCcCouncil ? { wardId } : {}),
@@ -290,6 +320,7 @@ export function ScheduleFormModal({
         ...(finalNotes.trim() ? { notes: finalNotes.trim() } : {}),
         ...(zoomLink.trim() && type !== 'ward_visit' ? { zoomLink: zoomLink.trim() } : {}),
         ...(customTitle.trim() && type !== 'ward_visit' ? { customTitle: customTitle.trim() } : {}),
+        ...(location.trim() ? { location: location.trim() } : {}),
         ...(projectId ? { projectId } : {}),
         ...(type === 'ward_visit' ? { presidentAccompanied } : {}),
       })
@@ -565,12 +596,19 @@ export function ScheduleFormModal({
               />
             </div>
 
+            <Input
+              label={t('schedule.locationOptional')}
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder={autoLocation ?? ''}
+            />
+
             {type !== 'ward_visit' && (
               <Input
                 label={t('schedule.customTitleOptional')}
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
-                placeholder={t('schedule.customTitlePlaceholder')}
+                placeholder={autoTitle}
               />
             )}
 

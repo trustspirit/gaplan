@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin'
 import { DATE_RE, TIME_RE, isValidUrl } from './validators'
 import { validateRelatedVisit } from './relatedVisit'
 import { buildCcCouncilTitle, isKnownRegionId } from './ccCouncil'
+import { resolveScheduleLocation } from './adminScheduleFields'
 
 interface AdminCreateScheduleRequest {
   type: 'ward_visit' | 'interview' | 'meeting'
@@ -16,6 +17,7 @@ interface AdminCreateScheduleRequest {
   endTime: string
   notes?: string
   zoomLink?: string
+  location?: string
   customTitle?: string
   projectId?: string
   presidentAccompanied?: boolean
@@ -31,7 +33,7 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const { type, seventyUid, unitId, regionId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId } = data
+    const { type, seventyUid, unitId, regionId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, location, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId } = data
 
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
@@ -51,8 +53,12 @@ export const adminCreateSchedule = functions
         throw new functions.https.HttpsError('invalid-argument', 'wardName required (1-100 chars) for ward_visit')
       }
     }
-    if (type !== 'ward_visit' && wardName) {
-      throw new functions.https.HttpsError('invalid-argument', 'wardName is only allowed for ward_visit type')
+    // ward_visit이 아니어도 와드 대상 접견/모임(targetKind='ward_bishop')은 그 와드 이름을
+    // 실어 보낸다 — 제목 규칙(scheduleRules.ts)이 접견에서도 wardName을 읽기 때문이다
+    // (Controller ruling, Fix 1). 그래도 형식은 지켜야 하니 길이는 계속 검사한다.
+    if (type !== 'ward_visit' && wardName !== undefined &&
+      (typeof wardName !== 'string' || wardName.trim().length > 100)) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid wardName')
     }
     if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {
       throw new functions.https.HttpsError('invalid-argument', 'notes max 500 chars')
@@ -73,6 +79,12 @@ export const adminCreateSchedule = functions
       }
       if (typeof customTitle !== 'string' || customTitle.trim().length === 0 || customTitle.length > 200) {
         throw new functions.https.HttpsError('invalid-argument', 'customTitle must be 1-200 chars')
+      }
+    }
+    if (location !== undefined && location !== null) {
+      const trimmed = typeof location === 'string' ? location.trim() : ''
+      if (trimmed.length > 100) {
+        throw new functions.https.HttpsError('invalid-argument', 'location max 100 chars')
       }
     }
     if (projectId !== undefined && typeof projectId !== 'string') {
@@ -148,18 +160,21 @@ export const adminCreateSchedule = functions
       }
     }
 
+    let relatedVisitWardName: string | undefined
     if (relatedVisitId && relatedVisitId.trim()) {
       const trimmedRelatedVisitId = relatedVisitId.trim()
       const visitSnap = await db.collection('schedules').doc(trimmedRelatedVisitId).get()
+      const visitData = visitSnap.exists ? (visitSnap.data() as { type?: string; seventyUid?: string; date?: string; wardName?: string }) : null
       const problem = validateRelatedVisit({
         scheduleType: type,
         scheduleSeventyUid: seventyUid,
         scheduleDate: date,
-        visit: visitSnap.exists ? (visitSnap.data() as { type?: string; seventyUid?: string; date?: string }) : null,
+        visit: visitData,
       })
       if (problem) {
         throw new functions.https.HttpsError('invalid-argument', problem)
       }
+      relatedVisitWardName = visitData?.wardName
     }
 
     const existing = await db.collection('schedules')
@@ -177,14 +192,15 @@ export const adminCreateSchedule = functions
     // 모두 customTitle을 우선 표시하므로, 제목을 여기서 한 번 채워 두면 전 표시 경로가 맞는다.
     const resolvedCustomTitle =
       customTitle?.trim() ||
-      (targetKind === 'cc_council' && regionId ? buildCcCouncilTitle(regionId) : null)
+      (targetKind === 'cc_council' && regionId ? buildCcCouncilTitle(regionId) : null) ||
+      (relatedVisitWardName ? `${relatedVisitWardName} 방문 사전 모임` : null)
 
     await db.collection('schedules').add({
       type,
       seventyUid,
       unitId: unitId ?? '',
       regionId: targetKind === 'cc_council' ? regionId : null,
-      wardName: (type === 'ward_visit' && wardName) ? wardName.trim() : null,
+      wardName: wardName ? wardName.trim() : null,
       presidentUid: presidentUid ?? null,
       date,
       startTime,
@@ -192,6 +208,7 @@ export const adminCreateSchedule = functions
       notes: notes ?? null,
       zoomLink: zoomLink?.trim() ?? null,
       customTitle: resolvedCustomTitle,
+      location: resolveScheduleLocation({ type, unitId, regionId, targetKind, wardName, zoomLink, location }),
       projectId: (projectId && projectId.trim()) ? projectId.trim() : null,
       presidentAccompanied: (type === 'ward_visit' && presidentAccompanied === true) ? true : null,
       targetKind: (type !== 'ward_visit' && targetKind) ? targetKind : null,

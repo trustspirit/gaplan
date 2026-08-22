@@ -1,5 +1,7 @@
 import { UNIT_NAME_MAP } from './unitNameMap'
-import { buildCcCouncilTitle, CC_COUNCIL_TARGET_KIND } from './ccCouncil'
+import { CC_COUNCIL_TARGET_KIND } from './ccCouncil'
+import { getScopeDisplayName } from './regions'
+import { buildScheduleTitle as buildFromParts, type ScheduleNameParts } from './scheduleRules'
 
 export interface ScheduleTitleInput {
   type?: string
@@ -8,18 +10,27 @@ export interface ScheduleTitleInput {
   targetKind?: string | null
   wardName?: string | null
   customTitle?: string | null
+  preVisitWardName?: string | null
+}
+
+/** 문서에 든 id들을 표시 이름으로 바꿔 공용 규칙에 넘긴다. */
+export function toNameParts(data: ScheduleTitleInput): ScheduleNameParts {
+  const unitName = data.unitId ? (UNIT_NAME_MAP[data.unitId] ?? data.unitId) : undefined
+  const ccName =
+    data.targetKind === CC_COUNCIL_TARGET_KIND && data.regionId
+      ? (getScopeDisplayName(data.regionId) ?? undefined)
+      : undefined
+  return {
+    type: (data.type as ScheduleNameParts['type']) ?? 'meeting',
+    unitName,
+    wardName: data.wardName ?? undefined,
+    targetKind: (data.targetKind as ScheduleNameParts['targetKind']) ?? null,
+    ccName,
+    preVisitWardName: data.preVisitWardName ?? undefined,
+    customTitle: data.customTitle ?? null,
+  }
 }
 
 export function buildScheduleTitle(data: ScheduleTitleInput): string {
-  if (data.customTitle) return data.customTitle
-  // 협의 평의회는 unitId가 없어 유닛 이름으로는 '모임'까지밖에 못 간다.
-  if (data.targetKind === CC_COUNCIL_TARGET_KIND && data.regionId) {
-    return buildCcCouncilTitle(data.regionId)
-  }
-  const unitName = UNIT_NAME_MAP[data.unitId ?? ''] ?? data.unitId ?? ''
-  if (data.type === 'ward_visit') {
-    return data.wardName ? `${unitName} - ${data.wardName} 방문` : `${unitName} 방문`
-  }
-  if (data.type === 'interview') return `${unitName} 접견`
-  return unitName ? `${unitName} 모임` : '모임'
+  return buildFromParts(toNameParts(data))
 }

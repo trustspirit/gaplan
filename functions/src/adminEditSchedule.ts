@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin'
 import { DATE_RE, TIME_RE, isValidUrl } from './validators'
 import { validateRelatedVisit } from './relatedVisit'
 import { CC_COUNCIL_TARGET_KIND } from './ccCouncil'
+import { resolveScheduleLocationForEdit } from './adminScheduleFields'
 
 interface AdminEditScheduleRequest {
   scheduleId: string
@@ -15,6 +16,7 @@ interface AdminEditScheduleRequest {
     wardName?: string | null
     presidentUid?: string | null
     zoomLink?: string | null
+    location?: string | null
     customTitle?: string | null
     projectId?: string | null
     presidentAccompanied?: boolean | null
@@ -107,6 +109,14 @@ export const adminEditSchedule = functions
         allowed.customTitle = trimmed
       } else {
         allowed.customTitle = null
+      }
+    }
+    if (updates.location !== undefined) {
+      if (updates.location !== null) {
+        const trimmed = updates.location.trim()
+        if (trimmed.length > 100) {
+          throw new functions.https.HttpsError('invalid-argument', 'location max 100 chars')
+        }
       }
     }
     if (updates.projectId !== undefined) {
@@ -216,6 +226,27 @@ export const adminEditSchedule = functions
       if (conflict) {
         throw new functions.https.HttpsError('already-exists', '해당 시간에 이미 확정된 일정이 있습니다.')
       }
+    }
+
+    // location은 write time에 다시 확정한다 — customTitle과 달리 사용자가 쓴 문구를
+    // 다음 수정에서도 지켜주는 필드가 아니므로, 이번 요청이 명시하지 않았으면 매 수정마다
+    // (기존 문서 + 이번 업데이트)를 합쳐 다시 유도해 오래된 값이 남지 않게 한다.
+    {
+      const current = snap.data()!
+      allowed.location = resolveScheduleLocationForEdit(current as {
+        type?: string
+        unitId?: string
+        regionId?: string | null
+        targetKind?: string | null
+        wardName?: string | null
+        zoomLink?: string | null
+      }, {
+        unitId: allowed.unitId as string | undefined,
+        targetKind: allowed.targetKind as string | null | undefined,
+        wardName: allowed.wardName as string | null | undefined,
+        zoomLink: allowed.zoomLink as string | null | undefined,
+        location: updates.location,
+      })
     }
 
     await scheduleRef.update({

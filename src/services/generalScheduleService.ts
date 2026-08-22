@@ -8,7 +8,7 @@ import { httpsCallable } from 'firebase/functions'
 import dayjs from 'dayjs'
 import { db, functions } from '@/firebase'
 import type { GeneralSchedule } from '@/types'
-import { mapDocs, snapshotErrHandler } from './_utils'
+import { mapDocs, snapshotErrHandler, stripUndefined } from './_utils'
 
 export function subscribeToGeneralSchedules(
   callback: (schedules: GeneralSchedule[]) => void,
@@ -31,7 +31,7 @@ type CreateInput = Omit<GeneralSchedule, 'id' | 'createdAt'>
 
 export async function createGeneralSchedule(data: CreateInput): Promise<string> {
   const ref = await addDoc(collection(db, 'generalSchedules'), {
-    ...data,
+    ...stripUndefined(data),
     createdAt: serverTimestamp(),
   })
   return ref.id
@@ -41,7 +41,7 @@ export async function updateGeneralSchedule(
   id: string,
   updates: Partial<Omit<GeneralSchedule, 'id' | 'createdBy' | 'createdAt'>>,
 ): Promise<void> {
-  await updateDoc(doc(db, 'generalSchedules', id), updates)
+  await updateDoc(doc(db, 'generalSchedules', id), stripUndefined(updates))
 }
 
 export async function deleteGeneralSchedule(id: string): Promise<void> {

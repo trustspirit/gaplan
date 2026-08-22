@@ -2,6 +2,7 @@ import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { getScopeUnitIds, getScopeDisplayName } from './regions'
 import { isCcCouncilForScope } from './ccCouncil'
+import { buildScheduleTitle } from './scheduleTitle'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -31,13 +32,6 @@ function safeUrl(url: unknown): string | null {
   if (typeof url !== 'string') return null
   const stripped = url.replace(/[\r\n]/g, '')
   return /^https?:\/\//i.test(stripped) ? stripped : null
-}
-
-function buildSummary(data: admin.firestore.DocumentData, unitName: string): string {
-  if (data.customTitle) return data.customTitle as string
-  const typeLabel = data.type === 'ward_visit' ? '와드 방문' : data.type === 'interview' ? '접견' : '모임'
-  const ward = data.wardName ? ` · ${data.wardName}` : ''
-  return `${typeLabel} - ${unitName}${ward}`
 }
 
 export const publicScheduleIcs = functions
@@ -118,13 +112,12 @@ export const publicScheduleIcs = functions
               .get()
           : null
 
-      const [schedulesSnap, unitsSnap2, ccSnap] = await Promise.all([
+      const [schedulesSnap, ccSnap] = await Promise.all([
         schedulesQuery
           .where('status', '==', 'confirmed')
           .where('date', '>=', cutoffStr)
           .orderBy('date', 'asc')
           .get(),
-        admin.firestore().collection('units').get(),
         ccQuery,
       ])
 
@@ -139,9 +132,6 @@ export const publicScheduleIcs = functions
         })
         .sort((a, b) => (a.data().date as string).localeCompare(b.data().date as string))
 
-      const unitMap: Record<string, string> = {}
-      unitsSnap2.docs.forEach((d) => { unitMap[d.id] = d.data().name ?? d.id })
-
       const dtstamp = nowDtStamp()
       const events: string[] = []
 
@@ -150,8 +140,14 @@ export const publicScheduleIcs = functions
         return unitSet === null || d.data().type === 'ward_visit' || isCcCouncilForScope(d.data(), scopeValue)
       }).forEach((d) => {
         const data = d.data()
-        const unitName = unitMap[data.unitId] ?? data.unitId ?? ''
-        const summary = buildSummary(data, unitName)
+        const summary = buildScheduleTitle({
+          type: data.type,
+          unitId: data.unitId,
+          regionId: data.regionId,
+          targetKind: data.targetKind,
+          wardName: data.wardName,
+          customTitle: data.customTitle,
+        })
         const dtstart = toIcsDateTime(data.date, data.startTime)
         const dtend = toIcsDateTime(data.date, data.endTime)
 
@@ -163,6 +159,8 @@ export const publicScheduleIcs = functions
           `DTEND;TZID=Asia/Seoul:${dtend}`,
           `SUMMARY:${escape(summary)}`,
         ]
+        const place = typeof data.location === 'string' ? data.location.trim() : ''
+        if (place) lines.push(`LOCATION:${escape(place)}`)
         const descParts: string[] = []
         // 동행 정보는 전체 공유에서만 노출 — CCM 지역별 공유에는 포함하지 않음
         if (unitSet === null && data.presidentAccompanied === true) descParts.push('스테이크 회장 동행')

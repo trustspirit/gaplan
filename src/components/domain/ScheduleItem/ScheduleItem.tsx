@@ -20,19 +20,29 @@ import { useUnits } from '@/hooks/useUnits'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { DeleteConfirmSheet, BottomSheet, DataList, type DataListRow } from '@/components/ui'
 import { toScheduleRow } from './scheduleRow'
+import { buildScheduleTitle } from '../../../../functions/src/scheduleRules'
 import styles from './ScheduleItem.module.scss'
 
-function buildGCalUrl(schedule: Schedule, unitName: string): string {
-  const locationLabel = schedule.wardName ? `${unitName} ${schedule.wardName}` : unitName
-  const title =
-    schedule.type === 'ward_visit'
-      ? `와드 방문 - ${locationLabel}`
-      : schedule.type === 'interview'
-        ? `접견 - ${unitName}`
-        : `모임 - ${unitName}`
+// Fix 2 (controller ruling): this used to build its own, fifth title format
+// (`와드 방문 - X` / `접견 - X` / `모임 - X`) — the same shared rule the row,
+// Google Calendar sync, Kakao and the ICS feed already use now drives the
+// "add to my calendar" link too, so what a user creates from this button
+// matches what they see everywhere else.
+function buildGCalUrl(schedule: Schedule, unitName: string, wardLabel?: string): string {
+  const title = buildScheduleTitle({
+    type: schedule.type,
+    unitName,
+    wardName: wardLabel ?? schedule.wardName ?? undefined,
+    targetKind: schedule.targetKind ?? null,
+    customTitle: schedule.customTitle ?? null,
+  })
   const start = `${schedule.date.replace(/-/g, '')}T${schedule.startTime.replace(':', '')}00`
   const end = `${schedule.date.replace(/-/g, '')}T${schedule.endTime.replace(':', '')}00`
   const params = new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${start}/${end}` })
+  // Use the schedule's own location when it has one; never invent one for
+  // this URL (no derivation via buildScheduleLocation).
+  const location = schedule.location?.trim()
+  if (location) params.set('location', location)
   return `https://calendar.google.com/calendar/render?${params}`
 }
 
@@ -176,7 +186,7 @@ export function ScheduleItem({
             e.stopPropagation()
             setNotesOpen((v) => !v)
           }}
-          title="메모 보기"
+          title={t('schedule.notesToggle')}
           aria-expanded={notesOpen}
         >
           {notesOpen ? <ChevronUp size={14} /> : <FileText size={14} />}
@@ -185,11 +195,11 @@ export function ScheduleItem({
 
       {showCalendarAdd && !isPast && (
         <a
-          href={buildGCalUrl(schedule, unitName)}
+          href={buildGCalUrl(schedule, unitName, wardLabel)}
           target="_blank"
           rel="noopener noreferrer"
           className={styles.calendarAddBtn}
-          title="내 캘린더에 추가"
+          title={t('schedule.addToMyCalendar')}
         >
           <CalendarPlus size={15} />
         </a>

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import React from 'react'
 import type { AppUser } from '@/types/user'
 
@@ -76,6 +77,7 @@ vi.mock('react-dom', () => ({
 
 import { ScheduleFormModal } from './ScheduleFormModal'
 import { buildNotesWithLeaderContact, getContactTargetOptions } from './leaderContactNotes'
+import { buildScheduleTitle } from '../../../../functions/src/scheduleRules'
 import * as useLeadersModule from '@/hooks/useLeaders'
 import type { Leader } from '@/types/leader'
 
@@ -318,6 +320,44 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
     )
   })
 
+  // Controller ruling (Fix 1): functions/ has no ward-name table, so the form must
+  // send the ward's Korean name itself for a ward-bishop target — not just wardId.
+  // End to end: target picked in the form → payload carries wardName → the shared
+  // title rule renders the specced "<와드> 감독 접견" (not the old unit-only fallback).
+  it('와드 감독 접견 대상을 고르면 payload에 wardName이 실리고, 그 payload로 접견 제목이 와드를 밝힌다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('schedule.type.interview'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-east-stake' },
+    })
+    // Placeholder preview must already show the ward-qualified title before saving.
+    expect(screen.getByLabelText('schedule.customTitleOptional')).toHaveAttribute(
+      'placeholder',
+      '서울동 스테이크 접견',
+    )
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
+      target: { value: 'ward:seoul-east-gyomun' },
+    })
+    expect(screen.getByLabelText('schedule.customTitleOptional')).toHaveAttribute(
+      'placeholder',
+      '교문 와드 감독 접견',
+    )
+
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    const payload = createSpy.mock.calls[0][0]
+    expect(payload).toMatchObject({
+      type: 'interview',
+      targetKind: 'ward_bishop',
+      wardId: 'seoul-east-gyomun',
+      wardName: '교문 와드',
+    })
+    expect(buildScheduleTitle({ ...payload, unitName: '서울동 스테이크' })).toBe('교문 와드 감독 접견')
+  })
+
   it('스테이크 대상 선택 시 targetKind=stake_president, presidentUid를 payload에 포함한다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
 
@@ -377,6 +417,16 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
 
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
     expect(createSpy).not.toHaveBeenCalled()
+  })
+
+  // 비워 두면 뭐가 될지 알 수 있어야 비워 둘 수 있다.
+  it('제목 칸 placeholder에 자동 생성될 제목을 보여준다', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} initialType="interview" />)
+    await userEvent.selectOptions(screen.getByLabelText('schedule.stakeLabelOptional'), 'seoul-east-stake')
+    expect(screen.getByLabelText('schedule.customTitleOptional')).toHaveAttribute(
+      'placeholder',
+      '서울동 스테이크 접견',
+    )
   })
 })
 
