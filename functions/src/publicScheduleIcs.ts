@@ -3,6 +3,8 @@ import * as admin from 'firebase-admin'
 import { getScopeUnitIds, getScopeDisplayName } from './regions'
 import { isCcCouncilForScope } from './ccCouncil'
 import { buildScheduleTitle } from './scheduleTitle'
+import { generalScheduleInScope } from './generalScheduleScope'
+import { buildGeneralScheduleVEvent } from './generalScheduleIcsEvent'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -112,13 +114,19 @@ export const publicScheduleIcs = functions
               .get()
           : null
 
-      const [schedulesSnap, ccSnap] = await Promise.all([
+      const [schedulesSnap, ccSnap, generalSnap] = await Promise.all([
         schedulesQuery
           .where('status', '==', 'confirmed')
           .where('date', '>=', cutoffStr)
           .orderBy('date', 'asc')
           .get(),
         ccQuery,
+        admin.firestore()
+          .collection('generalSchedules')
+          .where('isPublic', '==', true)
+          .where('date', '>=', cutoffStr)
+          .orderBy('date', 'asc')
+          .get(),
       ])
 
       const unitSet = unitIds !== null ? new Set(unitIds) : null
@@ -171,6 +179,21 @@ export const publicScheduleIcs = functions
         lines.push('END:VEVENT')
         events.push(lines.join('\r\n'))
       })
+
+      // 행사(generalSchedules)도 같은 스코프 규칙(generalScheduleInScope)으로 걸러 VEVENT로 싣는다.
+      // getPublicSchedules.ts의 웹 뷰와 이 ICS 피드가 서로 다른 행사 목록을 보여주면 안 된다.
+      generalSnap.docs
+        .filter((d) => generalScheduleInScope(d.data(), unitIds === null ? null : scopeValue, unitIds))
+        .forEach((d) => {
+          const data = d.data()
+          events.push(buildGeneralScheduleVEvent({
+            id: d.id,
+            title: data.title,
+            date: data.date,
+            startTime: data.startTime,
+            endTime: data.endTime,
+          }, dtstamp))
+        })
 
       const ics = [
         'BEGIN:VCALENDAR',
