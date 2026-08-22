@@ -770,3 +770,238 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
     expect(screen.queryByLabelText('schedule.purposeLabel')).not.toBeInTheDocument()
   })
 })
+
+// ---------------------------------------------------------------------------
+// PIN-DOWN TESTS (Task 6, Step 1) — DO NOT EDIT AFTER THIS POINT.
+//
+// These capture the *current* adminCreateSchedule payload byte-for-byte, before
+// ScheduleFormModal is rebuilt on top of useScheduleForm/TargetSection/WhenSection/
+// DetailSection. They must pass unmodified both before and after the refactor.
+// If the refactor makes one of these fail, the refactor changed behaviour — fix the
+// refactor, never this block.
+// ---------------------------------------------------------------------------
+describe('ScheduleFormModal 핀다운: adminCreateSchedule payload 계약', () => {
+  const SEVENTY_USER: AppUser = {
+    uid: 'test-uid',
+    email: 'test@test.com',
+    name: '테스트',
+    role: 'seventy',
+    regionId: 'seoul',
+    createdAt: '2026-01-01',
+  }
+
+  const CC_SEVENTY_USER: AppUser = {
+    uid: 'test-uid',
+    email: 'test@test.com',
+    name: '테스트',
+    role: 'seventy',
+    regionIds: ['seoul', 'busan'],
+    createdAt: '2026-01-01',
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    createSpy.mockReset()
+    createSpy.mockResolvedValue({ data: {} })
+    mocks.currentUser = {
+      uid: 'test-uid',
+      email: 'test@test.com',
+      role: 'seventy',
+      name: '테스트',
+      unitId: 'seoul-stake',
+      createdAt: '2026-01-01',
+    }
+    mocks.users = [SEVENTY_USER, MOCK_PRESIDENT_USER]
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: [MOCK_STAKE_PRESIDENT, MOCK_LEADER_BISHOP, MOCK_GYOMUN_BISHOP],
+      loading: false,
+      getLeaderByUnitName: vi.fn().mockReturnValue(undefined),
+    })
+  })
+
+  function fillDateTime() {
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), {
+      target: { value: '2026-09-01' },
+    })
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
+  }
+
+  it('ward_visit with stake + ward', async () => {
+    mocks.currentUser = { ...(mocks.currentUser as AppUser), role: 'seventy' }
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabel'), {
+      target: { value: 'seoul-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.wardLabel'), {
+      target: { value: '녹번 와드' },
+    })
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy).toHaveBeenCalledWith({
+      type: 'ward_visit',
+      seventyUid: 'test-uid',
+      unitId: 'seoul-stake',
+      wardName: '녹번 와드',
+      date: '2026-09-01',
+      startTime: '10:00',
+      endTime: '11:00',
+      notes: '스테이크 회장: 홍길동 (010-1111-2222)',
+      presidentAccompanied: false,
+    })
+  })
+
+  it('interview with a ward target (ward: -> targetKind ward_bishop, wardId + wardName)', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('schedule.type.interview'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-east-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
+      target: { value: 'ward:seoul-east-gyomun' },
+    })
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy).toHaveBeenCalledWith({
+      type: 'interview',
+      seventyUid: 'test-uid',
+      unitId: 'seoul-east-stake',
+      wardName: '교문 와드',
+      targetKind: 'ward_bishop',
+      wardId: 'seoul-east-gyomun',
+      date: '2026-09-01',
+      startTime: '10:00',
+      endTime: '11:00',
+      notes: '감독: 김교문 (010-2222-3333)',
+    })
+  })
+
+  it('interview with a stake target (unit: -> targetKind stake_president)', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('schedule.type.interview'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
+      target: { value: 'unit:seoul-stake' },
+    })
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy).toHaveBeenCalledWith({
+      type: 'interview',
+      seventyUid: 'test-uid',
+      unitId: 'seoul-stake',
+      presidentUid: 'president-uid',
+      targetKind: 'stake_president',
+      date: '2026-09-01',
+      startTime: '10:00',
+      endTime: '11:00',
+      notes: '스테이크 회장: 홍길동 (010-1111-2222)',
+    })
+  })
+
+  it('meeting with cc_council sends regionId, not unitId', async () => {
+    mocks.currentUser = CC_SEVENTY_USER
+    mocks.users = [CC_SEVENTY_USER]
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: [MOCK_STAKE_PRESIDENT],
+      loading: false,
+      getLeaderByUnitName: vi.fn(),
+    })
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
+      target: { value: 'cc_council' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.ccRegionLabel'), {
+      target: { value: 'busan' },
+    })
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy).toHaveBeenCalledWith({
+      type: 'meeting',
+      seventyUid: 'test-uid',
+      regionId: 'busan',
+      targetKind: 'cc_council',
+      date: '2026-09-01',
+      startTime: '10:00',
+      endTime: '11:00',
+    })
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('unitId')
+  })
+
+  it('a free-text target (other) prefixes notes with 대상: <name>', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('schedule.type.interview'))
+    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'other' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetFreeTextLabel'), {
+      target: { value: '홍길순' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.notesLabelOptional'), {
+      target: { value: '개인 상담 필요' },
+    })
+    fillDateTime()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy).toHaveBeenCalledWith({
+      type: 'interview',
+      seventyUid: 'test-uid',
+      targetKind: 'other',
+      date: '2026-09-01',
+      startTime: '10:00',
+      endTime: '11:00',
+      notes: '대상: 홍길순\n개인 상담 필요',
+    })
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('unitId')
+  })
+
+  it('a pre-visit meeting (purpose: pre_visit with a related visit)', async () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
+      target: { value: 'seoul-stake' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
+      target: { value: 'pre_visit' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), {
+      target: { value: 'v1' },
+    })
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), {
+      target: { value: dates.beforeVisit },
+    })
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy).toHaveBeenCalledWith({
+      type: 'meeting',
+      seventyUid: 'test-uid',
+      unitId: 'seoul-east-stake',
+      wardName: '교문 와드',
+      targetKind: 'ward_bishop',
+      wardId: 'seoul-east-gyomun',
+      relatedVisitId: 'v1',
+      date: dates.beforeVisit,
+      startTime: '10:00',
+      endTime: '11:00',
+      notes: '감독: 김교문 (010-2222-3333)',
+    })
+  })
+})
