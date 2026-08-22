@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildScheduleTitle } from './scheduleRules'
+import { buildScheduleTitle, buildScheduleLocation } from './scheduleRules'
 
 const STAKE = '서울동 스테이크'
 
@@ -63,5 +63,52 @@ describe('buildScheduleTitle', () => {
     expect(buildScheduleTitle({ type: 'meeting' })).toBe('모임')
     expect(buildScheduleTitle({ type: 'ward_visit' })).toBe('방문')
     expect(buildScheduleTitle({ type: 'interview' })).toBe('접견')
+  })
+})
+
+describe('buildScheduleLocation', () => {
+  it('사용자가 쓴 값이 언제나 이긴다', () => {
+    expect(
+      buildScheduleLocation({
+        type: 'ward_visit',
+        wardName: '교문 와드',
+        location: '스테이크 센터 2층',
+      }),
+    ).toBe('스테이크 센터 2층')
+  })
+
+  // 온라인 여부가 물리적 장소보다 먼저다 — 어디로 가야 하는지가 달라진다.
+  it('Zoom 링크가 있으면 온라인이다', () => {
+    expect(
+      buildScheduleLocation({ type: 'meeting', unitName: '서울동 스테이크', zoomLink: 'https://zoom.us/j/1' }),
+    ).toBe('온라인 (Zoom)')
+  })
+
+  it('빈 문자열 Zoom 링크는 온라인으로 치지 않는다', () => {
+    expect(
+      buildScheduleLocation({ type: 'meeting', unitName: '서울동 스테이크', zoomLink: '   ' }),
+    ).toBe('서울동 스테이크')
+  })
+
+  it('와드 방문은 와드가 장소다', () => {
+    expect(
+      buildScheduleLocation({ type: 'ward_visit', unitName: '서울동 스테이크', wardName: '교문 와드' }),
+    ).toBe('교문 와드')
+  })
+
+  it('와드를 모르는 방문은 단위명이 장소다', () => {
+    expect(buildScheduleLocation({ type: 'ward_visit', unitName: '서울동 스테이크' })).toBe(
+      '서울동 스테이크',
+    )
+  })
+
+  it('협의 평의회는 CC가 장소다', () => {
+    expect(
+      buildScheduleLocation({ type: 'meeting', targetKind: 'cc_council', ccName: '서울 CC' }),
+    ).toBe('서울 CC')
+  })
+
+  it('아무것도 모르면 null을 준다 — 표시하지 않는다', () => {
+    expect(buildScheduleLocation({ type: 'meeting' })).toBeNull()
   })
 })

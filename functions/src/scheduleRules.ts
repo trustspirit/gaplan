@@ -44,3 +44,21 @@ export function buildScheduleTitle(parts: ScheduleNameParts): string {
 
   return parts.unitName ? `${parts.unitName} 모임` : '모임'
 }
+
+export interface ScheduleLocationParts extends ScheduleNameParts {
+  zoomLink?: string | null
+  /** 사용자가 폼에 직접 쓴 장소. 있으면 유도 규칙을 건너뛴다. */
+  location?: string | null
+}
+
+export function buildScheduleLocation(parts: ScheduleLocationParts): string | null {
+  const written = parts.location?.trim()
+  if (written) return written
+
+  // 온라인 여부가 먼저다 — 물리적 장소보다 "어디로 가야 하는가"를 더 크게 바꾼다.
+  if (parts.zoomLink?.trim()) return '온라인 (Zoom)'
+
+  if (parts.targetKind === 'cc_council') return parts.ccName ?? null
+  if (parts.type === 'ward_visit') return parts.wardName ?? parts.unitName ?? null
+  return parts.unitName ?? null
+}
