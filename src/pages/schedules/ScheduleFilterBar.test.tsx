@@ -6,11 +6,6 @@ import { expectNoAccentStripe } from '@/components/ui/testing/bannedPatterns'
 import { ScheduleFilterBar } from './ScheduleFilterBar'
 import { SCHEDULE_KINDS, type ScheduleKind } from './scheduleFilters'
 
-// ResponsiveDialog reaches into useIsMobile, which calls window.matchMedia —
-// jsdom doesn't implement it. Repo convention is to mock the hook directly
-// rather than polyfill matchMedia.
-vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
-
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
   initReactI18next: { type: '3rdParty', init: () => {} },
@@ -102,83 +97,60 @@ describe('ScheduleFilterBar', () => {
     expectNoAccentStripe(readFileSync(resolve(__dirname, 'ScheduleFilterBar.module.scss'), 'utf8'))
   })
 
-  describe('filter button', () => {
-    it('is not rendered when there is nothing to filter behind it', () => {
-      renderBar({ regions: [], hideStatus: true })
-      expect(screen.queryByRole('button', { name: /common\.filter/ })).toBeNull()
-    })
-
-    it('is rendered when there are regions to choose between, even with status hidden', () => {
-      renderBar({ regions: TWO_REGIONS, hideStatus: true })
-      expect(screen.getByRole('button', { name: /common\.filter/ })).toBeInTheDocument()
-    })
-
-    it('is rendered when status is visible, even with no regions', () => {
+  describe('region select', () => {
+    it('is not rendered when there is nothing to choose between', () => {
       renderBar({ regions: [] })
-      expect(screen.getByRole('button', { name: /common\.filter/ })).toBeInTheDocument()
+      expect(screen.queryByRole('combobox', { name: 'schedules.regionFilterLabel' })).toBeNull()
     })
 
-    it('carries no badge when nothing is filtered', () => {
-      renderBar({ regions: TWO_REGIONS, regionId: null, status: 'all' })
-      const button = screen.getByRole('button', { name: /common\.filter/ })
-      expect(button).toHaveTextContent(/^common\.filter$/)
+    it('is rendered when there are regions to choose between', () => {
+      renderBar({ regions: TWO_REGIONS })
+      expect(
+        screen.getByRole('combobox', { name: 'schedules.regionFilterLabel' }),
+      ).toBeInTheDocument()
     })
 
-    it('badges the active filter count, matching activeFilterCount', () => {
-      renderBar({ regions: TWO_REGIONS, regionId: 'r1', status: 'upcoming' })
-      const button = screen.getByRole('button', { name: /common\.filter/ })
-      expect(button).toHaveTextContent('2')
-    })
-  })
-
-  describe('the sheet behind the filter button', () => {
-    it('applies a picked region back through onRegionChange', async () => {
-      const props = renderBar({ regions: TWO_REGIONS, regionId: 'r1' })
-      await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
-      await userEvent.click(screen.getByRole('radio', { name: '서울남' }))
-      await userEvent.click(screen.getByRole('button', { name: 'common.apply' }))
+    it('calls onRegionChange with the picked region id', async () => {
+      const props = renderBar({ regions: TWO_REGIONS, regionId: null })
+      await userEvent.selectOptions(
+        screen.getByRole('combobox', { name: 'schedules.regionFilterLabel' }),
+        'r2',
+      )
       expect(props.onRegionChange).toHaveBeenCalledWith('r2')
     })
 
-    it('applies the all-regions choice back through onRegionChange', async () => {
+    // 빈 문자열이 "전체"다 — 유효한 선택이지 미선택 상태가 아니다.
+    it('calls onRegionChange(null) when 전체 is picked', async () => {
       const props = renderBar({ regions: TWO_REGIONS, regionId: 'r1' })
-      await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
-      await userEvent.click(screen.getByRole('radio', { name: 'common.all' }))
-      await userEvent.click(screen.getByRole('button', { name: 'common.apply' }))
+      await userEvent.selectOptions(
+        screen.getByRole('combobox', { name: 'schedules.regionFilterLabel' }),
+        screen.getByRole('option', { name: 'common.all' }),
+      )
       expect(props.onRegionChange).toHaveBeenCalledWith(null)
     })
+  })
 
-    // 시트가 목록을 가리고 있어 즉시 반영해도 소용없다 — 배경을 탭해 닫으면 고른 게 버려진다.
-    it('drops the pick and leaves onRegionChange uncalled when the backdrop is tapped', async () => {
-      const props = renderBar({ regions: TWO_REGIONS, regionId: 'r1' })
-      await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
-      await userEvent.click(screen.getByRole('radio', { name: '서울남' }))
-      await userEvent.click(screen.getByRole('dialog').parentElement!)
-      expect(props.onRegionChange).not.toHaveBeenCalled()
-    })
-
-    it('resets to region null and status all once Apply is pressed', async () => {
-      const props = renderBar({ regions: TWO_REGIONS, regionId: 'r1', status: 'completed' })
-      await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
-      await userEvent.click(screen.getByRole('button', { name: 'common.reset' }))
-      await userEvent.click(screen.getByRole('button', { name: 'common.apply' }))
-      expect(props.onRegionChange).toHaveBeenCalledWith(null)
-      expect(props.onStatusChange).toHaveBeenCalledWith('all')
-    })
-
-    it('offers no region section when there is nothing to choose between', async () => {
-      renderBar({ regions: [{ id: 'r1', name: '서울' }] })
-      await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
-      expect(screen.queryByRole('radiogroup', { name: 'schedules.regionFilterLabel' })).toBeNull()
+  describe('status select', () => {
+    it('is rendered by default', () => {
+      renderBar()
+      expect(
+        screen.getByRole('combobox', { name: 'schedules.statusFilterLabel' }),
+      ).toBeInTheDocument()
     })
 
     // 달력은 격자 자체가 시간을 표현한다 — 예정만 남기면 격자에 구멍이 날 뿐이다(판정 R26).
-    it('offers no status section when hideStatus is set', async () => {
-      renderBar({ regions: TWO_REGIONS, hideStatus: true })
-      await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
-      expect(
-        screen.queryByRole('radiogroup', { name: 'schedules.statusFilterLabel' }),
-      ).toBeNull()
+    it('is not rendered when hideStatus is set', () => {
+      renderBar({ hideStatus: true })
+      expect(screen.queryByRole('combobox', { name: 'schedules.statusFilterLabel' })).toBeNull()
+    })
+
+    it('calls onStatusChange with the picked status', async () => {
+      const props = renderBar()
+      await userEvent.selectOptions(
+        screen.getByRole('combobox', { name: 'schedules.statusFilterLabel' }),
+        'completed',
+      )
+      expect(props.onStatusChange).toHaveBeenCalledWith('completed')
     })
   })
 })

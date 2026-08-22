@@ -175,10 +175,7 @@
     "selectPlaceholder": "Select...",
     "discardChanges": "You have unsaved changes. Discard them?",
     "loadFailed": "Failed to load.",
-    "me": "me",
-    "filter": "Filters",
-    "reset": "Reset",
-    "apply": "Apply"
+    "me": "me"
   },
   "scope": {
     "myAssigned": "My Assigned",

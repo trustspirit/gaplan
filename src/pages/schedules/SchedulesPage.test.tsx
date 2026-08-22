@@ -237,14 +237,15 @@ describe('SchedulesPage', () => {
     expect(screen.queryByText('row-talk')).toBeNull()
   })
 
-  // 상태 필터는 목록에만 있다(판정 R26). 이제 필터 시트 안에 있으므로 열어서 본다.
+  // 상태 필터는 목록에만 있다(판정 R26).
   it('offers the status filter only in the list view', async () => {
     render(<SchedulesPage />)
-    expect(screen.queryByRole('radiogroup', { name: 'schedules.statusFilterLabel' })).toBeNull()
-    await userEvent.click(screen.getByRole('radio', { name: 'schedules.listView' }))
-    await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
     expect(
-      screen.getByRole('radiogroup', { name: 'schedules.statusFilterLabel' }),
+      screen.queryByRole('combobox', { name: 'schedules.statusFilterLabel' }),
+    ).toBeNull()
+    await userEvent.click(screen.getByRole('radio', { name: 'schedules.listView' }))
+    expect(
+      screen.getByRole('combobox', { name: 'schedules.statusFilterLabel' }),
     ).toBeInTheDocument()
   })
 
@@ -286,9 +287,10 @@ describe('SchedulesPage', () => {
     const before = readTiles()
     expect(screen.getAllByText(/^row-/)).toHaveLength(3)
 
-    await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
-    await userEvent.click(screen.getByRole('radio', { name: 'schedules.status.completed' }))
-    await userEvent.click(screen.getByRole('button', { name: 'common.apply' }))
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'schedules.statusFilterLabel' }),
+      'completed',
+    )
 
     expect(readTiles()).toEqual(before)
     expect(screen.getAllByText(/^row-/)).toHaveLength(2)
@@ -305,11 +307,12 @@ describe('SchedulesPage', () => {
     ]
     render(<SchedulesPage />)
 
-    // 지역 선택은 필터 시트 안 라디오다(REGIONS를 그대로 쓴다 — 2개 이상일 때만
-    // 보인다). 번역 키가 아니라 실제 지역명이 라벨이다.
-    await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
-    await userEvent.click(screen.getByRole('radio', { name: '부산 CC' }))
-    await userEvent.click(screen.getByRole('button', { name: 'common.apply' }))
+    // 지역 선택은 인라인 셀렉트다(REGIONS를 그대로 쓴다 — 2개 이상일 때만 보인다).
+    // 번역 키가 아니라 실제 지역명이 옵션 라벨이다.
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'schedules.regionFilterLabel' }),
+      screen.getByRole('option', { name: '부산 CC' }),
+    )
 
     const grid = screen.getByTestId('calendar')
     expect(grid.dataset.scheduleIds).toBe('busanVisit')

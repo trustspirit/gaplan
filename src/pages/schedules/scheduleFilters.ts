@@ -35,21 +35,6 @@ export function toggleScheduleKind(kinds: ScheduleKind[], kind: ScheduleKind): S
   return SCHEDULE_KINDS.filter((k) => (k === kind ? !selected.has(k) : selected.has(k)))
 }
 
-/**
- * 필터 시트 버튼 배지에 쓰는 개수. 종류 칩은 인라인에 그대로 남으므로 세지 않는다 —
- * 시트 뒤로 숨긴 것만 "몇 개 켜져 있는지" 알려줄 필요가 있다.
- */
-export function activeFilterCount(params: {
-  regionId: string | null
-  status: ScheduleStatusFilter
-  hideStatus: boolean
-}): number {
-  let count = 0
-  if (params.regionId !== null) count++
-  if (!params.hideStatus && params.status !== 'all') count++
-  return count
-}
-
 export type BoardEntry =
   | { source: 'schedule'; schedule: Schedule }
   | { source: 'event'; event: GeneralSchedule }
