@@ -41,32 +41,35 @@ export function ScheduleDateRangeFilter({ setting, currentRange, onChange }: Pro
   }
 
   return (
-    <div className={styles.filter}>
-      <div className={styles.customRange}>
-        <Input
-          type="date"
-          className={styles.dateInput}
-          wrapperClassName={styles.dateField}
-          aria-label={t('schedule.filterStartDate')}
-          value={localStart}
-          onChange={e => handleStartChange(e.target.value)}
-        />
-        <span className={styles.rangeSep}>–</span>
-        <Input
-          type="date"
-          className={styles.dateInput}
-          wrapperClassName={styles.dateField}
-          aria-label={t('schedule.filterEndDate')}
-          value={localEnd}
-          onChange={e => handleEndChange(e.target.value)}
-        />
-        {isCustom && (
-          <button type="button" className={styles.resetBtn} onClick={() => onChange({ preset: 'rolling' })}>
-            <RotateCcw size={13} />
-            <span>{t('schedule.filterReset')}</span>
-          </button>
-        )}
-      </div>
+    <div className={styles.customRange}>
+      <Input
+        type="date"
+        className={styles.dateInput}
+        wrapperClassName={styles.dateField}
+        aria-label={t('schedule.filterStartDate')}
+        value={localStart}
+        onChange={e => handleStartChange(e.target.value)}
+      />
+      <span className={styles.rangeSep}>–</span>
+      <Input
+        type="date"
+        className={styles.dateInput}
+        wrapperClassName={styles.dateField}
+        aria-label={t('schedule.filterEndDate')}
+        value={localEnd}
+        onChange={e => handleEndChange(e.target.value)}
+      />
+      {isCustom && (
+        <button
+          type="button"
+          className={styles.resetBtn}
+          aria-label={t('schedule.filterReset')}
+          title={t('schedule.filterReset')}
+          onClick={() => onChange({ preset: 'rolling' })}
+        >
+          <RotateCcw size={14} aria-hidden="true" />
+        </button>
+      )}
     </div>
   )
 }

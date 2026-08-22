@@ -60,21 +60,38 @@
 // 기간·지역·상태 셀렉트 묶음만 오른쪽으로 민다 — 종류 칩은 왼쪽에 붙어 있어야 한 덩어리로 읽힌다.
 .trailing {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: $space-2;
   margin-left: auto;
 
   @include mobile {
     margin-left: 0;
+    width: 100%;
   }
 }
 
 // Select는 폼 안에서 쓰던 기본 크기라 필터 바에서는 커 보인다. Select 컴포넌트 자체는
 // 다른 화면들이 쓰고 있으니 고치지 않고, 여기서만 className으로 눌러 준다. 모듈 로드
 // 순서가 Select.module.scss보다 항상 뒤라는 보장이 없어 !important로 확실히 이긴다.
+//
+// Field는 라벨을 컨트롤 위에 쌓는다 — 그러면 이 상자만 라벨 한 줄만큼 키가 커서
+// 옆에 선 날짜 칸과 세로가 어긋난다. 종류 칩 그룹처럼 라벨을 왼쪽에 눕혀 한 줄로 만든다.
 .selectWrapper {
+  // Field의 .wrapper와 명시도가 같아 청크 순서에 따라 질 수 있다 — .select과 같은 이유.
+  flex-direction: row !important;
+  align-items: center;
+  gap: $space-1;
   width: auto;
   min-width: 0;
+  flex-shrink: 0;
+
+  > label {
+    flex-shrink: 0;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-normal;
+    color: var(--text-muted);
+  }
 }
 
 .select {

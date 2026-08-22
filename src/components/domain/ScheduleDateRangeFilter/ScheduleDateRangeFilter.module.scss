@@ -1,50 +1,50 @@
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
-.filter {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: $space-2;
-  width: 100%;
-  min-width: 0;
-  margin-bottom: $space-4;
-}
-
+// 필터 바(ScheduleFilterBar)의 한 칸으로 선다. 폭을 100%로 늘리거나 아래 여백을 두면
+// 옆에 선 셀렉트를 밀어내고, flex 정렬이 margin까지 세는 탓에 세로 위치도 어긋난다.
 .customRange {
   display: flex;
   align-items: center;
   gap: $space-2;
-  width: 100%;
   min-width: 0;
 
   @include mobile {
-    // 모바일에서는 날짜 두 칸을 위아래로 쌓고, 되돌리기 버튼이 그 아래 한 줄을 차지한다.
+    // 날짜 두 칸이 남는 폭을 반씩 나눠 갖고, 되돌리기 아이콘이 오른쪽 끝에 붙는다.
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr auto;
+    width: 100%;
   }
 }
 
 // 직접 입력 중일 때만 나타난다 — 기본 기간에서는 되돌릴 것이 없다.
+// 라벨 없는 아이콘 한 칸이다: 필터 바에서 이것만 글자를 달고 있으면 1차 액션처럼 읽힌다.
 .resetBtn {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
   flex-shrink: 0;
-  padding: $space-2 $space-3;
-  min-height: 36px;
+  padding: 0;
+  // 같은 줄에 선 종류 칩·셀렉트와 높이를 맞춘다.
+  width: 32px;
+  height: 32px;
   border-radius: $border-radius-full;
   border: 1px solid $color-border;
   background: $color-surface;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
   color: $color-text-muted;
   cursor: pointer;
-  white-space: nowrap;
   transition:
     background 0.15s,
     color 0.15s,
     border-color 0.15s;
+
+  // 시각 크기는 32px이지만 탭 영역은 접근성 최소치(44px)를 지킨다.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+  }
 
   &:hover {
     background: $color-bg;
@@ -52,12 +52,13 @@
   }
 
   @include mobile {
-    justify-content: center;
+    width: 38px;
+    height: 38px;
   }
 }
 
 .dateField {
-  width: 170px;
+  width: 150px;
   min-width: 0;
   max-width: 100%;
 
@@ -75,13 +76,16 @@
   box-sizing: border-box;
   border: 1px solid $color-border;
   border-radius: $border-radius-md;
-  padding: $space-2 $space-3;
+  min-height: 32px;
+  padding: 0 $space-2;
   font-size: $font-size-sm;
   background: $color-surface;
   color: $color-text;
 
   @include mobile {
+    // 16px 미만이면 iOS Safari가 포커스할 때 화면을 확대한다 — 대신 칸을 키운다.
     font-size: 16px;
+    min-height: 38px;
     width: 100%;
     inline-size: 100%;
 
