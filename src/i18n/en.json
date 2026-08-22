@@ -290,8 +290,6 @@
     "errorDateTimeRequired": "Date and time are required.",
     "errorSeventyRequired": "Please select an Area Seventy.",
     "errorStakeWardRequired": "Please select a Stake/District and Ward/Branch.",
-    "targetLabel": "Target",
-    "targetOptionOther": "Other (enter manually)",
     "targetFreeTextLabel": "Target (enter manually)",
     "targetFreeTextPlaceholder": "Enter member name",
     "errorTargetRequired": "Please select an interview target.",
@@ -337,7 +335,6 @@
       "meeting": "Sacrament Meeting",
       "general_attendance": "Event Attendance"
     },
-    "targetOptionCcCouncil": "Stake presidents in the CC (Coordinating Council)",
     "ccRegionLabel": "Coordinating Council",
     "errorCcRegionRequired": "Select the CC for this coordinating council meeting.",
     "targetKindLabel": "Target type",

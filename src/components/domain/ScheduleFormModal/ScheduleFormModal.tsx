@@ -189,8 +189,9 @@ export function ScheduleFormModal({
   const payloadWardName = type === 'ward_visit' ? target.wardName : targetPayload.wardName
   const isCcCouncil = targetPayload.targetKind === 'cc_council'
 
-  // 스테이크 회장 대상을 고르면 그 스테이크 회장 계정의 uid를 함께 싣는다(예전 getContactTargetOptions와
-  // 같은 계산: role === 'president' && unitId 일치).
+  // 스테이크 회장 대상을 고르면 그 스테이크 회장 계정의 uid를 함께 싣는다(예전에는
+  // getContactTargetOptions와 같은 계산이었지만, 그 함수는 프로덕션에서 안 쓰여 M5
+  // (2026-08-22)에서 지웠다: role === 'president' && unitId 일치).
   const presidentUid =
     targetPayload.targetKind === 'stake_president'
       ? users.find((u) => u.role === 'president' && u.unitId === target.unitId)?.uid

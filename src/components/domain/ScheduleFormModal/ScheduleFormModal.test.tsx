@@ -81,7 +81,7 @@ vi.mock('react-dom', () => ({
 }))
 
 import { ScheduleFormModal } from './ScheduleFormModal'
-import { buildNotesWithLeaderContact, getContactTargetOptions } from './leaderContactNotes'
+import { buildNotesWithLeaderContact } from './leaderContactNotes'
 import { buildScheduleTitle } from '../../../../functions/src/scheduleRules'
 import * as useLeadersModule from '@/hooks/useLeaders'
 import type { Leader } from '@/types/leader'
@@ -114,16 +114,6 @@ const MOCK_STAKE_PRESIDENT: Leader = {
   role: '스테이크 회장',
   name: '홍길동',
   phone: '010-1111-2222',
-}
-
-const MOCK_BRANCH_PRESIDENT: Leader = {
-  id: 'branch-president',
-  externalUnitId: 2,
-  unitNameKo: '중앙 수어 지부',
-  unitNameEn: 'Jungang Sign Language Branch',
-  role: '지부 회장',
-  name: '박지부',
-  phone: '010-5555-6666',
 }
 
 const MOCK_PRESIDENT_USER: AppUser = {
@@ -181,33 +171,6 @@ describe('ScheduleFormModal 메모 자동 입력', () => {
 })
 
 describe('ScheduleFormModal 연락처 대상', () => {
-  it('접견 대상에 스테이크/지방부 회장과 소속 와드/지부 지도자를 함께 노출한다', () => {
-    const options = getContactTargetOptions({
-      type: 'interview',
-      unitId: 'seoul-stake',
-      leaders: [MOCK_STAKE_PRESIDENT, MOCK_LEADER_BISHOP, MOCK_BRANCH_PRESIDENT],
-      users: [MOCK_PRESIDENT_USER],
-    })
-
-    expect(options).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          label: '서울 스테이크 · 스테이크 회장',
-          unitNameKo: '서울 스테이크',
-          presidentUid: 'president-uid',
-        }),
-        expect.objectContaining({
-          label: '녹번 와드 · 감독',
-          unitNameKo: '녹번 와드',
-        }),
-        expect.objectContaining({
-          label: '중앙 수어 지부 · 지부 회장',
-          unitNameKo: '중앙 수어 지부',
-        }),
-      ]),
-    )
-  })
-
   it('모임에서 와드/지부를 선택하면 해당 감독/지부 회장 연락처를 메모 앞에 붙인다', () => {
     const notes = buildNotesWithLeaderContact({
       type: 'meeting',
