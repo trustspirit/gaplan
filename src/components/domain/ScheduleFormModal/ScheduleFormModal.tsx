@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { httpsCallable } from 'firebase/functions'
 import { useAtomValue } from 'jotai'
@@ -10,24 +10,23 @@ import { functions } from '@/firebase'
 import { useUsers } from '@/hooks/useUsers'
 import { useLeaders } from '@/hooks/useLeaders'
 import { useUpcomingVisits } from '@/hooks/useUpcomingVisits'
-import { ALL_UNITS, REGIONS, getWardsByUnit, getWardIdByName } from '@/constants/regions'
+import { ALL_UNITS, REGIONS, getWardsByUnit } from '@/constants/regions'
 import { isGeneralScheduleRelevant } from '@/types'
-import type { ScheduleType, GeneralSchedule, AppUser, InterviewTargetKind } from '@/types'
-import { Button, Select, Input, Textarea } from '@/components/ui'
-import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
+import type { ScheduleType, GeneralSchedule, AppUser } from '@/types'
+import { Button, Select, Input } from '@/components/ui'
 import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
-import {
-  buildNotesWithLeaderContact,
-  getContactTargetOptions,
-} from './leaderContactNotes'
+import { buildNotesWithLeaderContact, stakeTargetLabel, wardTargetLabel } from './leaderContactNotes'
 import { buildScheduleTitle, buildScheduleLocation } from '../../../../functions/src/scheduleRules'
+import { useScheduleForm } from '../scheduleForm/useScheduleForm'
+import type { ScheduleFormState } from '../scheduleForm/useScheduleForm'
+import { toTargetPayload } from '../scheduleForm/scheduleTargetRules'
+import { TargetSection } from '../scheduleForm/TargetSection'
+import { WhenSection } from '../scheduleForm/WhenSection'
+import { DetailSection } from '../scheduleForm/DetailSection'
 import styles from './ScheduleFormModal.module.scss'
 
 const adminCreateScheduleFn = httpsCallable(functions, 'adminCreateSchedule')
-
-/** 대상 Select에서 'CC 내 스테이크 회장들'(협의 평의회)을 고른 상태 */
-const CC_COUNCIL_TARGET = 'cc_council'
 
 interface ScheduleFormModalProps {
   initialDate?: string
@@ -53,7 +52,20 @@ export function ScheduleFormModal({
   const { users } = useUsers()
   const { leaders } = useLeaders()
 
-  const [type, setType] = useState<ScheduleType>(initialType ?? allowedTypes?.[0] ?? 'ward_visit')
+  const { state, set, setTargetKind, setType, isDirty } = useScheduleForm({
+    type: initialType ?? allowedTypes?.[0] ?? 'ward_visit',
+    date: initialDate ?? '',
+  })
+  const { type, target, date, startTime, endTime, purpose, relatedVisitId, notes, zoomLink, customTitle, location, projectId } = state
+
+  // 조각(TargetSection/WhenSection/DetailSection)들은 { state, onChange } 계약을 쓴다 —
+  // onChange는 부분 병합. useScheduleForm의 set(key, value)를 그 모양으로 감싼다.
+  const applyPartial = (partial: Partial<ScheduleFormState>) => {
+    ;(Object.keys(partial) as Array<keyof ScheduleFormState>).forEach((key) => {
+      set(key, partial[key] as ScheduleFormState[typeof key])
+    })
+  }
+
   const [seventyUid, setSeventyUid] = useState(
     user.role === 'seventy' ? user.uid :
     user.role === 'exec_secretary' ? (user.assignedSeventyUid ?? '') :
@@ -61,34 +73,9 @@ export function ScheduleFormModal({
     user.role === 'admin' && user.secondaryRole === 'exec_secretary' ? (user.assignedSeventyUid ?? '') :
     ''
   )
-  const [unitId, setUnitId] = useState('')
-  const [wardName, setWardName] = useState('')
-  const [presidentUid, setPresidentUid] = useState('')
-  const [contactTargetValue, setContactTargetValue] = useState('')
-  const [targetSelect, setTargetSelect] = useState('')  // '', 'other', 'cc_council', 'unit:...', 'ward:...'
-  const [ccRegionId, setCcRegionId] = useState('')      // 협의 평의회 대상 CC
-  const [purpose, setPurpose] = useState<'general' | 'pre_visit'>('general')
-  const [relatedVisitId, setRelatedVisitId] = useState('')
-  const [date, setDate] = useState(initialDate ?? '')
-  const [startTime, setStartTime] = useState('')
-  const [endTime, setEndTime] = useState('')
-  const [notes, setNotes] = useState('')
-  const [zoomLink, setZoomLink] = useState('')
-  const [customTitle, setCustomTitle] = useState('')
-  const [location, setLocation] = useState('')
-  const [projectId, setProjectId] = useState('')
-  const [isSabbath, setIsSabbath] = useState(false)
-  const [presidentAccompanied, setPresidentAccompanied] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Guard against losing a filled form to a stray backdrop tap / Escape
-  const isDirty =
-    date !== (initialDate ?? '') ||
-    startTime !== '' || endTime !== '' || notes !== '' || zoomLink !== '' ||
-    customTitle !== '' || location !== '' || projectId !== '' || unitId !== '' || wardName !== '' ||
-    contactTargetValue !== '' || targetSelect !== '' || ccRegionId !== '' ||
-    isSabbath || presidentAccompanied
   const requestClose = () => {
     if (isDirty && !window.confirm(t('common.discardChanges'))) return
     onClose()
@@ -101,39 +88,23 @@ export function ScheduleFormModal({
     return releaseScrollLock
   }, [])
 
+  // 종류를 바꾸면 대상(target)·목적(purpose)은 useScheduleForm의 규칙이 알아서 지운다.
+  // 여기서는 그 규칙이 모르는, 종류에 딸린 나머지 선택 칸(제목/장소/Zoom/메모/대상 방문)만 비운다 —
+  // 예전 handleTypeChange가 지우던 목록과 정확히 같다.
   const handleTypeChange = (nextType: ScheduleType) => {
     setType(nextType)
-    setUnitId('')
-    setWardName('')
-    setPresidentUid('')
-    setContactTargetValue('')
-    setTargetSelect('')
-    setCcRegionId('')
-    setZoomLink('')
-    setCustomTitle('')
-    setLocation('')
-    setNotes('')
-    setPurpose('general')
-    setRelatedVisitId('')
+    set('zoomLink', '')
+    set('customTitle', '')
+    set('location', '')
+    set('notes', '')
+    set('relatedVisitId', '')
   }
 
+  // 담당 칠십인이 바뀌면 그 사람 담당 범위 밖일 수 있는 대상 선택을 지운다(예전과 동일).
   const handleSeventyChange = (nextSeventyUid: string) => {
     setSeventyUid(nextSeventyUid)
-    setUnitId('')
-    setWardName('')
-    setPresidentUid('')
-    setContactTargetValue('')
-    setTargetSelect('')
-    setCcRegionId('')
-    setRelatedVisitId('')
-  }
-
-  const handleUnitChange = (nextUnitId: string) => {
-    setUnitId(nextUnitId)
-    setWardName('')
-    setPresidentUid('')
-    setContactTargetValue('')
-    setTargetSelect('')
+    setTargetKind('')
+    set('relatedVisitId', '')
   }
 
   const seventyUsers = users.filter((u) => u.role === 'seventy')
@@ -143,28 +114,10 @@ export function ScheduleFormModal({
       : ''
   const effectiveSeventyUid = seventyUid || autoSeventyUid
 
-  const { visits: upcomingVisits, loading: upcomingVisitsLoading } = useUpcomingVisits(
-    type === 'interview' || type === 'meeting' ? effectiveSeventyUid : '',
-    date || dayjs().format('YYYY-MM-DD'),
-  )
-  const relatedVisit = upcomingVisits.find(v => v.id === relatedVisitId)
-
-  // 고른 대상 방문이 목록에서 사라지면(날짜를 방문 이후로 변경, 담당 칠십인 변경 등) stale id를
-  // 그대로 서버로 보내지 않도록 지운다. 목록 로딩 중에는 아직 판단할 수 없으니 건드리지 않는다.
-  useEffect(() => {
-    if (!relatedVisitId || upcomingVisitsLoading) return
-    if (!upcomingVisits.some(v => v.id === relatedVisitId)) {
-      setRelatedVisitId('')
-    }
-  }, [relatedVisitId, upcomingVisitsLoading, upcomingVisits])
-
-  const handleSabbathToggle = (checked: boolean) => {
-    setIsSabbath(checked)
-    if (checked) {
-      setStartTime('10:00')
-      setEndTime('12:00')
-    }
-  }
+  // 담당 칠십인 범위로 스테이크/지방부·CC 목록을 미리 거른다(Controller ruling R2,
+  // 2026-08-22 — TargetSection은 users 목록이 없어 스스로 이 범위를 계산할 수 없으므로
+  // 모달이 계산해 read-only 데이터로 내려준다). 예전 ScheduleFormModal의 unitPool/
+  // unitSelectDisabled/ccRegionOptions 계산을 그대로 옮긴 것이다.
   const selectedSeventy = users.find((u) => u.uid === effectiveSeventyUid)
   const seventyRegionIds =
     selectedSeventy?.regionIds ?? (selectedSeventy?.regionId ? [selectedSeventy.regionId] : [])
@@ -179,49 +132,78 @@ export function ScheduleFormModal({
       : []
   const unitOptions = unitPool.map((u) => ({ value: u.id, label: u.name.ko }))
   const unitSelectDisabled = waitingForSeventyScope || (!!effectiveSeventyUid && unitOptions.length === 0)
-  const wardOptions = unitId
-    ? getWardsByUnit(unitId).map((w) => ({ value: w.name.ko, label: w.name.ko }))
+  const ccRegionOptions = (
+    seventyRegionIds.length > 0
+      ? REGIONS.filter((r) => seventyRegionIds.includes(r.id))
+      : effectiveSeventyUid ? [] : REGIONS
+  ).map((r) => ({ value: r.id, label: r.name }))
+
+  // TargetSection은 leaders/users를 갖지 않는다 — 라벨을 붙이는 계산은 모두 여기서 한다
+  // (Controller ruling R8/R9, 2026-08-22). 두 select 모두 "무엇을 고르든 같은 목록"이
+  // 아니라, 고른 대상 유형에 따라 그 옵션이 실제 대상(=연락처가 붙을 리더)인지 아닌지가
+  // 갈린다 — 대상 유형이 stake_president일 때만 스테이크 select 자체가 대상이므로
+  // 그때만 리더 역할 라벨("서울 스테이크 · 스테이크 회장")을 붙인다. ward_visit이나
+  // ward_bishop 선택 중 와드를 좁히기 위한 스테이크 select는 예전에도 늘 평범한 이름만
+  // 보여줬으므로 그대로 둔다.
+  const unitOptionsForTargetSection =
+    target.kind === 'stake_president'
+      ? unitOptions.map((o) => ({ value: o.value, label: stakeTargetLabel(o.label, leaders) }))
+      : unitOptions
+  // 와드 select는 ward_bishop 대상을 고를 때만 나타나므로(questionsFor), 나타날 때는
+  // 항상 "그 와드가 곧 대상"이다 — 늘 리더 역할 라벨을 붙인다. ward_visit의 와드
+  // select는 이 목록을 쓰지 않는 별개 렌더 분기라 영향받지 않는다(TargetSection.tsx).
+  const wardOptionsForTargetSection = target.unitId
+    ? getWardsByUnit(target.unitId).map((w) => ({
+        value: w.name.ko,
+        label: type === 'ward_visit' ? w.name.ko : wardTargetLabel(w.name.ko, leaders),
+      }))
     : []
+
+  const { visits: upcomingVisits, loading: upcomingVisitsLoading } = useUpcomingVisits(
+    type === 'interview' || type === 'meeting' ? effectiveSeventyUid : '',
+    date || dayjs().format('YYYY-MM-DD'),
+  )
+  const relatedVisit = upcomingVisits.find(v => v.id === relatedVisitId)
+
+  // 고른 대상 방문이 목록에서 사라지면(날짜를 방문 이후로 변경, 담당 칠십인 변경 등) stale id를
+  // 그대로 서버로 보내지 않도록 지운다. 목록 로딩 중에는 아직 판단할 수 없으니 건드리지 않는다.
+  useEffect(() => {
+    if (!relatedVisitId || upcomingVisitsLoading) return
+    if (!upcomingVisits.some(v => v.id === relatedVisitId)) {
+      set('relatedVisitId', '')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [relatedVisitId, upcomingVisitsLoading, upcomingVisits])
+
   const seventyOptions = seventyUsers.map((u) => ({
     value: u.uid,
     label: u.preRegistered ? u.name : `${u.name} ✓`,
   }))
-  const contactTargetOptions = getContactTargetOptions({ type, unitId, leaders, users })
-  const selectedContactTarget = contactTargetOptions.find(o => o.label === contactTargetValue)
-  const isCcCouncil = targetSelect === CC_COUNCIL_TARGET
-  // 협의 평의회 대상 CC. 담당 칠십인이 정해졌으면 그 칠십인의 CC로 제한한다.
-  const ccRegionOptions = (
-    seventyRegionIds.length > 0
-      ? REGIONS.filter(r => seventyRegionIds.includes(r.id))
-      : effectiveSeventyUid ? [] : REGIONS
-  ).map(r => ({ value: r.id, label: r.name }))
-  const targetOptions = [
-    // 협의 평의회는 특정 스테이크가 아니라 CC 전체가 대상이라 unitId와 무관하게 늘 고를 수 있다.
-    ...(type === 'meeting' ? [{ value: CC_COUNCIL_TARGET, label: t('schedule.targetOptionCcCouncil') }] : []),
-    ...contactTargetOptions.map(o => ({ value: o.value, label: o.label })),
-    { value: 'other', label: t('schedule.targetOptionOther') },
-  ]
 
-  // 접견/모임에서 대상으로 특정 와드(감독)를 골랐을 때의 그 와드 한글 이름. wardId만으로는
-  // CF가 이름을 못 붙인다(functions/에는 와드 이름 테이블이 없다) — 그래서 이 이름 자체를
-  // payload에 실어 보낸다(Controller ruling, Fix 1). ward_visit의 wardName Select와는
-  // 별개 값이다 — 둘은 type이 서로 배타적이라 섞이지 않는다.
-  const targetWardId = targetSelect.startsWith('ward:') ? targetSelect.slice('ward:'.length) : ''
-  const targetWardName = targetWardId
-    ? getWardsByUnit(unitId).find((w) => w.id === targetWardId)?.name.ko
-    : undefined
+  // 대상 규칙 모듈이 유형에 따라 payload에 실릴 unitId/wardName/regionId/targetKind(/wardId)를
+  // 정한다. ward_visit은 「대상」이라는 개념이 없어(방문하는 곳 자체가 대상) target.kind가 늘
+  // ''로 남는다 — toTargetPayload는 그때 모든 칸을 비우므로, ward_visit의 유닛/와드는 target에서
+  // 직접 읽는다.
+  const targetPayload = toTargetPayload(target)
+  const payloadUnitId = type === 'ward_visit' ? target.unitId : targetPayload.unitId
+  const payloadWardName = type === 'ward_visit' ? target.wardName : targetPayload.wardName
+  const isCcCouncil = targetPayload.targetKind === 'cc_council'
+
+  // 스테이크 회장 대상을 고르면 그 스테이크 회장 계정의 uid를 함께 싣는다(예전 getContactTargetOptions와
+  // 같은 계산: role === 'president' && unitId 일치).
+  const presidentUid =
+    targetPayload.targetKind === 'stake_president'
+      ? users.find((u) => u.role === 'president' && u.unitId === target.unitId)?.uid
+      : undefined
 
   // 지금까지 채운 값만으로 실제 저장 시 생성될 제목·장소를 미리 보여준다
   // (customTitle/location을 사용자가 직접 채우면 placeholder는 무시된다).
   const autoParts = {
     type,
-    unitName: ALL_UNITS.find((u) => u.id === unitId)?.name.ko,
-    wardName: type === 'ward_visit' ? (wardName || undefined) : targetWardName,
-    targetKind: targetSelect.startsWith('ward:') ? ('ward_bishop' as const)
-      : targetSelect.startsWith('unit:') ? ('stake_president' as const)
-      : targetSelect === CC_COUNCIL_TARGET ? ('cc_council' as const)
-      : null,
-    ccName: REGIONS.find((r) => r.id === ccRegionId)?.name,
+    unitName: ALL_UNITS.find((u) => u.id === payloadUnitId)?.name.ko,
+    wardName: payloadWardName || undefined,
+    targetKind: targetPayload.targetKind,
+    ccName: REGIONS.find((r) => r.id === target.ccRegionId)?.name,
     preVisitWardName: purpose === 'pre_visit' ? relatedVisit?.wardName : undefined,
   }
   const autoTitle = buildScheduleTitle(autoParts)
@@ -242,35 +224,23 @@ export function ScheduleFormModal({
       setError(t('schedule.errorSeventyRequired'))
       return
     }
-    if (type === 'ward_visit' && (!unitId || !wardName)) {
+    if (type === 'ward_visit' && (!target.unitId || !target.wardName)) {
       setError(t('schedule.errorStakeWardRequired'))
       return
-    }
-
-    // 접견/모임 대상 Select에서 targetKind/wardId 도출
-    let targetKind: InterviewTargetKind | undefined
-    let wardId: string | undefined
-    if (type === 'interview' || type === 'meeting') {
-      if (targetSelect === CC_COUNCIL_TARGET) targetKind = 'cc_council'
-      else if (targetSelect.startsWith('unit:')) targetKind = 'stake_president'
-      else if (targetSelect.startsWith('ward:')) {
-        targetKind = 'ward_bishop'
-        wardId = targetSelect.slice('ward:'.length)
-      } else if (targetSelect === 'other') targetKind = 'other'
     }
     // 접견/모임은 대상 하나는 반드시 지정 (빈 접견 방지 + 대상에 따라 연락처를 노트에
     // 자동으로 채워주고, 분기 접견(스테이크 회장) 충족 여부를 targetKind로 판정하므로
     // 구조화된 대상이 필요하다)
     if (type === 'interview' || type === 'meeting') {
-      if (!targetKind) {
+      if (!targetPayload.targetKind) {
         setError(t('schedule.errorTargetRequired'))
         return
       }
-      if (targetKind === 'other' && !contactTargetValue.trim()) {
+      if (targetPayload.targetKind === 'other' && !target.freeText.trim()) {
         setError(t('schedule.errorTargetNameRequired'))
         return
       }
-      if (targetKind === 'cc_council' && !ccRegionId) {
+      if (targetPayload.targetKind === 'cc_council' && !target.ccRegionId) {
         setError(t('schedule.errorCcRegionRequired'))
         return
       }
@@ -281,19 +251,27 @@ export function ScheduleFormModal({
     }
 
     // 접견/모임에서 알려진 유닛/리더가 아니라 자유 입력한 일반 회원 이름이면 대상으로 기록
-    const isFreeTextTarget =
-      (type === 'interview' || type === 'meeting') &&
-      contactTargetValue.trim() !== '' &&
-      !selectedContactTarget
+    const isFreeTextTarget = targetPayload.targetKind === 'other'
+    // 노트에 붙일 연락처의 소속 이름 — ward_bishop은 그 와드의 한글 이름, stake_president는
+    // 그 스테이크/지방부의 한글 이름. wardId/unitId만으로는 CF가 이름을 못 붙인다(functions/에는
+    // 이름 테이블이 없다) — 그래서 이 이름 자체를 여기서 구해 싣는다.
+    const contactTargetUnitName =
+      type === 'ward_visit'
+        ? ''
+        : targetPayload.targetKind === 'ward_bishop'
+        ? target.wardName
+        : targetPayload.targetKind === 'stake_president'
+        ? (ALL_UNITS.find((u) => u.id === target.unitId)?.name.ko ?? '')
+        : ''
     // 협의 평의회는 붙일 유닛 리더가 하나로 정해지지 않으므로 연락처 자동 첨부를 건너뛴다.
     const finalNotes = isCcCouncil
       ? notes
       : isFreeTextTarget
-      ? (notes.trim() ? `대상: ${contactTargetValue.trim()}\n${notes}` : `대상: ${contactTargetValue.trim()}`)
+      ? (notes.trim() ? `대상: ${target.freeText.trim()}\n${notes}` : `대상: ${target.freeText.trim()}`)
       : buildNotesWithLeaderContact({
           type,
-          unitId,
-          contactTargetUnitName: selectedContactTarget?.unitNameKo ?? '',
+          unitId: payloadUnitId,
+          contactTargetUnitName,
           notes,
           leaders,
         })
@@ -303,14 +281,12 @@ export function ScheduleFormModal({
       await adminCreateScheduleFn({
         type,
         seventyUid: effectiveSeventyUid,
-        ...(unitId && !isCcCouncil ? { unitId } : {}),
-        ...(isCcCouncil ? { regionId: ccRegionId } : {}),
-        ...(type === 'ward_visit'
-          ? (wardName ? { wardName } : {})
-          : (targetWardName ? { wardName: targetWardName } : {})),
+        ...(payloadUnitId && !isCcCouncil ? { unitId: payloadUnitId } : {}),
+        ...(isCcCouncil ? { regionId: targetPayload.regionId } : {}),
+        ...(payloadWardName ? { wardName: payloadWardName } : {}),
         ...(presidentUid && !isCcCouncil ? { presidentUid } : {}),
-        ...(targetKind ? { targetKind } : {}),
-        ...(wardId && !isCcCouncil ? { wardId } : {}),
+        ...(targetPayload.targetKind ? { targetKind: targetPayload.targetKind } : {}),
+        ...(targetPayload.wardId && !isCcCouncil ? { wardId: targetPayload.wardId } : {}),
         ...((type === 'interview' || type === 'meeting') && purpose === 'pre_visit' && relatedVisitId
           ? { relatedVisitId }
           : {}),
@@ -322,7 +298,7 @@ export function ScheduleFormModal({
         ...(customTitle.trim() && type !== 'ward_visit' ? { customTitle: customTitle.trim() } : {}),
         ...(location.trim() ? { location: location.trim() } : {}),
         ...(projectId ? { projectId } : {}),
-        ...(type === 'ward_visit' ? { presidentAccompanied } : {}),
+        ...(type === 'ward_visit' ? { presidentAccompanied: state.presidentAccompanied } : {}),
       })
       onSaved()
       onClose()
@@ -410,231 +386,32 @@ export function ScheduleFormModal({
               />
             )}
 
-            {/* 협의 평의회는 CC 전체가 대상이라 스테이크 대신 CC를 고른다 */}
-            {isCcCouncil ? (
-              <Select
-                label={t('schedule.ccRegionLabel')}
-                value={ccRegionId}
-                onChange={(e) => setCcRegionId(e.target.value)}
-                options={ccRegionOptions}
-                disabled={ccRegionOptions.length === 0}
-              />
-            ) : (
-              /* Stake/District — required for ward_visit, optional for interview/meeting */
-              <Select
-                label={
-                  type === 'ward_visit' ? t('schedule.stakeLabel') : t('schedule.stakeLabelOptional')
-                }
-                value={unitId}
-                onChange={(e) => handleUnitChange(e.target.value)}
-                options={unitOptions}
-                disabled={unitSelectDisabled}
-              />
-            )}
-
-            {/* Ward — ward_visit only */}
-            {type === 'ward_visit' && (
-              <Select
-                label={t('schedule.wardLabel')}
-                value={wardName}
-                onChange={(e) => setWardName(e.target.value)}
-                options={wardOptions}
-                disabled={!unitId}
-              />
-            )}
-
-            {/* Contact target — 구조화된 대상 Select(스테이크/지방부 회장, 와드/지부 감독) + 기타(직접 입력) */}
-            {(type === 'interview' || type === 'meeting') && (
-              <>
-                {!isCcCouncil && (
-                <Select
-                  label={t('schedule.purposeLabel')}
-                  value={purpose === 'general' ? '' : purpose}
-                  placeholder={t('schedule.purposeGeneral')}
-                  onChange={(e) => {
-                    const next = (e.target.value || 'general') as 'general' | 'pre_visit'
-                    setPurpose(next)
-                    if (next === 'general') setRelatedVisitId('')
-                  }}
-                  options={[
-                    { value: 'pre_visit', label: t('schedule.purposePreVisit') },
-                  ]}
-                />
-                )}
-                {purpose === 'pre_visit' && (
-                  <>
-                    <Select
-                      label={t('schedule.relatedVisitLabel')}
-                      value={relatedVisitId}
-                      placeholder={
-                        upcomingVisits.length === 0
-                          ? t('schedule.relatedVisitNone')
-                          : t('schedule.relatedVisitPlaceholder')
-                      }
-                      onChange={(e) => {
-                        const id = e.target.value
-                        setRelatedVisitId(id)
-                        const v = upcomingVisits.find(x => x.id === id)
-                        if (v) {
-                          setUnitId(v.unitId)
-                          const wid = v.wardId ?? getWardIdByName(v.wardName)
-                          if (wid) {
-                            setTargetSelect(`ward:${wid}`)
-                            // 수동 대상 선택 경로와 동일하게 contactTargetValue/presidentUid를
-                            // 함께 채워야 노트에 (스테이크 회장이 아니라) 와드 감독 연락처가 붙는다.
-                            const options = getContactTargetOptions({ type, unitId: v.unitId, leaders, users })
-                            const opt = options.find(o => o.value === `ward:${wid}`)
-                            setPresidentUid(opt?.presidentUid ?? '')
-                            setContactTargetValue(opt?.label ?? v.wardName)
-                          }
-                        }
-                      }}
-                      options={upcomingVisits.map(v => ({
-                        value: v.id,
-                        label: t('schedule.relatedVisitOption', {
-                          date: dayjs(v.date).format('M/D(ddd)'),
-                          ward: v.wardName,
-                        }),
-                      }))}
-                      disabled={upcomingVisits.length === 0}
-                    />
-                    {relatedVisit && (
-                      <p className={styles.hint}>
-                        {t('schedule.relatedVisitRecommendedBy', {
-                          date: dayjs(relatedVisit.date).subtract(14, 'day').format('M/D'),
-                        })}
-                      </p>
-                    )}
-                  </>
-                )}
-                <Select
-                  label={t('schedule.targetLabel')}
-                  value={targetSelect}
-                  onChange={(e) => {
-                    const next = e.target.value
-                    setTargetSelect(next)
-                    const opt = contactTargetOptions.find(o => o.value === next)
-                    setPresidentUid(opt?.presidentUid ?? '')
-                    if (next === 'other') setContactTargetValue('')
-                    else setContactTargetValue(opt?.label ?? '')
-                    if (next === CC_COUNCIL_TARGET) {
-                      // 스테이크 선택은 CC 선택으로 대체된다 — 남은 값이 payload로 새어 나가지 않게 비운다
-                      setUnitId('')
-                      setWardName('')
-                      // 담당 CC가 하나뿐이면 굳이 고르게 하지 않는다
-                      setCcRegionId(ccRegionOptions.length === 1 ? ccRegionOptions[0].value : '')
-                      // 사전 준비 모임은 특정 와드 방문에 붙는 개념이라 협의 평의회에는 없다
-                      setPurpose('general')
-                      setRelatedVisitId('')
-                    } else {
-                      setCcRegionId('')
-                    }
-                  }}
-                  options={targetOptions}
-                />
-                {targetSelect === 'other' && (
-                  <Input
-                    label={t('schedule.targetFreeTextLabel')}
-                    value={contactTargetValue}
-                    onChange={(e) => setContactTargetValue(e.target.value)}
-                    placeholder={t('schedule.targetFreeTextPlaceholder')}
-                  />
-                )}
-              </>
-            )}
-
-            {type === 'ward_visit' && (
-              <label className={styles.checkRow}>
-                <input
-                  type="checkbox"
-                  checked={isSabbath}
-                  onChange={e => handleSabbathToggle(e.target.checked)}
-                  className={styles.checkbox}
-                  style={{ accentColor: 'var(--color-primary, #177C9C)' }}
-                />
-                <span className={styles.checkLabel}>{t('schedule.sabbathVisit')}</span>
-              </label>
-            )}
-
-            {type === 'ward_visit' && (
-              <label className={styles.checkRow}>
-                <input
-                  type="checkbox"
-                  checked={presidentAccompanied}
-                  onChange={e => setPresidentAccompanied(e.target.checked)}
-                  className={styles.checkbox}
-                  style={{ accentColor: 'var(--color-primary, #177C9C)' }}
-                />
-                <span className={styles.checkLabel}>{t('schedule.presidentAccompanied')}</span>
-              </label>
-            )}
-
-            <Input
-              type="date"
-              label={t('schedule.dateLabel')}
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-            {conflictingEvent && (
-              <div className={styles.conflictWarning}>
-                {t('generalSchedule.conflictWarning', { title: conflictingEvent.title })}
-              </div>
-            )}
-
-            <div className={styles.timeRow}>
-              <Input
-                type="time"
-                label={t('common.startTime')}
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-              />
-              <Input
-                type="time"
-                label={t('common.endTime')}
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-              />
-            </div>
-
-            <Input
-              label={t('schedule.locationOptional')}
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder={autoLocation ?? ''}
+            <TargetSection
+              type={type}
+              state={state}
+              onChange={applyPartial}
+              upcomingVisits={upcomingVisits}
+              unitOptions={unitOptionsForTargetSection}
+              unitSelectDisabled={unitSelectDisabled}
+              wardOptions={wardOptionsForTargetSection}
+              ccRegionOptions={ccRegionOptions}
             />
 
-            {type !== 'ward_visit' && (
-              <Input
-                label={t('schedule.customTitleOptional')}
-                value={customTitle}
-                onChange={(e) => setCustomTitle(e.target.value)}
-                placeholder={autoTitle}
-              />
-            )}
-
-            {type !== 'ward_visit' && (
-              <Input
-                label={t('schedule.zoomLinkOptional')}
-                type="url"
-                value={zoomLink}
-                onChange={(e) => setZoomLink(e.target.value)}
-                placeholder="https://zoom.us/j/..."
-              />
-            )}
-
-            <Textarea
-              label={t('schedule.notesLabelOptional')}
-              className={styles.textarea}
-              wrapperClassName={styles.fieldGroup}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t('schedule.notesLabelOptional')}
-              rows={3}
+            <WhenSection
+              type={type}
+              state={state}
+              onChange={applyPartial}
+              conflictingEvent={conflictingEvent}
             />
 
-            {(user.role === 'admin' || user.role === 'exec_secretary') && (
-              <ProjectPicker value={projectId} onChange={setProjectId} />
-            )}
+            <DetailSection
+              type={type}
+              state={state}
+              onChange={applyPartial}
+              autoTitle={autoTitle}
+              autoLocation={autoLocation}
+              canPickProject={user.role === 'admin' || user.role === 'exec_secretary'}
+            />
           </div>
 
           <div className={styles.footer}>

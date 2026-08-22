@@ -273,7 +273,20 @@
     "notesLabelOptional": "메모 (선택)",
     "locationOptional": "장소 (선택)",
     "zoomLinkOptional": "줌 링크 (선택)",
+    "zoomLinkPickerLabel": "저장된 줌 링크",
+    "zoomLinkPickerPlaceholder": "직접 입력",
+    "zoomLinkSaveBtn": "이 링크 저장",
+    "zoomLinkLabelPrompt": "링크 이름",
+    "zoomLinkLabelExample": "예: 서울동 스테이크 정기 모임",
+    "zoomLinkSaved": "줌 링크를 저장했습니다.",
+    "zoomLinkError": {
+      "invalid_url": "http(s) 주소만 저장할 수 있습니다.",
+      "duplicate": "이미 저장된 링크입니다.",
+      "empty_label": "이름을 입력해주세요.",
+      "limit_reached": "저장할 수 있는 링크는 최대 10개입니다."
+    },
     "customTitleOptional": "제목 (선택)",
+    "detailSectionLabel": "상세 정보 (선택)",
     "errorDateTimeRequired": "날짜와 시간을 입력해주세요.",
     "errorSeventyRequired": "담당 칠십인을 선택해주세요.",
     "errorStakeWardRequired": "스테이크/지방부와 와드/지부를 선택해주세요.",
@@ -326,7 +339,14 @@
     },
     "targetOptionCcCouncil": "CC 내 스테이크 회장들 (협의 평의회)",
     "ccRegionLabel": "협의 평의회 CC",
-    "errorCcRegionRequired": "협의 평의회를 진행할 CC를 선택해 주세요."
+    "errorCcRegionRequired": "협의 평의회를 진행할 CC를 선택해 주세요.",
+    "targetKindLabel": "대상 유형",
+    "targetKind": {
+      "stake_president": "스테이크/지방부 회장",
+      "ward_bishop": "와드/지부 감독",
+      "cc_council": "협의 평의회",
+      "other": "기타 (직접 입력)"
+    }
   },
   "ward": {
     "assignTitle": "와드/지부 방문 날짜 배정",
@@ -369,7 +389,14 @@
       "nameFailed": "이름을 바꾸지 못했습니다.",
       "languageTitle": "언어",
       "calendarTitle": "구글 캘린더",
-      "kakaoTitle": "카카오 캘린더"
+      "kakaoTitle": "카카오 캘린더",
+      "zoomLinksTitle": "저장된 줌 링크",
+      "zoomLinksDesc": "일정을 만들 때 고를 수 있는 개인 Zoom 링크입니다. 추가는 일정 폼에서 합니다.",
+      "zoomLinksEmpty": "저장된 링크가 없습니다.",
+      "zoomLinkRenameTitle": "이름 바꾸기",
+      "zoomLinkLabelField": "이름",
+      "zoomLinkRenamed": "이름을 바꿨습니다.",
+      "zoomLinkDeleted": "링크를 삭제했습니다."
     },
     "sharing": {
       "title": "공유",

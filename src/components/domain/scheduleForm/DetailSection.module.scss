@@ -1,0 +1,59 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.summaryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+  width: 100%;
+  min-width: 0;
+  padding: $space-3;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  background: $color-bg;
+  cursor: pointer;
+  text-align: left;
+  color: $color-text;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:hover {
+    background: $color-surface-sunken;
+  }
+}
+
+.summaryLabel {
+  flex-shrink: 0;
+}
+
+.summaryText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: $color-text-muted;
+  font-weight: $font-weight-normal;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: $color-text-muted;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  margin-top: $space-4;
+}
+
+.zoomLinkGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+// .fieldGroup/.textarea are NOT defined here — the notes Textarea imports them straight from
+// ScheduleFormModal.module.scss (see DetailSection.tsx) so there's exactly one copy of those
+// rules to keep in sync, the same pattern WhenSection.tsx already uses for its own styles.

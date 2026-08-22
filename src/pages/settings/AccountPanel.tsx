@@ -8,6 +8,7 @@ import { buildKakaoAuthUrl, disconnectKakao } from '@/services/kakaoService'
 import { CalendarBanner } from '@/pages/home/CalendarBanner'
 import { Button, Card, CardBody, CardHeader, Input, SegmentedControl } from '@/components/ui'
 import { LANGUAGES, type SupportedLang } from '@/i18n'
+import { ZoomLinksCard } from './ZoomLinksCard'
 
 /**
  * 내 계정. 스펙 §4.3 — 나에게만 영향을 주는 설정을 한 화면에 모은다.
@@ -95,6 +96,8 @@ export function AccountPanel() {
           <CalendarBanner connected={user?.calendarConnected} />
         </CardBody>
       </Card>
+
+      <ZoomLinksCard />
 
       {/* functions/src/kakaoCalendarSync.ts만 실제로 카카오 이벤트를 보낸다. 그 필터
           (kakaoTargets.ts의 filterTargetSecretaries)는 assignedSeventyUid가 스케줄의

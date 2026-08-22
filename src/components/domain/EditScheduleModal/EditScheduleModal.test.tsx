@@ -32,6 +32,11 @@ vi.mock('@/hooks/useUpcomingVisits', () => ({
 vi.mock('@/components/domain/ProjectPicker/ProjectPicker', () => ({
   ProjectPicker: () => <div data-testid="project-picker" />,
 }))
+// Zoom link picker는 useZoomLinks()(Firestore)에 의존한다 — 그 자체 동작은
+// ZoomLinkPicker.test.tsx가 고정하므로, 이 모달 테스트에서는 자리만 확인한다.
+vi.mock('@/components/domain/scheduleForm/ZoomLinkPicker', () => ({
+  ZoomLinkPicker: () => <div data-testid="zoom-link-picker" />,
+}))
 vi.mock('react-dom', () => ({
   createPortal: (node: React.ReactNode) => node,
 }))
@@ -297,5 +302,205 @@ describe('EditScheduleModal 장소 프리필', () => {
       scheduleId: 'sched-1',
       updates: expect.objectContaining({ location: '2층 회의실' }),
     }))
+  })
+})
+
+// Task 7, Step 1: 리팩터 전에 현재 코드가 실제로 보내는 updates 객체를 통째로 못박는다
+// (Controller ruling 2). 아래는 모두 objectContaining이 아니라 완전한 객체로 비교한다 —
+// 리팩터 후 새 DOM으로 옮길 때 이 객체를 그대로 재사용해 필드가 하나라도 달라지면 즉시
+// 드러나게 하기 위해서다.
+describe('EditScheduleModal payload 고정(pin-down) — Task 7', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    editSpy.mockReset()
+    editSpy.mockResolvedValue({ data: {} })
+  })
+
+  it('구역 방문 — 아무것도 건드리지 않고 저장', async () => {
+    const schedule: Schedule = {
+      id: 'sched-visit-1',
+      type: 'ward_visit',
+      seventyUid: 'seventy-1',
+      unitId: 'seoul-east-stake',
+      wardName: '녹번 와드',
+      presidentUid: null,
+      date: '2026-08-01',
+      startTime: '10:00',
+      endTime: '11:00',
+      status: 'confirmed',
+      createdBy: 'admin-uid',
+    }
+    render(<EditScheduleModal schedule={schedule} onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(editSpy).toHaveBeenCalledWith({
+      scheduleId: 'sched-visit-1',
+      updates: {
+        date: '2026-08-01',
+        startTime: '10:00',
+        endTime: '11:00',
+        notes: null,
+        unitId: 'seoul-east-stake',
+        wardName: '녹번 와드',
+        projectId: null,
+        presidentAccompanied: null,
+      },
+    })
+  })
+
+  it('접견(와드 감독 대상) — 아무것도 건드리지 않고 저장', async () => {
+    const schedule: Schedule = {
+      id: 'sched-int-ward-1',
+      type: 'interview',
+      seventyUid: 'seventy-1',
+      unitId: 'seoul-east-stake',
+      wardName: '녹번 와드',
+      targetKind: 'ward_bishop',
+      presidentUid: 'bishop-uid-1',
+      date: '2026-08-03',
+      startTime: '09:00',
+      endTime: '09:30',
+      status: 'confirmed',
+      createdBy: 'admin-uid',
+      notes: '개인 면담',
+      zoomLink: 'https://zoom.us/j/111',
+      customTitle: '감독 접견',
+      location: '스테이크 센터',
+      projectId: 'proj-1',
+      relatedVisitId: null,
+    }
+    render(<EditScheduleModal schedule={schedule} onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(editSpy).toHaveBeenCalledWith({
+      scheduleId: 'sched-int-ward-1',
+      updates: {
+        date: '2026-08-03',
+        startTime: '09:00',
+        endTime: '09:30',
+        notes: '개인 면담',
+        unitId: 'seoul-east-stake',
+        presidentUid: 'bishop-uid-1',
+        zoomLink: 'https://zoom.us/j/111',
+        customTitle: '감독 접견',
+        location: '스테이크 센터',
+        projectId: 'proj-1',
+        relatedVisitId: null,
+      },
+    })
+  })
+
+  it('접견(스테이크 회장 대상) — 선택 칸이 비어 있는 채로 저장', async () => {
+    const schedule: Schedule = {
+      id: 'sched-int-stake-1',
+      type: 'interview',
+      seventyUid: 'seventy-1',
+      unitId: 'seoul-stake',
+      targetKind: 'stake_president',
+      presidentUid: 'president-uid-1',
+      date: '2026-08-05',
+      startTime: '14:00',
+      endTime: '14:30',
+      status: 'confirmed',
+      createdBy: 'admin-uid',
+    }
+    render(<EditScheduleModal schedule={schedule} onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(editSpy).toHaveBeenCalledWith({
+      scheduleId: 'sched-int-stake-1',
+      updates: {
+        date: '2026-08-05',
+        startTime: '14:00',
+        endTime: '14:30',
+        notes: null,
+        unitId: 'seoul-stake',
+        presidentUid: 'president-uid-1',
+        zoomLink: null,
+        customTitle: null,
+        projectId: null,
+        relatedVisitId: null,
+      },
+    })
+  })
+
+  it('협의 평의회 모임 — unitId를 아예 보내지 않는다', async () => {
+    const schedule: Schedule = {
+      id: 'sched-cc-1',
+      type: 'meeting',
+      seventyUid: 'seventy-1',
+      unitId: '',
+      regionId: 'seoul-region',
+      targetKind: 'cc_council',
+      presidentUid: null,
+      date: '2026-08-07',
+      startTime: '13:00',
+      endTime: '15:00',
+      status: 'confirmed',
+      createdBy: 'admin-uid',
+      notes: 'CC 모임',
+      location: '지역 사무실',
+      zoomLink: null,
+      customTitle: '8월 CC 협의회',
+      projectId: 'proj-2',
+      relatedVisitId: undefined,
+    }
+    render(<EditScheduleModal schedule={schedule} onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(editSpy).toHaveBeenCalledWith({
+      scheduleId: 'sched-cc-1',
+      updates: {
+        date: '2026-08-07',
+        startTime: '13:00',
+        endTime: '15:00',
+        notes: 'CC 모임',
+        zoomLink: null,
+        customTitle: '8월 CC 협의회',
+        location: '지역 사무실',
+        projectId: 'proj-2',
+        relatedVisitId: null,
+      },
+    })
+  })
+
+  it('사용자가 손으로 쓴 장소가 있는 일정 — 건드리지 않고 저장해도 그대로 담긴다', async () => {
+    const schedule: Schedule = {
+      id: 'sched-loc-1',
+      type: 'meeting',
+      seventyUid: 'seventy-1',
+      unitId: 'seoul-east-stake',
+      presidentUid: null,
+      date: '2026-08-01',
+      startTime: '10:00',
+      endTime: '11:00',
+      status: 'confirmed',
+      createdBy: 'admin-uid',
+      location: '2층 회의실',
+      relatedVisitId: 'v1',
+    }
+    render(<EditScheduleModal schedule={schedule} onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(editSpy).toHaveBeenCalledWith({
+      scheduleId: 'sched-loc-1',
+      updates: {
+        date: '2026-08-01',
+        startTime: '10:00',
+        endTime: '11:00',
+        notes: null,
+        unitId: 'seoul-east-stake',
+        zoomLink: null,
+        customTitle: null,
+        location: '2층 회의실',
+        projectId: null,
+        relatedVisitId: 'v1',
+      },
+    })
   })
 })

@@ -1,0 +1,29 @@
+@use '@/styles/variables' as *;
+
+.desc {
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  margin-bottom: $space-3;
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-1;
+  border: none;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+
+  &:hover {
+    color: $color-text;
+  }
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-2;
+  margin-top: $space-3;
+}
