@@ -21,6 +21,7 @@ export interface PublicGeneralScheduleItem {
   id: string
   title: string
   date: string
+  endDate?: string   // 여러 날 행사의 종료일. 없으면 하루짜리.
   startTime?: string
   endTime?: string
   category: PublicGeneralScheduleCategory

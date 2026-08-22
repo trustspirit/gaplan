@@ -1,6 +1,6 @@
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
-import { getScopeUnitIds, getScopeDisplayName } from './regions'
+import { getScopeUnitIds, getScopeDisplayName, getScopeRegionId } from './regions'
 import { CC_COUNCIL_TARGET_KIND, isCcCouncilForScope } from './ccCouncil'
 import { generalScheduleInScope } from './generalScheduleScope'
 
@@ -26,6 +26,9 @@ interface PublicGeneralSchedule {
   id: string
   title: string
   date: string
+  // 여러 날 행사의 종료일. 이게 빠지면 ICS·구글 캘린더는 이틀로, 공개 일정표는
+  // 하루로 보여줘 같은 행사를 두 곳에서 다르게 안내하게 된다.
+  endDate?: string
   startTime?: string
   endTime?: string
   category: 'conference' | 'fasting' | 'other'
@@ -65,6 +68,8 @@ export const getPublicSchedules = onCall(
 
     let unitIds: string[] | null = null
     let scopeDisplayName: string | null = null
+    // 행사 스코프 판정은 유닛 링크에서도 그 유닛의 CC 기준으로 해야 한다.
+    let scopeRegionId: string | null = null
 
     if (scopeValue !== '__all__') {
       const unitEnabled = unitsSnap.exists && unitsSnap.data()?.[scopeValue]?.enabled === true
@@ -78,6 +83,7 @@ export const getPublicSchedules = onCall(
         throw new HttpsError('permission-denied', 'Invalid scope')
       }
       scopeDisplayName = getScopeDisplayName(scopeValue) || null
+      scopeRegionId = getScopeRegionId(scopeValue)
     }
 
     const cutoff = new Date()
@@ -152,13 +158,14 @@ export const getPublicSchedules = onCall(
     const generalSchedules: PublicGeneralSchedule[] = generalSnap.docs
       // 로그인 사용자용 관련성 판단은 isGeneralScheduleRelevant(src/types/generalSchedule.ts)를 쓴다 —
       // 이건 공개 스코프(전체 공유 vs 특정 CC 링크)에 실려야 하는지를 판단하는 별개의 규칙이다.
-      .filter((d) => generalScheduleInScope(d.data(), unitIds === null ? null : scopeValue, unitIds))
+      .filter((d) => generalScheduleInScope(d.data(), scopeRegionId, unitIds))
       .map((d) => {
         const data = d.data()
         return {
           id: d.id,
           title: data.title,
           date: data.date,
+          ...(data.endDate ? { endDate: data.endDate } : {}),
           ...(data.startTime ? { startTime: data.startTime } : {}),
           ...(data.endTime ? { endTime: data.endTime } : {}),
           category: data.category,

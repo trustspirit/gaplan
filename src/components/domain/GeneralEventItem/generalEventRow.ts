@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import type { DataListRow } from '@/components/ui'
 import type { GeneralSchedule } from '@/types'
-import { formatEventDateRange } from '@/types'
+import { formatEventDateRange, isMultiDayEvent } from '@/types'
 import { DOW_LABELS } from '@/utils/date'
 
 export interface GeneralEventRowInput {
@@ -18,7 +18,7 @@ export function toGeneralEventRow({ event, today }: GeneralEventRowInput): DataL
   const date = dayjs(event.date)
   const dow = DOW_LABELS[date.day()]
   const isPast = date.isBefore(dayjs(today), 'day')
-  const isMultiDay = !!event.endDate && event.endDate > event.date
+  const isMultiDay = isMultiDayEvent(event)
   const meta =
     event.startTime && event.endTime ? `${event.startTime} – ${event.endTime}` : undefined
 

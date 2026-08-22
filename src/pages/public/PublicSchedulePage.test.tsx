@@ -48,6 +48,15 @@ const futureGeneralItem: PublicGeneralScheduleItem = {
   isPublic: true,
 }
 
+const multiDayGeneralItem: PublicGeneralScheduleItem = {
+  id: 'gen-multiday',
+  title: '1박 2일 대회',
+  date: '2099-03-10',
+  endDate: '2099-03-11',
+  category: 'conference',
+  isPublic: true,
+}
+
 function renderPage(token: string) {
   return render(
     <MemoryRouter initialEntries={[`/public/schedule/${token}`]}>
@@ -115,5 +124,37 @@ describe('PublicSchedulePage — general event row layout', () => {
 
     const scheduleRow = screen.getByText(/unit-1/).closest(`.${styles.scheduleRow}`)
     expect(scheduleRow).not.toHaveAttribute('data-kind')
+  })
+})
+
+// 여러 날 행사가 구글 캘린더·ICS에서는 이틀로, 공개 일정표에서만 하루로 보이면
+// 같은 행사를 두 곳에서 다르게 안내하는 셈이 된다.
+describe('PublicSchedulePage — 여러 날 행사', () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+    fetchPublicSchedulePageDataMock.mockReset()
+    fetchPublicSchedulePageDataMock.mockResolvedValue({
+      schedules: [],
+      generalSchedules: [multiDayGeneralItem, futureGeneralItem],
+      scopeDisplayName: null,
+    })
+  })
+
+  it('종료일이 있으면 날짜 칸에 시작일과 종료일을 함께 보여준다', async () => {
+    renderPage('token-multiday')
+    await waitFor(() => expect(screen.getByText('1박 2일 대회')).toBeInTheDocument())
+
+    const row = screen.getByText('1박 2일 대회').closest(`.${styles.scheduleRow}`)!
+    expect(row.querySelector(`.${styles.date}`)).toHaveTextContent('3.10')
+    expect(row.querySelector(`.${styles.dateEnd}`)).toHaveTextContent('3.11')
+  })
+
+  it('하루짜리 행사는 요일만 보여주고 종료일 줄을 만들지 않는다', async () => {
+    renderPage('token-singleday')
+    await waitFor(() => expect(screen.getByText('다가올 금식')).toBeInTheDocument())
+
+    const row = screen.getByText('다가올 금식').closest(`.${styles.scheduleRow}`)!
+    expect(row.querySelector(`.${styles.dow}`)).toBeInTheDocument()
+    expect(row.querySelector(`.${styles.dateEnd}`)).toBeNull()
   })
 })

@@ -17,6 +17,7 @@ import {
   User,
 } from 'lucide-react'
 import { ALL_UNITS, WARDS } from '@/constants/regions'
+import { isMultiDayEvent } from '@/types'
 import {
   fetchPublicSchedulePageData,
   type PublicGeneralScheduleItem,
@@ -403,7 +404,16 @@ export default function PublicSchedulePage() {
                               <div className={styles.colorBar} data-type={gs.category} />
                               <div className={styles.dateCol} data-type={gs.category}>
                                 <span className={styles.date}>{gDate.format('M.D')}</span>
-                                <span className={styles.dow}>{dowLabels[gDate.day()]}</span>
+                                {/* 여러 날 행사는 좁은 날짜 칸에 요일 대신 종료일을 이어 붙인다 —
+                                    ICS·구글 캘린더에서 이틀로 보이는 행사가 여기서만
+                                    하루로 보이지 않도록. */}
+                                {isMultiDayEvent(gs) ? (
+                                  <span className={styles.dateEnd}>
+                                    –{dayjs(gs.endDate).format('M.D')}
+                                  </span>
+                                ) : (
+                                  <span className={styles.dow}>{dowLabels[gDate.day()]}</span>
+                                )}
                               </div>
                               <div className={styles.itemBody}>
                                 <span className={styles.typeBadge}>
