@@ -74,7 +74,7 @@ export function ScheduleFilterBar({
             disabled={isLastOn(kind)}
             onClick={() => toggleKind(kind)}
           >
-            {selected.has(kind) && <Check size={14} aria-hidden="true" />}
+            {selected.has(kind) && <Check size={12} aria-hidden="true" />}
             {t(`schedules.kind.${kind}`)}
           </button>
         ))}
@@ -92,6 +92,8 @@ export function ScheduleFilterBar({
             ]}
             value={regionId ?? ''}
             onChange={(e) => onRegionChange(e.target.value || null)}
+            wrapperClassName={styles.selectWrapper}
+            className={styles.select}
           />
         )}
 
@@ -101,6 +103,8 @@ export function ScheduleFilterBar({
             options={STATUSES.map((value) => ({ value, label: t(`schedules.status.${value}`) }))}
             value={status}
             onChange={(e) => onStatusChange(e.target.value as ScheduleStatusFilter)}
+            wrapperClassName={styles.selectWrapper}
+            className={styles.select}
           />
         )}
 

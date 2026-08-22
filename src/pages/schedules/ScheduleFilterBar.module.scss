@@ -23,17 +23,27 @@
 
 // 활성 표현은 배경 채움 + 글자 무게로만 (스펙 §3). 왼쪽 스트라이프도 색 막대도 없다.
 .chip {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: $space-1;
-  min-height: 44px;
-  padding: 0 $space-4;
-  border: 1px solid var(--border);
+  min-height: 32px;
+  padding: 0 $space-3;
+  // 꺼진 칩은 투명 배경 + 옅은 테두리라 1차 액션 버튼처럼 읽히지 않는다.
+  border: 1px solid color-mix(in srgb, $color-border 60%, white);
   border-radius: $border-radius-full;
-  background: var(--surface);
+  background: transparent;
   color: var(--text-muted);
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
   cursor: pointer;
+
+  // 시각 높이는 32px로 줄었지만, 탭 가능 영역은 접근성 최소치(44px)를 지킨다 —
+  // 보이지 않는 ::after로 위아래를 확장한다 (32 + 6px*2 = 44).
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -6px 0;
+  }
 
   &:disabled {
     cursor: default;
@@ -57,4 +67,19 @@
   @include mobile {
     margin-left: 0;
   }
+}
+
+// Select는 폼 안에서 쓰던 기본 크기라 필터 바에서는 커 보인다. Select 컴포넌트 자체는
+// 다른 화면들이 쓰고 있으니 고치지 않고, 여기서만 className으로 눌러 준다. 모듈 로드
+// 순서가 Select.module.scss보다 항상 뒤라는 보장이 없어 !important로 확실히 이긴다.
+.selectWrapper {
+  width: auto;
+  min-width: 0;
+}
+
+.select {
+  min-height: 32px !important;
+  padding: 0 28px 0 $space-2 !important;
+  font-size: $font-size-xs !important;
+  background-position: right $space-2 center !important;
 }
