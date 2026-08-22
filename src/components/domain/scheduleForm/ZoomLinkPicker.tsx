@@ -80,6 +80,12 @@ export function ZoomLinkPicker({ value, onChange }: ZoomLinkPickerProps) {
             label={t('schedule.zoomLinkLabelPrompt')}
             value={draftLabel}
             onChange={(e) => setDraftLabel(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                void confirmSave()
+              }
+            }}
             placeholder={t('schedule.zoomLinkLabelExample')}
           />
           <div className={styles.saveActions}>

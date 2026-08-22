@@ -1,3 +1,4 @@
+import type { FormEvent } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { AppUser } from '@/types'
@@ -93,5 +94,21 @@ describe('ZoomLinkPicker', () => {
     // assertion that ZoomLinkPicker itself has no hidden input of its own it must sync.
     render(<ZoomLinkPicker value="https://zoom.us/j/999" onChange={vi.fn()} />)
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
+  it('pressing Enter in the label field saves the link instead of submitting the surrounding form', async () => {
+    zoomLinksMock.add.mockResolvedValue({ ok: true, link: { id: '2', label: '모임B', url: 'https://zoom.us/j/999' } })
+    const onSubmit = vi.fn((e: FormEvent) => e.preventDefault())
+    render(
+      <form onSubmit={onSubmit}>
+        <ZoomLinkPicker value="https://zoom.us/j/999" onChange={vi.fn()} />
+      </form>,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'schedule.zoomLinkSaveBtn' }))
+    await userEvent.type(screen.getByLabelText('schedule.zoomLinkLabelPrompt'), '모임B{Enter}')
+
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(zoomLinksMock.add).toHaveBeenCalledWith({ label: '모임B', url: 'https://zoom.us/j/999' })
   })
 })
