@@ -10,6 +10,7 @@ import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
 import { resolveScheduleRegionId } from './scheduleRegion'
 import { buildScheduleTitle, type ScheduleTitleInput } from './scheduleTitle'
+import { buildCalendarEventFields } from './calendarEventBody'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -81,18 +82,21 @@ export const manualCalendarSync = functions
 
       const startDateTime = `${s.date}T${s.startTime}:00+09:00`
       const endDateTime = `${s.date}T${s.endTime}:00+09:00`
-      const zoomLinkValue = s.zoomLink?.trim() ?? ''
-      const description = s.notes?.trim() || undefined
+      const fields = buildCalendarEventFields({
+        location: s.location,
+        zoomLink: s.zoomLink,
+        notes: s.notes,
+      })
 
       try {
         const event = await calendar.events.insert({
           calendarId,
           requestBody: {
             summary: title,
-            ...(description ? { description } : {}),
+            ...(fields.description ? { description: fields.description } : {}),
+            ...(fields.location ? { location: fields.location } : {}),
             start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
             end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
-            ...(zoomLinkValue ? { location: zoomLinkValue } : {}),
           },
         })
         await docSnap.ref.update({ googleCalendarEventId: event.data.id })

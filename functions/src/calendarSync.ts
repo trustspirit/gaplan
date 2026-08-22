@@ -9,6 +9,7 @@ import { google } from 'googleapis'
 import { resolveScheduleRegionId } from './scheduleRegion'
 import { buildScheduleTitle } from './scheduleTitle'
 import { isBookkeepingOnlyWrite } from './bookkeepingWrite'
+import { buildCalendarEventFields } from './calendarEventBody'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -85,22 +86,24 @@ export const calendarSync = functions
     const calendar = getCalendarClient()
     const existingEventId: string | undefined = before?.googleCalendarEventId
 
-    // Use empty string to explicitly clear location in Google Calendar (undefined = omit = no change)
-    const zoomLinkValue = after.zoomLink?.trim() ?? ''
+    // 갱신 경로는 빈 문자열을 넘겨 칸을 명시적으로 지운다(undefined는 "변경 없음"이다).
+    const fields = buildCalendarEventFields({
+      location: after.location,
+      zoomLink: after.zoomLink,
+      notes: after.notes,
+    })
 
     try {
-      const description = after.notes?.trim() || undefined
-
       if (existingEventId) {
         await calendar.events.update({
           calendarId: sharedCalendarId,
           eventId: existingEventId,
           requestBody: {
             summary: title,
-            description: description ?? '',
+            description: fields.description,
+            location: fields.location,
             start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
             end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
-            location: zoomLinkValue,
           },
         })
       } else {
@@ -108,10 +111,10 @@ export const calendarSync = functions
           calendarId: sharedCalendarId,
           requestBody: {
             summary: title,
-            ...(description ? { description } : {}),
+            ...(fields.description ? { description: fields.description } : {}),
+            ...(fields.location ? { location: fields.location } : {}),
             start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
             end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
-            ...(zoomLinkValue ? { location: zoomLinkValue } : {}),
           },
         })
         await change.after.ref.update({ googleCalendarEventId: event.data.id })
