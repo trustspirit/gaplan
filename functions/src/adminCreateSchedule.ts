@@ -53,8 +53,12 @@ export const adminCreateSchedule = functions
         throw new functions.https.HttpsError('invalid-argument', 'wardName required (1-100 chars) for ward_visit')
       }
     }
-    if (type !== 'ward_visit' && wardName) {
-      throw new functions.https.HttpsError('invalid-argument', 'wardName is only allowed for ward_visit type')
+    // ward_visit이 아니어도 와드 대상 접견/모임(targetKind='ward_bishop')은 그 와드 이름을
+    // 실어 보낸다 — 제목 규칙(scheduleRules.ts)이 접견에서도 wardName을 읽기 때문이다
+    // (Controller ruling, Fix 1). 그래도 형식은 지켜야 하니 길이는 계속 검사한다.
+    if (type !== 'ward_visit' && wardName !== undefined &&
+      (typeof wardName !== 'string' || wardName.trim().length > 100)) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid wardName')
     }
     if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {
       throw new functions.https.HttpsError('invalid-argument', 'notes max 500 chars')
@@ -196,7 +200,7 @@ export const adminCreateSchedule = functions
       seventyUid,
       unitId: unitId ?? '',
       regionId: targetKind === 'cc_council' ? regionId : null,
-      wardName: (type === 'ward_visit' && wardName) ? wardName.trim() : null,
+      wardName: wardName ? wardName.trim() : null,
       presidentUid: presidentUid ?? null,
       date,
       startTime,

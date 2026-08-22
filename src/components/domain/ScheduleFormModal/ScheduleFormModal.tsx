@@ -202,12 +202,21 @@ export function ScheduleFormModal({
     { value: 'other', label: t('schedule.targetOptionOther') },
   ]
 
+  // 접견/모임에서 대상으로 특정 와드(감독)를 골랐을 때의 그 와드 한글 이름. wardId만으로는
+  // CF가 이름을 못 붙인다(functions/에는 와드 이름 테이블이 없다) — 그래서 이 이름 자체를
+  // payload에 실어 보낸다(Controller ruling, Fix 1). ward_visit의 wardName Select와는
+  // 별개 값이다 — 둘은 type이 서로 배타적이라 섞이지 않는다.
+  const targetWardId = targetSelect.startsWith('ward:') ? targetSelect.slice('ward:'.length) : ''
+  const targetWardName = targetWardId
+    ? getWardsByUnit(unitId).find((w) => w.id === targetWardId)?.name.ko
+    : undefined
+
   // 지금까지 채운 값만으로 실제 저장 시 생성될 제목·장소를 미리 보여준다
   // (customTitle/location을 사용자가 직접 채우면 placeholder는 무시된다).
   const autoParts = {
     type,
     unitName: ALL_UNITS.find((u) => u.id === unitId)?.name.ko,
-    wardName: wardName || undefined,
+    wardName: type === 'ward_visit' ? (wardName || undefined) : targetWardName,
     targetKind: targetSelect.startsWith('ward:') ? ('ward_bishop' as const)
       : targetSelect.startsWith('unit:') ? ('stake_president' as const)
       : targetSelect === CC_COUNCIL_TARGET ? ('cc_council' as const)
@@ -296,7 +305,9 @@ export function ScheduleFormModal({
         seventyUid: effectiveSeventyUid,
         ...(unitId && !isCcCouncil ? { unitId } : {}),
         ...(isCcCouncil ? { regionId: ccRegionId } : {}),
-        ...(wardName ? { wardName } : {}),
+        ...(type === 'ward_visit'
+          ? (wardName ? { wardName } : {})
+          : (targetWardName ? { wardName: targetWardName } : {})),
         ...(presidentUid && !isCcCouncil ? { presidentUid } : {}),
         ...(targetKind ? { targetKind } : {}),
         ...(wardId && !isCcCouncil ? { wardId } : {}),
