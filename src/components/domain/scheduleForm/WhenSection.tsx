@@ -70,18 +70,20 @@ export function WhenSection({ type, state, onChange, conflictingEvent }: WhenSec
         </div>
       )}
 
-      <Input
-        type="time"
-        label={t('common.startTime')}
-        value={startTime}
-        onChange={(e) => onChange({ startTime: e.target.value })}
-      />
-      <Input
-        type="time"
-        label={t('common.endTime')}
-        value={endTime}
-        onChange={(e) => onChange({ endTime: e.target.value })}
-      />
+      <div className={styles.timeRow}>
+        <Input
+          type="time"
+          label={t('common.startTime')}
+          value={startTime}
+          onChange={(e) => onChange({ startTime: e.target.value })}
+        />
+        <Input
+          type="time"
+          label={t('common.endTime')}
+          value={endTime}
+          onChange={(e) => onChange({ endTime: e.target.value })}
+        />
+      </div>
     </>
   )
 }
