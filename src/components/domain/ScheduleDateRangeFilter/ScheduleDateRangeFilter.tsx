@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { RotateCcw } from 'lucide-react'
 import { Input } from '@/components/ui'
 import type { ScheduleDateRangeSetting, DateRange } from '@/hooks/useScheduleDateRange'
 import styles from './ScheduleDateRangeFilter.module.scss'
@@ -10,15 +11,22 @@ interface Props {
   onChange: (setting: ScheduleDateRangeSetting) => void
 }
 
+/**
+ * 일정 기간 필터. 날짜 두 칸을 상시 노출하고, 지금 적용 중인 범위를 그 칸에 그대로 채운다 —
+ * 예전에는 「직접 입력」을 먼저 눌러야 칸이 나타나서 기간을 바꾸려면 두 번 눌러야 했고,
+ * 기본 기간이 실제로 어디부터 어디까지인지도 화면에 없었다.
+ * 칸을 고치는 것 자체가 직접 입력이므로, 되돌리기 버튼은 직접 입력 중일 때만 의미가 있다.
+ */
 export function ScheduleDateRangeFilter({ setting, currentRange, onChange }: Props) {
   const { t } = useTranslation()
-  const [localStart, setLocalStart] = useState(setting.customStart ?? '')
-  const [localEnd, setLocalEnd] = useState(setting.customEnd ?? '')
+  const isCustom = setting.preset === 'custom'
+  const [localStart, setLocalStart] = useState(currentRange.start)
+  const [localEnd, setLocalEnd] = useState(currentRange.end)
 
   useEffect(() => {
-    setLocalStart(setting.customStart ?? '')
-    setLocalEnd(setting.customEnd ?? '')
-  }, [setting.customStart, setting.customEnd])
+    setLocalStart(currentRange.start)
+    setLocalEnd(currentRange.end)
+  }, [currentRange.start, currentRange.end])
 
   const handleStartChange = (val: string) => {
     setLocalStart(val)
@@ -32,57 +40,33 @@ export function ScheduleDateRangeFilter({ setting, currentRange, onChange }: Pro
       onChange({ preset: 'custom', customStart: localStart, customEnd: val })
   }
 
-  const handleCustomClick = () => {
-    // Pre-fill from the current effective range when switching to custom for the first time
-    const start = localStart || currentRange.start
-    const end = localEnd || currentRange.end
-    setLocalStart(start)
-    setLocalEnd(end)
-    onChange({ preset: 'custom', customStart: start, customEnd: end })
-  }
-
   return (
     <div className={styles.filter}>
-      <div className={styles.presets}>
-        <button
-          type="button"
-          className={styles.presetBtn}
-          data-active={setting.preset === 'rolling'}
-          onClick={() => onChange({ preset: 'rolling' })}
-        >
-          {t('schedule.filterRolling')}
-        </button>
-        <button
-          type="button"
-          className={styles.presetBtn}
-          data-active={setting.preset === 'custom'}
-          onClick={handleCustomClick}
-        >
-          {t('schedule.filterCustom')}
-        </button>
+      <div className={styles.customRange}>
+        <Input
+          type="date"
+          className={styles.dateInput}
+          wrapperClassName={styles.dateField}
+          aria-label={t('schedule.filterStartDate')}
+          value={localStart}
+          onChange={e => handleStartChange(e.target.value)}
+        />
+        <span className={styles.rangeSep}>–</span>
+        <Input
+          type="date"
+          className={styles.dateInput}
+          wrapperClassName={styles.dateField}
+          aria-label={t('schedule.filterEndDate')}
+          value={localEnd}
+          onChange={e => handleEndChange(e.target.value)}
+        />
+        {isCustom && (
+          <button type="button" className={styles.resetBtn} onClick={() => onChange({ preset: 'rolling' })}>
+            <RotateCcw size={13} />
+            <span>{t('schedule.filterReset')}</span>
+          </button>
+        )}
       </div>
-
-      {setting.preset === 'custom' && (
-        <div className={styles.customRange}>
-          <Input
-            type="date"
-            className={styles.dateInput}
-            wrapperClassName={styles.dateField}
-            aria-label={t('schedule.filterStartDate', { defaultValue: '시작일' })}
-            value={localStart}
-            onChange={e => handleStartChange(e.target.value)}
-          />
-          <span className={styles.rangeSep}>–</span>
-          <Input
-            type="date"
-            className={styles.dateInput}
-            wrapperClassName={styles.dateField}
-            aria-label={t('schedule.filterEndDate', { defaultValue: '종료일' })}
-            value={localEnd}
-            onChange={e => handleEndChange(e.target.value)}
-          />
-        </div>
-      )}
     </div>
   )
 }

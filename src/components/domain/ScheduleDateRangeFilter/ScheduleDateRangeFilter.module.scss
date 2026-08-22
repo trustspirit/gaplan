@@ -11,19 +11,26 @@
   margin-bottom: $space-4;
 }
 
-.presets {
+.customRange {
   display: flex;
-  gap: $space-1;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2;
   width: 100%;
+  min-width: 0;
 
   @include mobile {
+    // 모바일에서는 날짜 두 칸을 위아래로 쌓고, 되돌리기 버튼이 그 아래 한 줄을 차지한다.
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 }
 
-.presetBtn {
+// 직접 입력 중일 때만 나타난다 — 기본 기간에서는 되돌릴 것이 없다.
+.resetBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
   padding: $space-2 $space-3;
   min-height: 36px;
   border-radius: $border-radius-full;
@@ -34,9 +41,6 @@
   color: $color-text-muted;
   cursor: pointer;
   white-space: nowrap;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   transition:
     background 0.15s,
     color 0.15s,
@@ -47,23 +51,8 @@
     color: $color-text;
   }
 
-  &[data-active='true'] {
-    background: $color-primary;
-    border-color: $color-primary;
-    color: #fff;
-  }
-}
-
-.customRange {
-  display: flex;
-  align-items: center;
-  gap: $space-2;
-  width: 100%;
-  min-width: 0;
-
   @include mobile {
-    display: grid;
-    grid-template-columns: 1fr;
+    justify-content: center;
   }
 }
 
