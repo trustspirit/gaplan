@@ -8,6 +8,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet/BottomSheet'
 import { Modal } from '@/components/ui/Modal/Modal'
 import { DeleteConfirmSheet } from '@/components/ui'
 import type { GeneralSchedule, Schedule } from '@/types'
+import { formatEventDateRange } from '@/types'
 import styles from './GeneralScheduleDetailSheet.module.scss'
 
 const CATEGORY_ICONS = {
@@ -42,8 +43,10 @@ export function GeneralScheduleDetailSheet({
   if (!event) return null
 
   const canManage = currentRole === 'admin' || event.createdBy === currentUid
-  const date = dayjs(event.date)
   const Icon = CATEGORY_ICONS[event.category]
+  // 여러 날 행사는 날짜를 범위로 보여준다(예: "9.3(수) – 9.4(목)") — GeneralEventItem과
+  // 같은 범위 조립 규칙(formatEventDateRange)을 공유한다. 하루짜리는 지금 그대로.
+  const dateLabel = formatEventDateRange(event, (d) => dayjs(d).format(t('generalSchedule.dateFormat')))
 
   const content = (
     <div className={styles.content}>
@@ -76,7 +79,7 @@ export function GeneralScheduleDetailSheet({
 
       <div className={styles.infoRow}>
         <CalendarDays size={14} className={styles.infoIcon} />
-        <span>{date.format(t('generalSchedule.dateFormat'))}</span>
+        <span>{dateLabel}</span>
       </div>
       {event.startTime && event.endTime && (
         <div className={styles.infoRow}>

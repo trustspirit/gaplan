@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { GeneralSchedule } from './generalSchedule'
-import { eventCoversDate } from './generalSchedule'
+import { eventCoversDate, formatEventDateRange } from './generalSchedule'
 
 function gs(partial: Partial<GeneralSchedule> = {}): GeneralSchedule {
   return {
@@ -48,5 +48,28 @@ describe('eventCoversDate', () => {
     const event = gs({ date: '2026-09-03', endDate: '2026-09-01' })
     expect(eventCoversDate(event, '2026-09-03')).toBe(true)
     expect(eventCoversDate(event, '2026-09-01')).toBe(false)
+  })
+})
+
+// event-toast-and-multiday brief §2-5: GeneralEventItem과 GeneralScheduleDetailSheet가
+// 각자 범위 문자열을 만들지 않도록, 그 조립 규칙을 한 곳에 둔다. 실제 날짜 포맷은
+// 소비처가 넘기는 formatDay 콜백이 정한다(리스트는 "M.D(dow)", 상세 시트는 i18n
+// dateFormat을 쓰는 등 서로 다르므로).
+describe('formatEventDateRange', () => {
+  it('하루짜리 행사는 시작일 하나만 포맷한다', () => {
+    const event = gs({ date: '2026-09-03' })
+    expect(formatEventDateRange(event, (d) => d)).toBe('2026-09-03')
+  })
+
+  it('여러 날 행사는 시작일과 종료일을 en dash로 잇는다', () => {
+    const event = gs({ date: '2026-09-03', endDate: '2026-09-04' })
+    expect(formatEventDateRange(event, (d) => d)).toBe('2026-09-03 – 2026-09-04')
+  })
+
+  it('endDate가 date보다 이르거나 같으면(깨진 데이터·동일값) 시작일 하나만 포맷한다', () => {
+    const broken = gs({ date: '2026-09-03', endDate: '2026-09-01' })
+    expect(formatEventDateRange(broken, (d) => d)).toBe('2026-09-03')
+    const same = gs({ date: '2026-09-03', endDate: '2026-09-03' })
+    expect(formatEventDateRange(same, (d) => d)).toBe('2026-09-03')
   })
 })
