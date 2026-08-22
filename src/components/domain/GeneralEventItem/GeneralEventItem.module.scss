@@ -1,11 +1,6 @@
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
-// used by .attendBtn below, which keeps a fixed accent regardless of the
-// event's own category (pre-existing behaviour, unchanged by this refactor)
-$conference-bg: #fef3c7;
-$conference-bar: #f59e0b;
-
 .typeBadge {
   display: inline-flex;
   align-items: center;
@@ -36,41 +31,5 @@ $conference-bar: #f59e0b;
 
   &.hidden {
     color: $color-text-light;
-  }
-}
-
-.attendBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  align-self: center;
-  flex-shrink: 0;
-  padding: 5px $space-3;
-  border: 1px solid $conference-bar;
-  border-radius: $border-radius-full;
-  background: transparent;
-  color: $conference-bar;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  cursor: pointer;
-  white-space: nowrap;
-  min-height: 32px;
-
-  &:hover {
-    background: $conference-bg;
-  }
-
-  &.attending {
-    background: $conference-bar;
-    color: #fff;
-    border-color: $conference-bar;
-    &:hover {
-      opacity: 0.85;
-    }
-  }
-
-  @include mobile {
-    padding: 6px $space-3;
-    min-height: 36px;
   }
 }

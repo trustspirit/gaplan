@@ -619,9 +619,6 @@
     "saveBtn": "저장",
     "deleteBtn": "삭제",
     "deleteConfirm": "이 행사 일정을 삭제할까요?",
-    "attend": "참석하기",
-    "cancelAttend": "참석 취소",
-    "attending": "참석 중",
     "attendees": "참석자 {{count}}명",
     "noAttendees": "참석자 없음",
     "titleLabel": "제목",
@@ -638,8 +635,6 @@
     },
     "conflictWarning": "이 날짜에 '{{title}}' 행사가 있습니다. 일정을 추가해도 됩니다.",
     "empty": "등록된 행사 일정이 없습니다.",
-    "attendSuccess": "참석이 등록되었습니다.",
-    "cancelSuccess": "참석이 취소되었습니다.",
     "savedSuccess": "행사 일정이 저장되었습니다.",
     "deletedSuccess": "행사 일정이 삭제되었습니다.",
     "showToPublic": "공개 페이지에 표시",
@@ -651,8 +646,6 @@
     "public": "공개",
     "private": "비공개",
     "dateFormat": "YYYY년 M월 D일 (ddd)",
-    "attendFailed": "참석 등록에 실패했습니다.",
-    "cancelFailed": "참석 취소에 실패했습니다.",
     "visibilityFailed": "공개 설정 변경에 실패했습니다."
   },
   "kakao": {

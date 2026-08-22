@@ -619,9 +619,6 @@
     "saveBtn": "Save",
     "deleteBtn": "Delete",
     "deleteConfirm": "Delete this event?",
-    "attend": "Attend",
-    "cancelAttend": "Cancel Attendance",
-    "attending": "Attending",
     "attendees": "{{count}} attendees",
     "noAttendees": "No attendees",
     "titleLabel": "Title",
@@ -638,8 +635,6 @@
     },
     "conflictWarning": "There is '{{title}}' on this date. You can still add a schedule.",
     "empty": "No events scheduled.",
-    "attendSuccess": "Attendance registered.",
-    "cancelSuccess": "Attendance cancelled.",
     "savedSuccess": "Event saved.",
     "deletedSuccess": "Event deleted.",
     "showToPublic": "Show on public page",
@@ -651,8 +646,6 @@
     "public": "Public",
     "private": "Private",
     "dateFormat": "MMM D, YYYY (ddd)",
-    "attendFailed": "Failed to register attendance.",
-    "cancelFailed": "Failed to cancel attendance.",
     "visibilityFailed": "Failed to change visibility."
   },
   "kakao": {
