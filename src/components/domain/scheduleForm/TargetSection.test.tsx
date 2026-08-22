@@ -256,4 +256,54 @@ describe('TargetSection', () => {
       target: { kind: 'ward_bishop', unitId: 'seoul-stake', wardName: '녹번 와드', ccRegionId: '', freeText: '' },
     })
   })
+
+  // Task 8: 이 계획이 없앤 결함(아래→위 역방향 쓰기)이 돌아오는 것을 못박는다.
+  // 판정 기준은 "렌더된 값"이다 — 핸들러가 불렸는지가 아니라 화면에 보이는 select의
+  // value가 그대로인지를 본다. cc_council로 바꿀 때 목적·관련 방문을 지우는 것(R3)은
+  // 의미상 예외이므로 이 테스트들에서는 일부러 피한다.
+  it('스테이크를 바꿔도 대상 유형 선택은 바뀌지 않는다', async () => {
+    renderSection({ type: 'interview' })
+    await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'stake_president')
+    await userEvent.selectOptions(screen.getByLabelText('schedule.stakeLabel'), 'seoul-east-stake')
+
+    const kindBefore = (screen.getByLabelText('schedule.targetKindLabel') as HTMLSelectElement).value
+
+    // 아래쪽(스테이크)을 다시 바꾼다
+    await userEvent.selectOptions(screen.getByLabelText('schedule.stakeLabel'), 'seoul-stake')
+
+    expect((screen.getByLabelText('schedule.targetKindLabel') as HTMLSelectElement).value).toBe(kindBefore)
+  })
+
+  it('와드를 바꿔도 스테이크 선택은 바뀌지 않는다', async () => {
+    renderSection({ type: 'interview' })
+    await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'ward_bishop')
+    await userEvent.selectOptions(screen.getByLabelText('schedule.stakeLabel'), 'seoul-east-stake')
+    await userEvent.selectOptions(screen.getByLabelText('schedule.wardLabel'), '녹번 와드')
+
+    const stakeBefore = (screen.getByLabelText('schedule.stakeLabel') as HTMLSelectElement).value
+
+    // 아래쪽(와드)을 다시 바꾼다
+    await userEvent.selectOptions(screen.getByLabelText('schedule.wardLabel'), '교문 와드')
+
+    expect((screen.getByLabelText('schedule.stakeLabel') as HTMLSelectElement).value).toBe(stakeBefore)
+  })
+
+  // 대상 유형(target.kind)은 목적·관련 방문보다 아래에 있다. 유형을 바꿔 그 아래 칸이
+  // 새로 갈리더라도, 이미 위에서 골라둔 목적·관련 방문은 그대로여야 한다 — 예전 폼의
+  // 결함은 정확히 이 방향(협의 평의회를 고르면 위쪽 스테이크가 사라짐)이었다.
+  it('대상 유형을 바꿔도 위쪽의 목적·관련 방문 선택은 바뀌지 않는다', async () => {
+    const visits: UpcomingVisit[] = [
+      { id: 'v1', date: '2026-08-01', wardName: '녹번 와드', unitId: 'seoul-stake', wardId: 'seoul-nokbeon' },
+    ]
+    renderSection({ type: 'meeting', purpose: 'pre_visit', relatedVisitId: 'v1', upcomingVisits: visits })
+
+    await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'ward_bishop')
+    expect((screen.getByLabelText('schedule.purposeLabel') as HTMLSelectElement).value).toBe('pre_visit')
+    expect((screen.getByLabelText('schedule.relatedVisitLabel') as HTMLSelectElement).value).toBe('v1')
+
+    // 유형을 한 번 더 바꾼다 — 여전히 협의 평의회가 아니다
+    await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'other')
+    expect((screen.getByLabelText('schedule.purposeLabel') as HTMLSelectElement).value).toBe('pre_visit')
+    expect((screen.getByLabelText('schedule.relatedVisitLabel') as HTMLSelectElement).value).toBe('v1')
+  })
 })
