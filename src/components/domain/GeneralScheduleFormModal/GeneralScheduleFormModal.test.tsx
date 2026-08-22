@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import React from 'react'
 import type { AppUser } from '@/types'
 
@@ -110,6 +110,114 @@ describe('GeneralScheduleFormModal 뒤로 가기', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'common.back' }))
     expect(onBack).toHaveBeenCalled()
+    confirmSpy.mockRestore()
+  })
+})
+
+// event-toast-and-multiday brief §2-4: 행사는 1박 2일 등 여러 날에 걸칠 수 있다 —
+// 종료일(선택) 입력을 추가하고, dirty 판정·검증·저장 payload에 반영한다.
+describe('GeneralScheduleFormModal 여러 날 행사(종료일)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.currentUser = {
+      uid: 'test-uid',
+      email: 'test@test.com',
+      role: 'seventy',
+      name: '테스트',
+      regionId: 'seoul',
+      createdAt: '2026-01-01',
+    }
+  })
+
+  it('종료일(선택) 입력칸이 있다', () => {
+    render(<GeneralScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.getByLabelText('generalSchedule.endDateLabel')).toBeInTheDocument()
+  })
+
+  it('종료일을 채우고 저장하면 payload에 endDate가 실린다', async () => {
+    const { createGeneralSchedule } = await import('@/services/generalScheduleService')
+    render(<GeneralScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), {
+      target: { value: '수련회' },
+    })
+    fireEvent.change(screen.getByLabelText('generalSchedule.dateLabel'), {
+      target: { value: '2026-09-03' },
+    })
+    fireEvent.change(screen.getByLabelText('generalSchedule.endDateLabel'), {
+      target: { value: '2026-09-04' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
+
+    await waitFor(() =>
+      expect(createGeneralSchedule).toHaveBeenCalledWith(
+        expect.objectContaining({ endDate: '2026-09-04' }),
+      ),
+    )
+  })
+
+  // stripUndefined(generalScheduleService.ts)가 undefined 필드를 Firestore에 쓰기
+  // 전에 걷어낸다 — 여기서는 모달이 빈 문자열이 아니라 undefined를 실어 보내는지만
+  // 확인한다(startTime/endTime/description과 같은 기존 관례).
+  it('종료일을 비워 두면 payload의 endDate가 undefined다(빈 문자열이 아니다)', async () => {
+    const { createGeneralSchedule } = await import('@/services/generalScheduleService')
+    render(<GeneralScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), {
+      target: { value: '금식 주일' },
+    })
+    fireEvent.change(screen.getByLabelText('generalSchedule.dateLabel'), {
+      target: { value: '2026-09-06' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
+
+    await waitFor(() => expect(createGeneralSchedule).toHaveBeenCalled())
+    expect(vi.mocked(createGeneralSchedule).mock.calls[0][0].endDate).toBeUndefined()
+  })
+
+  it('종료일이 시작일보다 빠르면 저장을 막고 오류를 보여준다', async () => {
+    const { createGeneralSchedule } = await import('@/services/generalScheduleService')
+    render(<GeneralScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), {
+      target: { value: '수련회' },
+    })
+    fireEvent.change(screen.getByLabelText('generalSchedule.dateLabel'), {
+      target: { value: '2026-09-03' },
+    })
+    fireEvent.change(screen.getByLabelText('generalSchedule.endDateLabel'), {
+      target: { value: '2026-09-01' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
+
+    expect(await screen.findByText('generalSchedule.errorEndDateBeforeStart')).toBeInTheDocument()
+    expect(createGeneralSchedule).not.toHaveBeenCalled()
+  })
+
+  it('종료일만 고치고 닫으려 하면 dirty 확인을 묻는다', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const onClose = vi.fn()
+    render(
+      <GeneralScheduleFormModal
+        initialData={{
+          id: 'g1',
+          title: '수련회',
+          date: '2026-09-03',
+          category: 'conference',
+          createdBy: 'admin',
+          createdAt: '2026-08-01',
+          isPublic: false,
+        }}
+        onClose={onClose}
+        onSaved={vi.fn()}
+      />,
+    )
+    fireEvent.change(screen.getByLabelText('generalSchedule.endDateLabel'), {
+      target: { value: '2026-09-04' },
+    })
+    fireEvent.click(screen.getByLabelText('common.close'))
+    expect(confirmSpy).toHaveBeenCalledWith('common.discardChanges')
+    expect(onClose).toHaveBeenCalled()
     confirmSpy.mockRestore()
   })
 })

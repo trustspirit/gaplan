@@ -38,6 +38,7 @@ export function GeneralScheduleFormModal({
 
   const [title, setTitle]             = useState(initialData?.title ?? '')
   const [date, setDate]               = useState(initialData?.date ?? initialDate ?? '')
+  const [endDate, setEndDate]         = useState(initialData?.endDate ?? '')
   const [category, setCategory]       = useState<GeneralScheduleCategory>(initialData?.category ?? 'conference')
   const [startTime, setStartTime]     = useState(initialData?.startTime ?? '')
   const [endTime, setEndTime]         = useState(initialData?.endTime ?? '')
@@ -62,6 +63,7 @@ export function GeneralScheduleFormModal({
   const isDirty =
     title !== (initialData?.title ?? '') ||
     date !== (initialData?.date ?? initialDate ?? '') ||
+    endDate !== (initialData?.endDate ?? '') ||
     category !== (initialData?.category ?? 'conference') ||
     startTime !== (initialData?.startTime ?? '') ||
     endTime !== (initialData?.endTime ?? '') ||
@@ -95,12 +97,17 @@ export function GeneralScheduleFormModal({
       setError(t('admin.scheduleTimeError'))
       return
     }
+    if (endDate && endDate < date) {
+      setError(t('generalSchedule.errorEndDateBeforeStart'))
+      return
+    }
     setSaving(true)
     setError(null)
     try {
       const payload = {
         title:       title.trim(),
         date,
+        endDate:     endDate || undefined,
         category,
         startTime:   startTime || undefined,
         endTime:     endTime || undefined,
@@ -167,6 +174,12 @@ export function GeneralScheduleFormModal({
             value={date}
             onChange={e => setDate(e.target.value)}
             required
+          />
+          <Input
+            label={t('generalSchedule.endDateLabel')}
+            type="date"
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
           />
           <Select
             label={t('generalSchedule.categoryLabel')}
