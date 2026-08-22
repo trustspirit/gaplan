@@ -261,18 +261,15 @@ describe('ScheduleFormModal 담당 칠십인 범위', () => {
     })
   })
 
-  // KNOWN REGRESSION (see Task 6 report): the old modal disabled the stake/district
-  // select until the assigned seventy's region scope had loaded, so the dropdown
-  // never offered out-of-scope units. TargetSection (Task 3) builds its unit list
-  // from ALL_UNITS unconditionally and has no seventy-scoping input or `disabled`
-  // concept for it — that guard is gone post-refactor. Fixing it means editing
-  // TargetSection.tsx, which is outside Task 6's file scope (ScheduleFormModal.*
-  // only). This test documents the current (regressed) behaviour.
-  it('스테이크/지방부 select에 더 이상 담당 칠십인 범위 제한이 걸리지 않는다 (회귀 — 후속 필요)', async () => {
+  // Controller ruling R2 (2026-08-22): restored — the modal computes the scoped
+  // unit list/disabled state (unitPool/unitSelectDisabled, moved back from the
+  // pre-refactor ScheduleFormModal) and passes it into TargetSection as
+  // read-only data. While the assigned seventy's record hasn't loaded yet, the
+  // stake/district select must stay disabled so it never briefly offers
+  // out-of-scope units.
+  it('담당 칠십인 지역 정보가 로딩되기 전에는 전체 단위를 열지 않는다', () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    fireEvent.click(screen.getByText('schedule.type.interview'))
-    await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'ward_bishop')
-    expect(screen.getByLabelText('schedule.stakeLabel')).not.toBeDisabled()
+    expect(screen.getByLabelText('schedule.stakeLabel')).toBeDisabled()
   })
 })
 
@@ -300,15 +297,17 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
     }
     mocks.users = [SEVENTY_USER, MOCK_PRESIDENT_USER]
     vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
-      leaders: [MOCK_STAKE_PRESIDENT, MOCK_LEADER_BISHOP],
+      leaders: [MOCK_STAKE_PRESIDENT, MOCK_LEADER_BISHOP, MOCK_GYOMUN_BISHOP],
       loading: false,
       getLeaderByUnitName: vi.fn().mockReturnValue(undefined),
     })
   })
 
+  // 날짜를 pin-down 원본(commit d033e2e)과 맞춘다 — 아래 exact-payload 테스트들이 그
+  // 원본이 캡처한 payload와 한 글자도 다르지 않게 비교할 수 있도록.
   function fillDateTime() {
     fireEvent.change(screen.getByLabelText('schedule.dateLabel'), {
-      target: { value: '2026-07-10' },
+      target: { value: '2026-09-01' },
     })
     fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
     fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
@@ -349,6 +348,11 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
   // send the ward's Korean name itself for a ward-bishop target — not just wardId.
   // End to end: target picked in the form → payload carries wardName → the shared
   // title rule renders the specced "<와드> 감독 접견" (not the old unit-only fallback).
+  //
+  // Controller ruling R1 (2026-08-22): this is the payload-level replacement for the
+  // retired pin-down case "interview with a ward target" (commit d033e2e) — same
+  // exact payload object, driven through the new (post-Task-3) DOM instead of the
+  // old compound "대상" select, which no longer exists.
   it('와드 감독 접견 대상을 고르면 payload에 wardName이 실리고, 그 payload로 접견 제목이 와드를 밝힌다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     expandDetails()
@@ -377,17 +381,30 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
     fireEvent.click(screen.getByText('schedule.saveBtn'))
 
     await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    const payload = createSpy.mock.calls[0][0]
-    expect(payload).toMatchObject({
+    // Exact match — same payload the retired pin-down test captured from the
+    // original code (commit d033e2e, "interview with a ward target").
+    expect(createSpy).toHaveBeenCalledWith({
       type: 'interview',
+      seventyUid: 'test-uid',
+      unitId: 'seoul-east-stake',
+      wardName: '교문 와드',
       targetKind: 'ward_bishop',
       wardId: 'seoul-east-gyomun',
-      wardName: '교문 와드',
+      date: '2026-09-01',
+      startTime: '10:00',
+      endTime: '11:00',
+      notes: '감독: 김교문 (010-2222-3333)',
     })
+    const payload = createSpy.mock.calls[0][0]
     expect(buildScheduleTitle({ ...payload, unitName: '서울동 스테이크' })).toBe('교문 와드 감독 접견')
   })
 
-  it('스테이크 대상 선택 시 targetKind=stake_president, presidentUid를 payload에 포함한다', async () => {
+  // Controller ruling R1: payload-level replacement for the retired pin-down case
+  // "interview with a stake target" (commit d033e2e) — same exact payload, driven
+  // through the new DOM. Also verifies the unitNameKo mapping this task added (see
+  // task-6-report.md) — that stake_president notes come from ALL_UNITS, not a
+  // stale selectedContactTarget label.
+  it('스테이크 대상 선택 시 targetKind=stake_president, presidentUid를 payload에 포함하고 회장 연락처를 노트에 남긴다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
 
     fireEvent.click(screen.getByText('schedule.type.interview'))
@@ -402,40 +419,25 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
     fireEvent.click(screen.getByText('schedule.saveBtn'))
 
     await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'interview',
-        targetKind: 'stake_president',
-        unitId: 'seoul-stake',
-        presidentUid: 'president-uid',
-      }),
-    )
-    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('wardId')
+    expect(createSpy).toHaveBeenCalledWith({
+      type: 'interview',
+      seventyUid: 'test-uid',
+      unitId: 'seoul-stake',
+      presidentUid: 'president-uid',
+      targetKind: 'stake_president',
+      date: '2026-09-01',
+      startTime: '10:00',
+      endTime: '11:00',
+      notes: '스테이크 회장: 홍길동 (010-1111-2222)',
+    })
   })
 
-  // stake_president는 old modal의 selectedContactTarget?.unitNameKo와 같은 값(그 스테이크의
-  // 한글 이름)을 노트 연락처 첨부에 써야 한다 — 새 target 모델은 unitId만 들고 있으므로
-  // ALL_UNITS에서 그 이름을 다시 찾아야 한다(Task 6 report의 unitNameKo 매핑 참고).
-  it('스테이크 대상을 고르면 그 스테이크 회장 연락처가 노트에 붙는다', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-
-    fireEvent.click(screen.getByText('schedule.type.interview'))
-    fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), {
-      target: { value: 'stake_president' },
-    })
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabel'), {
-      target: { value: 'seoul-stake' },
-    })
-
-    fillDateTime()
-    fireEvent.click(screen.getByText('schedule.saveBtn'))
-
-    await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy.mock.calls[0][0].notes).toBe('스테이크 회장: 홍길동 (010-1111-2222)')
-  })
-
+  // Controller ruling R1: payload-level replacement for the retired pin-down case
+  // "a free-text target (other)" (commit d033e2e) — same exact payload (including
+  // the two-line "대상: <name>\n<notes>" concatenation), driven through the new DOM.
   it('스테이크/지방부를 선택하지 않아도(옵션널) 대상을 기타로 직접 입력하면 저장할 수 있다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    expandDetails()
 
     fireEvent.click(screen.getByText('schedule.type.interview'))
     // No stake/unit selected — 대상 유형만 '기타'로 고른다
@@ -443,17 +445,23 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
     fireEvent.change(screen.getByLabelText('schedule.targetFreeTextLabel'), {
       target: { value: '홍길순' },
     })
+    fireEvent.change(screen.getByLabelText('schedule.notesLabelOptional'), {
+      target: { value: '개인 상담 필요' },
+    })
 
     fillDateTime()
     fireEvent.click(screen.getByText('schedule.saveBtn'))
 
     await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'interview',
-        targetKind: 'other',
-      }),
-    )
+    expect(createSpy).toHaveBeenCalledWith({
+      type: 'interview',
+      seventyUid: 'test-uid',
+      targetKind: 'other',
+      date: '2026-09-01',
+      startTime: '10:00',
+      endTime: '11:00',
+      notes: '대상: 홍길순\n개인 상담 필요',
+    })
     expect(createSpy.mock.calls[0][0]).not.toHaveProperty('unitId')
   })
 
@@ -505,7 +513,7 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
     }
     mocks.users = [SEVENTY_USER, MOCK_PRESIDENT_USER]
     vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
-      leaders: [MOCK_STAKE_PRESIDENT, MOCK_LEADER_BISHOP],
+      leaders: [MOCK_STAKE_PRESIDENT, MOCK_LEADER_BISHOP, MOCK_GYOMUN_BISHOP],
       loading: false,
       getLeaderByUnitName: vi.fn().mockReturnValue(undefined),
     })
@@ -542,6 +550,9 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
     expect(createSpy).not.toHaveBeenCalled()
   })
 
+  // Controller ruling R1 (2026-08-22): payload-level replacement for the retired
+  // pin-down case "a pre-visit meeting" (commit d033e2e) — same exact payload,
+  // driven through the new DOM (purpose + related-visit selection, same as before).
   it('대상 방문을 고르면 relatedVisitId를 payload에 포함한다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.meeting'))
@@ -556,14 +567,19 @@ describe('ScheduleFormModal 사전 모임 목적', () => {
     fireEvent.click(screen.getByText('schedule.saveBtn'))
 
     await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'meeting',
-        relatedVisitId: 'v1',
-        targetKind: 'ward_bishop',
-        wardId: 'seoul-east-gyomun',
-      }),
-    )
+    expect(createSpy).toHaveBeenCalledWith({
+      type: 'meeting',
+      seventyUid: 'test-uid',
+      unitId: 'seoul-east-stake',
+      wardName: '교문 와드',
+      targetKind: 'ward_bishop',
+      wardId: 'seoul-east-gyomun',
+      relatedVisitId: 'v1',
+      date: dates.beforeVisit,
+      startTime: '10:00',
+      endTime: '11:00',
+      notes: '감독: 김교문 (010-2222-3333)',
+    })
   })
 
   it('일반 목적이면 relatedVisitId 없이 저장된다', async () => {
@@ -720,9 +736,10 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
     })
   })
 
+  // 날짜를 pin-down 원본(commit d033e2e, "meeting with cc_council")과 맞춘다.
   function fillDateTime() {
     fireEvent.change(screen.getByLabelText('schedule.dateLabel'), {
-      target: { value: '2026-07-10' },
+      target: { value: '2026-09-01' },
     })
     fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
     fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
@@ -763,12 +780,8 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
     expect(Array.from(ccSelect.options).map((o) => o.value)).toEqual(
       expect.arrayContaining(['seoul', 'busan']),
     )
-    // KNOWN REGRESSION (see Task 6 report): the old modal scoped this list to the
-    // seventy's assigned regions ("담당하지 않는 CC는 고를 수 없다"). TargetSection
-    // (Task 3) lists every REGIONS entry unconditionally and has no scoping input
-    // for it — fixing it means editing TargetSection.tsx, outside Task 6's file
-    // scope. This assertion documents the current (regressed) behaviour.
-    expect(Array.from(ccSelect.options).map((o) => o.value)).toContain('seoul-south')
+    // 담당하지 않는 CC는 고를 수 없다 (Controller ruling R2 — restored)
+    expect(Array.from(ccSelect.options).map((o) => o.value)).not.toContain('seoul-south')
   })
 
   it('CC를 고르지 않으면 저장을 막는다', async () => {
@@ -780,6 +793,9 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
     expect(createSpy).not.toHaveBeenCalled()
   })
 
+  // Controller ruling R1 (2026-08-22): payload-level replacement for the retired
+  // pin-down case "meeting with cc_council sends regionId, not unitId" (commit
+  // d033e2e) — same exact payload, driven through the new DOM.
   it('regionId와 cc_council을 보내고 unitId는 보내지 않는다', async () => {
     openCcCouncilForm()
     fireEvent.change(screen.getByLabelText('schedule.ccRegionLabel'), {
@@ -789,18 +805,26 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
     fireEvent.click(screen.getByText('schedule.saveBtn'))
 
     await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    const payload = createSpy.mock.calls[0][0]
-    expect(payload).toMatchObject({ type: 'meeting', targetKind: 'cc_council', regionId: 'busan' })
-    expect(payload).not.toHaveProperty('unitId')
-    expect(payload).not.toHaveProperty('wardId')
+    expect(createSpy).toHaveBeenCalledWith({
+      type: 'meeting',
+      seventyUid: 'test-uid',
+      regionId: 'busan',
+      targetKind: 'cc_council',
+      date: '2026-09-01',
+      startTime: '10:00',
+      endTime: '11:00',
+    })
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('unitId')
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('wardId')
   })
 
-  // 스테이크를 먼저 고른 뒤 협의 평의회로 바꾸면 남은 unitId가 payload로 새어 나가면 안 된다
+  // 스테이크를 먼저 고른 뒤 협의 평의회로 바꾸면 남은 unitId가 payload로 새어 나가면 안 된다.
+  // (모임은 스테이크 회장 대상을 제공하지 않으므로(R4) 여기서는 ward_bishop으로 unitId를 채운다.)
   it('스테이크를 골랐다가 협의 평의회로 바꿔도 unitId가 남지 않는다', async () => {
     render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.type.meeting'))
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), {
-      target: { value: 'stake_president' },
+      target: { value: 'ward_bishop' },
     })
     fireEvent.change(screen.getByLabelText('schedule.stakeLabel'), {
       target: { value: 'seoul-stake' },
@@ -818,24 +842,39 @@ describe('ScheduleFormModal 협의 평의회(CCM)', () => {
     expect(createSpy.mock.calls[0][0]).not.toHaveProperty('unitId')
   })
 
-  // Task 3의 의도적 설계 변경(대상 유형은 그 위 칸(목적/대상 방문)을 절대 건드리지 않는다,
-  // task-3-report.md "이 계획이 존재하는 이유" 참고): 예전 모달은 협의 평의회를 고르면
-  // 목적 select를 통째로 숨겼지만, 그 가드는 Task 3에서 의도적으로 없앴다. 이 테스트는
-  // 그 새 의도를 확인한다 — 예전 동작(가드 있음)을 다시 넣는 게 아니다.
-  it('협의 평의회를 골라도 목적(사전 모임) 선택은 그대로 남아 있다 — 대상 유형이 위쪽 칸을 바꾸지 않는다', () => {
+  it('협의 평의회에는 사전 준비 모임 목적을 노출하지 않는다', () => {
     openCcCouncilForm()
-    expect(screen.getByLabelText('schedule.purposeLabel')).toBeInTheDocument()
+    expect(screen.queryByLabelText('schedule.purposeLabel')).not.toBeInTheDocument()
+  })
+
+  // Controller ruling R4 (2026-08-22): 스테이크/지방부 회장 대상은 접견에만 있다 —
+  // CF가 한 번도 받아본 적 없는 `type: 'meeting'` + `targetKind: 'stake_president'`
+  // 조합을 이 리팩터가 새로 열면 안 된다.
+  it('모임 대상 유형에는 스테이크/지방부 회장이 없다', () => {
+    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.type.meeting'))
+    const kindSelect = screen.getByLabelText('schedule.targetKindLabel') as HTMLSelectElement
+    expect(Array.from(kindSelect.options).map((o) => o.value)).not.toContain('stake_president')
   })
 })
 
 // ---------------------------------------------------------------------------
-// PIN-DOWN TESTS (Task 6, Step 1) — DO NOT EDIT AFTER THIS POINT.
+// PIN-DOWN TEST (Task 6, Step 1) — DO NOT EDIT.
 //
-// These capture the *current* adminCreateSchedule payload byte-for-byte, before
-// ScheduleFormModal is rebuilt on top of useScheduleForm/TargetSection/WhenSection/
-// DetailSection. They must pass unmodified both before and after the refactor.
-// If the refactor makes one of these fail, the refactor changed behaviour — fix the
-// refactor, never this block.
+// Originally 6 cases, captured byte-for-byte from the pre-refactor code and
+// committed alone in d033e2e. Controller ruling R1 (2026-08-22): 5 of the 6
+// drove the old modal's single compound "대상" select (`schedule.targetLabel`,
+// values like `ward:<id>`/`unit:<id>`), which Task 3's TargetSection — already
+// committed before this task started — retired by design (a target-kind select
+// plus separate concrete pickers replaced it). Those 5 could never survive the
+// refactor unedited; querying a DOM that no longer exists isn't a test that can
+// stay frozen. Per the controller: delete them here, but their payload
+// expectations are not lost — they now live as exact-match assertions in the
+// rewritten tests below (each commented "Controller ruling R1... payload-level
+// replacement for the retired pin-down case ..."), verified against the exact
+// objects this block captured in d033e2e. Only this one case survives unedited,
+// because ward_visit's stake/ward fields happen to use the same labels/values
+// before and after Task 3.
 // ---------------------------------------------------------------------------
 describe('ScheduleFormModal 핀다운: adminCreateSchedule payload 계약', () => {
   const SEVENTY_USER: AppUser = {
@@ -844,15 +883,6 @@ describe('ScheduleFormModal 핀다운: adminCreateSchedule payload 계약', () =
     name: '테스트',
     role: 'seventy',
     regionId: 'seoul',
-    createdAt: '2026-01-01',
-  }
-
-  const CC_SEVENTY_USER: AppUser = {
-    uid: 'test-uid',
-    email: 'test@test.com',
-    name: '테스트',
-    role: 'seventy',
-    regionIds: ['seoul', 'busan'],
     createdAt: '2026-01-01',
   }
 
@@ -908,157 +938,6 @@ describe('ScheduleFormModal 핀다운: adminCreateSchedule payload 계약', () =
       endTime: '11:00',
       notes: '스테이크 회장: 홍길동 (010-1111-2222)',
       presidentAccompanied: false,
-    })
-  })
-
-  it('interview with a ward target (ward: -> targetKind ward_bishop, wardId + wardName)', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-
-    fireEvent.click(screen.getByText('schedule.type.interview'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
-      target: { value: 'seoul-east-stake' },
-    })
-    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
-      target: { value: 'ward:seoul-east-gyomun' },
-    })
-    fillDateTime()
-    fireEvent.click(screen.getByText('schedule.saveBtn'))
-
-    await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy).toHaveBeenCalledWith({
-      type: 'interview',
-      seventyUid: 'test-uid',
-      unitId: 'seoul-east-stake',
-      wardName: '교문 와드',
-      targetKind: 'ward_bishop',
-      wardId: 'seoul-east-gyomun',
-      date: '2026-09-01',
-      startTime: '10:00',
-      endTime: '11:00',
-      notes: '감독: 김교문 (010-2222-3333)',
-    })
-  })
-
-  it('interview with a stake target (unit: -> targetKind stake_president)', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-
-    fireEvent.click(screen.getByText('schedule.type.interview'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
-      target: { value: 'seoul-stake' },
-    })
-    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
-      target: { value: 'unit:seoul-stake' },
-    })
-    fillDateTime()
-    fireEvent.click(screen.getByText('schedule.saveBtn'))
-
-    await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy).toHaveBeenCalledWith({
-      type: 'interview',
-      seventyUid: 'test-uid',
-      unitId: 'seoul-stake',
-      presidentUid: 'president-uid',
-      targetKind: 'stake_president',
-      date: '2026-09-01',
-      startTime: '10:00',
-      endTime: '11:00',
-      notes: '스테이크 회장: 홍길동 (010-1111-2222)',
-    })
-  })
-
-  it('meeting with cc_council sends regionId, not unitId', async () => {
-    mocks.currentUser = CC_SEVENTY_USER
-    mocks.users = [CC_SEVENTY_USER]
-    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
-      leaders: [MOCK_STAKE_PRESIDENT],
-      loading: false,
-      getLeaderByUnitName: vi.fn(),
-    })
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
-    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), {
-      target: { value: 'cc_council' },
-    })
-    fireEvent.change(screen.getByLabelText('schedule.ccRegionLabel'), {
-      target: { value: 'busan' },
-    })
-    fillDateTime()
-    fireEvent.click(screen.getByText('schedule.saveBtn'))
-
-    await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy).toHaveBeenCalledWith({
-      type: 'meeting',
-      seventyUid: 'test-uid',
-      regionId: 'busan',
-      targetKind: 'cc_council',
-      date: '2026-09-01',
-      startTime: '10:00',
-      endTime: '11:00',
-    })
-    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('unitId')
-  })
-
-  it('a free-text target (other) prefixes notes with 대상: <name>', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-
-    fireEvent.click(screen.getByText('schedule.type.interview'))
-    fireEvent.change(screen.getByLabelText('schedule.targetLabel'), { target: { value: 'other' } })
-    fireEvent.change(screen.getByLabelText('schedule.targetFreeTextLabel'), {
-      target: { value: '홍길순' },
-    })
-    fireEvent.change(screen.getByLabelText('schedule.notesLabelOptional'), {
-      target: { value: '개인 상담 필요' },
-    })
-    fillDateTime()
-    fireEvent.click(screen.getByText('schedule.saveBtn'))
-
-    await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy).toHaveBeenCalledWith({
-      type: 'interview',
-      seventyUid: 'test-uid',
-      targetKind: 'other',
-      date: '2026-09-01',
-      startTime: '10:00',
-      endTime: '11:00',
-      notes: '대상: 홍길순\n개인 상담 필요',
-    })
-    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('unitId')
-  })
-
-  it('a pre-visit meeting (purpose: pre_visit with a related visit)', async () => {
-    render(<ScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-
-    fireEvent.click(screen.getByText('schedule.type.meeting'))
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
-      target: { value: 'seoul-stake' },
-    })
-    fireEvent.change(screen.getByLabelText('schedule.purposeLabel'), {
-      target: { value: 'pre_visit' },
-    })
-    fireEvent.change(screen.getByLabelText('schedule.relatedVisitLabel'), {
-      target: { value: 'v1' },
-    })
-    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), {
-      target: { value: dates.beforeVisit },
-    })
-    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
-    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
-    fireEvent.click(screen.getByText('schedule.saveBtn'))
-
-    await waitFor(() => expect(createSpy).toHaveBeenCalled())
-    expect(createSpy).toHaveBeenCalledWith({
-      type: 'meeting',
-      seventyUid: 'test-uid',
-      unitId: 'seoul-east-stake',
-      wardName: '교문 와드',
-      targetKind: 'ward_bishop',
-      wardId: 'seoul-east-gyomun',
-      relatedVisitId: 'v1',
-      date: dates.beforeVisit,
-      startTime: '10:00',
-      endTime: '11:00',
-      notes: '감독: 김교문 (010-2222-3333)',
     })
   })
 })
