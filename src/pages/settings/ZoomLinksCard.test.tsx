@@ -91,4 +91,29 @@ describe('ZoomLinksCard', () => {
 
     await waitFor(() => expect(zoomLinksMock.remove).toHaveBeenCalledWith('1'))
   })
+
+  it('clears the rename-saving state and shows an error when rename throws', async () => {
+    zoomLinksMock.links = [LINK_A]
+    zoomLinksMock.rename.mockRejectedValue(new Error('offline'))
+    render(<ZoomLinksCard />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'common.edit' }))
+    await userEvent.click(screen.getByRole('button', { name: 'common.save' }))
+
+    await waitFor(() => expect(toastMock.error).toHaveBeenCalled())
+    const saveButton = screen.getByRole('button', { name: 'common.save' })
+    expect(saveButton).not.toHaveAttribute('aria-busy', 'true')
+    expect(saveButton).not.toBeDisabled()
+  })
+
+  it('shows an error instead of throwing unhandled when delete rejects', async () => {
+    zoomLinksMock.links = [LINK_A]
+    zoomLinksMock.remove.mockReset().mockRejectedValue(new Error('offline'))
+    render(<ZoomLinksCard />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'common.delete' }))
+    await userEvent.click(screen.getByRole('button', { name: '삭제' }))
+
+    await waitFor(() => expect(toastMock.error).toHaveBeenCalled())
+  })
 })

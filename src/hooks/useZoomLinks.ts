@@ -28,6 +28,7 @@ export function useZoomLinks(uid: string | undefined) {
     setLoading(true)
     getZoomLinks(uid)
       .then((next) => { if (active) setLinks(next) })
+      .catch(() => { if (active) setLinks([]) })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [uid])

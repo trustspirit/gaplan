@@ -111,4 +111,18 @@ describe('ZoomLinkPicker', () => {
     expect(onSubmit).not.toHaveBeenCalled()
     expect(zoomLinksMock.add).toHaveBeenCalledWith({ label: '모임B', url: 'https://zoom.us/j/999' })
   })
+
+  it('clears the saving state and shows an error when the save throws (offline/permission failure)', async () => {
+    zoomLinksMock.add.mockRejectedValue(new Error('offline'))
+    render(<ZoomLinkPicker value="https://zoom.us/j/999" onChange={vi.fn()} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'schedule.zoomLinkSaveBtn' }))
+    await userEvent.type(screen.getByLabelText('schedule.zoomLinkLabelPrompt'), '모임B')
+    await userEvent.click(screen.getByRole('button', { name: 'common.save' }))
+
+    const saveButton = await screen.findByRole('button', { name: 'common.save' })
+    expect(saveButton).not.toHaveAttribute('aria-busy', 'true')
+    expect(saveButton).not.toBeDisabled()
+    expect(toastMock.error).toHaveBeenCalled()
+  })
 })

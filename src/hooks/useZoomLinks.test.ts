@@ -29,6 +29,13 @@ describe('useZoomLinks', () => {
     expect(getZoomLinks).toHaveBeenCalledWith('u1')
   })
 
+  it('degrades to an empty list instead of an unhandled rejection when the load fails', async () => {
+    vi.mocked(getZoomLinks).mockReset().mockRejectedValue(new Error('offline'))
+    const { result } = renderHook(() => useZoomLinks('u1'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.links).toEqual([])
+  })
+
   it('does not fetch and returns an empty list when there is no uid', async () => {
     const { result } = renderHook(() => useZoomLinks(undefined))
     await waitFor(() => expect(result.current.loading).toBe(false))

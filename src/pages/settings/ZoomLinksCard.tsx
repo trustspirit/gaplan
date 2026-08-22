@@ -32,21 +32,30 @@ export function ZoomLinksCard() {
   const confirmRename = async () => {
     if (!renaming) return
     setRenameSaving(true)
-    const result = await rename(renaming.id, renameLabel)
-    setRenameSaving(false)
-    if (result.ok) {
-      toast.success(t('settings.account.zoomLinkRenamed'))
-      setRenaming(null)
-    } else {
-      toast.error(t(`schedule.zoomLinkError.${result.reason}`))
+    try {
+      const result = await rename(renaming.id, renameLabel)
+      if (result.ok) {
+        toast.success(t('settings.account.zoomLinkRenamed'))
+        setRenaming(null)
+      } else {
+        toast.error(t(`schedule.zoomLinkError.${result.reason}`))
+      }
+    } catch {
+      toast.error(t('common.saveFailed'))
+    } finally {
+      setRenameSaving(false)
     }
   }
 
   const confirmDelete = async () => {
     if (!deleting) return
-    await remove(deleting.id)
-    toast.success(t('settings.account.zoomLinkDeleted'))
-    setDeleting(null)
+    try {
+      await remove(deleting.id)
+      toast.success(t('settings.account.zoomLinkDeleted'))
+      setDeleting(null)
+    } catch {
+      toast.error(t('common.deleteFailed'))
+    }
   }
 
   return (

@@ -46,13 +46,18 @@ export function ZoomLinkPicker({ value, onChange }: ZoomLinkPickerProps) {
   const confirmSave = async () => {
     if (draftLabel === null) return
     setSaving(true)
-    const result = await add({ label: draftLabel, url: trimmedValue })
-    setSaving(false)
-    if (result.ok) {
-      toast.success(t('schedule.zoomLinkSaved'))
-      setDraftLabel(null)
-    } else {
-      toast.error(t(`schedule.zoomLinkError.${result.reason}`))
+    try {
+      const result = await add({ label: draftLabel, url: trimmedValue })
+      if (result.ok) {
+        toast.success(t('schedule.zoomLinkSaved'))
+        setDraftLabel(null)
+      } else {
+        toast.error(t(`schedule.zoomLinkError.${result.reason}`))
+      }
+    } catch {
+      toast.error(t('common.saveFailed'))
+    } finally {
+      setSaving(false)
     }
   }
 
