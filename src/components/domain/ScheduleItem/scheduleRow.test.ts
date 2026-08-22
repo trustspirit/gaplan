@@ -33,11 +33,9 @@ describe('toScheduleRow', () => {
     expect(row.lead?.secondary).toBe(DOW_LABELS[date.day()])
   })
 
-  // Component wins over brief: the main text (styles.unit) is always
-  // customTitle ?? unitName. The ward name is never the title itself — it is
-  // appended as a suffix only when there is no customTitle, which maps to
-  // DataListRow.subtitle, not .title.
-  it('titles the row with the unit name (or custom title), never the ward name', () => {
+  // Title now comes from the shared buildScheduleTitle rule (Task 7): a ward
+  // visit takes the ward as its subject when a ward is known, not the unit.
+  it('titles a ward visit with the ward name, when there is one', () => {
     const row = toScheduleRow({
       schedule: schedule({ wardName: '녹번 와드' }),
       unitName: '서울 스테이크',
@@ -45,12 +43,12 @@ describe('toScheduleRow', () => {
       today: TODAY,
       t,
     })
-    expect(row.title).toBe('서울 스테이크')
+    expect(row.title).toBe('녹번 와드 방문')
   })
 
   it('falls back to the unit name when there is no ward', () => {
     const row = toScheduleRow({ schedule: schedule(), unitName: '서울 스테이크', today: TODAY, t })
-    expect(row.title).toBe('서울 스테이크')
+    expect(row.title).toBe('서울 스테이크 방문')
   })
 
   // wardLabel is the caller-resolved (locale-aware) display name — e.g. what
@@ -73,10 +71,11 @@ describe('toScheduleRow', () => {
     expect(row.subtitle).toBeUndefined()
   })
 
-  // Component wins: ScheduleItem.tsx only appends the ward suffix when there
-  // is no customTitle (`!schedule.customTitle && schedule.wardName`). A
-  // customTitle suppresses it even though wardLabel is present.
-  it('prefers the custom title over the unit name, and drops the ward subtitle', () => {
+  // buildScheduleTitle checks customTitle first, so it still wins over the
+  // ward-visit rule. But the subtitle rule (Task 7) no longer special-cases
+  // customTitle — it only asks whether the title already said the place. A
+  // custom title doesn't say the ward, so the ward still surfaces below it.
+  it('prefers the custom title over the unit name, but still surfaces the ward as subtitle', () => {
     const row = toScheduleRow({
       schedule: schedule({ customTitle: '특별 모임', wardName: '녹번 와드' }),
       unitName: '서울 스테이크',
@@ -85,7 +84,7 @@ describe('toScheduleRow', () => {
       t,
     })
     expect(row.title).toBe('특별 모임')
-    expect(row.subtitle).toBeUndefined()
+    expect(row.subtitle).toBe('녹번 와드')
   })
 
   // Exact match, not toContain — this task's guarantee is that the format
@@ -105,6 +104,40 @@ describe('toScheduleRow', () => {
     expect(
       toScheduleRow({ schedule: schedule({ id: 'abc' }), unitName: 'u', today: TODAY, t }).id,
     ).toBe('abc')
+  })
+
+  // 네 경로(앱·구글·카카오·ICS)의 제목이 한 규칙에서 나와야 한다.
+  it('와드 방문 제목은 와드를 주어로 쓴다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'ward_visit', wardName: '교문 와드' }),
+      unitName: '서울동 스테이크',
+      wardLabel: '교문 와드',
+      today: TODAY,
+      t,
+    })
+    expect(row.title).toBe('교문 와드 방문')
+  })
+
+  // 제목이 이미 장소를 말했으면 부제가 같은 말을 반복하지 않는다.
+  it('제목이 말한 장소는 부제에서 뺀다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'ward_visit', wardName: '교문 와드', location: '교문 와드' }),
+      unitName: '서울동 스테이크',
+      wardLabel: '교문 와드',
+      today: TODAY,
+      t,
+    })
+    expect(row.subtitle).toBe('서울동 스테이크')
+  })
+
+  it('접견은 장소를 부제로 보여준다', () => {
+    const row = toScheduleRow({
+      schedule: schedule({ type: 'interview', location: '온라인 (Zoom)' }),
+      unitName: '서울동 스테이크',
+      today: TODAY,
+      t,
+    })
+    expect(row.subtitle).toBe('온라인 (Zoom)')
   })
 
   // 지난 일정은 흐리게 — 지금 .past 클래스가 하는 일을 행 데이터로 옮긴다.

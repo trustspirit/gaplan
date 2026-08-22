@@ -176,7 +176,7 @@ export function ScheduleItem({
             e.stopPropagation()
             setNotesOpen((v) => !v)
           }}
-          title="메모 보기"
+          title={t('schedule.notesToggle')}
           aria-expanded={notesOpen}
         >
           {notesOpen ? <ChevronUp size={14} /> : <FileText size={14} />}
@@ -189,7 +189,7 @@ export function ScheduleItem({
           target="_blank"
           rel="noopener noreferrer"
           className={styles.calendarAddBtn}
-          title="내 캘린더에 추가"
+          title={t('schedule.addToMyCalendar')}
         >
           <CalendarPlus size={15} />
         </a>

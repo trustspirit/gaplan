@@ -46,7 +46,10 @@ function schedule(over: Partial<Schedule> = {}): Schedule {
 describe('ScheduleItem', () => {
   it('renders the ward name and the type badge', () => {
     render(<ScheduleItem schedule={schedule({ wardName: '녹번 와드' })} unitName="서울 스테이크" />)
-    expect(screen.getByText('녹번 와드', { exact: false })).toBeInTheDocument()
+    // Task 7: the row title now takes the ward as its subject ("녹번 와드 방문"),
+    // and the subtitle (no explicit location) falls back to the same ward
+    // label — so the ward name shows up twice, not once.
+    expect(screen.getAllByText('녹번 와드', { exact: false }).length).toBeGreaterThan(0)
     expect(screen.getByText('schedule.type.ward_visit')).toBeInTheDocument()
   })
 
@@ -106,10 +109,10 @@ describe('ScheduleItem', () => {
     render(<ScheduleItem schedule={schedule({ notes: '테스트 메모' })} unitName="서울 스테이크" />)
     expect(screen.queryByText('테스트 메모')).not.toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: '메모 보기' }))
+    await userEvent.click(screen.getByRole('button', { name: 'schedule.notesToggle' }))
     expect(screen.getByText('테스트 메모')).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: '메모 보기' }))
+    await userEvent.click(screen.getByRole('button', { name: 'schedule.notesToggle' }))
     expect(screen.queryByText('테스트 메모')).not.toBeInTheDocument()
   })
 
@@ -117,10 +120,10 @@ describe('ScheduleItem', () => {
     const { rerender } = render(
       <ScheduleItem schedule={schedule()} unitName="서울 스테이크" showCalendarAdd={false} />,
     )
-    expect(screen.queryByTitle('내 캘린더에 추가')).not.toBeInTheDocument()
+    expect(screen.queryByTitle('schedule.addToMyCalendar')).not.toBeInTheDocument()
 
     rerender(<ScheduleItem schedule={schedule()} unitName="서울 스테이크" showCalendarAdd />)
-    expect(screen.getByTitle('내 캘린더에 추가')).toBeInTheDocument()
+    expect(screen.getByTitle('schedule.addToMyCalendar')).toBeInTheDocument()
   })
 
   // Not required by the brief's minimum list, but locks the three badges the
@@ -163,7 +166,7 @@ describe('ScheduleItem', () => {
       />,
     )
     expect(screen.getByText('common.complete')).toBeInTheDocument()
-    expect(screen.queryByTitle('내 캘린더에 추가')).not.toBeInTheDocument()
+    expect(screen.queryByTitle('schedule.addToMyCalendar')).not.toBeInTheDocument()
   })
 
   // 판정 R57 — 행 앞의 색 막대 금지.

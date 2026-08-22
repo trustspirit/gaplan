@@ -299,6 +299,8 @@
     "noSlots": "No available slots.",
     "noDates": "No available dates.",
     "addToCalendar": "Add to My Calendar",
+    "notesToggle": "View notes",
+    "addToMyCalendar": "Add to my calendar",
     "upcoming": "Upcoming Schedule",
     "thisMonth": "{{count}} this month",
     "noUpcoming": "No upcoming schedule.",
