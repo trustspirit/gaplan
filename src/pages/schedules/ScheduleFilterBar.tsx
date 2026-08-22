@@ -82,14 +82,13 @@ export function ScheduleFilterBar({
 
       <div className={styles.trailing}>
         {regions.length > 1 && (
-          // "전체"는 유효한 선택이지 미선택 상태가 아니므로, Select의 placeholder가 아니라
-          // 실제 옵션(value: '')으로 넣는다.
+          // Select는 placeholder를 넘겼든 아니든 value=""인 옵션을 항상 하나 렌더한다.
+          // 그러니 "전체"를 별도 옵션으로 또 넣으면 빈 항목이 두 개가 된다 — 빈 값 자리를
+          // placeholder에게 넘기고 그 라벨을 "전체"로 준다.
           <Select
             label={t('schedules.regionFilterLabel')}
-            options={[
-              { value: '', label: t('common.all') },
-              ...regions.map((region) => ({ value: region.id, label: region.name })),
-            ]}
+            placeholder={t('common.all')}
+            options={regions.map((region) => ({ value: region.id, label: region.name }))}
             value={regionId ?? ''}
             onChange={(e) => onRegionChange(e.target.value || null)}
             wrapperClassName={styles.selectWrapper}
@@ -98,11 +97,18 @@ export function ScheduleFilterBar({
         )}
 
         {!hideStatus && (
+          // 같은 이유로 'all'을 옵션 목록에 넣지 않는다 — 빈 값이 곧 '전체'다.
+          // 이렇게 두지 않으면 사용자가 항상 렌더되는 빈 옵션을 골라 ''를 흘려보낼 수 있고,
+          // ''는 ScheduleStatusFilter가 아니다.
           <Select
             label={t('schedules.statusFilterLabel')}
-            options={STATUSES.map((value) => ({ value, label: t(`schedules.status.${value}`) }))}
-            value={status}
-            onChange={(e) => onStatusChange(e.target.value as ScheduleStatusFilter)}
+            placeholder={t('schedules.status.all')}
+            options={STATUSES.filter((v) => v !== 'all').map((value) => ({
+              value,
+              label: t(`schedules.status.${value}`),
+            }))}
+            value={status === 'all' ? '' : status}
+            onChange={(e) => onStatusChange((e.target.value || 'all') as ScheduleStatusFilter)}
             wrapperClassName={styles.selectWrapper}
             className={styles.select}
           />

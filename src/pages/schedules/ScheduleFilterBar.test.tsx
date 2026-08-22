@@ -97,6 +97,36 @@ describe('ScheduleFilterBar', () => {
     expectNoAccentStripe(readFileSync(resolve(__dirname, 'ScheduleFilterBar.module.scss'), 'utf8'))
   })
 
+  // Select는 placeholder를 넘겼든 아니든 value=""인 옵션을 하나 렌더한다. 그래서 "전체"를
+  // 별도 옵션으로 또 넣으면 빈 항목이 두 개 뜬다 — 사용자가 실제로 본 결함이다.
+  describe('the empty slot is not duplicated', () => {
+    it('gives the region select exactly one empty-valued option, labelled 전체', () => {
+      renderBar({ regions: TWO_REGIONS })
+      const select = screen.getByRole('combobox', { name: 'schedules.regionFilterLabel' })
+      const blanks = Array.from(select.querySelectorAll('option')).filter((o) => o.value === '')
+      expect(blanks).toHaveLength(1)
+      expect(blanks[0]).toHaveTextContent('common.all')
+    })
+
+    it('gives the status select exactly one empty-valued option, labelled 전체', () => {
+      renderBar()
+      const select = screen.getByRole('combobox', { name: 'schedules.statusFilterLabel' })
+      const blanks = Array.from(select.querySelectorAll('option')).filter((o) => o.value === '')
+      expect(blanks).toHaveLength(1)
+      expect(blanks[0]).toHaveTextContent('schedules.status.all')
+    })
+
+    // '' 는 ScheduleStatusFilter가 아니다 — 빈 값을 골라도 'all'로 올라가야 한다.
+    it("reports the status select's empty choice as 'all', never as ''", async () => {
+      const props = renderBar({ status: 'upcoming' })
+      await userEvent.selectOptions(
+        screen.getByRole('combobox', { name: 'schedules.statusFilterLabel' }),
+        '',
+      )
+      expect(props.onStatusChange).toHaveBeenCalledWith('all')
+    })
+  })
+
   describe('region select', () => {
     it('is not rendered when there is nothing to choose between', () => {
       renderBar({ regions: [] })
