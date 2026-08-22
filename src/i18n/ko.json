@@ -83,7 +83,6 @@
     "acknowledge": "확인함",
     "bellLabel": "리마인더 확인",
     "panelTitle": "리마인더",
-    "summaryBanner": "확인할 리마인더 {{count}}건",
     "none": "확인할 리마인더가 없습니다."
   },
   "visitPlan": {

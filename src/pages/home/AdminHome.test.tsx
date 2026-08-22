@@ -65,9 +65,6 @@ vi.mock('firebase/firestore', () => ({
 }))
 vi.mock('@/firebase', () => ({ db: {} }))
 vi.mock('@/services/scheduleService', () => ({ deleteScheduleViaCF: vi.fn() }))
-vi.mock('@/components/domain/Reminders/ReminderSummaryBanner', () => ({
-  ReminderSummaryBanner: () => <div data-testid="reminders" />,
-}))
 // 두 모달은 열렸는지만 본다. 진짜로 끌어오면 firebase functions까지 딸려 오고,
 // 그 안쪽은 각 모달의 제 테스트가 이미 본다.
 vi.mock('@/components/domain/ScheduleFormModal/ScheduleFormModal', () => ({
@@ -86,11 +83,6 @@ describe('AdminHome', () => {
     expect(screen.getByText('schedule.upcoming')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /common.publicLink/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /schedule.newTitle/ })).toBeInTheDocument()
-  })
-
-  it('shows the reminder banner', () => {
-    render(<AdminHome />)
-    expect(screen.getByTestId('reminders')).toBeInTheDocument()
   })
 
   // 경로 리터럴이 화면에 남아 있지 않다는 것을 고정한다 — 계획 3이 세운 규칙이다.

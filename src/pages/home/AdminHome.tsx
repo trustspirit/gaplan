@@ -20,7 +20,6 @@ import { ROUTES } from '@/router/routes'
 import { Button } from '@/components/ui'
 import { ScheduleFormModal } from '@/components/domain/ScheduleFormModal/ScheduleFormModal'
 import { EditScheduleModal } from '@/components/domain/EditScheduleModal/EditScheduleModal'
-import { ReminderSummaryBanner } from '@/components/domain/Reminders/ReminderSummaryBanner'
 import type { Schedule } from '@/types'
 import { ScheduleListCard } from './ScheduleListCard'
 import styles from './HomePage.module.scss'
@@ -82,7 +81,6 @@ export function AdminHome() {
     <>
       <div className={styles.layout}>
         <div className={styles.mainCol}>
-          <ReminderSummaryBanner />
           <ScheduleListCard
             schedules={upcoming}
             loading={schedulesLoading}

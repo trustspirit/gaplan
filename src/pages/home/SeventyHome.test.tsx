@@ -64,9 +64,6 @@ vi.mock('@/hooks/useDeleteWithUndo', () => ({
   useDeleteWithUndo: () => ({ pendingIds: new Set<string>(), scheduleDelete }),
 }))
 vi.mock('@/services/scheduleService', () => ({ deleteScheduleViaCF: vi.fn() }))
-vi.mock('@/components/domain/Reminders/ReminderSummaryBanner', () => ({
-  ReminderSummaryBanner: () => <div data-testid="reminders" />,
-}))
 // 편집 모달은 열렸는지만 본다 — 그 안쪽은 EditScheduleModal 제 테스트 소관이다.
 vi.mock('@/components/domain/EditScheduleModal/EditScheduleModal', () => ({
   EditScheduleModal: ({ schedule }: { schedule: Schedule }) => (
@@ -80,11 +77,6 @@ describe('SeventyHome', () => {
     render(<SeventyHome />)
     expect(screen.getByText('schedule.calendarBannerText')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'schedule.calendarSubscribe' })).toBeInTheDocument()
-  })
-
-  it('shows the reminder banner', () => {
-    render(<SeventyHome />)
-    expect(screen.getByTestId('reminders')).toBeInTheDocument()
   })
 
   it('lists the upcoming schedules', () => {

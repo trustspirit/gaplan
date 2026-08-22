@@ -12,7 +12,6 @@ import { deleteScheduleViaCF } from '@/services/scheduleService'
 import { selectGlanceSchedules } from '@/utils/glance'
 import { REGIONS } from '@/constants/regions'
 import { EditScheduleModal } from '@/components/domain/EditScheduleModal/EditScheduleModal'
-import { ReminderSummaryBanner } from '@/components/domain/Reminders/ReminderSummaryBanner'
 import type { Schedule } from '@/types'
 import { CalendarBanner } from './CalendarBanner'
 import { ScheduleListCard } from './ScheduleListCard'
@@ -45,7 +44,6 @@ export function SeventyHome() {
         <div className={styles.mainCol}>
           <CalendarBanner connected={user.calendarConnected} />
 
-          <ReminderSummaryBanner />
 
           <ScheduleListCard
             schedules={upcoming}
