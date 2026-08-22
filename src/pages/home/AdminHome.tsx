@@ -18,8 +18,9 @@ import { resolveScopedScheduleSeventyUid } from '@/utils/scope'
 import { selectGlanceSchedules } from '@/utils/glance'
 import { ROUTES } from '@/router/routes'
 import { Button } from '@/components/ui'
-import { ScheduleFormModal } from '@/components/domain/ScheduleFormModal/ScheduleFormModal'
 import { EditScheduleModal } from '@/components/domain/EditScheduleModal/EditScheduleModal'
+import { AddScheduleFlow } from '@/components/domain/addSchedule/AddScheduleFlow'
+import { addScheduleChoicesFor } from '@/components/domain/addSchedule/addScheduleChoices'
 import type { Schedule } from '@/types'
 import { ScheduleListCard } from './ScheduleListCard'
 import styles from './HomePage.module.scss'
@@ -39,7 +40,7 @@ export function AdminHome() {
     scheduleSeventyUid ? { seventyUid: scheduleSeventyUid } : {},
   )
   const { getUnitName } = useUnits()
-  const [formOpen, setFormOpen] = useState(false)
+  const [addFlowOpen, setAddFlowOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
   const [schedulePublic, setSchedulePublic] = useState(false)
@@ -95,9 +96,11 @@ export function AdminHome() {
                   {publicCopied ? <Check size={14} /> : <Globe size={14} />}
                   &nbsp;{t('common.publicLink')}
                 </Button>
-                <Button variant="primary" size="sm" onClick={() => setFormOpen(true)}>
-                  + {t('schedule.newTitle')}
-                </Button>
+                {addScheduleChoicesFor(user).length > 0 && (
+                  <Button variant="primary" size="sm" onClick={() => setAddFlowOpen(true)}>
+                    + {t('common.add')}
+                  </Button>
+                )}
               </div>
             }
             getUnitName={getUnitName}
@@ -114,11 +117,12 @@ export function AdminHome() {
         </div>
       </div>
 
-      {formOpen && (
-        <ScheduleFormModal
-          onClose={() => setFormOpen(false)}
+      {addFlowOpen && (
+        <AddScheduleFlow
+          user={user}
+          onClose={() => setAddFlowOpen(false)}
           onSaved={() => {
-            setFormOpen(false)
+            setAddFlowOpen(false)
             toast.success(t('schedule.savedSuccess'))
           }}
         />

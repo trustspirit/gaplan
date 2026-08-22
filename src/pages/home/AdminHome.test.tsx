@@ -66,9 +66,10 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/firebase', () => ({ db: {} }))
 vi.mock('@/services/scheduleService', () => ({ deleteScheduleViaCF: vi.fn() }))
 // 두 모달은 열렸는지만 본다. 진짜로 끌어오면 firebase functions까지 딸려 오고,
-// 그 안쪽은 각 모달의 제 테스트가 이미 본다.
-vi.mock('@/components/domain/ScheduleFormModal/ScheduleFormModal', () => ({
-  ScheduleFormModal: () => <div data-testid="schedule-form" />,
+// 그 안쪽은 각 모달의 제 테스트가 이미 본다. AddScheduleFlow는 admin에게 chooser를
+// 먼저 여니, 여기서는 페이지가 그 흐름을 실제로 붙였는지만 확인한다.
+vi.mock('@/components/domain/addSchedule/AddScheduleFlow', () => ({
+  AddScheduleFlow: () => <div data-testid="schedule-form" />,
 }))
 vi.mock('@/components/domain/EditScheduleModal/EditScheduleModal', () => ({
   EditScheduleModal: ({ schedule }: { schedule: Schedule }) => (
@@ -82,7 +83,7 @@ describe('AdminHome', () => {
     render(<AdminHome />)
     expect(screen.getByText('schedule.upcoming')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /common.publicLink/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /schedule.newTitle/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /common.add/ })).toBeInTheDocument()
   })
 
   // 경로 리터럴이 화면에 남아 있지 않다는 것을 고정한다 — 계획 3이 세운 규칙이다.
@@ -94,7 +95,7 @@ describe('AdminHome', () => {
 
   it('opens the schedule form from the new-schedule action', async () => {
     render(<AdminHome />)
-    await userEvent.click(screen.getByRole('button', { name: /schedule.newTitle/ }))
+    await userEvent.click(screen.getByRole('button', { name: /common.add/ }))
     expect(screen.getByTestId('schedule-form')).toBeInTheDocument()
   })
 
