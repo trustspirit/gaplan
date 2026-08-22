@@ -1,4 +1,4 @@
-import { questionsFor, toTargetPayload, resetForKind } from './scheduleTargetRules'
+import { questionsFor, toTargetPayload, resetForKind, stakeLabelKeyFor } from './scheduleTargetRules'
 
 const EMPTY = { kind: '' as const, unitId: '', wardName: '', ccRegionId: '', freeText: '' }
 
@@ -80,6 +80,30 @@ describe('toTargetPayload', () => {
     expect(p.wardName).toBe('')
     expect(p.regionId).toBe('')
     expect(p.wardId).toBeUndefined()
+  })
+})
+
+// M2 (2026-08-22): 스테이크 select 라벨은 대상 유형(effectiveKind)만으로 정해져야 한다 —
+// 어느 모달이 부르든, 일정 종류가 무엇이든 같은 kind면 같은 라벨이 나와야 사용자가
+// 지적한 결함(생성/편집 모달이 같은 대상에 다른 라벨을 보여주던 문제)이 재발하지 않는다.
+describe('stakeLabelKeyFor', () => {
+  it('스테이크/지방부 회장은 필수 라벨', () => {
+    expect(stakeLabelKeyFor('stake_president')).toBe('schedule.stakeLabel')
+  })
+
+  it('와드 감독도 필수 라벨', () => {
+    expect(stakeLabelKeyFor('ward_bishop')).toBe('schedule.stakeLabel')
+  })
+
+  it('직접 입력은 선택 라벨', () => {
+    expect(stakeLabelKeyFor('other')).toBe('schedule.stakeLabelOptional')
+  })
+
+  // 협의 평의회는 스테이크 칸 자체가 뜨지 않으므로(questionsFor) 어떤 값을 돌려주든
+  // 실제로 쓰이지 않는다 — 그래도 함수는 항상 문자열을 돌려줘야 한다(다른 kind와의
+  // 기본값 일관성을 위해 필수 라벨과 같은 값을 쓴다).
+  it('협의 평의회는 스테이크를 묻지 않지만, 함수는 필수 라벨을 기본값으로 돌려준다', () => {
+    expect(stakeLabelKeyFor('cc_council')).toBe('schedule.stakeLabel')
   })
 })
 

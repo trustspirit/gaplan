@@ -6,7 +6,7 @@ import { getWardIdByName } from '@/constants/regions'
 import { Select, Input } from '@/components/ui'
 import type { ScheduleFormState } from './useScheduleForm'
 import type { TargetKindChoice, TargetSelection } from './scheduleTargetRules'
-import { questionsFor, resetForKind } from './scheduleTargetRules'
+import { questionsFor, resetForKind, stakeLabelKeyFor } from './scheduleTargetRules'
 // .hint는 ScheduleFormModal의 related-visit 안내문과 같은 클래스다 — 위치만 이 조각
 // 안으로 옮겼을 뿐 마크업은 그대로다(Controller ruling R7, 2026-08-22).
 import styles from '../ScheduleFormModal/ScheduleFormModal.module.scss'
@@ -54,12 +54,6 @@ export interface TargetSectionProps {
    * 이 조각에 아예 넘기지 않고, 호출부가 읽기 전용 표시를 직접 그린다.
    */
   fixedKind?: TargetKindChoice
-  /**
-   * 스테이크 select 라벨의 번역 키를 덮어쓴다. 예전 편집 모달은 모임(meeting) 유형일
-   * 때만 "선택" 문구가 붙은 라벨을 썼다(schedule.stakeLabelOptional) — 그 문구 차이를
-   * 그대로 옮기기 위한 자리다. 넘기지 않으면 기존처럼 schedule.stakeLabel을 쓴다.
-   */
-  stakeLabelKey?: string
 }
 
 /** 방문을 골랐을 때 채워 넣을 대상 — 방문은 항상 와드 감독이 대상인 셈이다.
@@ -95,7 +89,6 @@ export function TargetSection({
   wardOptions,
   ccRegionOptions,
   fixedKind,
-  stakeLabelKey,
 }: TargetSectionProps) {
   const { t } = useTranslation()
   const { target, purpose, relatedVisitId } = state
@@ -224,7 +217,7 @@ export function TargetSection({
 
       {questions.asksUnit && (
         <Select
-          label={t(stakeLabelKey ?? 'schedule.stakeLabel')}
+          label={t(stakeLabelKeyFor(effectiveKind))}
           value={target.unitId}
           onChange={(e) => changeTarget({ unitId: e.target.value, wardName: '' })}
           options={unitOptions}

@@ -481,7 +481,7 @@ describe('ScheduleFormModal 접견/모임 구조화된 대상 선택', () => {
 
     fireEvent.click(screen.getByText('schedule.type.interview'))
     fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), { target: { value: 'other' } })
-    fireEvent.change(screen.getByLabelText('schedule.stakeLabel'), {
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), {
       target: { value: 'seoul-stake' },
     })
     fireEvent.change(screen.getByLabelText('schedule.targetFreeTextLabel'), {

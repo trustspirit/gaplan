@@ -93,6 +93,18 @@ export function toTargetPayload(sel: TargetSelection): TargetPayloadFields {
 }
 
 /**
+ * 스테이크/지방부 select 라벨의 번역 키 — 대상 유형(effectiveKind)만으로 정한다.
+ * 일정 종류(interview/meeting)는 관여하지 않는다: 생성 모달과 편집 모달이 같은 대상
+ * 유형이라면 반드시 같은 라벨을 보여줘야 한다(사용자가 직접 지적한 결함 — 두 모달이
+ * 서로 다른 기준(일정 종류 vs 판단 안 함)으로 라벨을 정해 어긋났었다).
+ * stake_president/ward_bishop은 필수, other는 선택. cc_council은 스테이크 칸 자체가
+ * 뜨지 않으므로(questionsFor) 실제로 쓰이지 않지만, 함수는 항상 값을 돌려준다.
+ */
+export function stakeLabelKeyFor(kind: TargetKindChoice | ''): string {
+  return kind === 'other' ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel'
+}
+
+/**
  * 유형을 바꿀 때 남으면 안 되는 값을 지운 새 selection.
  * 새 유형이 묻지 않는 칸은 비우고, 계속 묻는 칸은 남긴다.
  */

@@ -178,10 +178,12 @@ describe('TargetSection', () => {
 
   // Controller ruling R5 (2026-08-22): 직접 입력(기타)을 골라도 스테이크는 계속 물어야
   // 한다 — 예전 폼은 대상을 '기타'로 골라도 그때까지 고른 스테이크를 payload에 실었다.
-  it('직접 입력을 고르면 스테이크와 텍스트 칸을 함께 묻는다', async () => {
+  // M2 (2026-08-22): 직접 입력은 스테이크가 필수가 아니므로 라벨도 선택 문구로 바뀐다
+  // (stakeLabelKeyFor).
+  it('직접 입력을 고르면 스테이크(선택)와 텍스트 칸을 함께 묻는다', async () => {
     renderSection({ type: 'interview' })
     await userEvent.selectOptions(screen.getByLabelText('schedule.targetKindLabel'), 'other')
-    expect(screen.getByLabelText('schedule.stakeLabel')).toBeInTheDocument()
+    expect(screen.getByLabelText('schedule.stakeLabelOptional')).toBeInTheDocument()
     expect(screen.getByLabelText('schedule.targetFreeTextLabel')).toBeInTheDocument()
   })
 

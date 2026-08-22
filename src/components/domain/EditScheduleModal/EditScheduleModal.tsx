@@ -247,7 +247,6 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
                   wardOptions={wardOptions}
                   ccRegionOptions={[]}
                   fixedKind={isVisit ? undefined : 'stake_president'}
-                  stakeLabelKey={schedule.type === 'meeting' ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel'}
                 />
               )}
 
