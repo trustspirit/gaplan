@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BottomSheet } from '@/components/ui/BottomSheet/BottomSheet'
+import { ResponsiveDialog } from '@/components/ui/ResponsiveDialog/ResponsiveDialog'
 import { Button } from '@/components/ui/Button/Button'
 import type { ScheduleStatusFilter } from './scheduleFilters'
 import styles from './ScheduleFilterSheet.module.scss'
@@ -53,7 +53,7 @@ export function ScheduleFilterSheet({
   const showStatus = !hideStatus
 
   return (
-    <BottomSheet open={open} onClose={onClose} title={t('common.filter')}>
+    <ResponsiveDialog open={open} onClose={onClose} title={t('common.filter')}>
       {showRegions && (
         <div className={styles.section}>
           <h3 id={regionHeadingId} className={styles.sectionTitle}>
@@ -121,6 +121,6 @@ export function ScheduleFilterSheet({
           {t('common.apply')}
         </Button>
       </div>
-    </BottomSheet>
+    </ResponsiveDialog>
   )
 }

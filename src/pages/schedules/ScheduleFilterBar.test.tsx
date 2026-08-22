@@ -6,6 +6,11 @@ import { expectNoAccentStripe } from '@/components/ui/testing/bannedPatterns'
 import { ScheduleFilterBar } from './ScheduleFilterBar'
 import { SCHEDULE_KINDS, type ScheduleKind } from './scheduleFilters'
 
+// ResponsiveDialog reaches into useIsMobile, which calls window.matchMedia —
+// jsdom doesn't implement it. Repo convention is to mock the hook directly
+// rather than polyfill matchMedia.
+vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
   initReactI18next: { type: '3rdParty', init: () => {} },

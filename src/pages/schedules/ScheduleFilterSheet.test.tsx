@@ -2,6 +2,11 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ScheduleFilterSheet } from './ScheduleFilterSheet'
 
+// ResponsiveDialog reaches into useIsMobile, which calls window.matchMedia —
+// jsdom doesn't implement it. Repo convention is to mock the hook directly
+// rather than polyfill matchMedia.
+vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
   initReactI18next: { type: '3rdParty', init: () => {} },

@@ -6,6 +6,11 @@ import { deleteGeneralSchedule } from '@/services/generalScheduleService'
 import { downloadCsv, rowsToCsv } from './scheduleCsv'
 import { SchedulesPage } from './SchedulesPage'
 
+// ResponsiveDialog reaches into useIsMobile, which calls window.matchMedia —
+// jsdom doesn't implement it. Repo convention is to mock the hook directly
+// rather than polyfill matchMedia.
+vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
+
 const ADMIN = {
   uid: 'a1',
   role: 'admin',
