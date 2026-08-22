@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Card, CardHeader, CardBody, EmptyState } from '@/components/ui'
 import { CalendarView, type ViewMode } from '@/components/domain/CalendarView/CalendarView'
 import type { GeneralSchedule, Schedule } from '@/types'
+import { eventCoversDate } from '@/types'
 import type { BoardItem } from './scheduleFilters'
 import styles from './ScheduleCalendarPanel.module.scss'
 
@@ -52,7 +53,16 @@ export function ScheduleCalendarPanel({
   // 날짜가 선택되면 기간(range) 밖이라도 그 날의 항목을 보여준다 — 격자는
   // range를 안 타므로(위 주석) 선택된 날이 range 밖일 수 있다. items로
   // 찾으면 격자엔 보이는데 목록은 비는 모순이 생긴다.
-  const listed = selectedDate ? allItems.filter((item) => item.date === selectedDate) : items
+  // 행사(source: 'event')는 item.date가 시작일뿐이라 exact-match로는 1박 2일 등 여러
+  // 날에 걸친 행사가 그 마지막 날 선택 시 목록에서 빠진다 — eventCoversDate로 범위
+  // 전체를 판정한다. 일반 일정(source: 'schedule')은 여전히 하루짜리라 그대로 둔다.
+  const listed = selectedDate
+    ? allItems.filter((item) =>
+        item.entry.source === 'event'
+          ? eventCoversDate(item.entry.event, selectedDate)
+          : item.date === selectedDate,
+      )
+    : items
 
   const listTitle = selectedDate
     ? t('calendar.selectedDateTitle', { date: dayjs(selectedDate).format('M/D (ddd)') })

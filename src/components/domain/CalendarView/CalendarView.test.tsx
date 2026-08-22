@@ -1,6 +1,7 @@
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import type { GeneralSchedule } from '@/types'
 import { CalendarView } from './CalendarView'
 
 // view는 필수 프롭이고, 이 컴포넌트에는 더 이상 내부 상태로 뷰를 바꾸는 경로가
@@ -27,6 +28,46 @@ describe('CalendarView — view prop contract', () => {
     const { container } = render(<CalendarView schedules={[]} generalSchedules={[]} view="week" />)
 
     expect(container.textContent).toMatch(/–/)
+  })
+})
+
+// event-toast-and-multiday brief §2-3: 1박 2일 등 여러 날에 걸친 행사가 달력 격자에서
+// 그 범위의 날마다(시작일뿐 아니라) 보여야 한다 — eventCoversDate로 판정한다.
+describe('CalendarView — multi-day general schedules', () => {
+  function event(over: Partial<GeneralSchedule> = {}): GeneralSchedule {
+    return {
+      id: 'e1',
+      title: '1박2일 수련회',
+      date: '2026-09-03',
+      category: 'conference',
+      createdBy: 'admin',
+      createdAt: '2026-08-01',
+      isPublic: true,
+      ...over,
+    }
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-10T00:00:00'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('shows a multi-day event chip on every day it spans, not just the start day', () => {
+    const multiDay = event({ date: '2026-09-03', endDate: '2026-09-04' })
+    render(<CalendarView schedules={[]} generalSchedules={[multiDay]} view="month" />)
+
+    expect(screen.getAllByTitle('1박2일 수련회')).toHaveLength(2)
+  })
+
+  it('still shows a single-day event chip only once', () => {
+    const oneDay = event({ date: '2026-09-03' })
+    render(<CalendarView schedules={[]} generalSchedules={[oneDay]} view="month" />)
+
+    expect(screen.getAllByTitle('1박2일 수련회')).toHaveLength(1)
   })
 })
 

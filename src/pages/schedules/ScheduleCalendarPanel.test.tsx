@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ScheduleCalendarPanel } from './ScheduleCalendarPanel'
 import { buildBoardItems, SCHEDULE_KINDS } from './scheduleFilters'
-import type { Schedule } from '@/types'
+import type { GeneralSchedule, Schedule } from '@/types'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
@@ -22,6 +22,19 @@ vi.mock('@/components/domain/CalendarView/CalendarView', () => ({
     </div>
   ),
 }))
+
+function event(over: Partial<GeneralSchedule> = {}): GeneralSchedule {
+  return {
+    id: 'e1',
+    title: '1박2일 수련회',
+    date: '2026-03-10',
+    category: 'conference',
+    createdBy: 'admin',
+    createdAt: '2026-01-01',
+    isPublic: true,
+    ...over,
+  }
+}
 
 function schedule(over: Partial<Schedule> = {}): Schedule {
   return {
@@ -135,5 +148,35 @@ describe('ScheduleCalendarPanel', () => {
     renderPanel({ schedules, items, allItems, selectedDate: '2027-01-15' })
 
     expect(screen.getByText('s-outside')).toBeInTheDocument()
+  })
+
+  // event-toast-and-multiday brief §2-3: BoardItem.date는 행사의 시작일뿐이라
+  // item.date === selectedDate로만 비교하면 1박 2일 행사가 달력 격자에는 둘째 날에도
+  // 보이는데(CalendarView.test.tsx) 그 날을 클릭했을 때 옆 목록에는 나타나지 않는
+  // 모순이 생긴다.
+  it('lists a multi-day event on the second day it covers, even though its BoardItem.date is the start day', () => {
+    const multiDay = event({ date: '2026-03-10', endDate: '2026-03-11' })
+    const items = buildBoardItems({
+      schedules: [],
+      generalSchedules: [multiDay],
+      kinds: [...SCHEDULE_KINDS],
+      range: { start: '2026-01-01', end: '2026-12-31' },
+    })
+    const allItems = buildBoardItems({
+      schedules: [],
+      generalSchedules: [multiDay],
+      kinds: [...SCHEDULE_KINDS],
+      range: { start: '0000-01-01', end: '9999-12-31' },
+    })
+
+    renderPanel({
+      schedules: [],
+      generalSchedules: [multiDay],
+      items,
+      allItems,
+      selectedDate: '2026-03-11',
+    })
+
+    expect(screen.getByText('e-e1')).toBeInTheDocument()
   })
 })

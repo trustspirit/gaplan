@@ -12,7 +12,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { useLeaders } from '@/hooks/useLeaders'
 import { useUpcomingVisits } from '@/hooks/useUpcomingVisits'
 import { ALL_UNITS, REGIONS, getWardsByUnit } from '@/constants/regions'
-import { isGeneralScheduleRelevant } from '@/types'
+import { isGeneralScheduleRelevant, eventCoversDate } from '@/types'
 import type { ScheduleType, GeneralSchedule, AppUser } from '@/types'
 import { Button, Select, Input } from '@/components/ui'
 import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
@@ -312,7 +312,7 @@ export function ScheduleFormModal({
 
   const conflictingEvent = date
     ? (generalSchedules ?? []).find(gs => {
-        if (gs.date !== date) return false
+        if (!eventCoversDate(gs, date)) return false
         if (!currentUser) return true
         return isGeneralScheduleRelevant(gs, currentUser)
       })

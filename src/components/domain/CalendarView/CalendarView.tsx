@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 import type { Schedule, GeneralSchedule } from '@/types'
+import { eventCoversDate } from '@/types'
 import { isFastSunday } from '@/utils/fastSunday'
 import { layoutDayBlocks } from './layoutDayBlocks'
 import { Button } from '@/components/ui'
@@ -92,8 +93,10 @@ export function CalendarView({
   const getSchedulesForDate = (date: string) =>
     schedules.filter((s) => s.date === date && s.status === 'confirmed')
 
+  // eventCoversDate가 아니라 gs.date === date로 비교하면 1박 2일 같은 여러 날
+  // 행사가 시작일에만 보이고 나머지 날에는 사라진다.
   const getGeneralEventsForDate = (date: string) =>
-    (generalSchedules ?? []).filter((gs) => gs.date === date)
+    (generalSchedules ?? []).filter((gs) => eventCoversDate(gs, date))
 
   const movePeriod = (amount: number) => {
     setCurrent((c) => c.add(amount, view === 'month' ? 'month' : 'week'))

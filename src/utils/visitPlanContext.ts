@@ -22,7 +22,9 @@ export function isGeneralScheduleRelevantToUnit(gs: GeneralSchedule, unitId: str
   return regionMatch || unitMatch
 }
 
-// 방문일 ±windowDays 내, 해당 unit에 relevant한 general schedule 목록
+// 방문일 ±windowDays 내, 해당 unit에 relevant한 general schedule 목록. 여러 날에 걸친
+// 행사(endDate 있음)는 시작일만이 아니라 그 범위 전체를 기준으로 근접을 판정한다 —
+// 시작일만 보면 종료일 쪽이 창 안에 들어오는 행사를 놓친다.
 export function findNearbyEvents(
   date: string,
   unitId: string,
@@ -30,10 +32,14 @@ export function findNearbyEvents(
   windowDays: number = CONFERENCE_PROXIMITY_DAYS,
 ): GeneralSchedule[] {
   const d = dayjs(date)
-  return generalSchedules.filter(gs =>
-    isGeneralScheduleRelevantToUnit(gs, unitId) &&
-    Math.abs(dayjs(gs.date).diff(d, 'day')) <= windowDays,
-  )
+  return generalSchedules.filter(gs => {
+    if (!isGeneralScheduleRelevantToUnit(gs, unitId)) return false
+    const start = dayjs(gs.date)
+    const end = dayjs(gs.endDate && gs.endDate >= gs.date ? gs.endDate : gs.date)
+    if (!d.isBefore(start, 'day') && !d.isAfter(end, 'day')) return true
+    const distance = d.isBefore(start, 'day') ? start.diff(d, 'day') : d.diff(end, 'day')
+    return distance <= windowDays
+  })
 }
 
 // 칠십인 담당 unit별 (최근 실제 + 초안 계획) 분포

@@ -71,6 +71,24 @@ describe('findNearbyEvents', () => {
   it('uses the default proximity window constant', () => {
     expect(CONFERENCE_PROXIMITY_DAYS).toBe(14)
   })
+
+  // event-toast-and-multiday brief §2-3: 여러 날에 걸친 행사는 시작일만이 아니라
+  // 그 범위 전체를 기준으로 근접을 판정해야 한다. 이 사례는 시작일(6/1)만 보면
+  // 창(14일) 밖이지만, 종료일(6/5)을 보면 6/18이 그 창 안에 든다.
+  it('flags a multi-day event within the window of its end date, even when its start date is outside it', () => {
+    const events = [gs({ date: '2026-06-01', endDate: '2026-06-05' })]
+    expect(findNearbyEvents('2026-06-18', unit.id, events)).toHaveLength(1)
+  })
+
+  it('flags a multi-day event when the checked date falls inside its span', () => {
+    const events = [gs({ date: '2026-06-01', endDate: '2026-06-05' })]
+    expect(findNearbyEvents('2026-06-03', unit.id, events)).toHaveLength(1)
+  })
+
+  it('still ignores a multi-day event whose whole span is outside the window', () => {
+    const events = [gs({ date: '2026-06-01', endDate: '2026-06-05' })]
+    expect(findNearbyEvents('2026-01-01', unit.id, events)).toHaveLength(0)
+  })
 })
 
 describe('computeUnitBalance', () => {

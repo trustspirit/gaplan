@@ -989,6 +989,53 @@ describe('ScheduleFormModal 핀다운: adminCreateSchedule payload 계약', () =
 
 // add-schedule-chooser Task 4: 종류가 fixedType 하나로 고정되니 세그먼트 컨트롤
 // 자체가 없어져야 하고, onBack이 주어지면 그 dirty 확인이 requestClose와 같아야 한다.
+// event-toast-and-multiday brief §2-3: gs.date === date로 정확히 같은 날만 비교하면
+// 1박 2일 행사의 둘째 날에는 충돌 경고가 뜨지 않는다 — eventCoversDate로 판정해야 한다.
+describe('ScheduleFormModal 행사 충돌 경고 · 여러 날 행사', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.currentUser = {
+      uid: 'test-uid',
+      email: 'test@test.com',
+      role: 'seventy',
+      name: '테스트',
+      unitId: 'seoul-stake',
+      createdAt: '2026-01-01',
+    }
+    mocks.users = []
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: [],
+      loading: false,
+      getLeaderByUnitName: vi.fn().mockReturnValue(undefined),
+    })
+  })
+
+  it('이틀짜리 행사의 둘째 날을 골라도 충돌 경고가 뜬다', () => {
+    const multiDayEvent = {
+      id: 'g1',
+      title: '지역 대회',
+      date: '2026-09-03',
+      endDate: '2026-09-04',
+      category: 'conference' as const,
+      createdBy: 'admin',
+      createdAt: '2026-08-01',
+      isPublic: true,
+    }
+    render(
+      <ScheduleFormModal
+        fixedType="meeting"
+        generalSchedules={[multiDayEvent]}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), {
+      target: { value: '2026-09-04' },
+    })
+    expect(screen.getByText(/generalSchedule.conflictWarning/)).toBeInTheDocument()
+  })
+})
+
 // event-toast-and-multiday brief §1: 폼 모달이 자기 성공 토스트를 소유한다 — 호출부가
 // 또 한 번 띄우면 중복이 난다(사용자 신고: 행사 하나 추가에 토스트가 두 개 뜸). 일정
 // 저장도 같은 규칙을 따라야 한다.
