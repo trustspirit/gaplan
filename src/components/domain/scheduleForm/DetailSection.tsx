@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { ScheduleType } from '@/types'
 import { Input, Textarea } from '@/components/ui'
 import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
+import { ZoomLinkPicker } from './ZoomLinkPicker'
 import type { ScheduleFormState } from './useScheduleForm'
 import styles from './DetailSection.module.scss'
 // .fieldGroup/.textarea are the exact classes ScheduleFormModal's notes Textarea used — shared
@@ -82,13 +83,19 @@ export function DetailSection({
           )}
 
           {type !== 'ward_visit' && (
-            <Input
-              label={t('schedule.zoomLinkOptional')}
-              type="url"
-              value={zoomLink}
-              onChange={(e) => onChange({ zoomLink: e.target.value })}
-              placeholder="https://zoom.us/j/..."
-            />
+            // ZoomLinkPicker는 위 이동 태스크 이후에 새로 붙은 편의 기능이다 — 저장된
+            // 링크가 있으면 고르는 select를, 새 URL이면 저장 버튼을 보여준다. 이 입력칸
+            // 자체(직접 타이핑)는 그대로다: onChange는 여전히 이 Input 하나로만 나간다.
+            <div className={styles.zoomLinkGroup}>
+              <ZoomLinkPicker value={zoomLink} onChange={(url) => onChange({ zoomLink: url })} />
+              <Input
+                label={t('schedule.zoomLinkOptional')}
+                type="url"
+                value={zoomLink}
+                onChange={(e) => onChange({ zoomLink: e.target.value })}
+                placeholder="https://zoom.us/j/..."
+              />
+            </div>
           )}
 
           <Textarea

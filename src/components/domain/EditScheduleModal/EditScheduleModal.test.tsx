@@ -32,6 +32,11 @@ vi.mock('@/hooks/useUpcomingVisits', () => ({
 vi.mock('@/components/domain/ProjectPicker/ProjectPicker', () => ({
   ProjectPicker: () => <div data-testid="project-picker" />,
 }))
+// Zoom link picker는 useZoomLinks()(Firestore)에 의존한다 — 그 자체 동작은
+// ZoomLinkPicker.test.tsx가 고정하므로, 이 모달 테스트에서는 자리만 확인한다.
+vi.mock('@/components/domain/scheduleForm/ZoomLinkPicker', () => ({
+  ZoomLinkPicker: () => <div data-testid="zoom-link-picker" />,
+}))
 vi.mock('react-dom', () => ({
   createPortal: (node: React.ReactNode) => node,
 }))

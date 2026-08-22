@@ -45,6 +45,13 @@ vi.mock('@/pages/home/CalendarBanner', () => ({
   CalendarBanner: () => <div data-testid="calendar-banner" />,
 }))
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+// 저장된 Zoom 링크 카드는 useZoomLinks()(Firestore)에 의존한다 — 그 자체 동작은
+// ZoomLinksCard.test.tsx가 고정하므로, 여기서는 자리만 확인한다.
+vi.mock('@/hooks/useZoomLinks', () => ({
+  useZoomLinks: () => ({ links: [], loading: false, rename: vi.fn(), remove: vi.fn() }),
+}))
+// jsdom has no matchMedia — ZoomLinksCard's dialogs call useIsMobile() even while closed.
+vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
 
 describe('AccountPanel', () => {
   it('shows the current name in the name field', () => {
@@ -113,5 +120,10 @@ describe('AccountPanel', () => {
   it('hides the kakao card for a user with no assigned seventy', () => {
     render(<AccountPanel />)
     expect(screen.queryByText('settings.account.kakaoTitle')).not.toBeInTheDocument()
+  })
+
+  it('carries the saved zoom links card', () => {
+    render(<AccountPanel />)
+    expect(screen.getByText('settings.account.zoomLinksTitle')).toBeInTheDocument()
   })
 })

@@ -273,6 +273,18 @@
     "notesLabelOptional": "Notes (Optional)",
     "locationOptional": "Location (Optional)",
     "zoomLinkOptional": "Zoom Link (Optional)",
+    "zoomLinkPickerLabel": "Saved Zoom Links",
+    "zoomLinkPickerPlaceholder": "Enter manually",
+    "zoomLinkSaveBtn": "Save this link",
+    "zoomLinkLabelPrompt": "Link name",
+    "zoomLinkLabelExample": "e.g. Seoul-dong Stake Regular Meeting",
+    "zoomLinkSaved": "Zoom link saved.",
+    "zoomLinkError": {
+      "invalid_url": "Only http(s) links can be saved.",
+      "duplicate": "This link is already saved.",
+      "empty_label": "Please enter a name.",
+      "limit_reached": "You can save up to 10 links."
+    },
     "customTitleOptional": "Title (Optional)",
     "detailSectionLabel": "Details (Optional)",
     "errorDateTimeRequired": "Date and time are required.",
@@ -377,7 +389,14 @@
       "nameFailed": "Could not change the name.",
       "languageTitle": "Language",
       "calendarTitle": "Google Calendar",
-      "kakaoTitle": "Kakao Calendar"
+      "kakaoTitle": "Kakao Calendar",
+      "zoomLinksTitle": "Saved Zoom Links",
+      "zoomLinksDesc": "Your personal Zoom links you can pick from when creating a schedule. Add new ones from the schedule form.",
+      "zoomLinksEmpty": "No saved links yet.",
+      "zoomLinkRenameTitle": "Rename",
+      "zoomLinkLabelField": "Name",
+      "zoomLinkRenamed": "Renamed.",
+      "zoomLinkDeleted": "Link deleted."
     },
     "sharing": {
       "title": "Sharing",

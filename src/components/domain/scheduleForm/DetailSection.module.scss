@@ -48,6 +48,12 @@
   margin-top: $space-4;
 }
 
+.zoomLinkGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
 // .fieldGroup/.textarea are NOT defined here — the notes Textarea imports them straight from
 // ScheduleFormModal.module.scss (see DetailSection.tsx) so there's exactly one copy of those
 // rules to keep in sync, the same pattern WhenSection.tsx already uses for its own styles.

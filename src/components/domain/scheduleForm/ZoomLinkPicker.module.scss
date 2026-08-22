@@ -1,0 +1,19 @@
+@use '@/styles/variables' as *;
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.saveForm {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.saveActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-2;
+}
