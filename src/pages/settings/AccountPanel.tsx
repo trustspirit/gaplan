@@ -63,7 +63,7 @@ export function AccountPanel() {
         <CardHeader title={t('settings.account.nameTitle')} />
         <CardBody>
           <Input
-            label={t('settings.account.nameTitle')}
+            aria-label={t('settings.account.nameTitle')}
             hint={t('settings.account.nameDesc')}
             value={name}
             onChange={(e) => setName(e.target.value)}
