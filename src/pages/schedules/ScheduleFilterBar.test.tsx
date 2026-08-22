@@ -15,6 +15,11 @@ vi.mock('@/components/domain/ScheduleDateRangeFilter/ScheduleDateRangeFilter', (
   ScheduleDateRangeFilter: () => <div data-testid="range-filter" />,
 }))
 
+const TWO_REGIONS = [
+  { id: 'r1', name: '서울' },
+  { id: 'r2', name: '서울남' },
+]
+
 function renderBar(over: Partial<React.ComponentProps<typeof ScheduleFilterBar>> = {}) {
   const props = {
     kinds: [...SCHEDULE_KINDS] as ScheduleKind[],
@@ -49,6 +54,17 @@ describe('ScheduleFilterBar', () => {
     }
   })
 
+  // 다중 선택임이 한눈에 보이도록, 켜진 칩에는 체크 표시가 있다 (지역 단일 선택 시트와 구분).
+  it('shows a check mark on every kind chip that is on, and none that are off', () => {
+    renderBar({ kinds: ['visit'] })
+    expect(
+      screen.getByRole('button', { name: 'schedules.kind.visit' }).querySelector('svg'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'schedules.kind.event' }).querySelector('svg'),
+    ).toBeNull()
+  })
+
   // 배타 탭이 아니라 다중 선택이다(판정 R23) — 하나를 꺼도 나머지는 켜져 있다.
   it('turns one kind off without touching the others', async () => {
     const props = renderBar()
@@ -71,38 +87,6 @@ describe('ScheduleFilterBar', () => {
     expect(props.onKindsChange).not.toHaveBeenCalled()
   })
 
-  it('renders no region chips when there is nothing to choose between', () => {
-    renderBar({ regions: [{ id: 'r1', name: '서울' }] })
-    expect(screen.queryByRole('group', { name: 'schedules.regionFilterLabel' })).toBeNull()
-  })
-
-  it('offers an all-regions choice alongside each region', async () => {
-    const props = renderBar({
-      regions: [
-        { id: 'r1', name: '서울' },
-        { id: 'r2', name: '부산' },
-      ],
-      regionId: 'r1',
-    })
-    await userEvent.click(screen.getByRole('button', { name: 'common.all' }))
-    expect(props.onRegionChange).toHaveBeenCalledWith(null)
-    await userEvent.click(screen.getByRole('button', { name: '부산' }))
-    expect(props.onRegionChange).toHaveBeenCalledWith('r2')
-  })
-
-  it('offers the status filter as a single-choice control', () => {
-    renderBar()
-    expect(
-      screen.getByRole('radiogroup', { name: 'schedules.statusFilterLabel' }),
-    ).toBeInTheDocument()
-  })
-
-  // 달력은 격자 자체가 시간을 표현한다 — 예정만 남기면 격자에 구멍이 날 뿐이다(판정 R26).
-  it('hides the status filter when asked', () => {
-    renderBar({ hideStatus: true })
-    expect(screen.queryByRole('radiogroup', { name: 'schedules.statusFilterLabel' })).toBeNull()
-  })
-
   it('always offers the date range', () => {
     renderBar()
     expect(screen.getByTestId('range-filter')).toBeInTheDocument()
@@ -111,5 +95,85 @@ describe('ScheduleFilterBar', () => {
   // 스펙 §3: 선택 상태는 배경 채움 + 글자 무게로만.
   it('never marks a selected chip with a left accent stripe', () => {
     expectNoAccentStripe(readFileSync(resolve(__dirname, 'ScheduleFilterBar.module.scss'), 'utf8'))
+  })
+
+  describe('filter button', () => {
+    it('is not rendered when there is nothing to filter behind it', () => {
+      renderBar({ regions: [], hideStatus: true })
+      expect(screen.queryByRole('button', { name: /common\.filter/ })).toBeNull()
+    })
+
+    it('is rendered when there are regions to choose between, even with status hidden', () => {
+      renderBar({ regions: TWO_REGIONS, hideStatus: true })
+      expect(screen.getByRole('button', { name: /common\.filter/ })).toBeInTheDocument()
+    })
+
+    it('is rendered when status is visible, even with no regions', () => {
+      renderBar({ regions: [] })
+      expect(screen.getByRole('button', { name: /common\.filter/ })).toBeInTheDocument()
+    })
+
+    it('carries no badge when nothing is filtered', () => {
+      renderBar({ regions: TWO_REGIONS, regionId: null, status: 'all' })
+      const button = screen.getByRole('button', { name: /common\.filter/ })
+      expect(button).toHaveTextContent(/^common\.filter$/)
+    })
+
+    it('badges the active filter count, matching activeFilterCount', () => {
+      renderBar({ regions: TWO_REGIONS, regionId: 'r1', status: 'upcoming' })
+      const button = screen.getByRole('button', { name: /common\.filter/ })
+      expect(button).toHaveTextContent('2')
+    })
+  })
+
+  describe('the sheet behind the filter button', () => {
+    it('applies a picked region back through onRegionChange', async () => {
+      const props = renderBar({ regions: TWO_REGIONS, regionId: 'r1' })
+      await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
+      await userEvent.click(screen.getByRole('radio', { name: '서울남' }))
+      await userEvent.click(screen.getByRole('button', { name: 'common.apply' }))
+      expect(props.onRegionChange).toHaveBeenCalledWith('r2')
+    })
+
+    it('applies the all-regions choice back through onRegionChange', async () => {
+      const props = renderBar({ regions: TWO_REGIONS, regionId: 'r1' })
+      await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
+      await userEvent.click(screen.getByRole('radio', { name: 'common.all' }))
+      await userEvent.click(screen.getByRole('button', { name: 'common.apply' }))
+      expect(props.onRegionChange).toHaveBeenCalledWith(null)
+    })
+
+    // 시트가 목록을 가리고 있어 즉시 반영해도 소용없다 — 배경을 탭해 닫으면 고른 게 버려진다.
+    it('drops the pick and leaves onRegionChange uncalled when the backdrop is tapped', async () => {
+      const props = renderBar({ regions: TWO_REGIONS, regionId: 'r1' })
+      await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
+      await userEvent.click(screen.getByRole('radio', { name: '서울남' }))
+      await userEvent.click(screen.getByRole('dialog').parentElement!)
+      expect(props.onRegionChange).not.toHaveBeenCalled()
+    })
+
+    it('resets to region null and status all once Apply is pressed', async () => {
+      const props = renderBar({ regions: TWO_REGIONS, regionId: 'r1', status: 'completed' })
+      await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
+      await userEvent.click(screen.getByRole('button', { name: 'common.reset' }))
+      await userEvent.click(screen.getByRole('button', { name: 'common.apply' }))
+      expect(props.onRegionChange).toHaveBeenCalledWith(null)
+      expect(props.onStatusChange).toHaveBeenCalledWith('all')
+    })
+
+    it('offers no region section when there is nothing to choose between', async () => {
+      renderBar({ regions: [{ id: 'r1', name: '서울' }] })
+      await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
+      expect(screen.queryByRole('radiogroup', { name: 'schedules.regionFilterLabel' })).toBeNull()
+    })
+
+    // 달력은 격자 자체가 시간을 표현한다 — 예정만 남기면 격자에 구멍이 날 뿐이다(판정 R26).
+    it('offers no status section when hideStatus is set', async () => {
+      renderBar({ regions: TWO_REGIONS, hideStatus: true })
+      await userEvent.click(screen.getByRole('button', { name: /common\.filter/ }))
+      expect(
+        screen.queryByRole('radiogroup', { name: 'schedules.statusFilterLabel' }),
+      ).toBeNull()
+    })
   })
 })

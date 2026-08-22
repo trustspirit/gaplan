@@ -1,26 +1,23 @@
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
-import { SegmentedControl, type SegmentOption } from '@/components/ui'
+import { Check } from 'lucide-react'
 import { ScheduleDateRangeFilter } from '@/components/domain/ScheduleDateRangeFilter/ScheduleDateRangeFilter'
 import type { DateRange, ScheduleDateRangeSetting } from '@/hooks/useScheduleDateRange'
 import {
+  activeFilterCount,
   SCHEDULE_KINDS,
   toggleScheduleKind,
   type ScheduleKind,
   type ScheduleStatusFilter,
 } from './scheduleFilters'
+import { ScheduleFilterSheet, type RegionOption } from './ScheduleFilterSheet'
 import styles from './ScheduleFilterBar.module.scss'
-
-interface RegionOption {
-  id: string
-  name: string
-}
 
 interface ScheduleFilterBarProps {
   kinds: ScheduleKind[]
   onKindsChange: (next: ScheduleKind[]) => void
-  /** 2개 미만이면 고를 것이 없으므로 칩을 아예 그리지 않는다. */
+  /** 2개 미만이면 고를 것이 없으므로 시트에 지역 섹션을 그리지 않는다. */
   regions: RegionOption[]
   regionId: string | null
   onRegionChange: (next: string | null) => void
@@ -32,8 +29,6 @@ interface ScheduleFilterBarProps {
   range: DateRange
   onRangeChange: (next: ScheduleDateRangeSetting) => void
 }
-
-const STATUSES: ScheduleStatusFilter[] = ['all', 'upcoming', 'completed']
 
 export function ScheduleFilterBar({
   kinds,
@@ -50,7 +45,11 @@ export function ScheduleFilterBar({
 }: ScheduleFilterBarProps) {
   const { t } = useTranslation()
   const kindHeadingId = useId()
-  const regionHeadingId = useId()
+  const [sheetOpen, setSheetOpen] = useState(false)
+  // lazy-mount flag so an unopened sheet doesn't sit in the DOM as a second
+  // role="dialog" (BottomSheet stays mounted-but-inert while closed, for its
+  // exit transition — see ScheduleItem's kebab-menu sheet for the same trick).
+  const [sheetEverOpen, setSheetEverOpen] = useState(false)
 
   const selected = new Set(kinds)
   // 전부 끄면 빈 화면만 남고 되돌릴 실마리가 없다. 마지막 하나는 잠근다(사용자 affordance).
@@ -59,15 +58,20 @@ export function ScheduleFilterBar({
   // 실제 규칙(마지막 하나는 안 꺼진다)은 순수 함수로 옮겨져 있다 — scheduleFilters.test.ts 참고.
   const toggleKind = (kind: ScheduleKind) => onKindsChange(toggleScheduleKind(kinds, kind))
 
-  const statusOptions: SegmentOption<ScheduleStatusFilter>[] = STATUSES.map((value) => ({
-    value,
-    label: t(`schedules.status.${value}`),
-  }))
+  // 지역·상태는 시트 뒤로 숨었다 — 고를 것이 아예 없으면 시트도 빈 껍데기라 버튼째 감춘다.
+  const canFilter = regions.length > 1 || !hideStatus
+  const filterCount = activeFilterCount({ regionId, status, hideStatus: !!hideStatus })
+
+  const applyFromSheet = (next: { regionId: string | null; status: ScheduleStatusFilter }) => {
+    onRegionChange(next.regionId)
+    onStatusChange(next.status)
+    setSheetOpen(false)
+  }
 
   return (
     <div className={styles.bar}>
       <div className={styles.chipGroup} role="group" aria-labelledby={kindHeadingId}>
-        <span id={kindHeadingId} className={styles.srOnly}>
+        <span id={kindHeadingId} className={styles.groupLabel}>
           {t('schedules.kindFilterLabel')}
         </span>
         {SCHEDULE_KINDS.map((kind) => (
@@ -79,53 +83,45 @@ export function ScheduleFilterBar({
             disabled={isLastOn(kind)}
             onClick={() => toggleKind(kind)}
           >
+            {selected.has(kind) && <Check size={14} aria-hidden="true" />}
             {t(`schedules.kind.${kind}`)}
           </button>
         ))}
       </div>
 
-      {regions.length > 1 && (
-        <div className={styles.chipGroup} role="group" aria-labelledby={regionHeadingId}>
-          <span id={regionHeadingId} className={styles.srOnly}>
-            {t('schedules.regionFilterLabel')}
-          </span>
+      <div className={styles.trailing}>
+        <ScheduleDateRangeFilter
+          setting={rangeSetting}
+          currentRange={range}
+          onChange={onRangeChange}
+        />
+
+        {canFilter && (
           <button
             type="button"
-            className={clsx(styles.chip, regionId === null && styles.chipOn)}
-            aria-pressed={regionId === null}
-            onClick={() => onRegionChange(null)}
+            className={styles.filterButton}
+            onClick={() => {
+              setSheetEverOpen(true)
+              setSheetOpen(true)
+            }}
           >
-            {t('common.all')}
+            {t('common.filter')}
+            {filterCount > 0 && <span className={styles.filterBadge}>{filterCount}</span>}
           </button>
-          {regions.map((region) => (
-            <button
-              key={region.id}
-              type="button"
-              className={clsx(styles.chip, regionId === region.id && styles.chipOn)}
-              aria-pressed={regionId === region.id}
-              onClick={() => onRegionChange(region.id)}
-            >
-              {region.name}
-            </button>
-          ))}
-        </div>
-      )}
+        )}
+      </div>
 
-      {!hideStatus && (
-        <SegmentedControl
-          options={statusOptions}
-          value={status}
-          onChange={onStatusChange}
-          aria-label={t('schedules.statusFilterLabel')}
-          className={styles.status}
+      {canFilter && sheetEverOpen && (
+        <ScheduleFilterSheet
+          open={sheetOpen}
+          regions={regions}
+          regionId={regionId}
+          status={status}
+          hideStatus={!!hideStatus}
+          onApply={applyFromSheet}
+          onClose={() => setSheetOpen(false)}
         />
       )}
-
-      <ScheduleDateRangeFilter
-        setting={rangeSetting}
-        currentRange={range}
-        onChange={onRangeChange}
-      />
     </div>
   )
 }
