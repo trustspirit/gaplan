@@ -62,4 +62,25 @@ describe('validateNewZoomLink', () => {
     const result = validateNewZoomLink([], { label: '', url: 'not-a-url' })
     expect(result).toEqual({ ok: false, reason: 'invalid_url' })
   })
+
+  // Test hardening #7 (2026-08-22): the priority chain is invalid_url -> duplicate ->
+  // empty_label -> limit_reached. Only the invalid_url-vs-empty_label pair was pinned
+  // above -- pin each adjacent pair so a future reorder gets caught immediately.
+  it('rejects an invalid URL even when it also duplicates an existing (also-invalid) entry', () => {
+    const existing = [link('not-a-url')]
+    const result = validateNewZoomLink(existing, { label: '라벨', url: 'not-a-url' })
+    expect(result).toEqual({ ok: false, reason: 'invalid_url' })
+  })
+
+  it('rejects a duplicate URL even when the label is also empty', () => {
+    const existing = [link('https://zoom.us/j/111')]
+    const result = validateNewZoomLink(existing, { label: '', url: 'https://zoom.us/j/111' })
+    expect(result).toEqual({ ok: false, reason: 'duplicate' })
+  })
+
+  it('rejects an empty label even when already at the max', () => {
+    const existing = Array.from({ length: MAX_ZOOM_LINKS }, (_, i) => link(`https://zoom.us/j/${i}`))
+    const result = validateNewZoomLink(existing, { label: '   ', url: 'https://zoom.us/j/new' })
+    expect(result).toEqual({ ok: false, reason: 'empty_label' })
+  })
 })

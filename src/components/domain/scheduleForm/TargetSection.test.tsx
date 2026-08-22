@@ -259,6 +259,22 @@ describe('TargetSection', () => {
     })
   })
 
+  // 테스트 보강 #6 (2026-08-22): 위 테스트는 onChange에 어떤 인자가 실렸는지만 본다 —
+  // Harness가 그 부분 병합을 실제로 반영해 화면에 그 값을 보여주는지는 따로 확인한
+  // 적이 없다. 관련 방문을 고르면 화면에 보이는 대상 유형/스테이크/와드 select가
+  // 실제로 그 방문의 스테이크·와드로 갱신되는지를 렌더된 값으로 직접 확인한다.
+  it('관련 방문을 고르면 화면의 대상 유형·스테이크·와드 select가 그 방문의 값으로 채워진다', async () => {
+    const visits: UpcomingVisit[] = [
+      { id: 'v-known', date: '2026-08-01', wardName: '녹번 와드', unitId: 'seoul-stake', wardId: 'seoul-nokbeon' },
+    ]
+    renderSection({ type: 'meeting', purpose: 'pre_visit', upcomingVisits: visits })
+    await userEvent.selectOptions(screen.getByLabelText('schedule.relatedVisitLabel'), 'v-known')
+
+    expect((screen.getByLabelText('schedule.targetKindLabel') as HTMLSelectElement).value).toBe('ward_bishop')
+    expect((screen.getByLabelText('schedule.stakeLabel') as HTMLSelectElement).value).toBe('seoul-stake')
+    expect((screen.getByLabelText('schedule.wardLabel') as HTMLSelectElement).value).toBe('녹번 와드')
+  })
+
   // Task 8: 이 계획이 없앤 결함(아래→위 역방향 쓰기)이 돌아오는 것을 못박는다.
   // 판정 기준은 "렌더된 값"이다 — 핸들러가 불렸는지가 아니라 화면에 보이는 select의
   // value가 그대로인지를 본다. cc_council로 바꿀 때 목적·관련 방문을 지우는 것(R3)은
