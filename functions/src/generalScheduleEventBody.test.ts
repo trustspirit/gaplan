@@ -62,3 +62,31 @@ describe('a general schedule with a start time but no end time', () => {
     expect(body.end).toEqual({ dateTime: '2026-09-03T11:00:00+09:00', timeZone: 'Asia/Seoul' })
   })
 })
+
+// 1박 2일 행사에 시간이 있는 경우. 종료 날짜를 무시하면 둘째 날이 통째로 잘린다.
+describe('a multi-day event that also has times', () => {
+  it('ends on endDate, not on the start date', () => {
+    const body = generalScheduleEventBody({
+      title: '수련회',
+      date: '2026-09-03',
+      endDate: '2026-09-04',
+      startTime: '19:00',
+      endTime: '12:00',
+    })
+    expect(body.start).toEqual({ dateTime: '2026-09-03T19:00:00+09:00', timeZone: 'Asia/Seoul' })
+    expect(body.end).toEqual({ dateTime: '2026-09-04T12:00:00+09:00', timeZone: 'Asia/Seoul' })
+  })
+
+  // 하루짜리에서는 종료가 시작보다 이르면 기본 길이로 대체되지만, 날짜가 다르면
+  // 12:00 < 19:00 이어도 정상이다 — 시각만 비교해서 덮어쓰면 안 된다.
+  it('does not treat an earlier clock time on a later day as broken', () => {
+    const body = generalScheduleEventBody({
+      title: '수련회',
+      date: '2026-09-03',
+      endDate: '2026-09-04',
+      startTime: '19:00',
+      endTime: '09:00',
+    })
+    expect(body.end).toEqual({ dateTime: '2026-09-04T09:00:00+09:00', timeZone: 'Asia/Seoul' })
+  })
+})

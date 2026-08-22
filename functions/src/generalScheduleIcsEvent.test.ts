@@ -110,3 +110,21 @@ describe('a general schedule with a start time but no end time', () => {
     expect(text).toContain('DTEND;TZID=Asia/Seoul:20260903T110000')
   })
 })
+
+describe('a multi-day event that also has times', () => {
+  it('puts DTEND on endDate, not on the start date', () => {
+    const text = buildGeneralScheduleVEvent(
+      {
+        id: 'e2',
+        title: '수련회',
+        date: '2026-09-03',
+        endDate: '2026-09-04',
+        startTime: '19:00',
+        endTime: '12:00',
+      },
+      '20260901T000000Z',
+    )
+    expect(text).toContain('DTSTART;TZID=Asia/Seoul:20260903T190000')
+    expect(text).toContain('DTEND;TZID=Asia/Seoul:20260904T120000')
+  })
+})

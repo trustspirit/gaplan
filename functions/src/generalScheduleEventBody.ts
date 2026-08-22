@@ -7,7 +7,7 @@
  * 시간대는 `calendarSync.ts`와 동일하게 KST(+09:00, Asia/Seoul)로 맞춘다.
  */
 import dayjs from 'dayjs'
-import { resolveGeneralScheduleEndTime } from './generalScheduleDefaults'
+import { resolveGeneralScheduleEnd } from './generalScheduleDefaults'
 
 export interface GeneralScheduleForCalendar {
   title: string
@@ -35,12 +35,18 @@ export function generalScheduleEventBody(gs: GeneralScheduleForCalendar): Genera
     // 행사는 endTime이 선택이라 시작만 있는 문서가 실제로 존재한다. 같은 시각으로 채우면
     // 길이 0짜리 이벤트가 되어 구글 캘린더에 점처럼 그려지므로, 폼이 자동으로 채우는 것과
     // 같은 기본 길이를 쓴다(generalScheduleDefaults.ts).
-    const endTime = resolveGeneralScheduleEndTime(gs.startTime, gs.endTime ?? undefined)
+    // 여러 날에 걸친 행사는 종료가 endDate에 찍혀야 한다 — gs.date를 쓰면 둘째 날이 잘린다.
+    const end = resolveGeneralScheduleEnd(
+      gs.date,
+      gs.startTime,
+      gs.endDate ?? undefined,
+      gs.endTime ?? undefined,
+    )
     return {
       summary: gs.title,
       ...(description ? { description } : {}),
       start: { dateTime: `${gs.date}T${gs.startTime}:00+09:00`, timeZone: 'Asia/Seoul' },
-      end: { dateTime: `${gs.date}T${endTime}:00+09:00`, timeZone: 'Asia/Seoul' },
+      end: { dateTime: `${end.date}T${end.time}:00+09:00`, timeZone: 'Asia/Seoul' },
     }
   }
 

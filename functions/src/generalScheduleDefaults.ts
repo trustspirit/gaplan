@@ -39,3 +39,24 @@ export function resolveGeneralScheduleEndTime(startTime: string, endTime?: strin
 
   return toHHMM(start + GENERAL_SCHEDULE_DEFAULT_DURATION_MINUTES)
 }
+
+/**
+ * 시간이 지정된 행사의 종료 지점(날짜 + 시각)을 정한다.
+ *
+ * 하루짜리에서는 `resolveGeneralScheduleEndTime`의 규칙이 그대로 적용되지만, 여러 날에
+ * 걸친 행사는 **시각만 비교하면 안 된다** — 9/3 19:00 시작해서 9/4 09:00에 끝나는 수련회는
+ * 09:00 < 19:00이어도 깨진 데이터가 아니다.
+ */
+export function resolveGeneralScheduleEnd(
+  date: string,
+  startTime: string,
+  endDate?: string,
+  endTime?: string,
+): { date: string; time: string } {
+  const lastDay = endDate && endDate > date ? endDate : date
+  if (lastDay !== date) {
+    // 날짜가 이미 뒤이므로 시각은 있는 그대로 쓴다. 없으면 기본 길이를 적용한다.
+    return { date: lastDay, time: endTime ?? resolveGeneralScheduleEndTime(startTime) }
+  }
+  return { date, time: resolveGeneralScheduleEndTime(startTime, endTime) }
+}
