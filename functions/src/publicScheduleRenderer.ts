@@ -2,7 +2,7 @@ import { onRequest } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import { getScopeDisplayName } from './regions'
 import { createTtlCache } from './publicScheduleRendererCache'
-import { buildPublicSchedulePayload, type FirestoreLike } from './publicSchedulePayload'
+import { buildPublicSchedulePayload, PublicScopeError, type FirestoreLike } from './publicSchedulePayload'
 import { buildInlineDataScript } from './publicInlineScript'
 
 const HOSTING_URL = 'https://gaplan-fccfe.web.app'
@@ -11,9 +11,6 @@ const TITLE_CACHE_TTL_MS = 5 * 60 * 1000
 
 const indexHtmlCache = createTtlCache<string>(HTML_CACHE_TTL_MS)
 const titleCache = new Map<string, { title: string; cachedAt: number }>()
-
-const PAYLOAD_CACHE_TTL_MS = 5 * 60 * 1000
-const payloadCache = new Map<string, { script: string; cachedAt: number }>()
 
 function escapeAttr(s: string) {
   return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
@@ -56,22 +53,35 @@ async function loadIndexHtml(): Promise<string> {
 }
 
 /**
- * 문서에 실을 데이터 태그. 실패하면 빈 문자열을 돌려준다 — 페이지는 스스로
- * fetch할 줄 알기 때문에, 여기서 실패해도 기능이 죽지 않고 예전 속도로만 돌아간다.
+ * 문서에 실을 데이터 태그. 캐시하지 않는다 — 캐시하면 관리자가 링크를 비공개로 돌린 뒤에도
+ * 그 시간만큼 예전 일정이 문서 소스에 그대로 남는다. CDN(s-maxage=300)이 부하를 흡수하고
+ * 그 창은 이 설계가 처음부터 받아들인 것이지만, 인스턴스 캐시를 더하면 최악의 경우가 두 배가
+ * 되는데 그건 계산에 넣은 적이 없다. 읽기 비용은 이 변경 전 클라이언트가 매 페이지 로드마다
+ * 콜러블로 하던 것과 같다 — 회귀가 아니다.
+ *
+ * 실패하면 빈 문자열을 돌려준다. 페이지는 스스로 fetch할 줄 알기 때문에 기능이 죽지는 않고
+ * 예전 속도로 돌아갈 뿐이다 — 그래서 더더욱 로그가 필요하다. 조용히 삼키면 왕복 절감이 통째로
+ * 사라진 걸 아무도 모른다.
  */
 async function getInlineDataScript(token: string): Promise<string> {
   if (!token) return ''
-
-  const cached = payloadCache.get(token)
-  if (cached && Date.now() - cached.cachedAt < PAYLOAD_CACHE_TTL_MS) return cached.script
 
   try {
     // 실제 Firestore 타입은 FirestoreLike보다 구조적으로 넓다(admin SDK가 여기서만 등장한다).
     const payload = await buildPublicSchedulePayload(admin.firestore() as unknown as FirestoreLike, token)
     const script = buildInlineDataScript(token, payload)
-    payloadCache.set(token, { script, cachedAt: Date.now() })
+    if (!script) {
+      // 캡을 넘겨 안 실은 경우. 가장 큰 스코프가 인라인의 이득이 가장 큰 자리라 조용히 넘기면 안 된다.
+      console.warn('[publicScheduleRenderer] inline payload exceeded the size cap; serving without it')
+    }
     return script
-  } catch {
+  } catch (e) {
+    // PublicScopeError(잘못됐거나 꺼진 토큰)는 정상 흐름이다 — 페이지가 스스로 fetch해서
+    // 비공개 화면을 띄운다. 그 밖의 에러는 반드시 남긴다: FirestoreLike가 실제 SDK와 어긋나는
+    // 경우가 정확히 여기로 떨어지는데, 이 저장소는 functions/src를 타입 검사하지 않는다.
+    if (!(e instanceof PublicScopeError)) {
+      console.error('[publicScheduleRenderer] failed to build the inline payload', e)
+    }
     return ''
   }
 }
@@ -132,6 +142,10 @@ export const publicScheduleRenderer = onRequest(
     // pageUrl은 오늘은 안전하지만, 같은 위험을 한 리팩터링 거리에 두지 않기 위해 체인
     // 전체를 함수 리플레이서로 통일한다.
     const html = indexHtml
+      // escapeAttr은 &, "만 이스케이프한다 — <title> 안에서 실제로 위험한 문자는 '<'인데,
+      // 이게 안전한 건 title이 getScopeDisplayName의 고정 지역 표(regions.ts)에서만 나오고
+      // 사용자 입력을 절대 타지 않기 때문이다. 나중에 title이 사용자 입력(예: customTitle)을
+      // 반영하게 되면 여기도 '<'를 이스케이프해야 한다.
       .replace(/<title>[^<]*<\/title>/, () => `<title>${escapeAttr(title)}</title>`)
       .replace(/<meta property="og:title"[^>]*\/?>/, () => `<meta property="og:title" content="${escapeAttr(title)}" />`)
       .replace(/<meta property="og:url"[^>]*\/?>/, () => `<meta property="og:url" content="${escapeAttr(pageUrl)}" />`)

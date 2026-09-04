@@ -33,7 +33,10 @@ if (total > LIMIT_BYTES) {
   console.error(
     `check-public-bundle: 공개 엔트리가 상한을 넘었다 (${kb(total)} > ${kb(LIMIT_BYTES)}).\n` +
     '  공개 페이지가 로그인 앱 쪽 모듈을 새로 끌어오지 않았는지 확인할 것 — ' +
-    'firebase auth/firestore, react-router, src/i18n/{ko,en}.json 이 흔한 범인이다.',
+    'firebase auth/firestore, react-router, src/i18n/{ko,en}.json 이 흔한 범인이다.\n' +
+    '  청크 이름은 Rollup이 붙이는 것일 뿐 내용물을 보장하지 않는다 — 예를 들어 ' +
+    '"en-*.js"는 실제로는 react-dom 내부 코드다. 이름만 보고 i18n을 의심하지 말고 ' +
+    '해당 파일을 직접 열어 확인할 것.',
   )
   process.exit(1)
 }

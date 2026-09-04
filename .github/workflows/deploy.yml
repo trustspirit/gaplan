@@ -22,6 +22,8 @@ jobs:
               - 'src/**'
               - 'public/**'
               - 'index.html'
+              - 'public.html'
+              - 'scripts/**'
               - 'vite.config.ts'
               - 'package.json'
               - 'package-lock.json'

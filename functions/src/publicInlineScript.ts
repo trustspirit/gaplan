@@ -14,10 +14,15 @@ export const MAX_INLINE_BYTES = 256 * 1024
  */
 export function buildInlineDataScript(token: string, payload: PublicSchedulePayload): string {
   const json = JSON.stringify({ token, data: payload })
-  if (Buffer.byteLength(json, 'utf8') > MAX_INLINE_BYTES) return ''
 
   // JSON.stringify는 '<'를 그대로 둔다 — 노트에 '</script>'가 있으면 태그가 거기서
   // 끊긴다. '<'만 유니코드 이스케이프하면 JSON.parse 결과는 원문 그대로다.
   const safe = json.replace(/</g, '\\u003c')
+
+  // 상한은 실제로 문서에 실리는 문자열(safe) 기준이어야 한다. escaping 전 json으로
+  // 재면 '<' 하나가 이스케이프 후 6바이트(<)로 불어나는 걸 못 잡아, 캡이
+  // 지키려는 상한을 캡 자신이 넘겨버릴 수 있다.
+  if (Buffer.byteLength(safe, 'utf8') > MAX_INLINE_BYTES) return ''
+
   return `<script type="application/json" id="${INLINE_DATA_ID}">${safe}</script>`
 }
