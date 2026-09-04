@@ -18,7 +18,12 @@ import { generalScheduleInScope } from './generalScheduleScope'
  * 없이(이 저장소엔 설치돼 있지도 않다) 돌릴 수 있다.
  */
 export class PublicScopeError extends Error {
-  constructor(public readonly reason: 'invalid-token' | 'not-enabled' | 'invalid-scope') {
+  constructor(
+    // 'not-enabled'(전역 schedulePublic 꺼짐)와 'scope-not-enabled'(이 유닛/CC 링크만 꺼짐)를
+    // 합치지 마라 — 둘 다 permission-denied로 나가지만 뜻이 다르다. 하나로 합치면 나중에
+    // 특정 링크가 왜 막혔는지 디버깅할 때 "전체가 꺼졌나, 이 링크만 꺼졌나"를 구분할 수 없다.
+    public readonly reason: 'invalid-token' | 'not-enabled' | 'scope-not-enabled' | 'invalid-scope',
+  ) {
     super(reason)
     this.name = 'PublicScopeError'
   }
@@ -126,7 +131,7 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
     const unitEnabled = unitsSnap.exists && unitsSnap.data()?.[scopeValue]?.enabled === true
 
     if (!unitEnabled) {
-      throw new PublicScopeError('not-enabled')
+      throw new PublicScopeError('scope-not-enabled')
     }
 
     unitIds = getScopeUnitIds(scopeValue)

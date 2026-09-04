@@ -11,6 +11,8 @@ function toHttpsError(e: PublicScopeError): HttpsError {
       return new HttpsError('permission-denied', 'Invalid token')
     case 'not-enabled':
       return new HttpsError('permission-denied', 'Public schedule is not enabled')
+    case 'scope-not-enabled':
+      return new HttpsError('permission-denied', 'This scope is not enabled')
     case 'invalid-scope':
       return new HttpsError('permission-denied', 'Invalid scope')
   }

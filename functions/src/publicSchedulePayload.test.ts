@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { buildPublicSchedulePayload, PublicScopeError, type FirestoreLike } from './publicSchedulePayload'
+import { buildPublicSchedulePayload, type FirestoreLike } from './publicSchedulePayload'
 
 function snap(data: unknown, exists = true) {
   return { exists, data: () => data }
@@ -54,7 +54,32 @@ describe('buildPublicSchedulePayload', () => {
       tokens: { tok: '__all__' },
       publicSettings: { schedulePublic: false },
     })
-    await expect(buildPublicSchedulePayload(db, 'tok')).rejects.toBeInstanceOf(PublicScopeError)
+    await expect(buildPublicSchedulePayload(db, 'tok')).rejects.toMatchObject({
+      reason: 'not-enabled',
+    })
+  })
+
+  // 전역 schedulePublic은 켜져 있지만 이 토큰이 가리키는 특정 유닛/CC 링크만 꺼진 경우.
+  // 'not-enabled'(전체가 꺼짐)와 구분되는 별개의 reason이어야 한다 — 합치면 나중에 이
+  // 링크가 왜 막혔는지 디버깅할 수 없다.
+  it('특정 유닛/CC 링크가 꺼져 있으면 scope-not-enabled로 거부한다', async () => {
+    const db = setupFirestore({
+      tokens: { tok: 'seoul-east-stake' },
+      units: { 'seoul-east-stake': { enabled: false } },
+    })
+    await expect(buildPublicSchedulePayload(db, 'tok')).rejects.toMatchObject({
+      reason: 'scope-not-enabled',
+    })
+  })
+
+  it('settings/publicUnits에 항목 자체가 없어도 scope-not-enabled로 거부한다', async () => {
+    const db = setupFirestore({
+      tokens: { tok: 'seoul-east-stake' },
+      // units를 아예 지정하지 않으면 settings/publicUnits 문서가 exists:false로 잡힌다.
+    })
+    await expect(buildPublicSchedulePayload(db, 'tok')).rejects.toMatchObject({
+      reason: 'scope-not-enabled',
+    })
   })
 
   it('전체 공유 토큰은 확정 일정을 그대로 내보내고 scopeDisplayName이 null이다', async () => {
