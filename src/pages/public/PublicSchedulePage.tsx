@@ -1,5 +1,4 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
@@ -122,8 +121,13 @@ function buildSubscribeUrls(token: string, outlookName: string) {
   return { icsWebcal, googleUrl, outlookPersonalUrl, outlookWorkUrl }
 }
 
-export default function PublicSchedulePage() {
-  const { token } = useParams<{ token: string }>()
+export interface PublicSchedulePageProps {
+  /** URL의 공개 토큰. 라우터가 있는 본 앱은 라우트가, 공개 전용 엔트리는
+   *  pathname 파싱이 넘긴다 — 한 컴포넌트가 두 방식을 알지 않게 한다. */
+  token?: string
+}
+
+export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
   const { t, i18n } = useTranslation()
   const [schedules, setSchedules] = useState<PublicScheduleItem[]>([])
   const [scopeDisplayName, setScopeDisplayName] = useState<string | null>(null)

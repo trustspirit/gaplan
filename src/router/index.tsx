@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ComponentType } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { useAtomValue } from 'jotai'
 import { ProtectedRoute } from './ProtectedRoute'
 import RespondPage from '@/pages/respond/RespondPage'
@@ -39,6 +39,13 @@ function ShellFallback() {
       </div>
     </AppShell>
   )
+}
+
+// 페이지는 token을 prop으로 받는다 — 공개 전용 엔트리가 react-router 없이 같은
+// 컴포넌트를 그릴 수 있어야 하기 때문이다. 라우터를 아는 건 이 얇은 껍데기뿐이다.
+function PublicScheduleRoute() {
+  const { token } = useParams<{ token: string }>()
+  return <PublicSchedulePage token={token} />
 }
 
 // After a deploy, tabs opened on the previous version hold an index.html that
@@ -150,7 +157,7 @@ export function AppRouter() {
           </Route>
 
           <Route path="/respond/:taskId" element={<RespondPage />} />
-          <Route path="/public/schedule/:token" element={<PublicSchedulePage />} />
+          <Route path="/public/schedule/:token" element={<PublicScheduleRoute />} />
           <Route path="/public/schedule" element={<Navigate to={ROUTES.home} replace />} />
 
           <Route path="*" element={<Navigate to={ROUTES.home} replace />} />

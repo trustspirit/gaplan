@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter, Routes, Route } from 'react-router-dom'
 
 const { fetchSpy } = vi.hoisted(() => ({ fetchSpy: vi.fn() }))
 
@@ -28,13 +27,7 @@ function plantInline(token: string, schedules: unknown[]) {
 }
 
 function renderAt(token: string) {
-  return render(
-    <MemoryRouter initialEntries={[`/public/schedule/${token}`]}>
-      <Routes>
-        <Route path="/public/schedule/:token" element={<PublicSchedulePage />} />
-      </Routes>
-    </MemoryRouter>,
-  )
+  return render(<PublicSchedulePage token={token} />)
 }
 
 const ONE = {

@@ -1,5 +1,4 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type {
   PublicGeneralScheduleItem,
   PublicScheduleItem,
@@ -58,13 +57,7 @@ const multiDayGeneralItem: PublicGeneralScheduleItem = {
 }
 
 function renderPage(token: string) {
-  return render(
-    <MemoryRouter initialEntries={[`/public/schedule/${token}`]}>
-      <Routes>
-        <Route path="/public/schedule/:token" element={<PublicSchedulePage />} />
-      </Routes>
-    </MemoryRouter>,
-  )
+  return render(<PublicSchedulePage token={token} />)
 }
 
 describe('PublicSchedulePage — general event row layout', () => {
