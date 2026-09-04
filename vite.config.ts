@@ -31,6 +31,16 @@ export default defineConfig(({ command, mode }) => {
 
 const config = {
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      input: {
+        // 로그인 앱과 공개 페이지는 서로 아무것도 공유할 필요가 없다 — 엔트리를
+        // 나눠야 공개 방문자가 firebase auth·firestore와 전체 i18n 사전을 받지 않는다.
+        main: resolve(__dirname, 'index.html'),
+        public: resolve(__dirname, 'public.html'),
+      },
+    },
+  },
   resolve: {
     alias: { '@': resolve(__dirname, 'src') },
     extensions,
