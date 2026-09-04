@@ -71,8 +71,13 @@ export const adminEditSchedule = functions
       }
       allowed.notes = updates.notes
     }
+    // 빈 문자열은 '스테이크/지방부 없음'이라는 뜻이다 — 단체 모임처럼 대상이 특정
+    // 스테이크에 딸려 있지 않은 일정에서 한번 붙은 스테이크를 뗄 수 있어야 한다.
+    // 생성 CF가 스테이크 없는 일정을 unitId: ''로 저장하므로 같은 모양을 쓴다(null이
+    // 아니어야 협의 평의회 문서와 같은 '빈 값' 판정과 unitId-in 쿼리 동작을 공유한다).
+    // ward_visit만은 예외라 아래 문서 조회 뒤에 따로 막는다.
     if (updates.unitId !== undefined) {
-      if (typeof updates.unitId !== 'string' || updates.unitId.length === 0) {
+      if (typeof updates.unitId !== 'string') {
         throw new functions.https.HttpsError('invalid-argument', 'Invalid unitId')
       }
       allowed.unitId = updates.unitId
@@ -172,6 +177,12 @@ export const adminEditSchedule = functions
         throw new functions.https.HttpsError('permission-denied',
           'exec_secretary can only edit schedules for their assigned seventy')
       }
+    }
+
+    // 방문(ward_visit)은 방문하는 단위 자체가 일정의 대상이다 — 스테이크를 비우면 제목·장소가
+    // 통째로 사라진다. 생성 CF가 ward_visit에 unitId를 요구하는 것과 같은 규칙.
+    if (snap.data()?.type === 'ward_visit' && allowed.unitId === '') {
+      throw new functions.https.HttpsError('invalid-argument', 'unitId required for ward_visit')
     }
 
     // 협의 평의회는 'unitId는 비고 regionId가 채워져 있다'가 전제다. 수정으로 스테이크가

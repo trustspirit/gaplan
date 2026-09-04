@@ -28,9 +28,16 @@
   }
 }
 
+// display를 flex로 두는 건 폭 때문이 아니라 **세로 가운데 정렬** 때문이다. control-metrics가
+// 준 min-height(38/44px)는 값 한 줄보다 크고, iOS Safari는 그 남는 높이 안에서 네이티브
+// 날짜/시간 위젯을 스스로 가운데로 놓지 않는다 — 일반 text input과 달리 값이 콘텐츠 상자
+// 위쪽에 붙는다(iOS 17 Safari에서 재현). input 자체를 flex 컨테이너로 만들면 그림자 트리가
+// flex item이 되어 align-items가 먹는다. 데스크톱 Chrome은 이 규칙 유무와 무관하게 같은
+// 그림(달력 아이콘 위치 포함)이라 회귀가 없다.
 .input[type='date'],
 .input[type='time'] {
-  display: block;
+  display: flex;
+  align-items: center;
   inline-size: 100%;
   max-inline-size: 100%;
   text-align: left;
@@ -44,6 +51,8 @@
 .input[type='date']::-webkit-date-and-time-value,
 .input[type='time']::-webkit-date-and-time-value {
   min-width: 0;
+  // iOS Safari가 이 값 상자에 붙이는 기본 여백 — 남겨두면 위 정렬이 다시 어긋난다.
+  margin: 0;
   text-align: left;
 }
 

@@ -1,4 +1,4 @@
-import { questionsFor, toTargetPayload, resetForKind, stakeLabelKeyFor, targetKindChoicesFor } from './scheduleTargetRules'
+import { questionsFor, toTargetPayload, resetForKind, stakeLabelKeyFor, targetKindChoicesFor, unitIsOptionalFor } from './scheduleTargetRules'
 
 const EMPTY = { kind: '' as const, unitId: '', wardName: '', ccRegionId: '', freeText: '' }
 
@@ -152,5 +152,30 @@ describe('resetForKind', () => {
       'stake_president',
     )
     expect(next).toEqual({ ...EMPTY, kind: 'stake_president', unitId: 'seoul-east-stake' })
+  })
+})
+
+// 단체 모임처럼 대상이 특정 스테이크/지방부에 딸려 있지 않은 경우가 있다 — 그때
+// 스테이크를 비운 채로 저장할 수 있어야 한다(사용자 지적, 2026-09-04). 라벨과 편집
+// 모달의 payload가 같은 판정을 쓰도록 이 함수 하나로 모았다.
+describe('unitIsOptionalFor', () => {
+  it('기타(직접 입력)만 스테이크를 비울 수 있다', () => {
+    expect(unitIsOptionalFor('other')).toBe(true)
+  })
+
+  it('스테이크 회장·와드 감독은 스테이크를 비울 수 없다', () => {
+    expect(unitIsOptionalFor('stake_president')).toBe(false)
+    expect(unitIsOptionalFor('ward_bishop')).toBe(false)
+  })
+
+  it('대상 유형을 아직 안 골랐거나 협의 평의회면 비울 수 있는 칸 자체가 없다', () => {
+    expect(unitIsOptionalFor('')).toBe(false)
+    expect(unitIsOptionalFor('cc_council')).toBe(false)
+  })
+
+  it('스테이크 라벨의 (선택) 여부와 같은 판정을 쓴다', () => {
+    for (const kind of ['stake_president', 'ward_bishop', 'cc_council', 'other', ''] as const) {
+      expect(stakeLabelKeyFor(kind) === 'schedule.stakeLabelOptional').toBe(unitIsOptionalFor(kind))
+    }
   })
 })

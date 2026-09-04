@@ -116,6 +116,18 @@ export function targetKindChoicesFor(type: ScheduleType): TargetKindChoice[] {
 }
 
 /**
+ * 스테이크/지방부를 비워둔 채로 저장할 수 있는 대상 유형인가.
+ * '기타(직접 입력)'만 비워둘 수 있다 — 단체 모임처럼 대상이 특정 스테이크/지방부에
+ * 딸려 있지 않은 경우가 있기 때문이다(사용자가 직접 지적한 결함: 편집 모달에서 한번
+ * 붙은 스테이크를 다시 뗄 수단이 없었다). stake_president는 그 스테이크가 곧 대상이고,
+ * ward_bishop은 와드가 스테이크에 매달려 있으므로 둘 다 비울 수 없다. cc_council은
+ * 스테이크 칸 자체가 뜨지 않는다(questionsFor).
+ */
+export function unitIsOptionalFor(kind: TargetKindChoice | ''): boolean {
+  return kind === 'other'
+}
+
+/**
  * 스테이크/지방부 select 라벨의 번역 키 — 대상 유형(effectiveKind)만으로 정한다.
  * 일정 종류(interview/meeting)는 관여하지 않는다: 생성 모달과 편집 모달이 같은 대상
  * 유형이라면 반드시 같은 라벨을 보여줘야 한다(사용자가 직접 지적한 결함 — 두 모달이
@@ -124,7 +136,7 @@ export function targetKindChoicesFor(type: ScheduleType): TargetKindChoice[] {
  * 뜨지 않으므로(questionsFor) 실제로 쓰이지 않지만, 함수는 항상 값을 돌려준다.
  */
 export function stakeLabelKeyFor(kind: TargetKindChoice | ''): string {
-  return kind === 'other' ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel'
+  return unitIsOptionalFor(kind) ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel'
 }
 
 /**

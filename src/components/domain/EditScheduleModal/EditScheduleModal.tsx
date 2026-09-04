@@ -17,6 +17,7 @@ import { buildScheduleTitle, buildScheduleLocation } from '../../../../functions
 import { useScheduleForm } from '../scheduleForm/useScheduleForm'
 import type { ScheduleFormState } from '../scheduleForm/useScheduleForm'
 import { TargetSection } from '../scheduleForm/TargetSection'
+import { unitIsOptionalFor } from '../scheduleForm/scheduleTargetRules'
 import { WhenSection } from '../scheduleForm/WhenSection'
 import { DetailSection } from '../scheduleForm/DetailSection'
 import styles from './EditScheduleModal.module.scss'
@@ -188,7 +189,13 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
           startTime,
           endTime,
           notes: notes || null,
-          ...(isCcCouncil ? {} : { unitId: target.unitId || undefined }),
+          // 스테이크/지방부가 선택인 대상 유형(기타 — 단체 모임 등)은 비운 채로도 저장돼야
+          // 한다. undefined로 보내면 JSON 직렬화에서 키가 통째로 빠져 CF가 "이 필드는 안
+          // 건드림"으로 읽고 예전 값이 그대로 남는다 — 사용자에겐 필수 칸처럼 보였다.
+          // 빈 문자열이어야 지워진다(생성 CF도 스테이크 없는 일정을 unitId: ''로 저장한다).
+          ...(isCcCouncil
+            ? {}
+            : { unitId: unitIsOptionalFor(target.kind) ? target.unitId : target.unitId || undefined }),
           ...(isVisit ? { wardName: target.wardName || null } : {}),
           ...(isInterview ? { presidentUid: presidentUid || null } : {}),
           ...(!isVisit ? { zoomLink: zoomLink.trim() || null } : {}),

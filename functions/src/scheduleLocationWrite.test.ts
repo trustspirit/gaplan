@@ -77,3 +77,22 @@ describe('resolveScheduleLocationForEdit', () => {
     expect(resolveScheduleLocationForEdit(current, {})).toBe('교문 와드')
   })
 })
+
+// 스테이크/지방부를 비운 수정(단체 모임 등)은 unitId를 빈 문자열로 보낸다 — 키가 빠진
+// "안 건드림"과 구분돼야 하고, 스테이크에서 유도됐던 장소도 함께 사라져야 한다.
+describe('resolveScheduleLocationForEdit — 스테이크를 비운 수정', () => {
+  const meeting = {
+    type: 'meeting',
+    unitId: 'seoul-east-stake',
+    targetKind: 'other',
+    location: '서울동 스테이크',
+  }
+
+  it('unitId를 빈 문자열로 비우면 유도된 장소도 null이 된다', () => {
+    expect(resolveScheduleLocationForEdit(meeting, { unitId: '' })).toBeNull()
+  })
+
+  it('unitId를 아예 안 보내면 기존 스테이크에서 유도한 장소가 그대로 남는다', () => {
+    expect(resolveScheduleLocationForEdit(meeting, {})).toBe('서울동 스테이크')
+  })
+})

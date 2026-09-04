@@ -616,3 +616,54 @@ describe('EditScheduleModal 대상 select — askOnlyUnit', () => {
     expect(targetFields[0]).toHaveAccessibleName('schedule.stakeLabelOptional')
   })
 })
+
+// 사용자가 직접 지적한 결함(2026-09-04): "모임 계획할 때 단체일 수도 있고 그러다 보면
+// 스테이크/지방부가 특정되지 않을 수도 있는데 필수값으로 되어 있어."
+// 라벨은 이미 (선택)이었지만, 편집 모달이 빈 값을 undefined로 보내 JSON 직렬화에서 키가
+// 통째로 빠졌고 — CF는 그걸 "이 필드는 안 건드림"으로 읽어 예전 스테이크가 그대로 남았다.
+// 즉 화면에서 비워도 저장되지 않는, 사실상 필수 칸이었다.
+describe('EditScheduleModal 스테이크/지방부 비우기', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    editSpy.mockReset()
+    editSpy.mockResolvedValue({ data: {} })
+  })
+
+  it('대상이 기타인 모임 — 스테이크를 비우면 unitId: "" 가 전송된다', async () => {
+    render(
+      <EditScheduleModal
+        schedule={{ ...MEETING_SCHEDULE, targetKind: 'other', relatedVisitId: undefined }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabelOptional'), { target: { value: '' } })
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(editSpy).toHaveBeenCalledWith(expect.objectContaining({
+      scheduleId: 'sched-1',
+      updates: expect.objectContaining({ unitId: '' }),
+    }))
+  })
+
+  // 와드/지부 감독 대상은 와드가 스테이크에 매달려 있으므로 비울 수 없다 — 예전처럼
+  // 키 자체를 빼서 CF가 손대지 않게 둔다(빈 문자열을 보내면 스테이크가 지워진다).
+  it('대상이 와드/지부 감독인 모임 — 스테이크를 비워도 unitId 키를 보내지 않는다', async () => {
+    render(
+      <EditScheduleModal
+        schedule={{ ...MEETING_SCHEDULE, targetKind: 'ward_bishop', wardName: '녹번 와드', relatedVisitId: undefined }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+
+    fireEvent.change(screen.getByLabelText('schedule.stakeLabel'), { target: { value: '' } })
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    const sent = editSpy.mock.calls[0][0] as { updates: Record<string, unknown> }
+    expect(sent.updates.unitId).toBeUndefined()
+  })
+})
