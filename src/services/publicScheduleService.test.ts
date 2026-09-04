@@ -1,17 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { publicCallable } from './publicFunctions'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   fetchPublicSchedulePageData,
   type PublicSchedulePageData,
 } from './publicScheduleService'
-
-const { callable } = vi.hoisted(() => ({
-  callable: vi.fn(),
-}))
-
-vi.mock('./publicFunctions', () => ({
-  publicCallable: vi.fn(() => callable),
-}))
 
 const SAMPLE: PublicSchedulePageData = {
   schedules: [
@@ -38,33 +29,54 @@ const SAMPLE: PublicSchedulePageData = {
 }
 
 beforeEach(() => {
-  callable.mockReset()
-  vi.mocked(publicCallable).mockClear()
+  vi.stubGlobal('fetch', vi.fn())
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
 })
 
 describe('fetchPublicSchedulePageData', () => {
-  it('loads public schedule and general events through one callable request', async () => {
-    callable.mockResolvedValue({ data: SAMPLE })
+  it('loads public schedule and general events through one HTTP request', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ result: SAMPLE }),
+    } as Response)
 
     await expect(fetchPublicSchedulePageData('token-123')).resolves.toEqual(SAMPLE)
 
-    expect(publicCallable).toHaveBeenCalledTimes(1)
-    expect(publicCallable).toHaveBeenCalledWith('getPublicSchedules')
-    expect(callable).toHaveBeenCalledWith({ token: 'token-123' })
+    expect(fetch).toHaveBeenCalledTimes(1)
+    const [url, init] = vi.mocked(fetch).mock.calls[0]
+    expect(String(url)).toContain('getPublicSchedules')
+    expect(init).toMatchObject({ method: 'POST' })
+    expect(JSON.parse(init!.body as string)).toEqual({ data: { token: 'token-123' } })
   })
 
-  it('keeps old callable responses usable while the backend rolls forward', async () => {
-    callable.mockResolvedValue({
-      data: {
-        schedules: SAMPLE.schedules,
-        scopeDisplayName: null,
-      },
-    })
+  it('tolerates a response missing generalSchedules while the backend rolls forward', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        result: {
+          schedules: SAMPLE.schedules,
+          scopeDisplayName: null,
+        },
+      }),
+    } as Response)
 
     await expect(fetchPublicSchedulePageData('token-123')).resolves.toEqual({
       schedules: SAMPLE.schedules,
       generalSchedules: [],
       scopeDisplayName: null,
+    })
+  })
+
+  it('reconstructs a functions/permission-denied code from a PERMISSION_DENIED error so the private-link screen still shows', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: { status: 'PERMISSION_DENIED', message: 'Invalid token' } }),
+    }))
+    await expect(fetchPublicSchedulePageData('bad-token')).rejects.toMatchObject({
+      code: 'functions/permission-denied',
     })
   })
 })
