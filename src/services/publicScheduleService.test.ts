@@ -40,7 +40,8 @@ describe('fetchPublicSchedulePageData', () => {
   it('loads public schedule and general events through one HTTP request', async () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
-      json: async () => ({ result: SAMPLE }),
+      status: 200,
+      json: async () => ({ data: SAMPLE }),
     } as Response)
 
     await expect(fetchPublicSchedulePageData('token-123')).resolves.toEqual(SAMPLE)
@@ -52,9 +53,10 @@ describe('fetchPublicSchedulePageData', () => {
     expect(JSON.parse(init!.body as string)).toEqual({ data: { token: 'token-123' } })
   })
 
-  it('tolerates a response missing generalSchedules while the backend rolls forward', async () => {
+  it('still resolves a legacy {result} envelope, tolerating a response missing generalSchedules', async () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
+      status: 200,
       json: async () => ({
         result: {
           schedules: SAMPLE.schedules,
@@ -71,12 +73,40 @@ describe('fetchPublicSchedulePageData', () => {
   })
 
   it('reconstructs a functions/permission-denied code from a PERMISSION_DENIED error so the private-link screen still shows', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    vi.mocked(fetch).mockResolvedValue({
       ok: false,
+      status: 403,
       json: async () => ({ error: { status: 'PERMISSION_DENIED', message: 'Invalid token' } }),
-    }))
+    } as Response)
+
     await expect(fetchPublicSchedulePageData('bad-token')).rejects.toMatchObject({
       code: 'functions/permission-denied',
+    })
+  })
+
+  it('falls back to the HTTP status when a non-2xx response has an unparseable body', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => {
+        throw new Error('not json')
+      },
+    } as unknown as Response)
+
+    await expect(fetchPublicSchedulePageData('token-123')).rejects.toMatchObject({
+      code: 'functions/permission-denied',
+    })
+  })
+
+  it('rejects with functions/internal instead of throwing a bare TypeError when a 2xx body has neither data nor result', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    } as Response)
+
+    await expect(fetchPublicSchedulePageData('token-123')).rejects.toMatchObject({
+      code: 'functions/internal',
     })
   })
 })
