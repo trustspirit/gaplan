@@ -24,6 +24,7 @@ import {
   type PublicScheduleItem,
 } from '@/services/publicScheduleService'
 import { loadScheduleCache, saveScheduleCache, clearScheduleCache } from '@/utils/scheduleCache'
+import { readInlinePublicData } from '@/utils/inlinePublicData'
 import { getTodayMarkerPlacement, getTodayMarkerScrollTop } from './todayMarker'
 import styles from './PublicSchedulePage.module.scss'
 
@@ -163,8 +164,11 @@ export default function PublicSchedulePage() {
 
     let cancelled = false
 
-    // 동기 캐시 체크 — 캐시 히트 시 즉시 렌더 (스켈레톤 스킵)
-    const cached = loadScheduleCache(token)
+    // 동기 씨앗 — 있으면 즉시 렌더(스켈레톤 스킵). 서버가 문서에 심어 준 데이터를
+    // 먼저 본다: 이 문서와 함께 도착한 것이라 왕복이 없다. 없으면 지난 방문의
+    // sessionStorage 캐시. 어느 쪽이든 아래 백그라운드 fetch가 곧 덮으므로
+    // 둘 중 어느 게 더 최신인지는 따지지 않는다.
+    const cached = readInlinePublicData(token) ?? loadScheduleCache(token)
     if (cached) {
       setSchedules(cached.schedules)
       setGeneralSchedules(cached.generalSchedules)
