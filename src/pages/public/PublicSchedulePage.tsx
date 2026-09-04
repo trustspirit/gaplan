@@ -331,7 +331,7 @@ export default function PublicSchedulePage() {
             onClick={handleRefresh}
             disabled={refreshing}
           >
-            {refreshing ? t('common.loading') : t('common.retry')}
+            {refreshing ? t('public.loading') : t('public.retry')}
           </button>
         </div>
       </div>
@@ -350,8 +350,8 @@ export default function PublicSchedulePage() {
             className={styles.langToggle}
             onClick={handleRefresh}
             disabled={refreshing}
-            title={t('common.refresh')}
-            aria-label={t('common.refresh')}
+            title={t('public.refresh')}
+            aria-label={t('public.refresh')}
           >
             <RefreshCw size={14} className={refreshing ? styles.spinning : undefined} />
           </button>
@@ -481,7 +481,7 @@ export default function PublicSchedulePage() {
                                 {s.presidentAccompanied && (
                                   <span className={styles.presidentBadge}>
                                     <UserCheck size={10} />
-                                    <span>{t('schedule.presidentAccompanied')}</span>
+                                    <span>{t('public.presidentAccompanied')}</span>
                                   </span>
                                 )}
                               </div>

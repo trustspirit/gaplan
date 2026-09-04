@@ -1,0 +1,24 @@
+{
+  "public": {
+    "title": "Schedule",
+    "scopedTitle": "{{name}} Schedule",
+    "subscribeLabel": "Subscribe",
+    "appleCalendar": "Apple Calendar",
+    "googleCalendar": "Google Calendar",
+    "outlookCalendar": "Outlook Calendar",
+    "outlookPersonal": "Personal (Outlook.com)",
+    "outlookWork": "Work/School (Microsoft 365)",
+    "loading": "Loading...",
+    "empty": "No confirmed schedules.",
+    "privateError": "This schedule is private.",
+    "fetchError": "Could not load schedule.",
+    "typeVisit": "Ward Visit",
+    "typeInterview": "Interview",
+    "typeMeeting": "Meeting",
+    "todayMarker": "Today",
+    "pastBadge": "Done",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "presidentAccompanied": "Stake President Accompanies"
+  }
+}
