@@ -39,6 +39,13 @@ async function loadIndexHtml(): Promise<string> {
 
   try {
     const html = await fetchHtml('/public.html').catch(() => fetchHtml('/'))
+    // 호스팅의 catch-all rewrite("**" -> /index.html)는 public.html이 실제로 없어도
+    // 200을 돌려준다 — r.ok만으로는 올바른 문서(공개 전용 엔트리)가 왔다고 증명되지
+    // 않으므로, 심어둔 마커로 직접 확인한다. 실패해도 던지지 않는다: 결국 같은
+    // index.html이라 더 나은 대안이 없다.
+    if (!html.includes('name="gaplan-entry"')) {
+      console.warn('public.html이 호스팅에 없어(또는 catch-all에 걸려) 로그인 엔트리(index.html)를 대신 서빙합니다.')
+    }
     indexHtmlCache.set(html)
     return html
   } catch {
@@ -119,13 +126,18 @@ export const publicScheduleRenderer = onRequest(
       return
     }
 
+    // 문자열 리플레이서는 $&, $`, $', $$를 치환 문자열 안에서 특수 패턴으로 해석한다.
+    // inlineScript는 notes/customTitle/wardName 같은 사용자 입력을 담고 있어 그 패턴이
+    // 그대로 등장할 수 있다 — 함수 리플레이서로 넘기면 그 해석이 통째로 꺼진다. title/
+    // pageUrl은 오늘은 안전하지만, 같은 위험을 한 리팩터링 거리에 두지 않기 위해 체인
+    // 전체를 함수 리플레이서로 통일한다.
     const html = indexHtml
-      .replace(/<title>[^<]*<\/title>/, `<title>${escapeAttr(title)}</title>`)
-      .replace(/<meta property="og:title"[^>]*\/?>/, `<meta property="og:title" content="${escapeAttr(title)}" />`)
-      .replace(/<meta property="og:url"[^>]*\/?>/, `<meta property="og:url" content="${escapeAttr(pageUrl)}" />`)
+      .replace(/<title>[^<]*<\/title>/, () => `<title>${escapeAttr(title)}</title>`)
+      .replace(/<meta property="og:title"[^>]*\/?>/, () => `<meta property="og:title" content="${escapeAttr(title)}" />`)
+      .replace(/<meta property="og:url"[^>]*\/?>/, () => `<meta property="og:url" content="${escapeAttr(pageUrl)}" />`)
       // 데이터는 </head> 앞에 심는다 — 번들이 실행되기 전에 문서에 이미 들어 있어야
       // 페이지가 첫 렌더에서 그걸 씨앗으로 쓸 수 있다.
-      .replace('</head>', `${inlineScript}</head>`)
+      .replace('</head>', () => `${inlineScript}</head>`)
 
     res.set('Content-Type', 'text/html; charset=utf-8')
     res.set('Cache-Control', 'public, max-age=300, s-maxage=300')
