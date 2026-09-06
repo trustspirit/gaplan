@@ -782,5 +782,12 @@
     },
     "createTask": "Task 만들기",
     "createTaskClose": "닫기"
+  },
+  "commandPalette": {
+    "open": "검색",
+    "placeholder": "페이지 이름을 입력하세요",
+    "empty": "맞는 것이 없습니다",
+    "hint": "↑↓ 이동 · Enter 실행 · Esc 닫기",
+    "label": "빠른 이동"
   }
 }

@@ -782,5 +782,12 @@
     },
     "createTask": "New task",
     "createTaskClose": "Close"
+  },
+  "commandPalette": {
+    "open": "Search",
+    "placeholder": "Type a page name",
+    "empty": "Nothing matches",
+    "hint": "↑↓ move · Enter open · Esc close",
+    "label": "Quick jump"
   }
 }

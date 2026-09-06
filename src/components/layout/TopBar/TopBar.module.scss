@@ -192,3 +192,31 @@
   white-space: pre-line;
   padding: $space-2 0;
 }
+
+// 빠른 이동 입구. 단축키를 같이 보여줘 한 번 눌러본 사람이 다음부터 키를 쓰게 한다.
+.searchBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-1 $space-2;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  color: $color-text-muted;
+  background: $color-surface;
+
+  &:hover {
+    color: $color-text;
+    border-color: $color-border-strong;
+  }
+
+  // 모바일에는 ⌘K를 칠 방법이 없다 — 누를 수만 있고 배울 것이 없는 버튼은 자리만 먹는다.
+  @include mobile {
+    display: none;
+  }
+}
+
+.searchKbd {
+  font-family: inherit;
+  font-size: $font-size-xs;
+  color: $color-text-light;
+}

@@ -1,5 +1,9 @@
+import { useEffect } from 'react'
+import { useAtom } from 'jotai'
 import { Sidebar } from '@/components/layout/Sidebar/Sidebar'
+import { CommandPalette } from '@/components/domain/CommandPalette/CommandPalette'
 import { usePendingTaskCount } from '@/hooks/usePendingTaskCount'
+import { commandPaletteOpenAtom } from '@/store/uiAtom'
 import type { UserRole } from '@/types'
 import styles from './AppShell.module.scss'
 
@@ -16,6 +20,20 @@ export function AppShell({ children, role, name, topBar }: AppShellProps) {
   // subscriptions for the same badge.
   const pendingTaskCount = usePendingTaskCount()
 
+  // ⌘K(맥)/Ctrl+K로 빠른 이동을 연다. 셸에 두는 이유는 어느 페이지에서든 같은
+  // 키가 통해야 하기 때문이고, 로그인한 사용자만 지나는 자리라 역할도 여기서 안다.
+  const [paletteOpen, setPaletteOpen] = useAtom(commandPaletteOpenAtom)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'k' || !(e.metaKey || e.ctrlKey)) return
+      // 브라우저 기본 동작(파이어폭스의 검색창 포커스 등)을 가로챈다.
+      e.preventDefault()
+      setPaletteOpen((v) => !v)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [setPaletteOpen])
+
   return (
     <div className={styles.shell}>
       <div className={styles.sidebar}>
@@ -30,6 +48,7 @@ export function AppShell({ children, role, name, topBar }: AppShellProps) {
       <div className={styles.bottomTab}>
         <Sidebar role={role} name={name} pendingTaskCount={pendingTaskCount} mobile />
       </div>
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} role={role} />
     </div>
   )
 }

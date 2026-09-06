@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { LogOut, UserCircle, Languages, HelpCircle } from 'lucide-react'
-import { useAtom, useAtomValue } from 'jotai'
+import { LogOut, UserCircle, Languages, HelpCircle, Search } from 'lucide-react'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { Badge, Avatar, SegmentedControl, ResponsiveDialog } from '@/components/ui'
 import { signOut } from '@/services/authService'
 import { authUserAtom } from '@/store/authAtom'
 import { seventyViewAtom } from '@/store/seventyViewAtom'
+import { commandPaletteOpenAtom } from '@/store/uiAtom'
 import { SCOPE_ALL } from '@/utils/scope'
 import { LANGUAGES, type SupportedLang } from '@/i18n'
 import { RemindersBell } from '@/components/domain/Reminders/RemindersBell'
@@ -23,6 +24,7 @@ interface TopBarProps {
 
 export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarProps) {
   const { t, i18n } = useTranslation()
+  const setPaletteOpen = useSetAtom(commandPaletteOpenAtom)
   const [open, setOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -70,6 +72,18 @@ export function TopBar({ name, subtext, pendingCount = 0, helpInfoKey }: TopBarP
         {pendingCount > 0 && (
           <Badge variant="warning">{t('task.pendingCount', { count: pendingCount })}</Badge>
         )}
+        {/* 아무도 모르는 단축키는 없는 기능과 같다 — 눈에 보이는 입구를 같이 둔다.
+            데스크톱에서만 보인다: 모바일에는 ⌘K를 칠 방법이 없다. */}
+        <button
+          type="button"
+          className={styles.searchBtn}
+          onClick={() => setPaletteOpen(true)}
+          aria-label={t('commandPalette.open')}
+          title={t('commandPalette.open')}
+        >
+          <Search size={16} />
+          <kbd className={styles.searchKbd}>⌘K</kbd>
+        </button>
         <RemindersBell />
         {helpInfoKey && (
           <button

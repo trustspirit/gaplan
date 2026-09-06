@@ -1,0 +1,101 @@
+@use '@/styles/variables' as *;
+
+// 화면 한가운데가 아니라 위쪽 1/5 지점에 띄운다 — 타이핑하는 동안 눈이
+// 머무는 자리가 거기고, 가운데 정렬은 결과가 늘어날 때 상자가 위아래로 흔들린다.
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: $z-modal;
+  display: flex;
+  justify-content: center;
+  padding: 20vh $space-4 $space-4;
+  background: rgba(20, 23, 26, 0.4);
+}
+
+.sheet {
+  width: 100%;
+  max-width: 480px;
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  background: $color-surface;
+  box-shadow: $shadow-overlaid;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: 0 $space-3;
+  border-bottom: 1px solid $color-border;
+}
+
+.inputIcon {
+  flex-shrink: 0;
+  color: $color-text-muted;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  padding: $space-3 0;
+  // 16px을 유지해야 iOS Safari가 포커스할 때 화면을 확대하지 않는다.
+  font-size: $font-size-base;
+  font-family: inherit;
+  color: $color-text;
+  background: transparent;
+
+  &:focus {
+    outline: none;
+  }
+
+  &::placeholder {
+    color: $color-text-light;
+  }
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: $space-1;
+}
+
+.item {
+  width: 100%;
+  text-align: left;
+  padding: $space-2 $space-3;
+  border-radius: $border-radius-md;
+  font-size: $font-size-base;
+  color: $color-text;
+}
+
+// hover와 키보드 선택이 같은 표시를 쓴다 — 둘이 다르면 지금 Enter가 무엇을
+// 열지가 화면에 두 군데로 보인다.
+.itemActive {
+  background: $color-primary-weak;
+  color: $color-primary;
+}
+
+.empty {
+  margin: 0;
+  padding: $space-5 $space-4;
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.hint {
+  margin: 0;
+  padding: $space-2 $space-3;
+  border-top: 1px solid $color-border;
+  font-size: $font-size-xs;
+  color: $color-text-light;
+}
