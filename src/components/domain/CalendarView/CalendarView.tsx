@@ -8,6 +8,7 @@ import { eventCoversDate } from '@/types'
 import { isFastSunday } from '@/utils/fastSunday'
 import { layoutDayBlocks } from './layoutDayBlocks'
 import { Button } from '@/components/ui'
+import { swipeDirection, tracksPointer, type SwipePoint } from '@/utils/swipeGesture'
 import styles from './CalendarView.module.scss'
 
 // Day-of-week abbreviations derived from dayjs locale (auto-updates with language switch)
@@ -104,21 +105,18 @@ export function CalendarView({
   }
 
   // Horizontal swipe on touch advances the period (vertical scroll untouched
-  // via touch-action: pan-y on the viewport)
-  const swipeStart = useRef<{ x: number; y: number } | null>(null)
+  // via touch-action: pan-y on the viewport). 판정은 일정 행의 스와이프와 공유한다 —
+  // 한 앱 안에서 두 스와이프가 다른 임계값을 가지면 손이 둘을 다르게 기억해야 한다.
+  const swipeStart = useRef<SwipePoint | null>(null)
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (e.pointerType === 'mouse') return
+    if (!tracksPointer(e.pointerType)) return
     swipeStart.current = { x: e.clientX, y: e.clientY }
   }
   const handlePointerUp = (e: React.PointerEvent) => {
     const start = swipeStart.current
     swipeStart.current = null
-    if (!start) return
-    const dx = e.clientX - start.x
-    const dy = e.clientY - start.y
-    if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      movePeriod(dx < 0 ? 1 : -1)
-    }
+    const direction = swipeDirection(start, { x: e.clientX, y: e.clientY })
+    if (direction) movePeriod(direction === 'left' ? 1 : -1)
   }
 
   // ── Month view ─────────────────────────────────────────────────────────────

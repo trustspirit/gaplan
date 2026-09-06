@@ -284,3 +284,47 @@
   border-color: $color-highlight-danger;
   background: $color-highlight-danger;
 }
+
+// ── 스와이프로 드러나는 액션 (모바일) ────────────────────────────────────────
+// 액션은 행 뒤에 깔아 두고 행 자체를 왼쪽으로 민다. 행을 밀지 않고 액션을
+// 밀어 넣으면 두 요소가 각자 애니메이션해서 폭이 어긋나는 순간이 생긴다.
+.swipeActions {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: flex;
+  align-items: stretch;
+}
+
+.swipeActionBtn {
+  border: none;
+  padding: 0 $space-4;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: var(--text);
+  background: var(--surface-sunken);
+}
+
+.swipeActionDanger {
+  color: $color-surface;
+  background: $color-danger;
+}
+
+// pan-y라야 세로 스크롤이 네이티브로 남는다 — 가로만 우리가 가져간다.
+.swipeTrack {
+  position: relative;
+  touch-action: pan-y;
+  background: var(--surface);
+  transition: transform 0.18s ease;
+}
+
+// 드러나는 폭은 버튼 두 개가 앉을 만큼. 고정값이라 글자가 길어지면 잘리므로
+// 버튼 라벨은 한 단어로 유지한다(수정/삭제, Edit/Delete).
+.swipeTrackOpen {
+  transform: translateX(-8.5rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipeTrack {
+    transition: none;
+  }
+}

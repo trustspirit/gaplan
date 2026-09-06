@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardHeader, CardBody, Skeleton } from '@/components/ui'
 import { ScheduleItem } from '@/components/domain/ScheduleItem/ScheduleItem'
+import { SwipeOpenRowProvider } from '@/components/domain/ScheduleItem/swipeOpenRow'
 import type { Schedule } from '@/types'
 import { groupByWhen, type WhenGroupKey } from './homeScheduleGroups'
 import styles from './HomePage.module.scss'
@@ -44,28 +45,32 @@ export function ScheduleListCard({
     <Card>
       <CardHeader title={t('schedule.upcoming')} action={action} />
       <CardBody>
-        {loading ? (
-          [1, 2].map((i) => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
-        ) : schedules.length === 0 ? (
-          <p className={styles.empty}>{t('schedule.noUpcoming')}</p>
-        ) : (
-          [...groups.entries()].map(([key, group]) => (
-            <section key={key} className={styles.group}>
-              <h3 className={styles.groupLabel}>{t(GROUP_LABEL_KEY[key])}</h3>
-              {group.map((schedule) => (
-                <ScheduleItem
-                  key={schedule.id}
-                  schedule={schedule}
-                  unitName={getUnitName(schedule.unitId)}
-                  showCalendarAdd={showCalendarAdd}
-                  canEdit={canEdit}
-                  onEdit={onEdit ? () => onEdit(schedule) : undefined}
-                  onDelete={onDelete ? () => onDelete(schedule) : undefined}
-                />
-              ))}
-            </section>
-          ))
-        )}
+        <SwipeOpenRowProvider>
+          {loading ? (
+            [1, 2].map((i) => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
+          ) : schedules.length === 0 ? (
+            <p className={styles.empty}>{t('schedule.noUpcoming')}</p>
+          ) : (
+            // 열린 행은 목록 전체에서 하나뿐이다 — 그룹을 가로질러도 마찬가지라
+            // Provider가 그룹 바깥을 감싼다.
+            [...groups.entries()].map(([key, group]) => (
+              <section key={key} className={styles.group}>
+                <h3 className={styles.groupLabel}>{t(GROUP_LABEL_KEY[key])}</h3>
+                {group.map((schedule) => (
+                  <ScheduleItem
+                    key={schedule.id}
+                    schedule={schedule}
+                    unitName={getUnitName(schedule.unitId)}
+                    showCalendarAdd={showCalendarAdd}
+                    canEdit={canEdit}
+                    onEdit={onEdit ? () => onEdit(schedule) : undefined}
+                    onDelete={onDelete ? () => onDelete(schedule) : undefined}
+                  />
+                ))}
+              </section>
+            ))
+          )}
+        </SwipeOpenRowProvider>
       </CardBody>
     </Card>
   )

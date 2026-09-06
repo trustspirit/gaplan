@@ -19,7 +19,9 @@ import type { Schedule } from '@/types'
 import { useUnits } from '@/hooks/useUnits'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { DeleteConfirmSheet, BottomSheet, DataList, type DataListRow } from '@/components/ui'
+import { swipeDirection, tracksPointer, type SwipePoint } from '@/utils/swipeGesture'
 import { toScheduleRow } from './scheduleRow'
+import { useSwipeOpenRow } from './swipeOpenRowContext'
 import { buildScheduleTitle } from '../../../../functions/src/scheduleRules'
 import styles from './ScheduleItem.module.scss'
 
@@ -93,6 +95,25 @@ export function ScheduleItem({
   const { t } = useTranslation()
   const { getWardName } = useUnits()
   const isMobile = useIsMobile()
+
+  // 스와이프로 드러나는 액션. 목록에서 열린 행은 하나뿐이므로 열림 상태는 바깥이 갖는다.
+  const swipe = useSwipeOpenRow(schedule.id)
+  const swipeStart = useRef<SwipePoint | null>(null)
+  // 액션이 없는 행(공개 목록 등)은 열 것이 없다. 편집 권한도 없으면 마찬가지다.
+  const canSwipe = swipe.enabled && isMobile && canEdit && (!!onEdit || !!onDelete)
+
+  const handleSwipeDown = (e: React.PointerEvent) => {
+    if (!canSwipe || !tracksPointer(e.pointerType)) return
+    swipeStart.current = { x: e.clientX, y: e.clientY }
+  }
+  const handleSwipeUp = (e: React.PointerEvent) => {
+    if (!canSwipe) return
+    const start = swipeStart.current
+    swipeStart.current = null
+    const direction = swipeDirection(start, { x: e.clientX, y: e.clientY })
+    if (direction === 'left') swipe.open()
+    else if (direction === 'right') swipe.close()
+  }
   const [menuOpen, setMenuOpen] = useState(false)
   // lazy-mount flag so closed rows don't each carry a hidden portal
   const [sheetEverOpen, setSheetEverOpen] = useState(false)
@@ -305,7 +326,56 @@ export function ScheduleItem({
   return (
     <>
       <div className={styles.wrapper}>
-        <DataList rows={[row]} aria-label={row.title} />
+        {/* 드러나는 액션은 행 "뒤"에 깔려 있고, 행이 왼쪽으로 밀리면서 보인다.
+            버튼이 실제 DOM에 늘 있으므로 열기 전에는 aria-hidden으로 감춰
+            스크린 리더가 목록마다 안 보이는 버튼 두 개를 읽지 않게 한다. */}
+        {canSwipe && (
+          <div className={styles.swipeActions} aria-hidden={!swipe.isOpen}>
+            {onEdit && (
+              <button
+                type="button"
+                className={styles.swipeActionBtn}
+                tabIndex={swipe.isOpen ? 0 : -1}
+                onClick={() => {
+                  swipe.close()
+                  onEdit()
+                }}
+              >
+                {t('common.edit')}
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                className={clsx(styles.swipeActionBtn, styles.swipeActionDanger)}
+                tabIndex={swipe.isOpen ? 0 : -1}
+                onClick={() => {
+                  // ⋯ 메뉴의 삭제와 같은 확인을 거친다 — 같은 동작이 경로에 따라
+                  // 다른 안전장치를 가지면 언젠가 반드시 사고가 난다.
+                  swipe.close()
+                  setShowDeleteConfirm(true)
+                }}
+              >
+                {t('common.delete')}
+              </button>
+            )}
+          </div>
+        )}
+
+        <div
+          className={clsx(styles.swipeTrack, canSwipe && swipe.isOpen && styles.swipeTrackOpen)}
+          onPointerDown={handleSwipeDown}
+          onPointerUp={handleSwipeUp}
+          // 열린 행 위를 탭하면 닫기만 하고 그 탭은 행으로 넘기지 않는다 —
+          // 실수로 상세가 열리지 않게.
+          onClickCapture={(e) => {
+            if (!canSwipe || !swipe.isOpen) return
+            e.stopPropagation()
+            swipe.close()
+          }}
+        >
+          <DataList rows={[row]} aria-label={row.title} />
+        </div>
 
         {/* ── Notes panel ── */}
         {notesOpen && hasNotes && (

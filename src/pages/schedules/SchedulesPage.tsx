@@ -13,10 +13,7 @@ import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { useEffectiveScope } from '@/hooks/useEffectiveScope'
 import { useTopBar } from '@/hooks/useTopBar'
 import { manualCalendarSync, deleteScheduleViaCF } from '@/services/scheduleService'
-import {
-  updateGeneralSchedule,
-  deleteGeneralSchedule,
-} from '@/services/generalScheduleService'
+import { updateGeneralSchedule, deleteGeneralSchedule } from '@/services/generalScheduleService'
 import {
   Button,
   LoadingState,
@@ -25,6 +22,7 @@ import {
   type SegmentOption,
 } from '@/components/ui'
 import { ScheduleItem } from '@/components/domain/ScheduleItem/ScheduleItem'
+import { SwipeOpenRowProvider } from '@/components/domain/ScheduleItem/swipeOpenRow'
 import { GeneralEventItem } from '@/components/domain/GeneralEventItem/GeneralEventItem'
 import { EditScheduleModal } from '@/components/domain/EditScheduleModal/EditScheduleModal'
 import { GeneralScheduleFormModal } from '@/components/domain/GeneralScheduleFormModal/GeneralScheduleFormModal'
@@ -317,28 +315,31 @@ export function SchedulesPage() {
           onRangeChange={saveRange}
         />
 
-        {loading ? (
-          <LoadingState />
-        ) : view === 'list' ? (
-          <ScheduleListPanel
-            items={items}
-            visible={filterByStatus(items, status, today)}
-            today={today}
-            renderItem={renderItem}
-          />
-        ) : (
-          <ScheduleCalendarPanel
-            view={view}
-            schedules={calendarSchedules}
-            generalSchedules={calendarEvents}
-            items={items}
-            allItems={allItems}
-            getUnitName={getUnitName}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-            renderItem={renderItem}
-          />
-        )}
+        {/* 목록/달력 어느 쪽이든 행은 하나만 열린다 — 뷰를 감싸 그 상태를 공유한다. */}
+        <SwipeOpenRowProvider>
+          {loading ? (
+            <LoadingState />
+          ) : view === 'list' ? (
+            <ScheduleListPanel
+              items={items}
+              visible={filterByStatus(items, status, today)}
+              today={today}
+              renderItem={renderItem}
+            />
+          ) : (
+            <ScheduleCalendarPanel
+              view={view}
+              schedules={calendarSchedules}
+              generalSchedules={calendarEvents}
+              items={items}
+              allItems={allItems}
+              getUnitName={getUnitName}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              renderItem={renderItem}
+            />
+          )}
+        </SwipeOpenRowProvider>
 
         {addFlowOpen && (
           <AddScheduleFlow
