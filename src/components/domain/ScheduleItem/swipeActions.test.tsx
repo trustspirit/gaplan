@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import type { Schedule } from '@/types'
-import { SWIPE_THRESHOLD_PX } from '@/utils/swipeGesture'
 
 const { isMobileMock } = vi.hoisted(() => ({ isMobileMock: vi.fn(() => true) }))
 
@@ -17,6 +16,9 @@ vi.mock('@/hooks/useUnits', () => ({
 import { ScheduleItem } from './ScheduleItem'
 import { SwipeOpenRowProvider } from './swipeOpenRow'
 
+/** 수정·삭제 버튼이 차지하는 폭. 이 절반을 넘겨야 열린 채로 남는다. */
+const ACTIONS_WIDTH = 136
+
 const schedule = (over: Partial<Schedule> = {}): Schedule => ({
   id: 's1',
   type: 'ward_visit',
@@ -31,9 +33,20 @@ const schedule = (over: Partial<Schedule> = {}): Schedule => ({
   ...over,
 })
 
-/** pointerdown → pointerup 한 쌍으로 스와이프를 흉내낸다. */
+/**
+ * 실제 제스처처럼 down → move → up으로 민다. move 없이 down/up만 보내면
+ * 손가락을 따라가는 구현에서는 아무 일도 일어나지 않는다 — 그게 정상이다.
+ * 중간 move를 몇 번 나눠 보내 잠금 판정과 추적을 모두 지나가게 한다.
+ */
 function swipe(el: Element, dx: number, dy = 0, pointerType = 'touch') {
   fireEvent.pointerDown(el, { clientX: 200, clientY: 100, pointerType })
+  for (const step of [0.4, 0.8, 1]) {
+    fireEvent.pointerMove(el, {
+      clientX: 200 + dx * step,
+      clientY: 100 + dy * step,
+      pointerType,
+    })
+  }
   fireEvent.pointerUp(el, { clientX: 200 + dx, clientY: 100 + dy, pointerType })
 }
 
@@ -62,8 +75,14 @@ function renderRows(rows: Schedule[], props: Record<string, unknown> = {}) {
   )
 }
 
+/** jsdom은 레이아웃을 하지 않아 offsetWidth가 늘 0이다. 액션 폭을 재는 코드가
+ *  실제 브라우저에서 받는 값을 흉내내 준다. */
 beforeEach(() => {
   isMobileMock.mockReturnValue(true)
+  Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+    configurable: true,
+    value: ACTIONS_WIDTH,
+  })
 })
 
 describe('ScheduleItem 스와이프 액션', () => {
@@ -72,7 +91,7 @@ describe('ScheduleItem 스와이프 액션', () => {
     const actions = container.querySelector('[class*="swipeActions"]')!
 
     expect(actions).toHaveAttribute('aria-hidden', 'true')
-    swipe(track(container), -SWIPE_THRESHOLD_PX)
+    swipe(track(container), -ACTIONS_WIDTH)
     expect(actions).not.toHaveAttribute('aria-hidden', 'true')
     expect(within(actions as HTMLElement).getByText('common.edit')).toBeInTheDocument()
     expect(within(actions as HTMLElement).getByText('common.delete')).toBeInTheDocument()
@@ -82,9 +101,9 @@ describe('ScheduleItem 스와이프 액션', () => {
     const { container } = renderRows([schedule()])
     const actions = container.querySelector('[class*="swipeActions"]')!
 
-    swipe(track(container), -SWIPE_THRESHOLD_PX)
+    swipe(track(container), -ACTIONS_WIDTH)
     expect(actions).not.toHaveAttribute('aria-hidden', 'true')
-    swipe(track(container), SWIPE_THRESHOLD_PX)
+    swipe(track(container), ACTIONS_WIDTH)
     expect(actions).toHaveAttribute('aria-hidden', 'true')
   })
 
@@ -94,20 +113,53 @@ describe('ScheduleItem 스와이프 액션', () => {
     const tracks = container.querySelectorAll('[class*="swipeTrack"]')
     const actions = container.querySelectorAll('[class*="swipeActions"]')
 
-    swipe(tracks[0], -SWIPE_THRESHOLD_PX)
+    swipe(tracks[0], -ACTIONS_WIDTH)
     expect(actions[0]).not.toHaveAttribute('aria-hidden', 'true')
 
-    swipe(tracks[1], -SWIPE_THRESHOLD_PX)
+    swipe(tracks[1], -ACTIONS_WIDTH)
     expect(actions[0]).toHaveAttribute('aria-hidden', 'true')
     expect(actions[1]).not.toHaveAttribute('aria-hidden', 'true')
   })
 
-  it('임계값에 못 미치는 탭은 열지 않는다', () => {
+  // 조금만 밀다 놓으면 되닫힌다 — 실수로 반쯤 연 채 남지 않는다.
+  it('절반에 못 미치게 밀면 되닫힌다', () => {
     const { container } = renderRows([schedule()])
     const actions = container.querySelector('[class*="swipeActions"]')!
 
-    swipe(track(container), -(SWIPE_THRESHOLD_PX - 1))
+    swipe(track(container), -(ACTIONS_WIDTH / 2 - 4))
     expect(actions).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  // 이게 사용자가 지적한 문제다: 미는 동안 행이 손가락을 따라와야 한다.
+  it('미는 동안 행이 손가락을 따라 움직인다', () => {
+    const { container } = renderRows([schedule()])
+    const el = track(container) as HTMLElement
+
+    fireEvent.pointerDown(el, { clientX: 200, clientY: 100, pointerType: 'touch' })
+    fireEvent.pointerMove(el, { clientX: 160, clientY: 100, pointerType: 'touch' })
+
+    // 아직 손을 떼지 않았는데도 이미 움직여 있어야 한다.
+    expect(el.style.transform).toBe('translateX(-40px)')
+    expect(el.style.transition).toBe('none')
+  })
+
+  it('손을 떼면 실시간 위치를 놓고 열림/닫힘 중 하나로 정착한다', () => {
+    const { container } = renderRows([schedule()])
+    const el = track(container) as HTMLElement
+
+    swipe(el, -ACTIONS_WIDTH)
+    // 끌던 위치를 지우고 클래스가 정한 자리로 넘긴다 — 그래야 전환이 붙는다.
+    expect(el.style.transform).toBe('')
+  })
+
+  it('닫힌 행을 오른쪽으로 끌어도 밀려나지 않는다', () => {
+    const { container } = renderRows([schedule()])
+    const el = track(container) as HTMLElement
+
+    fireEvent.pointerDown(el, { clientX: 200, clientY: 100, pointerType: 'touch' })
+    fireEvent.pointerMove(el, { clientX: 260, clientY: 100, pointerType: 'touch' })
+
+    expect(el.style.transform).toBe('translateX(0px)')
   })
 
   it('세로로 크게 움직이면 열지 않는다 — 스크롤이 행을 열면 안 된다', () => {
@@ -122,7 +174,7 @@ describe('ScheduleItem 스와이프 액션', () => {
     const { container } = renderRows([schedule()])
     const actions = container.querySelector('[class*="swipeActions"]')!
 
-    swipe(track(container), -SWIPE_THRESHOLD_PX, 0, 'mouse')
+    swipe(track(container), -ACTIONS_WIDTH, 0, 'mouse')
     expect(actions).toHaveAttribute('aria-hidden', 'true')
   })
 
@@ -143,7 +195,7 @@ describe('ScheduleItem 스와이프 액션', () => {
     const onDelete = vi.fn()
     const { container } = renderRows([schedule()], { onDelete })
 
-    swipe(track(container), -SWIPE_THRESHOLD_PX)
+    swipe(track(container), -ACTIONS_WIDTH)
     const actions = container.querySelector('[class*="swipeActions"]') as HTMLElement
     fireEvent.click(within(actions).getByText('common.delete'))
 

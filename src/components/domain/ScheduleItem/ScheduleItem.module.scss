@@ -317,10 +317,11 @@
   transition: transform 0.18s ease;
 }
 
-// 드러나는 폭은 버튼 두 개가 앉을 만큼. 고정값이라 글자가 길어지면 잘리므로
-// 버튼 라벨은 한 단어로 유지한다(수정/삭제, Edit/Delete).
+// 드러나는 폭은 액션 영역을 실제로 재서 --swipe-open-width로 넘겨받는다.
+// 고정값이면 라벨이 긴 언어(Edit/Delete)에서 버튼이 잘린다. 아직 못 잰 첫 프레임에는
+// 폴백을 쓴다.
 .swipeTrackOpen {
-  transform: translateX(-8.5rem);
+  transform: translateX(calc(-1 * var(--swipe-open-width, 8.5rem)));
 }
 
 @media (prefers-reduced-motion: reduce) {

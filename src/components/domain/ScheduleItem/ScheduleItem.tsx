@@ -19,7 +19,7 @@ import type { Schedule } from '@/types'
 import { useUnits } from '@/hooks/useUnits'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { DeleteConfirmSheet, BottomSheet, DataList, type DataListRow } from '@/components/ui'
-import { swipeDirection, tracksPointer, type SwipePoint } from '@/utils/swipeGesture'
+import { locksHorizontal, settlesOpen, tracksPointer, type SwipePoint } from '@/utils/swipeGesture'
 import { toScheduleRow } from './scheduleRow'
 import { useSwipeOpenRow } from './swipeOpenRowContext'
 import { buildScheduleTitle } from '../../../../functions/src/scheduleRules'
@@ -98,21 +98,70 @@ export function ScheduleItem({
 
   // 스와이프로 드러나는 액션. 목록에서 열린 행은 하나뿐이므로 열림 상태는 바깥이 갖는다.
   const swipe = useSwipeOpenRow(schedule.id)
-  const swipeStart = useRef<SwipePoint | null>(null)
   // 액션이 없는 행(공개 목록 등)은 열 것이 없다. 편집 권한도 없으면 마찬가지다.
   const canSwipe = swipe.enabled && isMobile && canEdit && (!!onEdit || !!onDelete)
+
+  // 행은 손가락을 따라 실시간으로 움직인다. 뗄 때 한 번 판정해서 열면, 미는 동안
+  // 화면이 죽은 것처럼 보이다가 갑자기 튀어 "반응이 없다"고 느껴진다.
+  const swipeStart = useRef<SwipePoint | null>(null)
+  const dragLocked = useRef(false)
+  const actionsRef = useRef<HTMLDivElement>(null)
+  const [dragX, setDragX] = useState<number | null>(null)
+  // 드러날 폭은 CSS와 글자 길이가 정한다(수정/삭제 vs Edit/Delete) — 재서 쓴다.
+  const [actionsWidth, setActionsWidth] = useState(0)
+
+  useEffect(() => {
+    if (!canSwipe) return
+    const measure = () => setActionsWidth(actionsRef.current?.offsetWidth ?? 0)
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [canSwipe])
+
+  const endDrag = () => {
+    swipeStart.current = null
+    dragLocked.current = false
+    setDragX(null)
+  }
 
   const handleSwipeDown = (e: React.PointerEvent) => {
     if (!canSwipe || !tracksPointer(e.pointerType)) return
     swipeStart.current = { x: e.clientX, y: e.clientY }
+    dragLocked.current = false
   }
-  const handleSwipeUp = (e: React.PointerEvent) => {
-    if (!canSwipe) return
+
+  const handleSwipeMove = (e: React.PointerEvent) => {
     const start = swipeStart.current
-    swipeStart.current = null
-    const direction = swipeDirection(start, { x: e.clientX, y: e.clientY })
-    if (direction === 'left') swipe.open()
-    else if (direction === 'right') swipe.close()
+    if (!canSwipe || !start) return
+
+    const dx = e.clientX - start.x
+    const dy = e.clientY - start.y
+
+    if (!dragLocked.current) {
+      if (!locksHorizontal(dx, dy)) {
+        // 세로로 더 갔으면 스크롤이다 — 이 제스처는 브라우저에 넘기고 손을 뗀다.
+        if (Math.abs(dy) > Math.abs(dx)) swipeStart.current = null
+        return
+      }
+      dragLocked.current = true
+      // 손가락이 행 밖으로 나가도 계속 따라오게 한다. jsdom에는 없는 API라 가드한다.
+      e.currentTarget.setPointerCapture?.(e.pointerId)
+    }
+
+    const base = swipe.isOpen ? -actionsWidth : 0
+    // 닫힌 상태에서 오른쪽으로, 열린 상태에서 왼쪽으로 더 끌리지 않게 가둔다.
+    setDragX(Math.max(-actionsWidth, Math.min(0, base + dx)))
+  }
+
+  const handleSwipeUp = () => {
+    if (!canSwipe || !dragLocked.current) {
+      endDrag()
+      return
+    }
+    // 끌던 손의 마지막 위치가 곧 답이다 — 절반을 넘겼으면 연다.
+    if (settlesOpen(dragX ?? 0, actionsWidth)) swipe.open()
+    else swipe.close()
+    endDrag()
   }
   const [menuOpen, setMenuOpen] = useState(false)
   // lazy-mount flag so closed rows don't each carry a hidden portal
@@ -330,7 +379,7 @@ export function ScheduleItem({
             버튼이 실제 DOM에 늘 있으므로 열기 전에는 aria-hidden으로 감춰
             스크린 리더가 목록마다 안 보이는 버튼 두 개를 읽지 않게 한다. */}
         {canSwipe && (
-          <div className={styles.swipeActions} aria-hidden={!swipe.isOpen}>
+          <div ref={actionsRef} className={styles.swipeActions} aria-hidden={!swipe.isOpen}>
             {onEdit && (
               <button
                 type="button"
@@ -364,8 +413,23 @@ export function ScheduleItem({
 
         <div
           className={clsx(styles.swipeTrack, canSwipe && swipe.isOpen && styles.swipeTrackOpen)}
+          style={
+            canSwipe
+              ? {
+                  // 끄는 동안은 손가락 위치를 그대로 쓴다. 전환 애니메이션을 끄지 않으면
+                  // 행이 손보다 한 박자 늦게 따라와 미끄러지는 느낌이 난다.
+                  ...(dragX !== null
+                    ? { transform: `translateX(${dragX}px)`, transition: 'none' }
+                    : null),
+                  // 열린 위치는 잰 폭으로 정한다 — 라벨이 길어져도 잘리지 않는다.
+                  ...(actionsWidth ? { '--swipe-open-width': `${actionsWidth}px` } : null),
+                } as React.CSSProperties
+              : undefined
+          }
           onPointerDown={handleSwipeDown}
+          onPointerMove={handleSwipeMove}
           onPointerUp={handleSwipeUp}
+          onPointerCancel={handleSwipeUp}
           // 열린 행 위를 탭하면 닫기만 하고 그 탭은 행으로 넘기지 않는다 —
           // 실수로 상세가 열리지 않게.
           onClickCapture={(e) => {
