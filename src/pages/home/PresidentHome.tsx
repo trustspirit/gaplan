@@ -100,10 +100,14 @@ export function PresidentHome() {
             </div>
           )}
 
+          {/* 회장 홈에는 「다음 일정」 카드를 두지 않는다 — PrimaryTaskCard(지금 답해야 할
+              일 하나)가 이미 최상단 주인공이고, 히어로 둘은 서로 주도권을 다툰다.
+              날짜 그룹만 공유한다(스펙 §4.6, 판정 R38). */}
           <ScheduleListCard
             schedules={upcoming}
             loading={schedulesLoading}
             getUnitName={getUnitName}
+            today={today}
             showCalendarAdd
           />
         </div>

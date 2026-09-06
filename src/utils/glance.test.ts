@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { Schedule } from '@/types'
-import { selectGlanceSchedules } from './glance'
+import { selectGlanceSchedules, splitNextUp } from './glance'
 
 const s = (id: string, date: string, status: Schedule['status'] = 'confirmed'): Schedule => ({
   id, type: 'ward_visit', seventyUid: 's', unitId: 'u', presidentUid: null,
@@ -29,5 +29,48 @@ describe('selectGlanceSchedules', () => {
       today,
     )
     expect(out.map(x => x.id)).toEqual(['a', 'b', 'c', 'd', 'e'])
+  })
+})
+
+// 홈 맨 위의 「다음 일정」 카드 — 목록에서 그 한 건을 빼내 위에 크게 올린다.
+// 같은 일정이 두 곳에 보이지 않게 하는 게 이 분리의 요점이다.
+describe('splitNextUp', () => {
+  const at = (id: string, date: string, startTime: string, endTime: string): Schedule => ({
+    id, type: 'meeting', seventyUid: 's', unitId: 'u', presidentUid: null,
+    date, startTime, endTime, status: 'confirmed', createdBy: 'a',
+  })
+
+  it('빈 목록이면 next는 null이고 rest도 비어 있다', () => {
+    expect(splitNextUp([], '2026-07-02T09:00')).toEqual({ next: null, rest: [] })
+  })
+
+  it('첫 건을 next로 빼고 나머지를 rest로 남긴다', () => {
+    const list = [at('a', '2026-07-03', '10:00', '11:00'), at('b', '2026-07-04', '09:00', '10:00')]
+    const { next, rest } = splitNextUp(list, '2026-07-02T09:00')
+    expect(next?.id).toBe('a')
+    expect(rest.map(x => x.id)).toEqual(['b'])
+  })
+
+  // 오후 2시 접견 중에 홈을 열면 그 접견이 떠야 한다 — 이미 시작했다고 다음 것으로
+  // 넘어가면 "지금 뭘 하고 있는가"를 화면이 놓친다.
+  it('이미 시작했지만 아직 안 끝난 일정이 있으면 그게 next다', () => {
+    const list = [at('now', '2026-07-02', '14:00', '15:00'), at('later', '2026-07-02', '16:00', '17:00')]
+    const { next, rest } = splitNextUp(list, '2026-07-02T14:30')
+    expect(next?.id).toBe('now')
+    expect(rest.map(x => x.id)).toEqual(['later'])
+  })
+
+  // 오늘 이미 끝난 일정은 카드로는 안 올라가지만 목록에는 남는다 — 오늘 하루를
+  // 훑을 때 끝난 일정도 보여야 하고, ScheduleItem이 「완료」 배지로 이미 구분한다.
+  it('끝난 일정은 next가 되지 않고 목록에 남는다', () => {
+    const list = [at('done', '2026-07-02', '09:00', '10:00'), at('next', '2026-07-02', '16:00', '17:00')]
+    const { next, rest } = splitNextUp(list, '2026-07-02T10:30')
+    expect(next?.id).toBe('next')
+    expect(rest.map(x => x.id)).toEqual(['done'])
+  })
+
+  it('호출자가 넘긴 목록의 순서를 신뢰한다 — 정렬은 selectGlanceSchedules의 몫이다', () => {
+    const list = [at('first', '2026-07-05', '10:00', '11:00'), at('second', '2026-07-03', '10:00', '11:00')]
+    expect(splitNextUp(list, '2026-07-02T09:00').next?.id).toBe('first')
   })
 })

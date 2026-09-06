@@ -5,7 +5,14 @@
     "moreTasks": "외 {{count}}건",
     "moreTasksClose": "접기",
     "dueIn": "D-{{days}}",
-    "overdueBy": "D+{{days}}"
+    "overdueBy": "D+{{days}}",
+    "nextUp": "다음 일정",
+    "nextUpNow": "진행 중",
+    "nextUpInMinutes": "{{count}}분 뒤",
+    "nextUpInHours": "{{count}}시간 뒤",
+    "nextUpToday": "오늘 {{time}}",
+    "nextUpTomorrow": "내일 {{time}}",
+    "nextUpDday": "D-{{count}} · {{date}} {{time}}"
   },
   "nav": {
     "home": "홈",
@@ -359,7 +366,11 @@
       "ward_bishop": "와드/지부 감독",
       "cc_council": "협의 평의회",
       "other": "기타 (직접 입력)"
-    }
+    },
+    "groupToday": "오늘",
+    "groupTomorrow": "내일",
+    "groupThisWeek": "이번 주",
+    "groupLater": "이후"
   },
   "ward": {
     "assignTitle": "와드/지부 방문 날짜 배정",

@@ -5,7 +5,14 @@
     "moreTasks": "{{count}} more",
     "moreTasksClose": "Collapse",
     "dueIn": "D-{{days}}",
-    "overdueBy": "D+{{days}}"
+    "overdueBy": "D+{{days}}",
+    "nextUp": "Next up",
+    "nextUpNow": "In progress",
+    "nextUpInMinutes": "in {{count}} min",
+    "nextUpInHours": "in {{count}} h",
+    "nextUpToday": "Today {{time}}",
+    "nextUpTomorrow": "Tomorrow {{time}}",
+    "nextUpDday": "D-{{count}} · {{date}} {{time}}"
   },
   "nav": {
     "home": "Home",
@@ -359,7 +366,11 @@
       "ward_bishop": "Ward/Branch Bishop",
       "cc_council": "Coordinating Council",
       "other": "Other (enter manually)"
-    }
+    },
+    "groupToday": "Today",
+    "groupTomorrow": "Tomorrow",
+    "groupThisWeek": "This week",
+    "groupLater": "Later"
   },
   "ward": {
     "assignTitle": "Assign Ward/Branch Visit Dates",

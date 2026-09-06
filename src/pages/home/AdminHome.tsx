@@ -15,13 +15,14 @@ import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { useTopBar } from '@/hooks/useTopBar'
 import { deleteScheduleViaCF } from '@/services/scheduleService'
 import { resolveScopedScheduleSeventyUid } from '@/utils/scope'
-import { selectGlanceSchedules } from '@/utils/glance'
+import { selectGlanceSchedules, splitNextUp } from '@/utils/glance'
 import { ROUTES } from '@/router/routes'
 import { Button } from '@/components/ui'
 import { EditScheduleModal } from '@/components/domain/EditScheduleModal/EditScheduleModal'
 import { AddScheduleFlow } from '@/components/domain/addSchedule/AddScheduleFlow'
 import { addScheduleChoicesFor } from '@/components/domain/addSchedule/addScheduleChoices'
 import type { Schedule } from '@/types'
+import { NextUpCard } from './NextUpCard'
 import { ScheduleListCard } from './ScheduleListCard'
 import styles from './HomePage.module.scss'
 
@@ -39,7 +40,7 @@ export function AdminHome() {
   const { schedules, loading: schedulesLoading } = useSchedules(
     scheduleSeventyUid ? { seventyUid: scheduleSeventyUid } : {},
   )
-  const { getUnitName } = useUnits()
+  const { getUnitName, getWardName } = useUnits()
   const [addFlowOpen, setAddFlowOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
@@ -73,17 +74,30 @@ export function AdminHome() {
   }
 
   const today = dayjs().format('YYYY-MM-DD')
+  const now = dayjs().format('YYYY-MM-DDTHH:mm')
   const upcoming = selectGlanceSchedules(
     schedules.filter((s) => !deletingIds.has(s.id)),
     today,
   )
+  // 맨 위 카드로 올라간 한 건은 아래 목록에서 뺀다(칠십인 홈과 같은 규칙).
+  const { next, rest } = splitNextUp(upcoming, now)
 
   return (
     <>
       <div className={styles.layout}>
         <div className={styles.mainCol}>
+          {next && (
+            <NextUpCard
+              schedule={next}
+              unitName={getUnitName(next.unitId)}
+              wardLabel={next.wardName ? getWardName(next.wardName) : undefined}
+              now={now}
+            />
+          )}
+
           <ScheduleListCard
-            schedules={upcoming}
+            schedules={rest}
+            today={today}
             loading={schedulesLoading}
             action={
               <div className={styles.headerActions}>

@@ -204,3 +204,16 @@ describe('PresidentHome', () => {
     expect(openTask).toHaveBeenCalledWith(expect.objectContaining({ id: 'only' }))
   })
 })
+
+// 회장 홈의 최상단 주인공은 PrimaryTaskCard(지금 답해야 할 일 하나)다. 「다음 일정」
+// 카드를 여기 두면 히어로 둘이 주도권을 다툰다 — 스펙 §4.6·판정 R38이 정한 자리다.
+// 나중에 "다른 홈과 통일하자"며 무심코 추가되는 걸 이 테스트가 막는다.
+describe('PresidentHome — 다음 일정 카드를 두지 않는다', () => {
+  it('최상단에 「다음 일정」 카드가 없다', () => {
+    render(<PresidentHome />)
+    expect(screen.queryByText('home.nextUp')).not.toBeInTheDocument()
+  })
+
+  // 날짜 그룹은 여기서 다시 검사하지 않는다 — 세 홈이 같은 ScheduleListCard를 쓰고
+  // AdminHome 테스트와 homeScheduleGroups 단위 테스트가 이미 그 경로를 덮는다.
+})

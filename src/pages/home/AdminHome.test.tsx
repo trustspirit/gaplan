@@ -131,3 +131,44 @@ describe('AdminHome', () => {
     expect(screen.queryAllByRole('group')).toHaveLength(0)
   })
 })
+
+// 맨 위 「다음 일정」 카드는 목록에서 그 한 건을 빼내 올린 것이다 — 같은 일정이
+// 카드와 목록 양쪽에 보이면 훑는 눈이 그 자리에서 한 번 멈춘다.
+describe('AdminHome 다음 일정 카드', () => {
+  it('가장 가까운 일정을 카드로 올리고 아래 목록에서는 뺀다', async () => {
+    schedules = [
+      schedule({ id: 'soon', customTitle: '가까운 접견', date: NOW.add(1, 'day').format('YYYY-MM-DD') }),
+      schedule({ id: 'later', customTitle: '나중 접견', date: NOW.add(6, 'day').format('YYYY-MM-DD') }),
+    ]
+    render(<AdminHome />)
+
+    await waitFor(() => expect(screen.getByText('home.nextUp')).toBeInTheDocument())
+
+    // 가까운 건은 카드에 딱 한 번(목록에서 빠졌으므로), 나중 건은 목록에 한 번.
+    expect(screen.getAllByText('가까운 접견')).toHaveLength(1)
+    expect(screen.getAllByText('나중 접견')).toHaveLength(1)
+  })
+
+  it('보여줄 일정이 없으면 카드를 그리지 않는다', async () => {
+    schedules = []
+    render(<AdminHome />)
+
+    await waitFor(() => expect(screen.getByText('schedule.noUpcoming')).toBeInTheDocument())
+    expect(screen.queryByText('home.nextUp')).not.toBeInTheDocument()
+  })
+
+  it('목록을 날짜 그룹으로 묶는다', async () => {
+    schedules = [
+      schedule({ id: 'a', date: NOW.add(1, 'day').format('YYYY-MM-DD') }),
+      schedule({ id: 'b', date: NOW.add(2, 'day').format('YYYY-MM-DD') }),
+    ]
+    render(<AdminHome />)
+
+    // a는 카드로 빠지고 b만 목록에 남는다 — 그 b가 그룹 헤더 아래 놓인다.
+    await waitFor(() => expect(screen.getByText('home.nextUp')).toBeInTheDocument())
+    const headers = screen.queryAllByText(
+      /schedule\.group(Today|Tomorrow|ThisWeek|Later)/,
+    )
+    expect(headers.length).toBeGreaterThan(0)
+  })
+})

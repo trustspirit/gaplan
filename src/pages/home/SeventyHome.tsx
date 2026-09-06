@@ -9,11 +9,12 @@ import { useUnits } from '@/hooks/useUnits'
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { useTopBar } from '@/hooks/useTopBar'
 import { deleteScheduleViaCF } from '@/services/scheduleService'
-import { selectGlanceSchedules } from '@/utils/glance'
+import { selectGlanceSchedules, splitNextUp } from '@/utils/glance'
 import { REGIONS } from '@/constants/regions'
 import { EditScheduleModal } from '@/components/domain/EditScheduleModal/EditScheduleModal'
 import type { Schedule } from '@/types'
 import { CalendarBanner } from './CalendarBanner'
+import { NextUpCard } from './NextUpCard'
 import { ScheduleListCard } from './ScheduleListCard'
 import styles from './HomePage.module.scss'
 
@@ -25,7 +26,7 @@ export function SeventyHome() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
   const { schedules, loading: schedulesLoading } = useSchedules({ seventyUid: user.uid })
-  const { getUnitName } = useUnits()
+  const { getUnitName, getWardName } = useUnits()
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
   const regionIds = user.regionIds ?? (user.regionId ? [user.regionId] : [])
@@ -33,10 +34,14 @@ export function SeventyHome() {
   useTopBar({ subtext: regionName, helpInfoKey: 'pageHelp.dashboardSeventy' })
 
   const today = dayjs().format('YYYY-MM-DD')
+  const now = dayjs().format('YYYY-MM-DDTHH:mm')
   const upcoming = selectGlanceSchedules(
     schedules.filter((s) => !deletingIds.has(s.id)),
     today,
   )
+  // 맨 위 카드로 올라간 한 건은 아래 목록에서 뺀다 — 같은 일정이 두 번 보이면
+  // 목록을 훑는 눈이 그 자리에서 한 번 멈춘다.
+  const { next, rest } = splitNextUp(upcoming, now)
 
   return (
     <>
@@ -45,10 +50,20 @@ export function SeventyHome() {
           <CalendarBanner connected={user.calendarConnected} />
 
 
+          {next && (
+            <NextUpCard
+              schedule={next}
+              unitName={getUnitName(next.unitId)}
+              wardLabel={next.wardName ? getWardName(next.wardName) : undefined}
+              now={now}
+            />
+          )}
+
           <ScheduleListCard
-            schedules={upcoming}
+            schedules={rest}
             loading={schedulesLoading}
             getUnitName={getUnitName}
+            today={today}
             canEdit
             onEdit={setEditTarget}
             onDelete={(s) =>
