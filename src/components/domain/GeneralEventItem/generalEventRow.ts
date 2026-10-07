@@ -19,16 +19,17 @@ export function toGeneralEventRow({ event, today }: GeneralEventRowInput): DataL
   const dow = DOW_LABELS[date.day()]
   const isPast = date.isBefore(dayjs(today), 'day')
   const isMultiDay = isMultiDayEvent(event)
-  const meta =
+  const time =
     event.startTime && event.endTime ? `${event.startTime} – ${event.endTime}` : undefined
+  // 여러 날 행사의 범위(예: "9.3(수) – 9.4(목)")는 lead(46px 고정폭)에 들어가지 않는다 —
+  // lead는 하루짜리와 같게 시작일만 두고, 범위는 아래 줄(meta)에 시간과 함께 보여준다.
+  const meta = isMultiDay
+    ? [formatEventDateRange(event, dayLabel), time].filter(Boolean).join(' · ')
+    : time
 
   return {
     id: event.id,
-    // 여러 날 행사는 날짜를 범위로 보여준다(예: "9.3(수) – 9.4(목)") — 하루짜리는
-    // 지금 그대로 primary/secondary로 나눈다.
-    lead: isMultiDay
-      ? { primary: formatEventDateRange(event, dayLabel) }
-      : { primary: date.format('M.D'), secondary: dow },
+    lead: { primary: date.format('M.D'), secondary: dow },
     title: event.title,
     meta,
     dimmed: isPast,
