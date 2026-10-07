@@ -77,17 +77,31 @@ describe('toGeneralEventRow', () => {
 // event-toast-and-multiday brief §2-5: 여러 날 행사는 날짜를 범위로 보여준다
 // (예: "9.3(수) – 9.4(목)"). 하루짜리는 지금 그대로(primary=M.D, secondary=dow 분리).
 describe('toGeneralEventRow 여러 날 행사', () => {
-  it('종료일이 있으면 lead.primary에 시작일–종료일 범위를 넣고 secondary는 비운다', () => {
+  it('종료일이 있으면 lead는 시작일만 두고(고정폭에 맞게) 범위는 meta에 넣는다', () => {
     const row = toGeneralEventRow({
       event: event({ date: '2026-09-03', endDate: '2026-09-04' }),
       today: TODAY,
     })
     const start = dayjs('2026-09-03')
     const end = dayjs('2026-09-04')
-    expect(row.lead?.primary).toBe(
+    expect(row.lead?.primary).toBe(start.format('M.D'))
+    expect(row.lead?.secondary).toBe(DOW_LABELS[start.day()])
+    expect(row.meta).toBe(
       `${start.format('M.D')}(${DOW_LABELS[start.day()]}) – ${end.format('M.D')}(${DOW_LABELS[end.day()]})`,
     )
-    expect(row.lead?.secondary).toBeUndefined()
+  })
+
+  it('여러 날 행사에 시간이 있으면 meta에 범위 뒤에 덧붙인다', () => {
+    const row = toGeneralEventRow({
+      event: event({
+        date: '2026-09-03',
+        endDate: '2026-09-04',
+        startTime: '10:00',
+        endTime: '12:00',
+      }),
+      today: TODAY,
+    })
+    expect(row.meta).toMatch(/ · 10:00 – 12:00$/)
   })
 
   it('종료일이 시작일과 같으면 하루짜리와 같은 모양을 유지한다', () => {
