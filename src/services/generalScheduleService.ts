@@ -1,6 +1,6 @@
 import {
   collection, query, where, orderBy,
-  onSnapshot, addDoc, updateDoc,
+  onSnapshot, addDoc, updateDoc, deleteField,
   doc, getDocs, serverTimestamp, writeBatch,
   type Unsubscribe,
 } from 'firebase/firestore'
@@ -40,8 +40,17 @@ export async function updateGeneralSchedule(
   id: string,
   updates: Partial<Omit<GeneralSchedule, 'id' | 'createdBy' | 'createdAt'>>,
 ): Promise<void> {
-  await updateDoc(doc(db, 'generalSchedules', id), stripUndefined(updates))
+  // 폼이 비운 선택 필드는 undefined로 온다. 걷어내기만 하면 updateDoc이 그 필드를 건드리지
+  // 않아 예전 값이 남으므로, 이 필드들은 지운다. 언급하지 않은 필드(부분 수정)는 그대로 둔다.
+  const cleared = Object.fromEntries(
+    CLEARABLE_FIELDS.filter((key) => key in updates && updates[key] === undefined).map(
+      (key) => [key, deleteField()],
+    ),
+  )
+  await updateDoc(doc(db, 'generalSchedules', id), { ...stripUndefined(updates), ...cleared })
 }
+
+const CLEARABLE_FIELDS = ['endDate', 'startTime', 'endTime', 'description'] as const
 
 export async function deleteGeneralSchedule(id: string): Promise<void> {
   const attendanceSnap = await getDocs(

@@ -115,12 +115,12 @@ export function GeneralScheduleFormModal({
         isPublic:    canUseAdminTools(user) ? isPublic : false,
         targetRegionIds: canUseAdminTools(user) ? targetRegionIds : [],
         targetUnitIds,
-        createdBy:   user.uid,
       }
       if (initialData) {
+        // 작성자는 만들 때 한 번만 정한다 — 수정한 사람으로 바꾸면 원래 작성자가 관리 권한을 잃는다.
         await updateGeneralSchedule(initialData.id, payload)
       } else {
-        await createGeneralSchedule(payload)
+        await createGeneralSchedule({ ...payload, createdBy: user.uid })
       }
       toast.success(t('generalSchedule.savedSuccess'))
       onSaved()

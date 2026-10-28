@@ -194,6 +194,31 @@ describe('GeneralScheduleFormModal 여러 날 행사(종료일)', () => {
     expect(createGeneralSchedule).not.toHaveBeenCalled()
   })
 
+  // 관리자가 seventy의 행사를 고치면 작성자가 관리자로 바뀌어, 원래 작성자가 수정·삭제
+  // 권한(createdBy 기준)을 잃었다.
+  it('수정 저장은 작성자(createdBy)를 건드리지 않는다', async () => {
+    const { updateGeneralSchedule } = await import('@/services/generalScheduleService')
+    render(
+      <GeneralScheduleFormModal
+        initialData={{
+          id: 'g1',
+          title: '수련회',
+          date: '2026-09-03',
+          category: 'conference',
+          createdBy: 'someone-else',
+          createdAt: '2026-08-01',
+          isPublic: false,
+        }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
+
+    await waitFor(() => expect(updateGeneralSchedule).toHaveBeenCalled())
+    expect(vi.mocked(updateGeneralSchedule).mock.calls[0][1]).not.toHaveProperty('createdBy')
+  })
+
   it('종료일만 고치고 닫으려 하면 dirty 확인을 묻는다', () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const onClose = vi.fn()

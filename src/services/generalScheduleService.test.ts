@@ -7,6 +7,7 @@ const firestoreMocks = vi.hoisted(() => ({
   doc: vi.fn((...args: unknown[]) => ({ kind: 'doc', args })),
   updateDoc: vi.fn().mockResolvedValue(undefined),
   serverTimestamp: vi.fn(() => 'server-timestamp'),
+  deleteField: vi.fn(() => 'delete-field'),
 }))
 
 vi.mock('firebase/firestore', () => firestoreMocks)
@@ -55,5 +56,32 @@ describe('updateGeneralSchedule', () => {
     const payload = firestoreMocks.updateDoc.mock.calls[0][1] as Record<string, unknown>
     const undefinedKeys = Object.keys(payload).filter(k => payload[k] === undefined)
     expect(undefinedKeys).toEqual([])
+  })
+
+  // 수정 폼에서 종료일·시간·설명을 비우면 undefined로 온다. 그 키를 그냥 걷어내면
+  // updateDoc이 필드를 건드리지 않아, 저장됐다는 토스트 뒤에 예전 값이 그대로 남는다.
+  it('clears the optional fields the form emptied instead of leaving the old values', async () => {
+    await updateGeneralSchedule('gs-1', {
+      title: '행사',
+      endDate: undefined,
+      startTime: undefined,
+      endTime: undefined,
+      description: undefined,
+    })
+
+    const payload = firestoreMocks.updateDoc.mock.calls[0][1] as Record<string, unknown>
+    expect(payload).toEqual({
+      title: '행사',
+      endDate: 'delete-field',
+      startTime: 'delete-field',
+      endTime: 'delete-field',
+      description: 'delete-field',
+    })
+  })
+
+  it('leaves untouched the fields a partial update did not mention', async () => {
+    await updateGeneralSchedule('gs-1', { isPublic: true })
+
+    expect(firestoreMocks.updateDoc.mock.calls[0][1]).toEqual({ isPublic: true })
   })
 })
