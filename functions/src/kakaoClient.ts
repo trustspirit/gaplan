@@ -36,8 +36,8 @@ export function hasTalkCalendarScope(scope: string | undefined): boolean {
 
 export function getKakaoConfig(): { restApiKey: string; clientSecret: string } {
   return {
-    restApiKey: functions.config().kakao?.rest_api_key ?? process.env.KAKAO_REST_API_KEY ?? '',
-    clientSecret: functions.config().kakao?.client_secret ?? process.env.KAKAO_CLIENT_SECRET ?? '',
+    restApiKey: process.env.KAKAO_REST_API_KEY ?? '',
+    clientSecret: process.env.KAKAO_CLIENT_SECRET ?? '',
   }
 }
 
