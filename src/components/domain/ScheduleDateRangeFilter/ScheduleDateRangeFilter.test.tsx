@@ -86,6 +86,29 @@ describe('ScheduleDateRangeFilter', () => {
     expect(screen.queryByRole('button', { name: 'schedule.filterReset' })).toBeNull()
   })
 
+  // 필터 묶음은 오른쪽 끝에 붙어 있어서, 버튼이 새로 끼어들면 날짜 칸이 그만큼 왼쪽으로
+  // 밀린다 — 시작일을 고친 직후 종료일을 누르려던 손이 빗나간다.
+  it('되돌리기 버튼이 없을 때도 그 자리를 비워 두어 날짜 칸이 움직이지 않는다', () => {
+    const { container, unmount } = render(
+      <ScheduleDateRangeFilter
+        setting={{ preset: 'rolling' }}
+        currentRange={rollingRange}
+        onChange={vi.fn()}
+      />,
+    )
+    const rollingSlots = container.firstElementChild!.childElementCount
+    unmount()
+
+    const custom = render(
+      <ScheduleDateRangeFilter
+        setting={{ preset: 'custom', customStart: '2026-09-01', customEnd: '2026-09-30' }}
+        currentRange={{ start: '2026-09-01', end: '2026-09-30' }}
+        onChange={vi.fn()}
+      />,
+    )
+    expect(custom.container.firstElementChild!.childElementCount).toBe(rollingSlots)
+  })
+
   it('직접 입력 중이면 저장된 범위를 칸에 채우고 되돌리기 버튼을 보여준다', () => {
     const customRange: DateRange = { start: '2026-09-01', end: '2026-09-30' }
     renderFilter(

@@ -52,8 +52,21 @@
   }
 
   @include mobile {
-    width: 38px;
-    height: 38px;
+    width: $control-min-height-mobile;
+    height: $control-min-height-mobile;
+  }
+}
+
+// 기본 기간에서 되돌리기 버튼이 설 자리 — 크기를 똑같이 잡아 두어야 버튼이 나타나도
+// 날짜 칸이 움직이지 않는다.
+.resetSlot {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+
+  @include mobile {
+    width: $control-min-height-mobile;
+    height: $control-min-height-mobile;
   }
 }
 
@@ -78,14 +91,15 @@
   border-radius: $border-radius-md;
   min-height: 32px;
   padding: 0 $space-2;
-  font-size: $font-size-sm;
+  // 같은 줄에 선 종류 칩·셀렉트와 글자 크기를 맞춘다.
+  font-size: $font-size-xs;
   background: $color-surface;
   color: $color-text;
 
   @include mobile {
     // 16px 미만이면 iOS Safari가 포커스할 때 화면을 확대한다 — 대신 칸을 키운다.
-    font-size: 16px;
-    min-height: 38px;
+    font-size: $font-size-base;
+    min-height: $control-min-height-mobile;
     width: 100%;
     inline-size: 100%;
 

@@ -59,7 +59,9 @@ export function ScheduleDateRangeFilter({ setting, currentRange, onChange }: Pro
         value={localEnd}
         onChange={e => handleEndChange(e.target.value)}
       />
-      {isCustom && (
+      {/* 버튼이 없을 때도 자리를 남긴다 — 묶음이 오른쪽 끝에 붙어 있어서, 첫 수정에
+          버튼이 끼어들면 날짜 칸이 왼쪽으로 밀려 다음 클릭이 빗나간다. */}
+      {isCustom ? (
         <button
           type="button"
           className={styles.resetBtn}
@@ -69,6 +71,8 @@ export function ScheduleDateRangeFilter({ setting, currentRange, onChange }: Pro
         >
           <RotateCcw size={14} aria-hidden="true" />
         </button>
+      ) : (
+        <span className={styles.resetSlot} aria-hidden="true" />
       )}
     </div>
   )

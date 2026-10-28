@@ -97,6 +97,35 @@ describe('ScheduleFilterBar', () => {
     expectNoAccentStripe(readFileSync(resolve(__dirname, 'ScheduleFilterBar.module.scss'), 'utf8'))
   })
 
+  describe('filter select styles', () => {
+    const scss = readFileSync(resolve(__dirname, 'ScheduleFilterBar.module.scss'), 'utf8')
+    const block = (selector: string) => {
+      const start = scss.indexOf(`${selector} {`)
+      expect(start, selector).toBeGreaterThan(-1)
+      let depth = 0
+      for (let i = scss.indexOf('{', start); i < scss.length; i++) {
+        if (scss[i] === '{') depth++
+        if (scss[i] === '}' && --depth === 0) return scss.slice(start, i + 1)
+      }
+      throw new Error(`${selector} 블록을 닫는 괄호를 찾지 못했다`)
+    }
+
+    // 16px 미만이면 iOS Safari가 포커스할 때 화면을 확대한다 (_variables.scss의 control 토큰 주석).
+    it('keeps the select font at 16px on mobile', () => {
+      const mobile = block('.select').slice(block('.select').indexOf('@include mobile'))
+      expect(mobile).toMatch(/font-size:\s*\$font-size-base\s*!important/)
+    })
+
+    // 긴 지역 이름이 들어오면 줄어들지 못하는 셀렉트가 좁은 화면 밖으로 삐져나간다.
+    it('lets a select box shrink below its longest option', () => {
+      // 라벨(> label)은 줄지 않아도 된다 — 상자 자신의 선언만 본다.
+      const own = block('.selectWrapper')
+        .replace(/^[^{]*\{/, '')
+        .replace(/[^;{}]*\{[^{}]*\}/g, '')
+      expect(own).not.toMatch(/flex-shrink:\s*0/)
+    })
+  })
+
   // Select는 placeholder를 넘겼든 아니든 value=""인 옵션을 하나 렌더한다. 그래서 "전체"를
   // 별도 옵션으로 또 넣으면 빈 항목이 두 개 뜬다 — 사용자가 실제로 본 결함이다.
   describe('the empty slot is not duplicated', () => {
