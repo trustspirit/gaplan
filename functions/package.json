@@ -4,7 +4,7 @@
     "build": "tsc",
     "build:watch": "tsc --watch"
   },
-  "engines": { "node": "20" },
+  "engines": { "node": "22" },
   "main": "lib/index.js",
   "dependencies": {
     "firebase-admin": "^13.0.0",
@@ -16,6 +16,6 @@
   "devDependencies": {
     "typescript": "^5.0.0",
     "@types/nodemailer": "^6.4.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^22.0.0"
   }
 }
