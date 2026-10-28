@@ -77,7 +77,10 @@ export const calendarSync = functions
     const title = buildScheduleTitle(after)
 
     const calendar = getCalendarClient()
-    const existingEventId: string | undefined = before?.googleCalendarEventId
+    // 취소됐던 자리에 다시 확정하면 before에 남은 이벤트 ID는 이미 지운 이벤트다 —
+    // 그걸 update하지 말고 새로 만든다.
+    const existingEventId: string | undefined =
+      before?.status === 'cancelled' ? undefined : before?.googleCalendarEventId
 
     // 갱신 경로는 빈 문자열을 넘겨 칸을 명시적으로 지운다(undefined는 "변경 없음"이다).
     const fields = buildCalendarEventFields({

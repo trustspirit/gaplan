@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
+import { confirmDeniedReason } from './confirmGuards'
 
 interface AdminConfirmWardVisitParams {
   taskId: string
@@ -32,14 +33,11 @@ export const adminConfirmWardVisit = functions
 
     const taskData = taskSnap.data()!
 
-    if (callerRole === 'exec_secretary') {
-      const callerData = callerSnap.data()
-      const assignedUid = callerData?.assignedSeventyUid as string | undefined
-      if (!assignedUid || taskData?.seventyUid !== assignedUid) {
-        throw new functions.https.HttpsError('permission-denied',
-          'exec_secretary can only confirm ward visits for their assigned seventy')
-      }
-    }
+    const denied = confirmDeniedReason(
+      { role: callerRole, uid: callerUid, assignedSeventyUid: callerSnap.data()?.assignedSeventyUid },
+      taskData.seventyUid,
+    )
+    if (denied) throw new functions.https.HttpsError('permission-denied', denied)
 
     if (taskData.type !== 'select_visit') {
       throw new functions.https.HttpsError('invalid-argument', 'Only ward visit tasks can be confirmed this way')

@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
+import { isSlotTaken, wardVisitConfirmError } from './confirmGuards'
 
 interface ConfirmParams {
   taskId: string
@@ -43,12 +44,14 @@ export const confirmSchedule = functions
     const scheduleId = `${data.seventyUid}_${data.slot.date}`
     const scheduleRef = db.collection('schedules').doc(scheduleId)
     const taskRef = db.collection('tasks').doc(data.taskId)
+    const callerRef = db.collection('users').doc(context.auth.uid)
 
     return db.runTransaction(async tx => {
       // Validate task ownership and data integrity before writing
-      const [existingSchedule, taskSnap] = await Promise.all([
+      const [existingSchedule, taskSnap, callerSnap] = await Promise.all([
         tx.get(scheduleRef),
         tx.get(taskRef),
+        tx.get(callerRef),
       ])
 
       if (!taskSnap.exists) {
@@ -64,8 +67,17 @@ export const confirmSchedule = functions
       if (taskData.status === 'completed') {
         return { success: false, error: '이미 처리된 Task입니다.' }
       }
+      // 일정의 종류·소속·날짜는 요청이 아니라 과제와 회장 문서에서 온다.
+      const mismatch = wardVisitConfirmError(
+        taskData,
+        { unitId: data.unitId, date: data.slot.date },
+        callerSnap.data()?.unitId,
+      )
+      if (mismatch) {
+        throw new functions.https.HttpsError('invalid-argument', mismatch)
+      }
 
-      if (existingSchedule.exists) {
+      if (isSlotTaken(existingSchedule.data())) {
         return {
           success: false,
           error: '해당 날짜에 이미 확정된 일정이 있습니다. 다른 날짜를 선택해주세요.',
@@ -73,7 +85,7 @@ export const confirmSchedule = functions
       }
 
       tx.set(scheduleRef, {
-        type: data.type,
+        type: 'ward_visit',
         seventyUid: data.seventyUid,
         unitId: data.unitId,
         presidentUid: context.auth!.uid,

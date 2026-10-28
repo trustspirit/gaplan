@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
+import { confirmDeniedReason, isSlotTaken } from './confirmGuards'
 
 interface AdminConfirmParams {
   taskId: string
@@ -39,14 +40,11 @@ export const adminConfirmSchedule = functions
     }
     const taskData = taskSnap.data()!
 
-    if (callerRole === 'exec_secretary') {
-      const callerData = callerSnap.data()
-      const assignedUid = callerData?.assignedSeventyUid as string | undefined
-      if (!assignedUid || taskData?.seventyUid !== assignedUid) {
-        throw new functions.https.HttpsError('permission-denied',
-          'exec_secretary can only confirm schedules for their assigned seventy')
-      }
-    }
+    const denied = confirmDeniedReason(
+      { role: callerRole, uid: callerUid, assignedSeventyUid: callerSnap.data()?.assignedSeventyUid },
+      taskData.seventyUid,
+    )
+    if (denied) throw new functions.https.HttpsError('permission-denied', denied)
 
     if (taskData.status !== 'responded') {
       return { success: false, error: '아직 회장이 가능 시간을 제출하지 않았습니다.' }
@@ -70,7 +68,7 @@ export const adminConfirmSchedule = functions
 
     return db.runTransaction(async tx => {
       const existing = await tx.get(scheduleRef)
-      if (existing.exists) {
+      if (isSlotTaken(existing.data())) {
         return { success: false, error: '해당 슬롯에 이미 확정된 일정이 있습니다.' }
       }
 
