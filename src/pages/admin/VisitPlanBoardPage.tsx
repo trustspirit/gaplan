@@ -107,10 +107,12 @@ export function VisitPlanBoardPage() {
   const handleRemove = (itemId: string) => {
     if (!plan) return
     const target = (plan.items ?? []).find((i) => i.itemId === itemId)
-    const filtered = (plan.items ?? []).filter((i) => i.itemId !== itemId)
     schedulePlanDelete(
       itemId,
       async () => {
+        // 남길 목록은 되돌리기 창이 끝난 지금 정한다 — 클릭 순간에 정해 두면 그 5초 사이에
+        // 추가하거나 지운 항목을 이 저장이 덮어써, 추가한 방문이 사라지거나 지운 방문이 되살아난다.
+        const filtered = latestItemsRef.current.filter((i) => i.itemId !== itemId)
         if (target?.scheduleId) {
           try {
             await deleteScheduleViaCF(target.scheduleId)

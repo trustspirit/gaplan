@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   getVisitPlan: vi.fn(),
   updateVisitPlanItems: vi.fn(),
   publishVisitPlan: vi.fn(),
+  // 되돌리기 창(5초)이 끝나야 도는 삭제 콜백 — 테스트가 원하는 때에 직접 돌린다.
+  pendingDeletes: [] as (() => Promise<void>)[],
   addedVisit: {
     unitId: 'seoul-stake',
     wardName: '서대문 와드',
@@ -44,7 +46,12 @@ vi.mock('@/services/visitPlanService', () => ({
 
 vi.mock('@/services/scheduleService', () => ({ deleteScheduleViaCF: vi.fn() }))
 vi.mock('@/hooks/useDeleteWithUndo', () => ({
-  useDeleteWithUndo: () => ({ pendingIds: new Set<string>(), scheduleDelete: vi.fn() }),
+  useDeleteWithUndo: () => ({
+    pendingIds: new Set<string>(),
+    scheduleDelete: (_id: string, doDelete: () => Promise<void>) => {
+      mocks.pendingDeletes.push(doDelete)
+    },
+  }),
 }))
 vi.mock('@/hooks/useVisitPlanContext', () => ({
   useVisitPlanContext: () => ({
@@ -87,7 +94,11 @@ vi.mock('@/components/domain/visitPlan/AddVisitPanel', () => ({
   ),
 }))
 vi.mock('@/components/domain/visitPlan/PlanItemList', () => ({
-  PlanItemList: () => <div>items</div>,
+  PlanItemList: ({ onRemove }: { onRemove: (itemId: string) => void }) => (
+    <button type="button" onClick={() => onRemove('item-1')}>
+      mock-remove-item-1
+    </button>
+  ),
 }))
 vi.mock('@/components/domain/visitPlan/BalancePanel', () => ({
   BalancePanel: () => <div>balance</div>,
@@ -102,6 +113,7 @@ import { VisitPlanBoardPage } from './VisitPlanBoardPage'
 describe('VisitPlanBoardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.pendingDeletes = []
     vi.stubGlobal(
       'confirm',
       vi.fn(() => true),
@@ -149,6 +161,23 @@ describe('VisitPlanBoardPage', () => {
         expect.objectContaining({ itemId: 'item-1', wardName: '녹번 와드' }),
       ])
     })
+  })
+
+  // 삭제는 되돌리기 창이 끝난 뒤에 저장된다. 남길 목록을 클릭 순간에 정해 두면, 그 사이에
+  // 추가한 방문이 삭제 저장에 덮여 사라진다.
+  it('삭제를 기다리는 동안 추가한 방문을 삭제 저장이 지우지 않는다', async () => {
+    const user = userEvent.setup()
+    render(<VisitPlanBoardPage />)
+
+    await screen.findByText('테스트 계획')
+    await user.click(screen.getByRole('button', { name: 'mock-remove-item-1' }))
+    await user.click(screen.getByRole('button', { name: 'mock-add-visit' }))
+    await waitFor(() => expect(mocks.updateVisitPlanItems).toHaveBeenCalledTimes(1))
+
+    await mocks.pendingDeletes[0]()
+
+    const saved = mocks.updateVisitPlanItems.mock.calls.at(-1)![1] as { wardName: string }[]
+    expect(saved.map((i) => i.wardName)).toEqual(['서대문 와드'])
   })
 
   it('방문 추가 저장 중에는 publish를 막는다', async () => {
