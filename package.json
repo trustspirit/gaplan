@@ -11,6 +11,7 @@
     "format:check": "prettier --check .",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-gaplan 'vitest run -c vitest.rules.config.ts'",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

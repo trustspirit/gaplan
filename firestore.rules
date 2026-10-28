@@ -20,25 +20,57 @@ service cloud.firestore {
         : null;
     }
 
+    function invitePath() {
+      return /databases/$(database)/documents/invites/$(request.auth.token.email);
+    }
+    function invite() { return get(invitePath()).data; }
+    // 초대장이 있고, 그 초대장이 바로 이 역할로 초대한 것이어야 한다. 있기만 하면 통과시키던
+    // 예전 규칙에서는 집행서기로 초대된 사람이 자기 문서를 seventy로 만들 수 있었다.
+    function invitedAs(role) { return exists(invitePath()) && invite().get('role', null) == role; }
+    // resolveUser(authService.ts)가 초대장에서 지역을 옮겨 적는 규칙과 같아야 한다.
+    function inviteRegionIds() {
+      return invite().get('assignedRegionIds', []).size() > 0
+        ? invite().assignedRegionIds
+        : (invite().get('assignedRegionId', null) != null ? [invite().assignedRegionId] : []);
+    }
+
     match /users/{uid} {
       // Admin: all users. Seventy: all users (needed to resolve president names in task progress).
       // President/others: own document only.
       allow read: if isAuth() && (request.auth.uid == uid || isAdmin() || isSeventy() || isExecSecretary());
+      // Cloud Functions는 role·assignedSeventyUid·regionIds·unitId를 권한 근거로 믿는다 —
+      // 그러니 사용자가 자기 문서를 만들 때 이 값들을 마음대로 고를 수 없어야 한다.
       allow create: if isAuth() && request.auth.uid == uid
         && (
-          // Presidents self-create via onboarding
-          request.resource.data.role == 'president'
+          // 초대 없는 가입자: 온보딩이 이름·소속만 받아 승인 대기로 저장한다.
+          (request.resource.data.role == 'pending'
+              && request.resource.data.keys().hasOnly(['email', 'name', 'role', 'unitId', 'regionId', 'createdAt']))
+          // 초대받은 회장: 소속은 본인이 온보딩에서 고른다.
+          || (request.resource.data.role == 'president'
+              && invitedAs('president')
+              && request.resource.data.keys().hasOnly(['email', 'name', 'role', 'unitId', 'regionId', 'createdAt']))
           // Admin: email must match settings/admin
           || (request.resource.data.role == 'admin'
               && exists(/databases/$(database)/documents/settings/admin)
               && request.auth.token.email == get(/databases/$(database)/documents/settings/admin).data.get('email', null))
-          // Seventy/ExecSecretary: must have a valid invite
-          || ((request.resource.data.role == 'seventy' || request.resource.data.role == 'exec_secretary')
-              && exists(/databases/$(database)/documents/invites/$(request.auth.token.email)))
+          // Seventy: 담당 지역은 초대장에 적힌 그대로
+          || (request.resource.data.role == 'seventy'
+              && invitedAs('seventy')
+              && request.resource.data.keys().hasOnly(['email', 'name', 'role', 'regionIds', 'regionId', 'createdAt'])
+              && request.resource.data.get('regionIds', []) == inviteRegionIds()
+              && request.resource.data.get('regionId', null)
+                   == (inviteRegionIds().size() > 0 ? inviteRegionIds()[0] : null))
+          // ExecSecretary: 담당 seventy는 초대장에 적힌 그대로
+          || (request.resource.data.role == 'exec_secretary'
+              && invitedAs('exec_secretary')
+              && request.resource.data.keys().hasOnly(['email', 'name', 'role', 'assignedSeventyUid', 'createdAt'])
+              && request.resource.data.get('assignedSeventyUid', null) == invite().get('assignedSeventyUid', null))
         );
       // Admin can update any user's doc, but cannot change their own role (self-demotion prevention).
+      // 본인은 표시 이름과 캘린더 구독 표시만 고친다 — 나머지는 권한 근거라 관리자 몫이다.
       allow update: if (isAdmin() && (request.auth.uid != uid || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])))
-        || (isAuth() && request.auth.uid == uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']));
+        || (isAuth() && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'calendarConnected']));
     }
 
     match /invites/{email} {
@@ -77,8 +109,16 @@ service cloud.firestore {
     match /generalSchedules/{scheduleId} {
       // Authenticated users read all (calendar/list). Public page reads isPublic==true only.
       allow read: if isAuth() || resource.data.isPublic == true;
-      // Admin, seventy, and exec_secretary create/manage org-wide events.
-      allow create, update, delete: if isAdmin() || isSeventy() || isExecSecretary();
+      // Admin, seventy, and exec_secretary create org-wide events. 수정·삭제는 관리자와
+      // 만든 사람만 — 화면(GeneralScheduleDetailSheet의 canManage)과 같은 기준이다.
+      allow create: if (isAdmin() || isSeventy() || isExecSecretary())
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAdmin()
+        || ((isSeventy() || isExecSecretary())
+            && resource.data.createdBy == request.auth.uid
+            && request.resource.data.createdBy == resource.data.createdBy);
+      allow delete: if isAdmin()
+        || ((isSeventy() || isExecSecretary()) && resource.data.createdBy == request.auth.uid);
     }
 
     match /visitPlans/{planId} {
@@ -123,8 +163,12 @@ service cloud.firestore {
     // 집행서기가 함께 본다(스펙 §4.3). 나머지 settings 문서는 시스템 배선이라
     // 관리자 전용으로 남는다 — 규칙을 settings/{doc} 전체로 열지 않는다.
     match /settings/{doc} {
-      // All authenticated users can read settings (presidents may need calendar IDs for their own use).
-      allow read: if isAuth();
+      // 공개 링크 문서에는 토큰이 들어 있다 — 토큰 하나면 로그인 없이 일정표 전체(메모 포함)를
+      // 읽으니, 그 문서들은 링크를 관리하는 사람만 읽는다. 나머지(calendar·admin)는 가입 흐름과
+      // 캘린더 구독이 로그인한 누구에게나 읽혀야 한다.
+      allow read: if doc in ['public', 'publicUnits', 'publicTokens']
+        ? (isAdmin() || isExecSecretary())
+        : isAuth();
       allow write: if isAdmin()
         || (isExecSecretary()
             && doc in ['public', 'publicUnits', 'publicTokens']);
