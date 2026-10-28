@@ -69,6 +69,15 @@ describe('splitNextUp', () => {
     expect(rest.map(x => x.id)).toEqual(['done'])
   })
 
+  // 그 뒤로 올 일정이 없어도 마찬가지다 — 예전에는 이때만 rest를 비워, 오늘 끝난
+  // 일정이 홈 목록에서 통째로 사라졌다.
+  it('다가올 일정이 없어도 끝난 일정은 목록에 남는다', () => {
+    const list = [at('done', '2026-07-02', '09:00', '10:00')]
+    const { next, rest } = splitNextUp(list, '2026-07-02T10:30')
+    expect(next).toBeNull()
+    expect(rest.map(x => x.id)).toEqual(['done'])
+  })
+
   it('호출자가 넘긴 목록의 순서를 신뢰한다 — 정렬은 selectGlanceSchedules의 몫이다', () => {
     const list = [at('first', '2026-07-05', '10:00', '11:00'), at('second', '2026-07-03', '10:00', '11:00')]
     expect(splitNextUp(list, '2026-07-02T09:00').next?.id).toBe('first')

@@ -45,6 +45,6 @@ export function splitNextUp(schedules: Schedule[], now: string): NextUpSplit {
   )
   const index = ongoingIndex >= 0 ? ongoingIndex : schedules.findIndex((s) => `${s.date}T${s.startTime}` > now)
 
-  if (index < 0) return { next: null, rest: [] }
+  if (index < 0) return { next: null, rest: schedules }
   return { next: schedules[index], rest: schedules.filter((_, i) => i !== index) }
 }
