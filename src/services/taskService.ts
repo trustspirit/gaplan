@@ -9,7 +9,11 @@ import type { Task, RespondedSlot } from '@/types'
 import { mapDocs, snapshotErrHandler } from './_utils'
 
 // President: pending + responded tasks (responded = awaiting admin/seventy confirmation)
-export function subscribeToTasks(assignedTo: string, callback: (tasks: Task[]) => void): Unsubscribe {
+export function subscribeToTasks(
+  assignedTo: string,
+  callback: (tasks: Task[]) => void,
+  onError?: (e: Error) => void,
+): Unsubscribe {
   const q = query(
     collection(db, 'tasks'),
     where('assignedTo', '==', assignedTo),
@@ -18,7 +22,7 @@ export function subscribeToTasks(assignedTo: string, callback: (tasks: Task[]) =
   )
   return onSnapshot(q,
     snap => callback(mapDocs<Task>(snap)),
-    snapshotErrHandler('tasks'),
+    snapshotErrHandler('tasks', onError),
   )
 }
 
@@ -26,6 +30,7 @@ export function subscribeToTasks(assignedTo: string, callback: (tasks: Task[]) =
 export function subscribeToAllTasks(
   callback: (tasks: Task[]) => void,
   seventyUid?: string,  // when set, restrict to this seventy's tasks
+  onError?: (e: Error) => void,
 ): Unsubscribe {
   let q = query(collection(db, 'tasks'), orderBy('dueDate', 'asc'))
   if (seventyUid) {
@@ -33,7 +38,7 @@ export function subscribeToAllTasks(
   }
   return onSnapshot(q,
     snap => callback(mapDocs<Task>(snap)),
-    snapshotErrHandler('tasks'),
+    snapshotErrHandler('tasks', onError),
   )
 }
 
