@@ -90,6 +90,14 @@ describe('SeventyHome', () => {
     expect(screen.getByText('schedule.noUpcoming')).toBeInTheDocument()
   })
 
+  // 가장 가까운 한 건은 맨 위 카드로 올라가고 목록에서 빠진다. 그 한 건뿐일 때 목록이
+  // "예정된 일정이 없습니다"라고 말하면 바로 위 카드와 서로 모순된다.
+  it('does not say nothing is upcoming while the next-up card shows one', () => {
+    render(<SeventyHome />)
+    expect(screen.queryByText('schedule.noUpcoming')).toBeNull()
+    expect(screen.getByText('schedule.noMoreUpcoming')).toBeInTheDocument()
+  })
+
   it('opens the edit modal from a schedule row', async () => {
     render(<SeventyHome />)
     await userEvent.click(screen.getByRole('button', { name: 'common.more' }))

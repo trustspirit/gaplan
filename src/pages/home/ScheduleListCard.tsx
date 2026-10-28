@@ -18,6 +18,8 @@ export interface ScheduleListCardProps {
   onDelete?: (schedule: Schedule) => void
   /** 'YYYY-MM-DD'. 호출자가 넘겨 테스트가 시계에 매이지 않게 한다. */
   today: string
+  /** 비었을 때의 문구. 맨 위 카드가 한 건을 이미 보여주고 있으면 "없다"가 아니라 "그 밖엔 없다"다. */
+  emptyText?: string
 }
 
 const GROUP_LABEL_KEY: Record<WhenGroupKey, string> = {
@@ -37,6 +39,7 @@ export function ScheduleListCard({
   onEdit,
   onDelete,
   today,
+  emptyText,
 }: ScheduleListCardProps) {
   const { t } = useTranslation()
   const groups = groupByWhen(schedules, today)
@@ -49,7 +52,7 @@ export function ScheduleListCard({
           {loading ? (
             [1, 2].map((i) => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
           ) : schedules.length === 0 ? (
-            <p className={styles.empty}>{t('schedule.noUpcoming')}</p>
+            <p className={styles.empty}>{emptyText ?? t('schedule.noUpcoming')}</p>
           ) : (
             // 열린 행은 목록 전체에서 하나뿐이다 — 그룹을 가로질러도 마찬가지라
             // Provider가 그룹 바깥을 감싼다.

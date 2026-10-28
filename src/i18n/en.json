@@ -322,6 +322,7 @@
     "upcoming": "Upcoming Schedule",
     "thisMonth": "{{count}} this month",
     "noUpcoming": "No upcoming schedule.",
+    "noMoreUpcoming": "Nothing else coming up.",
     "calendarSubscribe": "Subscribe",
     "calendarSubscribed": "Subscribed",
     "calendarBannerText": "Subscribe to Google Calendar to view all confirmed schedules on your phone.",

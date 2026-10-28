@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import { Video } from 'lucide-react'
 import type { Schedule } from '@/types'
-import { Card, CardBody } from '@/components/ui'
+import { Card, CardBody, DeleteConfirmSheet } from '@/components/ui'
+import { ScheduleActionMenu } from '@/components/domain/ScheduleItem/ScheduleActionMenu'
 import { scheduleSubtitle } from '@/utils/scheduleSubtitle'
 import { buildScheduleTitle } from '../../../functions/src/scheduleRules'
 import { relativeWhen } from './nextUpTiming'
@@ -16,6 +18,10 @@ export interface NextUpCardProps {
   wardLabel?: string
   /** 'YYYY-MM-DDTHH:mm'. 호출자가 넘겨 테스트가 시계에 매이지 않게 한다. */
   now: string
+  /** 목록 행과 같은 ⋯ 메뉴(수정·삭제)를 붙인다. 이 한 건은 아래 목록에서 빠지므로 여기가 유일한 자리다. */
+  canEdit?: boolean
+  onEdit?: () => void
+  onDelete?: () => void
 }
 
 /** 한 시간 안이면 분으로, 그보다 멀면 시간으로 센다 — "97분 뒤"는 사람이 읽는 단위가 아니다. */
@@ -26,10 +32,20 @@ const MINUTES_IN_HOUR = 60
  *
  * 아래 목록이 답하지 못하던 질문 하나만 답한다: 지금 무엇을 향해 가고 있는가.
  * 그래서 담는 것도 그것뿐이다 — 언제, 무엇을, 어디 소속으로, (온라인이면) 어디로 들어가는지.
- * 노트·수정·삭제는 아래 목록과 상세가 이미 갖고 있으므로 여기서 되풀이하지 않는다.
+ * 노트는 상세가 갖고 있으므로 여기서 되풀이하지 않는다. 수정·삭제는 다르다 — 이 한 건은
+ * 아래 목록에서 빠지므로, 여기 메뉴가 없으면 가장 가까운 일정을 홈에서 고칠 길이 없다.
  */
-export function NextUpCard({ schedule, unitName, wardLabel, now }: NextUpCardProps) {
+export function NextUpCard({
+  schedule,
+  unitName,
+  wardLabel,
+  now,
+  canEdit,
+  onEdit,
+  onDelete,
+}: NextUpCardProps) {
   const { t } = useTranslation()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const when = relativeWhen(schedule.date, schedule.startTime, now)
 
   const title = buildScheduleTitle({
@@ -73,7 +89,16 @@ export function NextUpCard({ schedule, unitName, wardLabel, now }: NextUpCardPro
   return (
     <Card className={styles.nextUpCard}>
       <CardBody className={styles.nextUpBody}>
-        <p className={styles.nextUpLabel}>{t('home.nextUp')}</p>
+        <div className={styles.nextUpHead}>
+          <p className={styles.nextUpLabel}>{t('home.nextUp')}</p>
+          {canEdit && (
+            <ScheduleActionMenu
+              title={schedule.customTitle ?? unitName}
+              onEdit={onEdit}
+              onRequestDelete={onDelete ? () => setShowDeleteConfirm(true) : undefined}
+            />
+          )}
+        </div>
         <p className={styles.nextUpWhen}>
           <span className={styles.nextUpWhenPrimary}>{whenLabel}</span>
           {countdown && <span className={styles.nextUpCountdown}>{countdown}</span>}
@@ -94,6 +119,17 @@ export function NextUpCard({ schedule, unitName, wardLabel, now }: NextUpCardPro
           )}
         </div>
       </CardBody>
+      {onDelete && (
+        <DeleteConfirmSheet
+          open={showDeleteConfirm}
+          description={schedule.customTitle ?? unitName}
+          onConfirm={() => {
+            setShowDeleteConfirm(false)
+            onDelete()
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </Card>
   )
 }

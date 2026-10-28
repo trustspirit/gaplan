@@ -4,7 +4,6 @@ import {
   Users,
   CalendarPlus,
   Coffee,
-  MoreVertical,
   Video,
   Building2,
   Check,
@@ -18,9 +17,10 @@ import { useTranslation } from 'react-i18next'
 import type { Schedule } from '@/types'
 import { useUnits } from '@/hooks/useUnits'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import { DeleteConfirmSheet, BottomSheet, DataList, type DataListRow } from '@/components/ui'
+import { DeleteConfirmSheet, DataList, type DataListRow } from '@/components/ui'
 import { locksHorizontal, settlesOpen, tracksPointer, type SwipePoint } from '@/utils/swipeGesture'
 import { toScheduleRow } from './scheduleRow'
+import { ScheduleActionMenu } from './ScheduleActionMenu'
 import { useSwipeOpenRow } from './swipeOpenRowContext'
 import { buildScheduleTitle } from '../../../../functions/src/scheduleRules'
 import styles from './ScheduleItem.module.scss'
@@ -163,24 +163,8 @@ export function ScheduleItem({
     else swipe.close()
     endDrag()
   }
-  const [menuOpen, setMenuOpen] = useState(false)
-  // lazy-mount flag so closed rows don't each carry a hidden portal
-  const [sheetEverOpen, setSheetEverOpen] = useState(false)
-  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null)
   const [notesOpen, setNotesOpen] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const btnRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (!menuOpen || isMobile) return
-    const close = () => setMenuOpen(false)
-    window.addEventListener('scroll', close, true)
-    window.addEventListener('resize', close)
-    return () => {
-      window.removeEventListener('scroll', close, true)
-      window.removeEventListener('resize', close)
-    }
-  }, [menuOpen, isMobile])
 
   const isVisit = schedule.type === 'ward_visit'
   const isMeeting = schedule.type === 'meeting'
@@ -277,90 +261,11 @@ export function ScheduleItem({
       )}
 
       {canEdit && (
-        <div className={styles.kebabWrapper}>
-          <button
-            ref={btnRef}
-            type="button"
-            className={styles.kebabBtn}
-            onClick={(e) => {
-              e.stopPropagation()
-              if (isMobile) {
-                setSheetEverOpen(true)
-                setMenuOpen((prev) => !prev)
-                return
-              }
-              if (!menuOpen && btnRef.current) {
-                const rect = btnRef.current.getBoundingClientRect()
-                setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
-              }
-              setMenuOpen((prev) => !prev)
-            }}
-            aria-label={t('common.more')}
-          >
-            <MoreVertical size={16} />
-          </button>
-          {!isMobile && menuOpen && menuPos && (
-            <>
-              <div className={styles.menuOverlay} onClick={() => setMenuOpen(false)} />
-              <div className={styles.menu} style={{ top: menuPos.top, right: menuPos.right }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false)
-                    onEdit?.()
-                  }}
-                >
-                  {t('common.edit')}
-                </button>
-                {onDelete && (
-                  <button
-                    type="button"
-                    className={styles.deleteMenuItem}
-                    onClick={() => {
-                      setMenuOpen(false)
-                      setShowDeleteConfirm(true)
-                    }}
-                  >
-                    {t('common.delete')}
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-          {isMobile && (sheetEverOpen || menuOpen) && (
-            // mobile: actions in a bottom sheet instead of a scroll-fragile popover
-            <BottomSheet
-              open={menuOpen}
-              onClose={() => setMenuOpen(false)}
-              title={deleteDescription}
-            >
-              <div className={styles.sheetActions}>
-                <button
-                  type="button"
-                  className={styles.sheetActionBtn}
-                  onClick={() => {
-                    setMenuOpen(false)
-                    onEdit?.()
-                  }}
-                >
-                  {t('common.edit')}
-                </button>
-                {onDelete && (
-                  <button
-                    type="button"
-                    className={clsx(styles.sheetActionBtn, styles.sheetActionDanger)}
-                    onClick={() => {
-                      setMenuOpen(false)
-                      setShowDeleteConfirm(true)
-                    }}
-                  >
-                    {t('common.delete')}
-                  </button>
-                )}
-              </div>
-            </BottomSheet>
-          )}
-        </div>
+        <ScheduleActionMenu
+          title={deleteDescription}
+          onEdit={onEdit}
+          onRequestDelete={onDelete ? () => setShowDeleteConfirm(true) : undefined}
+        />
       )}
     </>
   )

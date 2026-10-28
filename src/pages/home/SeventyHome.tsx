@@ -42,6 +42,8 @@ export function SeventyHome() {
   // 맨 위 카드로 올라간 한 건은 아래 목록에서 뺀다 — 같은 일정이 두 번 보이면
   // 목록을 훑는 눈이 그 자리에서 한 번 멈춘다.
   const { next, rest } = splitNextUp(upcoming, now)
+  const deleteSchedule = (s: Schedule) =>
+    scheduleDelete(s.id, () => deleteScheduleViaCF(s.id), t('admin.scheduleCancelSuccess'))
 
   return (
     <>
@@ -56,6 +58,9 @@ export function SeventyHome() {
               unitName={getUnitName(next.unitId)}
               wardLabel={next.wardName ? getWardName(next.wardName) : undefined}
               now={now}
+              canEdit
+              onEdit={() => setEditTarget(next)}
+              onDelete={() => deleteSchedule(next)}
             />
           )}
 
@@ -66,13 +71,8 @@ export function SeventyHome() {
             today={today}
             canEdit
             onEdit={setEditTarget}
-            onDelete={(s) =>
-              scheduleDelete(
-                s.id,
-                () => deleteScheduleViaCF(s.id),
-                t('admin.scheduleCancelSuccess'),
-              )
-            }
+            onDelete={deleteSchedule}
+            emptyText={next ? t('schedule.noMoreUpcoming') : undefined}
           />
         </div>
       </div>

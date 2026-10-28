@@ -81,6 +81,8 @@ export function AdminHome() {
   )
   // 맨 위 카드로 올라간 한 건은 아래 목록에서 뺀다(칠십인 홈과 같은 규칙).
   const { next, rest } = splitNextUp(upcoming, now)
+  const deleteSchedule = (s: Schedule) =>
+    scheduleDelete(s.id, () => deleteScheduleViaCF(s.id), t('admin.scheduleCancelSuccess'))
 
   return (
     <>
@@ -92,6 +94,9 @@ export function AdminHome() {
               unitName={getUnitName(next.unitId)}
               wardLabel={next.wardName ? getWardName(next.wardName) : undefined}
               now={now}
+              canEdit
+              onEdit={() => setEditTarget(next)}
+              onDelete={() => deleteSchedule(next)}
             />
           )}
 
@@ -120,13 +125,8 @@ export function AdminHome() {
             getUnitName={getUnitName}
             canEdit
             onEdit={setEditTarget}
-            onDelete={(s) =>
-              scheduleDelete(
-                s.id,
-                () => deleteScheduleViaCF(s.id),
-                t('admin.scheduleCancelSuccess'),
-              )
-            }
+            onDelete={deleteSchedule}
+            emptyText={next ? t('schedule.noMoreUpcoming') : undefined}
           />
         </div>
       </div>
