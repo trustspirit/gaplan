@@ -7,8 +7,6 @@ import type { WardUnit } from '@/constants/regions'
 import { Button } from '@/components/ui'
 import styles from './WardAssigner.module.scss'
 
-const DOW_KR = ['일', '월', '화', '수', '목', '금', '토']
-
 interface WardAssignerProps {
   availableDates: string[]
   wards: WardUnit[]
@@ -72,7 +70,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
       if (names.length > 1) {
         found.push({
           type: 'conflict',
-          label: `${dayjs(date).format('M/D (ddd)')} — 날짜 중복`,
+          label: t('ward.dateConflict', { date: dayjs(date).format('M/D (ddd)') }),
           detail: names.join(', '),
         })
       }
@@ -83,7 +81,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
     if (unassigned.length > 0) {
       found.push({
         type: 'missing',
-        label: `${unassigned.length}개 와드/지부 미배정`,
+        label: t('ward.unassignedWards', { count: unassigned.length }),
         detail: unassigned.join(', '),
       })
     }
@@ -120,7 +118,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
       {/* Admin note */}
       {note && (
         <div className={styles.note}>
-          <span className={styles.noteLabel}>{t('task.noteLabel', { defaultValue: '관리자 메모' })}</span>
+          <span className={styles.noteLabel}>{t('task.noteLabel')}</span>
           <p className={styles.noteText}>{note}</p>
         </div>
       )}
@@ -136,9 +134,9 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
           const dj = dayjs(d)
           return (
             <div key={d} className={styles.dateHeader}>
-              <span className={styles.dateHeaderMonth}>{dj.format('M월')}</span>
+              <span className={styles.dateHeaderMonth}>{dj.format(t('common.monthShortFormat'))}</span>
               <span className={styles.dateHeaderDay}>{dj.date()}</span>
-              <span className={styles.dateHeaderDow}>{DOW_KR[dj.day()]}</span>
+              <span className={styles.dateHeaderDow}>{dj.format('dd')}</span>
             </div>
           )
         })}
@@ -147,7 +145,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
       {/* Ward rows */}
       <div className={styles.wardList}>
         {wards.length === 0 ? (
-          <p className={styles.emptyWards}>{t('ward.noWards', { defaultValue: '소속 와드/지부 정보가 없습니다.' })}</p>
+          <p className={styles.emptyWards}>{t('ward.noWards')}</p>
         ) : (
           wards.map(ward => {
             const assigned = assignments[ward.id]
@@ -180,7 +178,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
                         title={
                           otherWardOnDate
                             ? `${otherWardOnDate.name.ko} — ${t('ward.takenDateHint')}`
-                            : dayjs(d).format('M월 D일')
+                            : dayjs(d).format(t('common.monthDayFormat'))
                         }
                       >
                         {isSelected ? '✓' : otherWardOnDate ? '!' : ''}
@@ -199,7 +197,7 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
         <div className={styles.conflictBox}>
           <div className={styles.conflictHeader}>
             <AlertTriangle size={16} className={styles.conflictIcon} />
-            <span className={styles.conflictTitle}>{t('ward.warningTitle', { defaultValue: '제출 전 확인하세요' })}</span>
+            <span className={styles.conflictTitle}>{t('ward.warningTitle')}</span>
           </div>
           <ul className={styles.conflictList}>
             {warnings.map((w, i) => (
@@ -212,10 +210,10 @@ export function WardAssigner({ availableDates, wards, note, initialAssignments, 
               </li>
             ))}
           </ul>
-          <p className={styles.conflictQuestion}>{t('ward.confirmAnyway', { defaultValue: '그래도 이 배정으로 제출하시겠습니까?' })}</p>
+          <p className={styles.conflictQuestion}>{t('ward.confirmAnyway')}</p>
           <div className={styles.conflictActions}>
-            <Button variant="secondary" onClick={handleCancelWarning}>← {t('common.cancel')} ({t('ward.backToEdit', { defaultValue: '다시 수정' })})</Button>
-            <Button onClick={handleSubmit} loading={submitting}>{t('ward.confirmAndSubmit', { defaultValue: '확인 후 제출' })}</Button>
+            <Button variant="secondary" onClick={handleCancelWarning}>← {t('common.cancel')} ({t('ward.backToEdit')})</Button>
+            <Button onClick={handleSubmit} loading={submitting}>{t('ward.confirmAndSubmit')}</Button>
           </div>
         </div>
       )}

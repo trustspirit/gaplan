@@ -1,5 +1,6 @@
 import { Fragment, useRef, type PointerEvent } from 'react'
 import dayjs from 'dayjs'
+import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui'
 import styles from './TimePainterPicker.module.scss'
 
@@ -40,6 +41,7 @@ export function TimePainterPicker({
   onSetCell,
   onChangeRange,
 }: Props) {
+  const { t } = useTranslation()
   const axis = buildAxis(dailyRange[0], dailyRange[1], periodMinutes)
   const painting = useRef<{ targetState: boolean; visited: Set<string> } | null>(null)
 
@@ -65,7 +67,7 @@ export function TimePainterPicker({
   const handlePointerUp = () => { painting.current = null }
 
   if (selectedDates.length === 0) {
-    return <div className={styles.emptyHint}>날짜를 먼저 선택하세요</div>
+    return <div className={styles.emptyHint}>{t('task.selectDatesFirst')}</div>
   }
 
   const colCount = selectedDates.length
@@ -77,13 +79,13 @@ export function TimePainterPicker({
   return (
     <div className={styles.container}>
       <div className={styles.rangeRow}>
-        <span className={styles.rangeLabel}>가능한 시간 선택</span>
+        <span className={styles.rangeLabel}>{t('task.paintTimesLabel')}</span>
         <div className={styles.rangeInputs}>
           <Input
             type="time"
             className={styles.timeInput}
             wrapperClassName={styles.timeField}
-            aria-label="시작 시간"
+            aria-label={t('common.startTime')}
             value={dailyRange[0]}
             onChange={(e) => {
               const v = e.target.value
@@ -95,7 +97,7 @@ export function TimePainterPicker({
             type="time"
             className={styles.timeInput}
             wrapperClassName={styles.timeField}
-            aria-label="종료 시간"
+            aria-label={t('common.endTime')}
             value={dailyRange[1]}
             onChange={(e) => {
               const v = e.target.value

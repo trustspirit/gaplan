@@ -29,7 +29,7 @@ export function OnboardingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !unitId) {
-      toast.error('이름과 소속을 입력해주세요.')
+      toast.error(t('onboarding.nameUnitRequired'))
       return
     }
     const firebaseUser = auth.currentUser
@@ -55,7 +55,7 @@ export function OnboardingPage() {
       if (isPending) {
         navigate('/pending')
       } else {
-        toast.success('환영합니다!')
+        toast.success(t('onboarding.welcome'))
         navigate(ROUTES.home)
       }
     } catch {
@@ -77,7 +77,7 @@ export function OnboardingPage() {
             label={t('onboarding.nameLabel')}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="홍길동"
+            placeholder={t('onboarding.namePlaceholder')}
             required
           />
           <Select

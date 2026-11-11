@@ -1,12 +1,13 @@
 import { GoogleAuthProvider, reauthenticateWithPopup } from 'firebase/auth'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
+import i18n from '@/i18n'
 import { ALL_UNITS } from '@/constants/regions'
 
 const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar'
 
 export async function subscribeToSharedCalendar(): Promise<void> {
-  if (!auth.currentUser) throw new Error('로그인이 필요합니다.')
+  if (!auth.currentUser) throw new Error(i18n.t('schedule.calendarLoginRequired'))
 
   // Get user's regionId — stored directly on seventy, derived from unitId for president
   const userSnap = await getDoc(doc(db, 'users', auth.currentUser.uid))
@@ -22,7 +23,7 @@ export async function subscribeToSharedCalendar(): Promise<void> {
   // Fall back to legacy single-calendar field if present
   const sharedCalendarId = calendars[regionId] ?? settingsSnap.data()?.sharedCalendarId
   if (!sharedCalendarId) {
-    throw new Error('이 지역의 공유 캘린더가 설정되지 않았습니다. 관리자에게 문의하세요.')
+    throw new Error(i18n.t('schedule.calendarNotConfigured'))
   }
 
   // Re-authenticate with calendar scope to get access token
@@ -31,7 +32,7 @@ export async function subscribeToSharedCalendar(): Promise<void> {
   const result = await reauthenticateWithPopup(auth.currentUser, provider)
   const credential = GoogleAuthProvider.credentialFromResult(result)
   const accessToken = credential?.accessToken
-  if (!accessToken) throw new Error('캘린더 접근 권한을 가져오지 못했습니다.')
+  if (!accessToken) throw new Error(i18n.t('schedule.calendarAccessFailed'))
 
   // Subscribe to the regional calendar via Google Calendar API
   const response = await fetch(
@@ -48,7 +49,7 @@ export async function subscribeToSharedCalendar(): Promise<void> {
 
   if (!response.ok && response.status !== 409) {
     const err = await response.json()
-    throw new Error(err.error?.message ?? '캘린더 구독에 실패했습니다.')
+    throw new Error(err.error?.message ?? i18n.t('schedule.calendarSubscribeError'))
   }
   // 409 = already subscribed — treat as success
 

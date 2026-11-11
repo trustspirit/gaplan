@@ -40,6 +40,7 @@ function LeaderCard({
   canEdit: boolean
   onEdit: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <div className={styles.card}>
       <div className={styles.cardMain}>
@@ -53,7 +54,7 @@ function LeaderCard({
               <a
                 href={`tel:${leader.phone}`}
                 className={styles.contactLink}
-                aria-label={`${leader.name} 전화`}
+                aria-label={t('leaders.callAria', { name: leader.name })}
               >
                 {leader.phone}
               </a>
@@ -62,7 +63,7 @@ function LeaderCard({
               <a
                 href={`mailto:${leader.email}`}
                 className={styles.contactLink}
-                aria-label={`${leader.name} 이메일`}
+                aria-label={t('leaders.emailAria', { name: leader.name })}
               >
                 {leader.email}
               </a>
@@ -75,7 +76,7 @@ function LeaderCard({
           type="button"
           className={styles.editButton}
           onClick={onEdit}
-          aria-label={`${leader.name} 정보 수정`}
+          aria-label={t('leaders.editAria', { name: leader.name })}
         >
           <Pencil size={16} />
         </button>

@@ -24,7 +24,10 @@ vi.mock('jotai', () => ({
   useAtomValue: vi.fn().mockReturnValue({ uid: 'test', role: 'admin', name: '관리자' }),
 }))
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (k: string) => k, i18n: { language: 'ko' } }),
+  useTranslation: () => ({
+    t: (k: string, params?: { name?: string }) => (params?.name ? `${k}:${params.name}` : k),
+    i18n: { language: 'ko' },
+  }),
   initReactI18next: { type: '3rdParty', init: vi.fn() },
 }))
 
@@ -116,7 +119,7 @@ describe('LeadersPage', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: '김철수 정보 수정' }))
+    fireEvent.click(screen.getByRole('button', { name: 'leaders.editAria:김철수' }))
 
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(screen.getByLabelText('leaders.name')).toHaveValue('김철수')
@@ -137,7 +140,7 @@ describe('LeadersPage', () => {
 
     // 명단은 그대로 보인다 — 막는 것은 편집뿐이다.
     expect(screen.getByText('김철수')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /정보 수정/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /leaders\.editAria/ })).not.toBeInTheDocument()
   })
 
   it('저장하면 해당 지도자 id로 updateLeader를 호출한다', async () => {
@@ -149,7 +152,7 @@ describe('LeadersPage', () => {
     })
     render(<LeadersPage />)
 
-    fireEvent.click(screen.getByRole('button', { name: '김철수 정보 수정' }))
+    fireEvent.click(screen.getByRole('button', { name: 'leaders.editAria:김철수' }))
     fireEvent.change(screen.getByLabelText('leaders.email'), { target: { value: '' } })
     fireEvent.click(screen.getByRole('button', { name: 'leaders.save' }))
 

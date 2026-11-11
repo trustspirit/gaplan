@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAtomValue } from 'jotai'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import { authUserAtom } from '@/store/authAtom'
 import { useUsers } from '@/hooks/useUsers'
@@ -17,6 +18,7 @@ import { resolveAdminViewSeventyUid } from '@/utils/scope'
 import type { Schedule } from '@/types'
 
 export function useReminders() {
+  const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)
   const { users, loading: usersLoading } = useUsers()
   const [schedules, setSchedules] = useState<Schedule[]>([])
@@ -64,11 +66,11 @@ export function useReminders() {
       ])
       setSchedules(sched); setDismissed(dis); setLoaded(true)
     } catch {
-      toast.error('리마인더 데이터를 불러오지 못했습니다.')
+      toast.error(t('reminder.loadFailed'))
     } finally {
       setSchedulesLoading(false)
     }
-  }, [user, loaded, today, querySeventyUid])
+  }, [user, loaded, today, querySeventyUid, t])
 
   const scopeUnits = useMemo(() => {
     if (!user) return [] as { id: string; name: string }[]

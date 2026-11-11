@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { submitWardAssignments } from '@/services/taskService'
 import type { Task } from '@/types'
 
 export function useWardSubmit(activeTask: Task | null, onDone: () => void) {
+  const { t } = useTranslation()
   const [submitting, setSubmitting] = useState(false)
 
   const handleSubmitWards = async (assignments: { wardName: string; date: string }[]) => {
@@ -12,14 +14,14 @@ export function useWardSubmit(activeTask: Task | null, onDone: () => void) {
     try {
       const result = await submitWardAssignments({ taskId: activeTask.id, wardAssignments: assignments })
       if (result.success) {
-        toast.success('와드 방문 배정이 제출되었습니다!')
+        toast.success(t('ward.assignmentSubmitted'))
         onDone()
       } else {
-        toast.error(result.error ?? '제출에 실패했습니다.')
+        toast.error(result.error ?? t('ward.assignmentFailed'))
       }
     } catch (e: unknown) {
       const err = e as { message?: string; code?: string; details?: string }
-      const msg = err?.details ?? err?.message ?? err?.code ?? '알 수 없는 오류가 발생했습니다.'
+      const msg = err?.details ?? err?.message ?? err?.code ?? t('common.unknownError')
       console.error('[submitWardAssignments]', e)
       toast.error(msg)
     } finally {

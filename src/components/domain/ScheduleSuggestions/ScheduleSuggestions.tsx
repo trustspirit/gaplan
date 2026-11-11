@@ -8,8 +8,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
-import 'dayjs/locale/ko'
-dayjs.locale('ko')
 import clsx from 'clsx'
 import { toast } from 'sonner'
 import { CheckCircle2, AlertCircle, AlertTriangle } from 'lucide-react'
@@ -72,7 +70,7 @@ export function ScheduleSuggestions({ tasks, getPresidentName, generalSchedules,
         toast.success(t('admin.scheduleConfirmed'))
         onConfirmed?.()
       } else {
-        toast.error(`${failed.length}건 확정 실패: ${failed[0].error}`)
+        toast.error(t('admin.confirmPartialFailed', { count: failed.length, error: failed[0].error }))
       }
     } catch (e: unknown) {
       toast.error((e as { message?: string })?.message ?? t('common.unknownError'))
@@ -94,14 +92,14 @@ export function ScheduleSuggestions({ tasks, getPresidentName, generalSchedules,
         {suggestions.map((option, idx) => (
           <div key={idx} className={clsx(styles.option, option.unassigned.length > 0 && styles.optionIncomplete)}>
             <div className={styles.optionHeader}>
-              <span className={styles.optionLabel}>{option.label}</span>
+              <span className={styles.optionLabel}>{t(`admin.suggestionStrategy.${option.strategy}`)}</span>
               {option.unassigned.length > 0 ? (
                 <span className={styles.optionWarning}>
-                  <AlertCircle size={13} /> {option.unassigned.length}{t('ward.unassignedCount', { defaultValue: '명 배정 불가' })}
+                  <AlertCircle size={13} /> {t('ward.unassignedCount', { count: option.unassigned.length })}
                 </span>
               ) : (
                 <span className={styles.optionComplete}>
-                  <CheckCircle2 size={13} /> {t('ward.allAssigned', { defaultValue: '전원 배정 완료' })}
+                  <CheckCircle2 size={13} /> {t('ward.allAssigned')}
                 </span>
               )}
             </div>
@@ -124,7 +122,7 @@ export function ScheduleSuggestions({ tasks, getPresidentName, generalSchedules,
               {option.unassigned.map(r => (
                 <div key={r.uid} className={clsx(styles.assignRow, styles.assignRowMissing)}>
                   <span className={styles.assignName}>{r.name}</span>
-                  <span className={styles.assignSlotMissing}>{t('ward.noSlotAvailable', { defaultValue: '가능한 슬롯 없음' })}</span>
+                  <span className={styles.assignSlotMissing}>{t('ward.noSlotAvailable')}</span>
                 </div>
               ))}
             </div>
@@ -143,7 +141,7 @@ export function ScheduleSuggestions({ tasks, getPresidentName, generalSchedules,
       </div>
 
       <p className={styles.notice}>
-        * 이미 확정된 일정과의 중복 체크는 되지 않습니다. 개별 슬롯 확정은 위 응답 현황 테이블을 이용하세요.
+        {t('admin.suggestionNotice')}
       </p>
     </div>
   )

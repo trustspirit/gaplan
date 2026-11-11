@@ -48,7 +48,7 @@ export function MultiDatePicker({ selected, onChange, minDate, maxDate, sundayOn
         >
           <ChevronLeft size={16} />
         </button>
-        <span className={styles.period}>{current.format('YYYY년 M월')}</span>
+        <span className={styles.period}>{current.format(t('calendar.monthTitleFormat'))}</span>
         <button
           type="button"
           className={styles.navBtn}
@@ -95,12 +95,12 @@ export function MultiDatePicker({ selected, onChange, minDate, maxDate, sundayOn
       </div>
 
       {sundayOnly && (
-        <p className={styles.sundayLegend}>● {t('calendar.legendAvailable')} ({t('common.fastSundayLegend')} 제외)</p>
+        <p className={styles.sundayLegend}>● {t('calendar.legendAvailableExceptFast')}</p>
       )}
 
       {selected.length > 0 && (
         <div className={styles.selectedList}>
-          <p className={styles.selectedTitle}>{t('ward.selectedDates', { count: selected.length, defaultValue: `선택된 날짜 (${selected.length}일)` })}</p>
+          <p className={styles.selectedTitle}>{t('ward.selectedDates', { count: selected.length })}</p>
           <div className={styles.chips}>
             {selected.map(date => (
               <button

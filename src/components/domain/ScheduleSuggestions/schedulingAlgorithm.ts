@@ -27,7 +27,8 @@ export interface Assignment {
 }
 
 export interface SuggestionOption {
-  label: string
+  /** 표시 문구는 호출하는 컴포넌트가 고른다 — 이 모듈은 순수 함수라 i18n을 모른다. */
+  strategy: Strategy
   assignments: Assignment[]
   unassigned: Respondent[]
 }
@@ -38,7 +39,7 @@ export interface GeneralEventRef {
   date: string
 }
 
-type Strategy = 'earliest' | 'afternoon' | 'spread'
+export type Strategy = 'earliest' | 'afternoon' | 'spread'
 
 function slotKey(date: string, startTime: string): string {
   return `${date}_${startTime}`
@@ -98,13 +99,9 @@ export function generateSuggestions(
 ): SuggestionOption[] {
   if (respondents.length === 0) return []
 
-  const strategies: { strategy: Strategy; label: string }[] = [
-    { strategy: 'earliest',  label: '1안 — 가장 이른 날짜 우선' },
-    { strategy: 'afternoon', label: '2안 — 오후 시간 우선' },
-    { strategy: 'spread',    label: '3안 — 날짜 분산 우선' },
-  ]
+  const strategies: Strategy[] = ['earliest', 'afternoon', 'spread']
 
-  return strategies.map(({ strategy, label }) => {
+  return strategies.map((strategy) => {
     const assignments = greedyAssign(respondents, strategy)
     const assignmentsWithConflict = assignments.map(a => ({
       ...a,
@@ -112,6 +109,6 @@ export function generateSuggestions(
     }))
     const assignedUids = new Set(assignmentsWithConflict.map(a => a.respondent.uid))
     const unassigned = respondents.filter(r => !assignedUids.has(r.uid))
-    return { label, assignments: assignmentsWithConflict, unassigned }
+    return { strategy, assignments: assignmentsWithConflict, unassigned }
   })
 }

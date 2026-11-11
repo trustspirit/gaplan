@@ -90,7 +90,8 @@
     "acknowledge": "Acknowledge",
     "bellLabel": "View reminders",
     "panelTitle": "Reminders",
-    "none": "No reminders to review."
+    "none": "No reminders to review.",
+    "loadFailed": "Could not load reminders."
   },
   "visitPlan": {
     "listTitle": "Visit Plans",
@@ -121,7 +122,8 @@
     "balance": "Unit balance",
     "removeItemConfirm": "Remove this visit? The published schedule will also be deleted.",
     "deletePlanConfirm": "Delete this plan? Published schedules will also be deleted.",
-    "empty": "No plans"
+    "empty": "No plans",
+    "publishFailed": "Failed to publish."
   },
   "role": {
     "admin": "Administrator",
@@ -182,7 +184,13 @@
     "selectPlaceholder": "Select...",
     "discardChanges": "You have unsaved changes. Discard them?",
     "loadFailed": "Failed to load.",
-    "me": "me"
+    "me": "me",
+    "more": "More",
+    "loadingLabel": "Loading",
+    "errorRetry": "Something went wrong. Please try again.",
+    "submitFailed": "Failed to submit.",
+    "monthShortFormat": "MMM",
+    "monthDayFormat": "MMM D"
   },
   "scope": {
     "myAssigned": "My Assigned",
@@ -204,7 +212,8 @@
     "logoutFailed": "Sign out failed.",
     "nameSaved": "Name updated successfully.",
     "nameSaveFailed": "Failed to update name.",
-    "accountMenu": "Account menu"
+    "accountMenu": "Account menu",
+    "pendingGreeting": "{{name}}, "
   },
   "task": {
     "type": {
@@ -260,7 +269,9 @@
     "wardCount": "View {{count}} assignments",
     "addTimeRange": "Add time slot",
     "expireConfirmTitle": "Expire this task?",
-    "expireConfirmBody": "The president can no longer respond once it expires, and this cannot be undone."
+    "expireConfirmBody": "The president can no longer respond once it expires, and this cannot be undone.",
+    "selectDatesFirst": "Select dates first",
+    "paintTimesLabel": "Select available times"
   },
   "schedule": {
     "confirmVisit": "Confirm Visit Date",
@@ -385,7 +396,12 @@
     "allDayHint": "Leave the times empty to save an all-day schedule.",
     "errorDateRequired": "Please select a date.",
     "errorTimePairRequired": "Enter both a start and end time, or leave both empty for an all-day schedule.",
-    "targetKindNone": "No target"
+    "targetKindNone": "No target",
+    "dateTaken": "That date has already been taken. Please choose another date.",
+    "calendarLoginRequired": "Sign in required.",
+    "calendarNotConfigured": "No shared calendar is set up for this region. Please contact an administrator.",
+    "calendarAccessFailed": "Could not get permission to access the calendar.",
+    "calendarSubscribeError": "Failed to subscribe to the calendar."
   },
   "ward": {
     "assignTitle": "Assign Ward/Branch Visit Dates",
@@ -399,7 +415,18 @@
     "selectWard": "Select Ward/Branch",
     "visitAssignments": "Ward Assignments Submitted",
     "confirmVisit": "Confirm This Date",
-    "takenDateHint": "Another ward is assigned to this date"
+    "takenDateHint": "Another ward is assigned to this date",
+    "noWards": "No wards/branches found for your unit.",
+    "warningTitle": "Check before submitting",
+    "confirmAnyway": "Submit these assignments anyway?",
+    "backToEdit": "Back to edit",
+    "confirmAndSubmit": "Confirm and submit",
+    "dateConflict": "{{date}} — same date assigned twice",
+    "unassignedWards": "{{count}} ward(s)/branch(es) unassigned",
+    "unassignedCount": "{{count}} could not be assigned",
+    "allAssigned": "Everyone assigned",
+    "noSlotAvailable": "No available slot",
+    "selectedDates": "Selected dates ({{count}})"
   },
   "settings": {
     "title": "Settings",
@@ -498,7 +525,19 @@
     "scheduleTimeError": "End time must be later than start time.",
     "publicScheduleTitle": "Public Schedule",
     "selectSeventyLabel": "Select Area Seventy",
-    "slotsLoadFailed": "Failed to load slots. Please try again."
+    "slotsLoadFailed": "Failed to load slots. Please try again.",
+    "suggestionStrategy": {
+      "earliest": "Option 1 — Earliest dates first",
+      "afternoon": "Option 2 — Afternoons first",
+      "spread": "Option 3 — Spread across dates"
+    },
+    "confirmPartialFailed": "{{count}} could not be confirmed: {{error}}",
+    "suggestionNotice": "* Overlaps with already confirmed schedules are not checked. To confirm individual slots, use the response table above.",
+    "slotConfirmed": "{{name}} — {{date}} {{time}} confirmed!",
+    "matrixTime": "Time",
+    "matrixDateTime": "Date / Time",
+    "alreadyConfirmed": "Already confirmed",
+    "confirmThisTimeFor": "{{name}} — confirm this time"
   },
   "schedules": {
     "title": "Schedules",
@@ -581,6 +620,7 @@
     "upcomingTitle": "Upcoming (top 10)",
     "selectedDateTitle": "{{date}} Schedule",
     "legendAvailable": "Visit available",
+    "legendAvailableExceptFast": "Visit available (except Fast Sundays)",
     "syncManual": "Sync Now",
     "syncCardTitle": "Manual Calendar Sync",
     "syncCardDesc": "Re-sync confirmed schedules that failed to sync to Google Calendar.",
@@ -616,7 +656,9 @@
     "submitPresident": "Get Started",
     "submitting": "Saving...",
     "loginRequired": "Sign in required.",
-    "saveFailed": "Failed to save. Please try again."
+    "saveFailed": "Failed to save. Please try again.",
+    "nameUnitRequired": "Please enter your name and unit.",
+    "welcome": "Welcome!"
   },
   "generalSchedule": {
     "pageTitle": "Events",
@@ -707,7 +749,10 @@
     "save": "Save",
     "cancel": "Cancel",
     "saveFailed": "Failed to save. Please try again.",
-    "nameRequired": "Please enter a name."
+    "nameRequired": "Please enter a name.",
+    "callAria": "Call {{name}}",
+    "emailAria": "Email {{name}}",
+    "editAria": "Edit {{name}}"
   },
   "pageHelp": {
     "admin": {

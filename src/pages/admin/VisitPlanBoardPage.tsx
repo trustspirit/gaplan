@@ -139,7 +139,7 @@ export function VisitPlanBoardPage() {
       setPlan(fresh)
       toast.success(t('visitPlan.publishSuccess'))
     } catch (e: unknown) {
-      toast.error((e as { message?: string })?.message ?? '발행에 실패했습니다.')
+      toast.error((e as { message?: string })?.message ?? t('visitPlan.publishFailed'))
     } finally {
       setPublishing(false)
     }

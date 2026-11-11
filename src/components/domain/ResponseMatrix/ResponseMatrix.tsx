@@ -9,8 +9,6 @@
 import { useState, Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
-import 'dayjs/locale/ko'
-dayjs.locale('ko')
 import clsx from 'clsx'
 import { toast } from 'sonner'
 import { CheckCircle2 } from 'lucide-react'
@@ -91,13 +89,17 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: Respons
     try {
       const result = await adminConfirmSchedule({ taskId: task.id, slot })
       if (result.success) {
-        toast.success(`${getPresidentName(task.assignedTo)} — ${dayjs(slot.date).format('M/D')} ${slot.startTime} 확정!`)
+        toast.success(t('admin.slotConfirmed', {
+          name: getPresidentName(task.assignedTo),
+          date: dayjs(slot.date).format('M/D'),
+          time: slot.startTime,
+        }))
         onConfirmed?.()
       } else {
-        toast.error(result.error ?? '확정에 실패했습니다.')
+        toast.error(result.error ?? t('common.confirmFailed'))
       }
     } catch {
-      toast.error('오류가 발생했습니다.')
+      toast.error(t('common.error'))
     } finally {
       setConfirming(null)
     }
@@ -164,10 +166,10 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: Respons
           <table className={styles.table}>
             <thead>
               <tr>
-                <th className={clsx(styles.th, styles.thTime)}>시간</th>
+                <th className={clsx(styles.th, styles.thTime)}>{t('admin.matrixTime')}</th>
                 {dates.map(date => (
                   <th key={date} className={clsx(styles.th, styles.thDate)}>
-                    <span className={styles.dateMonth}>{dayjs(date).format('M월')}</span>
+                    <span className={styles.dateMonth}>{dayjs(date).format(t('common.monthShortFormat'))}</span>
                     <span className={styles.dateDay}>{dayjs(date).date()}</span>
                     <span className={styles.dateDow}>{dayjs(date).format('ddd')}</span>
                   </th>
@@ -212,7 +214,7 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: Respons
                                 )}
                                 style={{ borderLeftColor: respondentColor(respondents.indexOf(r)), color: respondentColor(respondents.indexOf(r)) }}
                                 onClick={() => !isCompleted && handleConfirm(r.task, { date, startTime: time, endTime: slot.endTime })}
-                                title={isCompleted ? '이미 확정됨' : `${r.name} — 이 시간으로 확정`}
+                                title={isCompleted ? t('admin.alreadyConfirmed') : t('admin.confirmThisTimeFor', { name: r.name })}
                                 disabled={!!confirming || isCompleted}
                               >
                                 {isCompleted ? '✓ ' : ''}{r.name}
@@ -232,7 +234,7 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: Respons
           <table className={styles.table}>
             <thead>
               <tr>
-                <th className={clsx(styles.th, styles.thTime)}>날짜 / 시간</th>
+                <th className={clsx(styles.th, styles.thTime)}>{t('admin.matrixDateTime')}</th>
                 {visibleRespondents.map(r => (
                   <th key={r.task.id} className={clsx(styles.th, styles.thParticipant)}
                     style={{ color: respondentColor(respondents.indexOf(r)) }}>
@@ -246,7 +248,7 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: Respons
                 <Fragment key={date}>
                   <tr className={styles.dateHeader}>
                     <td className={clsx(styles.td, styles.tdDateHeader)} colSpan={visibleRespondents.length + 1}>
-                      {dayjs(date).format('M월 D일 (ddd)')}
+                      {dayjs(date).format(t('respond.dateFormat'))}
                     </td>
                   </tr>
                   {slots.filter(s => s.date === date).map(slot => (
@@ -266,7 +268,7 @@ export function ResponseMatrix({ tasks, getPresidentName, onConfirmed }: Respons
                                 className={clsx(styles.checkBtn, isCompleted && styles.checkBtnConfirmed)}
                                 style={{ background: color + '33', color }}
                                 onClick={() => !isCompleted && handleConfirm(r.task, slot)}
-                                title={isCompleted ? '이미 확정됨' : '이 시간으로 확정'}
+                                title={isCompleted ? t('admin.alreadyConfirmed') : t('taskProgress.confirmThisTime')}
                                 disabled={!!confirming || isCompleted}
                               >
                                 {isCompleted ? '✓' : isConfirming ? '...' : '✓'}
