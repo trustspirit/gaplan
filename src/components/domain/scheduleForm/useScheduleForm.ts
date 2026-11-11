@@ -19,6 +19,8 @@ export interface ScheduleFormState {
   customTitle: string
   zoomLink: string
   notes: string
+  // 칠십인 전용 메모 — 회장·CC 공개 페이지·캘린더에는 나가지 않는다.
+  seventyNotes: string
   projectId: string
   // 칠십인 전용. 대상이 '기타'인 접견/모임에서만 의미가 있다 — 저장할 때 canBeSeventyOnly로 거른다.
   seventyOnly: boolean
@@ -48,6 +50,7 @@ function defaultState(): ScheduleFormState {
     customTitle: '',
     zoomLink: '',
     notes: '',
+    seventyNotes: '',
     projectId: '',
     seventyOnly: false,
   }

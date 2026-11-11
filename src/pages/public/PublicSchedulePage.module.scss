@@ -358,6 +358,23 @@
   background: $color-bg;
 }
 
+// 칠십인 전용 메모 — 일반 메모와 섞이지 않게 제목을 달아 따로 묶는다.
+.seventyNotes {
+  .notesText + & {
+    margin-top: $space-2;
+  }
+}
+
+.seventyNotesTitle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 2px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+}
+
 .notesText {
   font-size: $font-size-sm;
   color: $color-text-muted;

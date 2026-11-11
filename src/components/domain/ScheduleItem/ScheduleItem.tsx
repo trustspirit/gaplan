@@ -10,6 +10,7 @@ import {
   FileText,
   ChevronUp,
   UserCheck,
+  Lock,
 } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
@@ -171,7 +172,8 @@ export function ScheduleItem({
   const isMeeting = schedule.type === 'meeting'
   const isAttendance = schedule.type === 'general_attendance'
   const isPast = past ?? dayjs(scheduleLastDate(schedule)).isBefore(dayjs(), 'day')
-  const hasNotes = !!schedule.notes?.trim()
+  const seventyNotes = schedule.seventyNotes?.trim()
+  const hasNotes = !!schedule.notes?.trim() || !!seventyNotes
   const deleteDescription = schedule.customTitle ?? unitName
   const wardLabel = schedule.wardName ? getWardName(schedule.wardName) : undefined
 
@@ -349,7 +351,15 @@ export function ScheduleItem({
         {/* ── Notes panel ── */}
         {notesOpen && hasNotes && (
           <div className={styles.notesPanel}>
-            <NotesContent text={schedule.notes!} />
+            {schedule.notes?.trim() && <NotesContent text={schedule.notes} />}
+            {seventyNotes && (
+              <div className={styles.seventyNotes}>
+                <p className={styles.seventyNotesTitle}>
+                  <Lock size={11} /> {t('schedule.seventyNotesTitle')}
+                </p>
+                <NotesContent text={seventyNotes} />
+              </div>
+            )}
           </div>
         )}
       </div>

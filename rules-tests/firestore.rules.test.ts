@@ -257,3 +257,51 @@ describe('generalSchedules read — 칠십인 전용', () => {
     await assertFails(getDoc(doc(anon, 'generalSchedules/secret')))
   })
 })
+
+// 일정의 칠십인 전용 메모는 일정 문서와 따로 둔다 — 일정 문서는 연결된 회장도 읽기 때문이다.
+describe('scheduleSeventyNotes', () => {
+  beforeEach(async () => {
+    await seed('users/s1', { role: 'seventy' })
+    await seed('users/s2', { role: 'seventy' })
+    await seed('users/e1', { role: 'exec_secretary', assignedSeventyUid: 's1' })
+    await seed('users/e2', { role: 'exec_secretary', assignedSeventyUid: 's2' })
+    await seed('users/a1', { role: 'admin' })
+    await seed('users/p1', { role: 'president' })
+    await seed('schedules/sch1', { seventyUid: 's1', presidentUid: 'p1', status: 'confirmed', date: '2026-12-01' })
+    await seed('scheduleSeventyNotes/sch1', { seventyUid: 's1', date: '2026-12-01', notes: '전용 메모' })
+  })
+
+  it('hides the notes from the president who can read the schedule itself', async () => {
+    await assertSucceeds(getDoc(doc(as('p1'), 'schedules/sch1')))
+    await assertFails(getDoc(doc(as('p1'), 'scheduleSeventyNotes/sch1')))
+  })
+
+  it('shows the notes to the seventy, their exec secretary and the admin', async () => {
+    await assertSucceeds(getDoc(doc(as('s1'), 'scheduleSeventyNotes/sch1')))
+    await assertSucceeds(getDoc(doc(as('e1'), 'scheduleSeventyNotes/sch1')))
+    await assertSucceeds(getDoc(doc(as('a1'), 'scheduleSeventyNotes/sch1')))
+  })
+
+  it("hides the notes from another seventy and another seventy's exec secretary", async () => {
+    await assertFails(getDoc(doc(as('s2'), 'scheduleSeventyNotes/sch1')))
+    await assertFails(getDoc(doc(as('e2'), 'scheduleSeventyNotes/sch1')))
+  })
+
+  it('lets a seventy list only their own notes', async () => {
+    await assertSucceeds(
+      getDocs(query(collection(as('s1'), 'scheduleSeventyNotes'), where('seventyUid', '==', 's1'))),
+    )
+    await assertFails(getDocs(collection(as('s1'), 'scheduleSeventyNotes')))
+  })
+
+  it('refuses every client write, even from an admin', async () => {
+    await assertFails(setDoc(doc(as('a1'), 'scheduleSeventyNotes/sch2'), { seventyUid: 's1', notes: 'x' }))
+    await assertFails(updateDoc(doc(as('s1'), 'scheduleSeventyNotes/sch1'), { notes: '수정' }))
+    await assertFails(deleteDoc(doc(as('s1'), 'scheduleSeventyNotes/sch1')))
+  })
+
+  it('keeps the notes from visitors who are not signed in', async () => {
+    const anon = env.unauthenticatedContext().firestore()
+    await assertFails(getDoc(doc(anon, 'scheduleSeventyNotes/sch1')))
+  })
+})

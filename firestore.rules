@@ -106,6 +106,16 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin() || isExecSecretary();
     }
 
+    // 일정의 칠십인 전용 메모. 일정 문서(schedules)는 연결된 회장도 읽으므로 메모만 따로 둔다 —
+    // 규칙은 문서 단위라 한 필드만 가릴 수 없다. 쓰기는 Cloud Functions(adminCreateSchedule,
+    // adminEditSchedule)만 한다.
+    match /scheduleSeventyNotes/{scheduleId} {
+      allow read: if isAdmin()
+        || (isSeventy() && resource.data.seventyUid == request.auth.uid)
+        || (isExecSecretary() && resource.data.seventyUid == myAssignedSeventy());
+      allow write: if false;
+    }
+
     match /generalSchedules/{scheduleId} {
       // 칠십인 전용 행사(seventyOnly)는 관리자·칠십인·집행서기만 읽는다. 그 밖의 로그인 사용자
       // (회장 등)는 seventyOnly가 false인 행사만 읽는다 — 그래서 회장 계정의 목록 조회는

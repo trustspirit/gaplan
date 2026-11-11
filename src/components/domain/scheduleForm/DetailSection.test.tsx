@@ -62,6 +62,7 @@ function Harness(props: {
     notes: props.initialNotes ?? '',
     projectId: props.initialProjectId ?? '',
     seventyOnly: false,
+    seventyNotes: '',
     endDate: '',
   }))
 
@@ -172,5 +173,13 @@ describe('DetailSection', () => {
   it('방문에는 칠십인 전용 체크가 없다', () => {
     renderDetail({ type: 'ward_visit', initialKind: 'other' })
     expect(screen.queryByLabelText('schedule.seventyOnlyLabel')).toBeNull()
+  })
+
+  // 칠십인 전용 메모는 일반 메모와 다른 칸이다 — 일반 메모는 회장·CC 공개 페이지·캘린더에도 나간다.
+  it('칠십인 전용 메모 칸은 모든 일정 유형에 있고 seventyNotes로 넘긴다', async () => {
+    const onChange = vi.fn()
+    renderDetail({ type: 'ward_visit', onChange })
+    await userEvent.type(screen.getByLabelText('schedule.seventyNotesLabelOptional'), 'x')
+    expect(onChange).toHaveBeenCalledWith({ seventyNotes: 'x' })
   })
 })

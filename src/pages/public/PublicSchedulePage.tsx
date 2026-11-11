@@ -14,6 +14,7 @@ import {
   ChevronDown,
   UserCheck,
   User,
+  Lock,
 } from 'lucide-react'
 import { ALL_UNITS, WARDS } from '@/constants/regions'
 import { isMultiDayEvent } from '@/types'
@@ -466,7 +467,8 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
                       unitName + (s.wardName ? ` · ${getWardName(s.wardName, lang)}` : '')
                     const safeZoom =
                       s.zoomLink && /^https?:\/\//i.test(s.zoomLink) ? s.zoomLink : null
-                    const hasNotes = !!s.notes?.trim()
+                    const seventyNotes = s.seventyNotes?.trim()
+                    const hasNotes = !!s.notes?.trim() || !!seventyNotes
                     const notesOpen = openNotes.has(s.id)
 
                     return (
@@ -528,11 +530,25 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
                           </div>
                           {notesOpen && hasNotes && (
                             <div className={styles.notesPanel}>
-                              <NotesText
-                                text={s.notes!}
-                                linkClass={styles.notesLink}
-                                textClass={styles.notesText}
-                              />
+                              {s.notes?.trim() && (
+                                <NotesText
+                                  text={s.notes}
+                                  linkClass={styles.notesLink}
+                                  textClass={styles.notesText}
+                                />
+                              )}
+                              {seventyNotes && (
+                                <div className={styles.seventyNotes}>
+                                  <p className={styles.seventyNotesTitle}>
+                                    <Lock size={11} /> {t('public.seventyNotesTitle')}
+                                  </p>
+                                  <NotesText
+                                    text={seventyNotes}
+                                    linkClass={styles.notesLink}
+                                    textClass={styles.notesText}
+                                  />
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>

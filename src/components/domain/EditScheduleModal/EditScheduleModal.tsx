@@ -69,6 +69,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
     presidentAccompanied: schedule.presidentAccompanied ?? false,
     relatedVisitId: schedule.relatedVisitId ?? '',
     seventyOnly: schedule.seventyOnly === true,
+    seventyNotes: schedule.seventyNotes ?? '',
   })
   const { target, date, startTime, endTime, notes, zoomLink, customTitle, location, projectId, presidentAccompanied, relatedVisitId } = state
 
@@ -213,6 +214,11 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
           projectId: projectId || null,
           ...(isVisit ? { presidentAccompanied: presidentAccompanied || null } : {}),
           ...(isContact ? { relatedVisitId: relatedVisitId || null } : {}),
+          // 칠십인 전용 메모는 고쳤을 때만 보낸다. 메모는 일정과 따로 읽어 오므로 모달이 열린
+          // 순간 아직 안 왔을 수 있다 — 건드리지 않은 빈 칸을 보내면 있던 메모를 지운다.
+          ...(state.seventyNotes.trim() !== (schedule.seventyNotes ?? '').trim()
+            ? { seventyNotes: state.seventyNotes.trim() || null }
+            : {}),
           // 대상이 '기타'인 접견/모임에서만 보낸다. 그 밖의 일정은 선택지 자체가 없고, 대상 유형이
           // '기타'에서 벗어나는 수정은 서버가 표시를 함께 끈다.
           ...(canBeSeventyOnly({ type: schedule.type, targetKind: target.kind })

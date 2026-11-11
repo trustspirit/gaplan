@@ -42,7 +42,7 @@ export function DetailSection({
   canPickProject,
 }: DetailSectionProps) {
   const { t } = useTranslation()
-  const { location, customTitle, zoomLink, notes, projectId, seventyOnly } = state
+  const { location, customTitle, zoomLink, notes, seventyNotes, projectId, seventyOnly } = state
 
   return (
     <div className={styles.fields}>
@@ -91,6 +91,20 @@ export function DetailSection({
         placeholder={t('schedule.notesLabelOptional')}
         rows={3}
       />
+
+      {/* 위 메모는 회장·CC 공개 페이지·캘린더에도 나간다. 이 칸은 칠십인 쪽(칠십인·집행서기·
+          관리자)과 칠십인 전용 공개 페이지에만 보인다. */}
+      <div className={sharedStyles.fieldGroup}>
+        <Textarea
+          label={t('schedule.seventyNotesLabelOptional')}
+          className={sharedStyles.textarea}
+          value={seventyNotes}
+          onChange={(e) => onChange({ seventyNotes: e.target.value })}
+          rows={2}
+          maxLength={1000}
+        />
+        <p className={sharedStyles.hint}>{t('schedule.seventyNotesHint')}</p>
+      </div>
 
       {/* 대상이 '기타'인 접견/모임에만 나온다. 협의 평의회·스테이크 회장·와드 감독처럼 대상이
           정해진 일정은 공개 범위도 그 대상으로 정해져 있어 고를 것이 없다. */}

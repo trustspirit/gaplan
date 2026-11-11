@@ -375,7 +375,10 @@
     "seventyOnlyLabel": "칠십인 전용",
     "seventyOnlyHint": "칠십인 전용 공개 페이지에만 표시하고 CC 구글 캘린더에는 올리지 않습니다.",
     "startTimeFirstDay": "시작 시간 (첫날)",
-    "endTimeLastDay": "종료 시간 (마지막 날)"
+    "endTimeLastDay": "종료 시간 (마지막 날)",
+    "seventyNotesLabelOptional": "칠십인 전용 메모 (선택)",
+    "seventyNotesHint": "회장과 CC·스테이크 공개 페이지, 캘린더에는 보이지 않습니다. 칠십인 전용 공개 페이지에는 표시됩니다.",
+    "seventyNotesTitle": "칠십인 전용 메모"
   },
   "ward": {
     "assignTitle": "와드/지부 방문 날짜 배정",

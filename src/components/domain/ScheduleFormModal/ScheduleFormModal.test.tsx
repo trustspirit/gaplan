@@ -1202,6 +1202,18 @@ describe('ScheduleFormModal 여러 날 모임', () => {
     }))
   })
 
+  it('칠십인 전용 메모를 쓰면 payload에 seventyNotes가 실리고, 비우면 실리지 않는다', async () => {
+    openOtherMeeting()
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
+    fireEvent.change(screen.getByLabelText('schedule.seventyNotesLabelOptional'), {
+      target: { value: ' 면담 전 확인 ' },
+    })
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({ seventyNotes: '면담 전 확인' }))
+  })
+
   it('하루짜리 모임은 endDate를 보내지 않고, 뒤집힌 시간은 여전히 막는다', async () => {
     openOtherMeeting()
     fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '18:00' } })

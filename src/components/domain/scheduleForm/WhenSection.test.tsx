@@ -40,6 +40,7 @@ function Harness(props: {
     notes: '',
     projectId: '',
     seventyOnly: false,
+    seventyNotes: '',
     endDate: '',
   }))
 

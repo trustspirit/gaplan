@@ -6,6 +6,9 @@ import { buildCcCouncilTitle, isKnownRegionId } from './ccCouncil'
 import { resolveScheduleLocation } from './adminScheduleFields'
 import { canBeSeventyOnly } from './seventyOnly'
 import { isMultiDaySchedule } from './scheduleDates'
+import {
+  SEVENTY_NOTES_COLLECTION, SEVENTY_NOTES_MAX_LENGTH, isValidSeventyNotesInput, normalizeSeventyNotes,
+} from './seventyNotes'
 
 interface AdminCreateScheduleRequest {
   type: 'ward_visit' | 'interview' | 'meeting'
@@ -28,6 +31,7 @@ interface AdminCreateScheduleRequest {
   wardId?: string
   relatedVisitId?: string
   seventyOnly?: boolean
+  seventyNotes?: string   // 칠십인 전용 메모 — 일정 문서가 아니라 별도 컬렉션에 저장한다(seventyNotes.ts)
 }
 
 export const adminCreateSchedule = functions
@@ -37,7 +41,7 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const { type, seventyUid, unitId, regionId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, location, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId, seventyOnly, endDate } = data
+    const { type, seventyUid, unitId, regionId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, location, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId, seventyOnly, endDate, seventyNotes } = data
 
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
@@ -111,6 +115,9 @@ export const adminCreateSchedule = functions
     }
     if (presidentAccompanied !== undefined && typeof presidentAccompanied !== 'boolean') {
       throw new functions.https.HttpsError('invalid-argument', 'presidentAccompanied must be a boolean')
+    }
+    if (seventyNotes !== undefined && !isValidSeventyNotesInput(seventyNotes)) {
+      throw new functions.https.HttpsError('invalid-argument', `seventyNotes max ${SEVENTY_NOTES_MAX_LENGTH} chars`)
     }
     if (seventyOnly !== undefined && typeof seventyOnly !== 'boolean') {
       throw new functions.https.HttpsError('invalid-argument', 'seventyOnly must be a boolean')
@@ -222,7 +229,10 @@ export const adminCreateSchedule = functions
       (targetKind === 'cc_council' && regionId ? buildCcCouncilTitle(regionId) : null) ||
       (relatedVisitWardName ? `${relatedVisitWardName} 방문 사전 모임` : null)
 
-    await db.collection('schedules').add({
+    // 일정과 칠십인 전용 메모는 함께 쓴다 — 일정만 생기고 메모가 빠지면 사용자는 저장됐다고 믿는다.
+    const scheduleRef = db.collection('schedules').doc()
+    const batch = db.batch()
+    batch.set(scheduleRef, {
       type,
       seventyUid,
       unitId: unitId ?? '',
@@ -247,6 +257,16 @@ export const adminCreateSchedule = functions
       createdBy: context.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     })
+    const normalizedSeventyNotes = normalizeSeventyNotes(seventyNotes)
+    if (normalizedSeventyNotes) {
+      batch.set(db.collection(SEVENTY_NOTES_COLLECTION).doc(scheduleRef.id), {
+        seventyUid,
+        date,
+        notes: normalizedSeventyNotes,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      })
+    }
+    await batch.commit()
 
     return { success: true }
   })

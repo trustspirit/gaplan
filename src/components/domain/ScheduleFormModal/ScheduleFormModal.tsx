@@ -302,6 +302,7 @@ export function ScheduleFormModal({
         ...(customTitle.trim() && type !== 'ward_visit' ? { customTitle: customTitle.trim() } : {}),
         ...(location.trim() ? { location: location.trim() } : {}),
         ...(projectId ? { projectId } : {}),
+        ...(state.seventyNotes.trim() ? { seventyNotes: state.seventyNotes.trim() } : {}),
         ...(type === 'ward_visit' ? { presidentAccompanied: state.presidentAccompanied } : {}),
         // 체크한 뒤 대상 유형을 바꿨을 수 있다 — 지금 대상이 '기타'일 때만 싣는다(서버도 같은 규칙으로 거부한다).
         ...(state.seventyOnly && canBeSeventyOnly({ type, targetKind: targetPayload.targetKind })

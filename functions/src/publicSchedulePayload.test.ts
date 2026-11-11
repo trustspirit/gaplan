@@ -32,6 +32,7 @@ function setupFirestore(opts: {
   units?: Record<string, unknown>
   schedules?: Array<{ id: string; data: () => unknown }>
   generals?: Array<{ id: string; data: () => unknown }>
+  seventyNotes?: Array<{ id: string; data: () => unknown }>
 }): FirestoreLike {
   const docMock = vi.fn((path: string) => ({
     get: async () => {
@@ -42,7 +43,13 @@ function setupFirestore(opts: {
     },
   }))
   const collectionMock = vi.fn((name: string) =>
-    query(name === 'schedules' ? (opts.schedules ?? []) : (opts.generals ?? [])),
+    query(
+      name === 'schedules'
+        ? (opts.schedules ?? [])
+        : name === 'scheduleSeventyNotes'
+          ? (opts.seventyNotes ?? [])
+          : (opts.generals ?? []),
+    ),
   )
   return { doc: docMock, collection: collectionMock }
 }
@@ -141,6 +148,38 @@ describe('buildPublicSchedulePayload', () => {
       })
       const payload = await buildPublicSchedulePayload(db, 'tok')
       expect(payload.generalSchedules.map((g) => g.id)).toEqual(['g1'])
+    })
+  })
+
+  // 칠십인 전용 메모는 일정 문서가 아니라 별도 컬렉션에 있다. 칠십인 전용 페이지(전체 공유)에만
+  // 붙여 내보내고, CC·유닛 링크에는 절대 싣지 않는다.
+  describe('칠십인 전용 메모', () => {
+    const visit = {
+      id: 's1',
+      data: () => ({
+        type: 'ward_visit', unitId: 'seoul-east-stake', date: '2999-09-10',
+        startTime: '10:00', endTime: '12:00', status: 'confirmed', notes: '일반 메모',
+      }),
+    }
+    const seventyNotes = [{ id: 's1', data: () => ({ seventyUid: 'sv', date: '2999-09-10', notes: '전용 메모' }) }]
+
+    it('전체 공유 토큰은 일정에 칠십인 전용 메모를 붙여 내보낸다', async () => {
+      const db = setupFirestore({ tokens: { tok: '__all__' }, schedules: [visit], seventyNotes })
+      const payload = await buildPublicSchedulePayload(db, 'tok')
+      expect(payload.schedules[0]).toMatchObject({ notes: '일반 메모', seventyNotes: '전용 메모' })
+    })
+
+    it('유닛 링크는 칠십인 전용 메모를 내보내지 않는다', async () => {
+      const db = setupFirestore({
+        tokens: { tok: 'seoul-east-stake' },
+        units: { 'seoul-east-stake': { enabled: true } },
+        schedules: [visit],
+        seventyNotes,
+      })
+      const payload = await buildPublicSchedulePayload(db, 'tok')
+      expect(payload.schedules).toHaveLength(1)
+      expect(payload.schedules[0]).not.toHaveProperty('seventyNotes')
+      expect(payload.schedules[0].notes).toBe('일반 메모')
     })
   })
 })

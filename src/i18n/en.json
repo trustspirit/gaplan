@@ -375,7 +375,10 @@
     "seventyOnlyLabel": "Seventy only",
     "seventyOnlyHint": "Shown only on the Seventy-only public page; not added to the CC Google calendar.",
     "startTimeFirstDay": "Start time (first day)",
-    "endTimeLastDay": "End time (last day)"
+    "endTimeLastDay": "End time (last day)",
+    "seventyNotesLabelOptional": "Seventy-only notes (optional)",
+    "seventyNotesHint": "Hidden from presidents, CC/stake public pages and calendars. Shown on the Seventy-only public page.",
+    "seventyNotesTitle": "Seventy-only notes"
   },
   "ward": {
     "assignTitle": "Assign Ward/Branch Visit Dates",

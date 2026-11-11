@@ -7,6 +7,7 @@ import { generalScheduleInScope } from './generalScheduleScope'
 import { buildGeneralScheduleVEvent } from './generalScheduleIcsEvent'
 import { dedupeById, isSeventyOnly } from './seventyOnly'
 import { scheduleLastDate } from './scheduleDates'
+import { SEVENTY_NOTES_COLLECTION } from './seventyNotes'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -137,7 +138,20 @@ export const publicScheduleIcs = functions
               })
           : null
 
-      const [schedulesSnap, ccSnap, generalSnap, seventyOnlySnap] = await Promise.all([
+      // 칠십인 전용 메모 — 전체 공유의 구독에서만 싣는다(publicSchedulePayload와 같은 규칙).
+      const seventyNotesQuery =
+        unitIds === null
+          ? admin.firestore()
+              .collection(SEVENTY_NOTES_COLLECTION)
+              .where('date', '>=', cutoffStr)
+              .get()
+              .catch((err: unknown) => {
+                console.error('publicScheduleIcs: seventy notes query failed', err)
+                return null
+              })
+          : null
+
+      const [schedulesSnap, ccSnap, generalSnap, seventyOnlySnap, seventyNotesSnap] = await Promise.all([
         schedulesQuery
           .where('status', '==', 'confirmed')
           .where('date', '>=', cutoffStr)
@@ -151,7 +165,14 @@ export const publicScheduleIcs = functions
           .orderBy('date', 'asc')
           .get(),
         seventyOnlyQuery,
+        seventyNotesQuery,
       ])
+
+      const seventyNotesById = new Map<string, string>()
+      for (const d of seventyNotesSnap?.docs ?? []) {
+        const notes = d.data().notes
+        if (typeof notes === 'string' && notes.trim()) seventyNotesById.set(d.id, notes)
+      }
 
       const unitSet = unitIds !== null ? new Set(unitIds) : null
 
@@ -200,6 +221,9 @@ export const publicScheduleIcs = functions
         // 동행 정보는 전체 공유에서만 노출 — CCM 지역별 공유에는 포함하지 않음
         if (unitSet === null && data.presidentAccompanied === true) descParts.push('스테이크 회장 동행')
         if (data.notes) descParts.push(data.notes)
+        if (unitSet === null && seventyNotesById.has(d.id)) {
+          descParts.push(`[칠십인 전용] ${seventyNotesById.get(d.id)}`)
+        }
         if (descParts.length > 0) lines.push(`DESCRIPTION:${escape(descParts.join('\n'))}`)
         const zoomUrl = safeUrl(data.zoomLink)
         if (zoomUrl) lines.push(`URL:${zoomUrl}`)

@@ -3,6 +3,7 @@ import { CC_COUNCIL_TARGET_KIND, isCcCouncilForScope } from './ccCouncil'
 import { generalScheduleInScope } from './generalScheduleScope'
 import { dedupeById, isSeventyOnly } from './seventyOnly'
 import { isMultiDaySchedule } from './scheduleDates'
+import { SEVENTY_NOTES_COLLECTION } from './seventyNotes'
 
 /**
  * "이 토큰이 무엇을 볼 수 있는가"의 유일한 판정.
@@ -81,6 +82,8 @@ export interface PublicSchedule {
   customTitle?: string | null
   confirmedAt?: string
   notes?: string | null
+  // 칠십인 전용 메모 — 전체 공유(칠십인 전용 페이지)에서만 실린다. seventyNotes.ts 참고.
+  seventyNotes?: string
   presidentAccompanied?: boolean
 }
 
@@ -185,7 +188,22 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
           })
       : null
 
-  const [snap, generalSnap, ccSnap, seventyOnlySnap] = await Promise.all([
+  // 칠십인 전용 메모도 전체 공유에서만 읽는다. 일정 문서가 아니라 별도 컬렉션에 있어
+  // (회장이 일정 문서를 읽을 수 있어서다) 날짜 범위로 한 번에 가져와 일정 id로 붙인다.
+  const seventyNotesQuery =
+    unitIds === null
+      ? db
+          .collection(SEVENTY_NOTES_COLLECTION)
+          .where('date', '>=', cutoffStr)
+          .get()
+          // 메모를 못 읽었다고 일정표 전체를 못 열게 두지 않는다 — 메모만 빠진다.
+          .catch((err: unknown) => {
+            console.error('[publicSchedulePayload] seventy notes query failed', err)
+            return null
+          })
+      : null
+
+  const [snap, generalSnap, ccSnap, seventyOnlySnap, seventyNotesSnap] = await Promise.all([
     query
       .where('status', '==', 'confirmed')
       .where('date', '>=', cutoffStr)
@@ -199,7 +217,14 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
       .get(),
     ccQuery,
     seventyOnlyQuery,
+    seventyNotesQuery,
   ])
+
+  const seventyNotesById = new Map<string, string>()
+  for (const d of seventyNotesSnap?.docs ?? []) {
+    const notes = d.data().notes
+    if (typeof notes === 'string' && notes.trim()) seventyNotesById.set(d.id, notes)
+  }
 
   const unitSet = unitIds !== null ? new Set(unitIds) : null
 
@@ -234,6 +259,7 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
         ...(sd.customTitle != null ? { customTitle: sd.customTitle } : {}),
         ...(sd.confirmedAt ? { confirmedAt: sd.confirmedAt } : {}),
         ...(sd.notes != null ? { notes: sd.notes } : {}),
+        ...(unitSet === null && seventyNotesById.has(d.id) ? { seventyNotes: seventyNotesById.get(d.id) } : {}),
         ...(unitSet === null && sd.presidentAccompanied === true ? { presidentAccompanied: true } : {}),
       }
     })

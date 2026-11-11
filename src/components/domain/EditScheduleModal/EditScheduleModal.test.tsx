@@ -716,3 +716,51 @@ describe('EditScheduleModal 여러 날 모임', () => {
     }))
   })
 })
+
+// 칠십인 전용 메모는 일정과 따로 읽어 온다. 모달이 열린 순간 아직 안 왔을 수 있으므로,
+// 건드리지 않은 칸은 보내지 않는다 — 빈 값을 보내면 있던 메모가 지워진다.
+describe('EditScheduleModal 칠십인 전용 메모', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const sentUpdates = () => (editSpy.mock.calls[0][0] as { updates: Record<string, unknown> }).updates
+
+  it('건드리지 않으면 seventyNotes를 보내지 않는다', async () => {
+    render(
+      <EditScheduleModal
+        schedule={{ ...MEETING_SCHEDULE, seventyNotes: '전용 메모' }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+    expect(screen.getByLabelText('schedule.seventyNotesLabelOptional')).toHaveValue('전용 메모')
+    fireEvent.click(screen.getByText('common.save'))
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(sentUpdates()).not.toHaveProperty('seventyNotes')
+  })
+
+  it('고치면 새 메모를 보낸다', async () => {
+    render(<EditScheduleModal schedule={MEETING_SCHEDULE} onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('schedule.seventyNotesLabelOptional'), {
+      target: { value: '  새 메모  ' },
+    })
+    fireEvent.click(screen.getByText('common.save'))
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(sentUpdates().seventyNotes).toBe('새 메모')
+  })
+
+  it('비우면 null을 보내 메모를 지운다', async () => {
+    render(
+      <EditScheduleModal
+        schedule={{ ...MEETING_SCHEDULE, seventyNotes: '전용 메모' }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+    fireEvent.change(screen.getByLabelText('schedule.seventyNotesLabelOptional'), { target: { value: '' } })
+    fireEvent.click(screen.getByText('common.save'))
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(sentUpdates().seventyNotes).toBeNull()
+  })
+})

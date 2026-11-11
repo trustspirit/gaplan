@@ -137,3 +137,32 @@ export async function fetchRemindersPresence(viewSeventyUid?: string | null): Pr
   const res = await fn(viewSeventyUid ? { viewSeventyUid } : {})
   return res.data.hasPending
 }
+
+/**
+ * 일정의 칠십인 전용 메모(scheduleSeventyNotes/{scheduleId})를 구독한다. 일정 문서와 따로 두는
+ * 이유는 functions/src/seventyNotes.ts에 있다.
+ *
+ * 규칙이 읽을 수 있는 사람을 가린다 — 칠십인·집행서기는 그 칠십인의 메모만, 관리자는 전부.
+ * 그래서 조회도 같은 조건을 달아야 통과한다(seventyUid 없이 부르는 것은 관리자뿐이다).
+ * 콜백은 일정 id → 메모의 Map을 받는다.
+ */
+export function subscribeToSeventyNotes(
+  filters: { seventyUid?: string },
+  callback: (notesByScheduleId: Map<string, string>) => void,
+): Unsubscribe {
+  const base = collection(db, 'scheduleSeventyNotes')
+  const q = filters.seventyUid ? query(base, where('seventyUid', '==', filters.seventyUid)) : query(base)
+  return onSnapshot(
+    q,
+    snap => {
+      const map = new Map<string, string>()
+      for (const d of snap.docs) {
+        const notes = d.data().notes
+        if (typeof notes === 'string' && notes.trim()) map.set(d.id, notes)
+      }
+      callback(map)
+    },
+    // 메모를 못 읽어도 일정 목록은 그대로 보여야 한다 — 메모만 비운다.
+    snapshotErrHandler('scheduleSeventyNotes', () => callback(new Map())),
+  )
+}

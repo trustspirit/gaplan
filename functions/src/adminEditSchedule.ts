@@ -6,6 +6,9 @@ import { CC_COUNCIL_TARGET_KIND } from './ccCouncil'
 import { resolveScheduleLocationForEdit } from './adminScheduleFields'
 import { canBeSeventyOnly } from './seventyOnly'
 import { isMultiDaySchedule } from './scheduleDates'
+import {
+  SEVENTY_NOTES_COLLECTION, SEVENTY_NOTES_MAX_LENGTH, isValidSeventyNotesInput, normalizeSeventyNotes,
+} from './seventyNotes'
 
 interface AdminEditScheduleRequest {
   scheduleId: string
@@ -27,6 +30,7 @@ interface AdminEditScheduleRequest {
     wardId?: string | null
     relatedVisitId?: string | null
     seventyOnly?: boolean
+    seventyNotes?: string | null   // 칠십인 전용 메모. null·빈 문자열이면 지운다 (seventyNotes.ts)
   }
 }
 
@@ -172,7 +176,13 @@ export const adminEditSchedule = functions
       allowed.seventyOnly = updates.seventyOnly
     }
 
-    if (Object.keys(allowed).length === 0) {
+    // 칠십인 전용 메모는 일정 문서가 아니라 별도 컬렉션에 쓴다 — allowed에 넣지 않는다.
+    const seventyNotesChange: string | null | undefined = updates.seventyNotes
+    if (seventyNotesChange !== undefined && !isValidSeventyNotesInput(seventyNotesChange)) {
+      throw new functions.https.HttpsError('invalid-argument', `seventyNotes max ${SEVENTY_NOTES_MAX_LENGTH} chars`)
+    }
+
+    if (Object.keys(allowed).length === 0 && seventyNotesChange === undefined) {
       throw new functions.https.HttpsError('invalid-argument', 'No valid updates provided')
     }
 
@@ -317,11 +327,38 @@ export const adminEditSchedule = functions
       })
     }
 
-    await scheduleRef.update({
+    const batch = db.batch()
+    batch.update(scheduleRef, {
       ...allowed,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedBy: context.auth.uid,
     })
+
+    // 칠십인 전용 메모. 메모 문서의 date는 일정의 날짜를 따라간다 — 공개 페이지가 날짜로 범위
+    // 조회하므로, 일정만 옮기고 이 값을 두면 옮긴 일정의 메모가 공개 페이지에서 사라진다.
+    {
+      const current = snap.data()!
+      const notesRef = db.collection(SEVENTY_NOTES_COLLECTION).doc(scheduleId)
+      const effectiveDate = (allowed.date as string | undefined) ?? (current.date as string)
+      if (seventyNotesChange !== undefined) {
+        const normalized = normalizeSeventyNotes(seventyNotesChange)
+        if (normalized) {
+          batch.set(notesRef, {
+            seventyUid: current.seventyUid,
+            date: effectiveDate,
+            notes: normalized,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          })
+        } else {
+          batch.delete(notesRef)
+        }
+      } else if (allowed.date !== undefined && allowed.date !== current.date) {
+        const notesSnap = await notesRef.get()
+        if (notesSnap.exists) batch.update(notesRef, { date: effectiveDate })
+      }
+    }
+
+    await batch.commit()
 
     return { success: true }
   })
