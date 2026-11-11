@@ -2,72 +2,31 @@
 @use '@/styles/mixins' as *;
 
 .overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  @include dialog-overlay;
   z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: $space-4;
-
-  @include mobile {
-    align-items: flex-end;
-    padding: 0;
-  }
 }
 
 .sheet {
-  background: $color-surface;
-  border-radius: $border-radius-xl;
-  width: 100%;
-  max-width: 420px;
-  max-height: 90dvh;
-  overflow-y: auto;
-  box-shadow: $shadow-overlaid;
-
-  @include mobile {
-    border-radius: $border-radius-xl $border-radius-xl 0 0;
-    max-height: 92dvh;
-  }
+  @include dialog-panel(420px);
 }
 
 .header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: $space-4 $space-6;
-  border-bottom: 1px solid $color-border;
+  @include dialog-header;
 }
 
 .title {
-  font-size: $font-size-md;
-  font-weight: $font-weight-semibold;
-  color: $color-text;
-  margin: 0;
+  @include dialog-title;
 }
 
 .closeBtn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: $color-text-muted;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: $border-radius-md;
-  &:hover {
-    background: $color-bg;
-  }
+  @include dialog-icon-button;
 }
 
 .cardList {
   display: flex;
   flex-direction: column;
   gap: $space-2;
-  padding: $space-4 $space-6 calc($space-6 + env(safe-area-inset-bottom, 0px));
+  padding: $dialog-gutter $dialog-gutter calc(#{$dialog-gutter} + env(safe-area-inset-bottom, 0px));
 }
 
 .card {

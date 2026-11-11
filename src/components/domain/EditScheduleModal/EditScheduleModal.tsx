@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useId } from 'react'
 import { createPortal } from 'react-dom'
 import { httpsCallable } from 'firebase/functions'
 import { toast } from 'sonner'
@@ -35,6 +35,7 @@ interface Props {
 
 export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Props) {
   const { t } = useTranslation()
+  const titleId = useId()
   const { users } = useUsers()
 
   // 편집은 대상의 '종류'(targetKind)를 바꿀 수단이 없다(Controller ruling 1, 2026-08-22) —
@@ -241,11 +242,12 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
             tabIndex={-1}
             role="dialog"
             aria-modal="true"
+            aria-labelledby={titleId}
             className={styles.sheet}
             onClick={e => e.stopPropagation()}
           >
             <div className={styles.header}>
-              <h3 className={styles.title}>{t('schedule.editTitle')}</h3>
+              <h3 id={titleId} className={styles.title}>{t('schedule.editTitle')}</h3>
               <button type="button" onClick={requestClose} className={styles.closeBtn} aria-label={t('common.close')}>
                 <X size={18} />
               </button>

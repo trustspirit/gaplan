@@ -2,78 +2,16 @@
 @use '@/styles/mixins' as *;
 
 .overlay {
-  position: fixed;
-  inset: 0;
-  overflow-x: hidden;
-  background: rgba(0, 0, 0, 0.45);
+  @include dialog-overlay;
   z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.18s ease;
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @include mobile {
-    align-items: flex-end;
-  }
 }
 
 .sheet {
-  background: $color-surface;
-  border-radius: $border-radius-lg;
-  width: 100%;
-  max-width: 460px;
-  max-height: 90vh;
-  min-width: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  box-shadow: $shadow-overlaid;
-  animation: slideUp 0.22s cubic-bezier(0.32, 0.72, 0, 1);
-
-  @keyframes slideUp {
-    from {
-      transform: translateY(16px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes slideUpMobile {
-    from {
-      transform: translateY(100%);
-    }
-    to {
-      transform: translateY(0);
-    }
-  }
-
-  @include mobile {
-    border-radius: $border-radius-lg $border-radius-lg 0 0;
-    max-height: 92vh;
-    max-width: 100dvw;
-    animation: slideUpMobile 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-  }
+  @include dialog-panel(480px);
 }
 
 .header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $space-2;
-  min-width: 0;
-  padding: $space-5 $space-5 $space-4;
-  border-bottom: 1px solid $color-border;
+  @include dialog-header;
 }
 
 .headerLeft {
@@ -84,33 +22,12 @@
 }
 
 .title {
-  font-size: $font-size-base;
-  font-weight: $font-weight-semibold;
-  color: $color-text;
-  margin: 0;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @include dialog-title;
 }
 
 .closeBtn,
 .backBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-  border: none;
-  background: none;
-  border-radius: $border-radius-md;
-  cursor: pointer;
-  color: $color-text-muted;
-  &:hover {
-    background: $color-bg;
-    color: $color-text;
-  }
+  @include dialog-icon-button;
 }
 
 form {
@@ -125,7 +42,7 @@ form :global(textarea) {
 }
 
 .errorBanner {
-  margin: $space-3 $space-5 0;
+  margin: $space-3 $dialog-gutter 0;
   padding: $space-3 $space-4;
   background: $color-highlight-danger;
   color: $color-danger;
@@ -137,14 +54,10 @@ form :global(textarea) {
   display: flex;
   flex-direction: column;
   gap: $space-4;
-  padding: $space-4 $space-5;
+  padding: $dialog-gutter;
   min-width: 0;
   width: 100%;
   max-width: 100%;
-
-  @include mobile {
-    padding: $space-3;
-  }
 }
 
 .fields > * {
@@ -282,29 +195,7 @@ form :global(textarea) {
 }
 
 .footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: $space-3;
-  padding: $space-4 $space-5;
-  border-top: 1px solid $color-border;
-  // keep Save/Cancel reachable while the sheet content scrolls
-  position: sticky;
-  bottom: 0;
-  background: $color-surface;
-  z-index: 1;
-  padding-bottom: calc($space-4 + env(safe-area-inset-bottom, 0px));
-
-  @include mobile {
-    gap: $space-2;
-    padding: $space-3;
-    padding-bottom: calc($space-3 + env(safe-area-inset-bottom, 0px));
-
-    :global(button) {
-      flex: 1;
-      align-self: stretch;
-      min-width: 0;
-    }
-  }
+  @include dialog-footer;
 }
 
 .hint {

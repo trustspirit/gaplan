@@ -2,89 +2,30 @@
 @use '@/styles/mixins' as *;
 
 .overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  @include dialog-overlay;
   z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-
-  @include desktop {
-    align-items: center;
-    justify-content: center;
-  }
 }
 
 .sheet {
-  background: $color-surface;
-  border-radius: $border-radius-lg $border-radius-lg 0 0;
-  width: 100%;
-  max-width: 100%;
-  max-height: 92dvh;
-  overflow-x: hidden;
-  overflow-y: auto;
+  @include dialog-panel(480px);
   display: flex;
   flex-direction: column;
-
-  @include desktop {
-    border-radius: $border-radius-lg;
-    max-width: 460px;
-    max-height: 90vh;
-  }
 }
 
 .header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $space-2;
-  padding: $space-5 $space-5 $space-4;
-  border-bottom: 1px solid $color-border;
-  flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  background: $color-surface;
-  z-index: 1;
-
-  @include mobile {
-    padding: $space-4 $space-4 $space-3;
-  }
+  @include dialog-header;
 }
 
 .title {
-  font-size: $font-size-base;
-  font-weight: $font-weight-semibold;
-  color: $color-text;
-  margin: 0;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @include dialog-title;
 }
 
 .closeBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
-  flex-shrink: 0;
-  border: none;
-  background: none;
-  border-radius: $border-radius-md;
-  cursor: pointer;
-  color: $color-text-muted;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-
-  &:hover {
-    background: $color-bg;
-    color: $color-text;
-  }
+  @include dialog-icon-button;
 }
 
 .errorBanner {
-  margin: $space-3 $space-5 0;
+  margin: $space-3 $dialog-gutter 0;
   padding: $space-3 $space-4;
   background: $color-highlight-danger;
   color: $color-danger;
@@ -101,15 +42,10 @@
   display: flex;
   flex-direction: column;
   gap: $space-4;
-  padding: $space-4 $space-5;
+  padding: $dialog-gutter;
   min-width: 0;
   overflow-y: auto;
   flex: 1;
-
-  @include mobile {
-    padding: $space-3;
-    gap: $space-3;
-  }
 }
 
 .fieldGroup {
@@ -251,26 +187,7 @@
 }
 
 .actions {
-  display: flex;
-  gap: $space-3;
-  justify-content: flex-end;
-  padding: $space-4 $space-5;
-  border-top: 1px solid $color-border;
-  flex-shrink: 0;
-  position: sticky;
-  bottom: 0;
-  background: $color-surface;
-
-  @include mobile {
-    padding: $space-3;
-    padding-bottom: calc(#{$space-3} + env(safe-area-inset-bottom));
-    gap: $space-2;
-
-    button {
-      flex: 1;
-      min-width: 0;
-    }
-  }
+  @include dialog-footer;
 }
 
 .saveBtn {

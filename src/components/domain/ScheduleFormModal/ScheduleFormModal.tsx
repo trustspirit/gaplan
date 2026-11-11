@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useId } from 'react'
 import { createPortal } from 'react-dom'
 import { httpsCallable } from 'firebase/functions'
 import { useAtomValue } from 'jotai'
@@ -51,6 +51,7 @@ export function ScheduleFormModal({
   onSaved,
 }: ScheduleFormModalProps) {
   const { t } = useTranslation()
+  const titleId = useId()
   const user = useAtomValue(authUserAtom)!
   const { users } = useUsers()
   const { leaders } = useLeaders()
@@ -336,6 +337,7 @@ export function ScheduleFormModal({
         className={styles.sheet}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titleId}
         onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.header}>
@@ -350,7 +352,7 @@ export function ScheduleFormModal({
                 <ChevronLeft size={18} />
               </button>
             )}
-            <h3 className={styles.title}>{t('schedule.newTitle')}</h3>
+            <h3 id={titleId} className={styles.title}>{t('schedule.newTitle')}</h3>
           </div>
           <button
             type="button"

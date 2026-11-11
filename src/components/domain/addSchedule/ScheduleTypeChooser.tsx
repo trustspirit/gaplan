@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useId } from 'react'
 import { createPortal } from 'react-dom'
 import { MapPin, Coffee, Users, Building2, ChevronRight, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -23,6 +23,7 @@ interface ScheduleTypeChooserProps {
 
 export function ScheduleTypeChooser({ choices, onPick, onClose }: ScheduleTypeChooserProps) {
   const { t } = useTranslation()
+  const titleId = useId()
 
   // 입력할 게 없는 화면이므로 닫기는 확인 없이 바로 — 폼 모달의 requestClose처럼
   // isDirty를 검사할 이유가 없다.
@@ -47,10 +48,11 @@ export function ScheduleTypeChooser({ choices, onPick, onClose }: ScheduleTypeCh
         className={styles.sheet}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titleId}
         onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.header}>
-          <h3 className={styles.title}>{t('schedule.addChooserTitle')}</h3>
+          <h3 id={titleId} className={styles.title}>{t('schedule.addChooserTitle')}</h3>
           <button
             type="button"
             onClick={onClose}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useId } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronLeft, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -37,6 +37,7 @@ export function GeneralScheduleFormModal({
   onSaved,
 }: Props) {
   const { t } = useTranslation()
+  const titleId = useId()
   const user = useAtomValue(authUserAtom)!
 
   const [title, setTitle]             = useState(initialData?.title ?? '')
@@ -152,6 +153,7 @@ export function GeneralScheduleFormModal({
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titleId}
         className={styles.modal}
         onClick={e => e.stopPropagation()}
       >
@@ -167,7 +169,7 @@ export function GeneralScheduleFormModal({
                 <ChevronLeft size={18} />
               </button>
             )}
-            <h2 className={styles.title}>
+            <h2 id={titleId} className={styles.title}>
               {initialData ? t('generalSchedule.editTitle') : t('generalSchedule.newTitle')}
             </h2>
           </div>
