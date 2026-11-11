@@ -250,6 +250,7 @@ export function ScheduleItem({
             setNotesOpen((v) => !v)
           }}
           title={t('schedule.notesToggle')}
+          aria-label={t('schedule.notesToggle')}
           aria-expanded={notesOpen}
         >
           {notesOpen ? <ChevronUp size={14} /> : <FileText size={14} />}
@@ -263,6 +264,7 @@ export function ScheduleItem({
           rel="noopener noreferrer"
           className={styles.calendarAddBtn}
           title={t('schedule.addToMyCalendar')}
+          aria-label={t('schedule.addToMyCalendar')}
         >
           <CalendarPlus size={15} />
         </a>

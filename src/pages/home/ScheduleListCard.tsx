@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card, CardHeader, CardBody, Skeleton } from '@/components/ui'
+import { Card, CardHeader, CardBody, EmptyState, ErrorState, Skeleton } from '@/components/ui'
 import { ScheduleItem } from '@/components/domain/ScheduleItem/ScheduleItem'
 import { SwipeOpenRowProvider } from '@/components/domain/ScheduleItem/swipeOpenRow'
 import type { Schedule } from '@/types'
@@ -10,6 +10,8 @@ import styles from './HomePage.module.scss'
 export interface ScheduleListCardProps {
   schedules: Schedule[]
   loading?: boolean
+  /** 일정을 불러오지 못했다. 이때는 "일정 없음"이 아니라 실패를 보여준다 — 둘은 다른 상황이다. */
+  error?: boolean
   action?: ReactNode
   showCalendarAdd?: boolean
   canEdit?: boolean
@@ -32,6 +34,7 @@ const GROUP_LABEL_KEY: Record<WhenGroupKey, string> = {
 export function ScheduleListCard({
   schedules,
   loading,
+  error,
   action,
   showCalendarAdd,
   canEdit,
@@ -51,8 +54,10 @@ export function ScheduleListCard({
         <SwipeOpenRowProvider>
           {loading ? (
             [1, 2].map((i) => <Skeleton key={i} height="44px" className={styles.skeletonItem} />)
+          ) : error ? (
+            <ErrorState onRetry={() => window.location.reload()} />
           ) : schedules.length === 0 ? (
-            <p className={styles.empty}>{emptyText ?? t('schedule.noUpcoming')}</p>
+            <EmptyState title={emptyText ?? t('schedule.noUpcoming')} />
           ) : (
             // 열린 행은 목록 전체에서 하나뿐이다 — 그룹을 가로질러도 마찬가지라
             // Provider가 그룹 바깥을 감싼다.

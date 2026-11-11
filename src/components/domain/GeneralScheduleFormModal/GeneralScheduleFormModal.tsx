@@ -20,6 +20,7 @@ import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { DateRangePicker } from '@/components/domain/DateRangePicker/DateRangePicker'
 import { nextEndTime, DEFAULT_DURATION_MINUTES } from '@/components/domain/scheduleForm/scheduleTimeRules'
 import styles from './GeneralScheduleFormModal.module.scss'
+import { useDiscardGuard } from '@/hooks/useDiscardGuard'
 
 interface Props {
   initialData?: GeneralSchedule
@@ -86,16 +87,14 @@ export function GeneralScheduleFormModal({
     visibility !== initialVisibility ||
     JSON.stringify(targetRegionIds) !== JSON.stringify(initialData?.targetRegionIds ?? []) ||
     JSON.stringify(targetUnitIds) !== JSON.stringify(initialData?.targetUnitIds ?? [])
-  const requestClose = () => {
-    if (isDirty && !window.confirm(t('common.discardChanges'))) return
-    onClose()
-  }
+  // 작성 중인 내용이 있으면 닫기 전에 묻는다(바깥 탭·Escape·닫기 버튼 모두).
+  const { guard: guardDiscard, sheet: discardSheet } = useDiscardGuard(isDirty)
+  const requestClose = () => guardDiscard(onClose)
 
   // 뒤로 가기도 닫기와 같은 dirty 확인을 태운다 — 입력을 조용히 버리지 않는다.
   const requestBack = () => {
     if (!onBack) return
-    if (isDirty && !window.confirm(t('common.discardChanges'))) return
-    onBack()
+    guardDiscard(onBack)
   }
 
   const modalRef = useRef<HTMLDivElement>(null)
@@ -164,7 +163,9 @@ export function GeneralScheduleFormModal({
     }
   }
 
-  return createPortal(
+  return (
+    <>
+      {createPortal(
     <div className={styles.overlay} onClick={requestClose}>
       <div
         ref={modalRef}
@@ -326,8 +327,9 @@ export function GeneralScheduleFormModal({
             </div>
           </div>
 
-          {error && <p className={styles.error}>{error}</p>}
+          {/* 오류는 붙박이 바닥글 안, 저장 버튼 바로 위에 둔다 — 긴 폼의 어디에 있든 보인다. */}
           <div className={styles.footer}>
+            {error && <p className={styles.error} role="alert">{error}</p>}
             <Button type="button" variant="secondary" onClick={requestClose}>{t('common.cancel')}</Button>
             <Button type="submit" loading={saving}>{t('generalSchedule.saveBtn')}</Button>
           </div>
@@ -335,5 +337,8 @@ export function GeneralScheduleFormModal({
       </div>
     </div>,
     document.body,
+      )}
+      {discardSheet}
+    </>
   )
 }

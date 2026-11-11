@@ -118,6 +118,8 @@ vi.mock('@/components/ui', () => ({
     void size
     return <button {...buttonProps}>{children}</button>
   },
+  // 확인창은 열렸을 때만 그린다 — 닫힌 채로는 아무것도 없다.
+  ConfirmSheet: ({ open, title }: { open: boolean; title: string }) => (open ? <div role="dialog">{title}</div> : null),
   Skeleton: () => <div>loading</div>,
   Input: (
     props: React.InputHTMLAttributes<HTMLInputElement> & {

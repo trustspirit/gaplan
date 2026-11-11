@@ -45,6 +45,8 @@ vi.mock('react-dom', () => ({
 vi.mock('@/components/domain/DateRangePicker/DateRangePicker', async () => ({
   DateRangePicker: (await import('@/components/domain/DateRangePicker/testing')).DateRangePickerStub,
 }))
+// 확인창(ConfirmSheet)이 화면 폭으로 모양을 고른다 — jsdom에는 matchMedia가 없다.
+vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 import { toast } from 'sonner'

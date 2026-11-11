@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { adminConfirmSchedule, adminConfirmWardVisit } from '@/services/scheduleService'
 import { expireTask } from '@/services/taskService'
-import { Button } from '@/components/ui'
+import { Button, ConfirmSheet } from '@/components/ui'
 import type { RespondedSlot, Task } from '@/types'
 import { EditTaskModal } from './EditTaskModal'
 import { TaskDetailModal } from './TaskDetailModal'
@@ -101,7 +101,12 @@ export function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRow
   const canEdit = task.status === 'pending' || task.status === 'responded'
   const isExpired = task.status === 'expired'
 
+  // 만료는 되돌릴 수 없다(회장이 더 이상 응답하지 못한다). 수정 버튼 바로 옆의 작은 아이콘이라
+  // 잘못 누르기 쉬워서, 누르면 먼저 묻는다.
+  const [confirmingExpire, setConfirmingExpire] = useState(false)
+
   const handleExpire = async () => {
+    setConfirmingExpire(false)
     setExpiring(true)
     try {
       await expireTask(task.id)
@@ -141,6 +146,20 @@ export function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRow
         onClick={() => {
           if (task.status === 'completed') setDetailOpen(true)
         }}
+        // 완료된 Task는 줄 전체가 상세를 여는 버튼이다 — 마우스로만 열리지 않게 키보드로도 닿게 한다.
+        {...(task.status === 'completed'
+          ? {
+              role: 'button',
+              tabIndex: 0,
+              onKeyDown: (e: React.KeyboardEvent) => {
+                if (e.target !== e.currentTarget) return
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  setDetailOpen(true)
+                }
+              },
+            }
+          : {})}
       >
         <div className={styles.taskRowMain}>
           <div className={styles.taskRowLeft}>
@@ -216,6 +235,7 @@ export function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRow
                 className={styles.actionBtn}
                 onClick={() => setEditing(true)}
                 title={t('common.edit')}
+                aria-label={t('common.edit')}
               >
                 <Pencil size={14} />
               </button>
@@ -225,9 +245,10 @@ export function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRow
               <button
                 type="button"
                 className={clsx(styles.actionBtn, styles.actionBtnDanger)}
-                onClick={handleExpire}
+                onClick={() => setConfirmingExpire(true)}
                 disabled={expiring}
                 title={t('taskProgress.expire')}
+                aria-label={t('taskProgress.expire')}
               >
                 <XCircle size={14} />
               </button>
@@ -286,6 +307,16 @@ export function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRow
         )}
       </div>
 
+      <ConfirmSheet
+        open={confirmingExpire}
+        title={t('task.expireConfirmTitle')}
+        subject={typeLabel}
+        message={t('task.expireConfirmBody')}
+        confirmLabel={t('task.expire')}
+        tone="danger"
+        onConfirm={handleExpire}
+        onCancel={() => setConfirmingExpire(false)}
+      />
       {editing && <EditTaskModal task={task} onClose={() => setEditing(false)} />}
       {detailOpen && (
         <TaskDetailModal

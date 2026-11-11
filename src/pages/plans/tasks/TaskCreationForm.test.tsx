@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { AppUser } from '@/types'
+import { toast } from 'sonner'
 import { createTask } from '@/services/taskService'
 import { TaskCreationForm } from './TaskCreationForm'
 
@@ -49,9 +50,15 @@ describe('TaskCreationForm', () => {
     expect(screen.queryByLabelText('task.title')).not.toBeInTheDocument()
   })
 
-  it('keeps submit disabled until a president, a seventy and a date are all chosen', () => {
+  // 조건이 안 맞을 때 버튼을 막아 두면 왜 안 되는지 알려줄 수 없다. 버튼은 열어 두고,
+  // 누르면 빠진 것을 알려주되 Task는 만들지 않는다.
+  it('says what is missing instead of disabling submit', async () => {
     render(<TaskCreationForm />)
-    expect(screen.getByRole('button', { name: /task\.create/ })).toBeDisabled()
+    const submit = screen.getByRole('button', { name: /task\.create/ })
+    expect(submit).toBeEnabled()
+    await userEvent.click(submit)
+    expect(toast.error).toHaveBeenCalledWith('common.selectPresident')
+    expect(createTask).not.toHaveBeenCalled()
   })
 
   // 종류를 바꾸면 앞 종류에서 고른 날짜가 남아 있으면 안 된다 —
@@ -70,11 +77,12 @@ describe('TaskCreationForm', () => {
         (btn) => /^\d{1,2}$/.test(btn.textContent ?? '') && !(btn as HTMLButtonElement).disabled,
       )
     await userEvent.click(dayButtons[0])
-
-    expect(screen.getByRole('button', { name: /task\.create/ })).toBeEnabled()
-
     await userEvent.click(screen.getByRole('button', { name: 'task.type.select_visit' }))
 
-    expect(screen.getByRole('button', { name: /task\.create/ })).toBeDisabled()
+    // 날짜가 지워졌으면 제출이 "날짜를 고르라"고 막는다. 남아 있었다면 Task가 만들어진다.
+    vi.mocked(toast.error).mockClear()
+    await userEvent.click(screen.getByRole('button', { name: /task\.create/ }))
+    expect(toast.error).toHaveBeenCalledWith('common.selectSunday')
+    expect(createTask).not.toHaveBeenCalled()
   })
 })

@@ -20,6 +20,8 @@ import {
   PageHeader,
   SegmentedControl,
   type SegmentOption,
+  ConfirmSheet,
+  ErrorState,
 } from '@/components/ui'
 import { ScheduleItem } from '@/components/domain/ScheduleItem/ScheduleItem'
 import { SwipeOpenRowProvider } from '@/components/domain/ScheduleItem/swipeOpenRow'
@@ -74,7 +76,7 @@ export function SchedulesPage() {
   const [syncing, setSyncing] = useState(false)
 
   const query = useMemo(() => scheduleQueryFor(user), [user])
-  const { schedules, loading } = useSchedules(query)
+  const { schedules, loading, error: loadError } = useSchedules(query)
   const { generalSchedules } = useGeneralSchedules()
   const { getUnitName, getWardName } = useUnits()
   const { setting: rangeSetting, range, save: saveRange } = useScheduleDateRange(user.uid)
@@ -155,18 +157,29 @@ export function SchedulesPage() {
     }
   }
 
-  const handleToggleVisibility = async (event: GeneralSchedule) => {
+  // 눈 버튼은 "공개 페이지에 표시"를 켜고 끄는 스위치다. 한 번 누르면 바로 바뀌므로 결과를 알림으로
+  // 알려준다 — 예전에는 아이콘 모양 말고는 바뀐 줄 알 방법이 없었다.
+  const applyVisibility = async (event: GeneralSchedule, makePublic: boolean) => {
     try {
-      // 눈 버튼은 "공개 페이지에 표시"를 켜고 끄는 스위치다. 칠십인 전용 행사에서 누르면 공개로
-      // 올린다 — isPublic만 켜고 seventyOnly를 남기면 두 값이 어긋난다. 칠십인 전용으로 되돌리는
-      // 것은 편집 화면의 공개 범위에서 한다.
+      // 공개로 올릴 때는 seventyOnly도 끈다 — isPublic만 켜고 남기면 두 값이 어긋난다.
       await updateGeneralSchedule(
         event.id,
-        event.isPublic ? { isPublic: false } : { isPublic: true, seventyOnly: false },
+        makePublic ? { isPublic: true, seventyOnly: false } : { isPublic: false },
       )
+      toast.success(t(makePublic ? 'generalSchedule.shownOnPublic' : 'generalSchedule.hiddenFromPublicDone'))
     } catch {
       toast.error(t('generalSchedule.visibilityFailed'))
     }
+  }
+
+  // 칠십인 전용 행사를 공개로 올리는 것은 범위를 넓히는 일이라 먼저 묻는다. 칠십인 전용으로
+  // 되돌리는 것은 편집 화면의 공개 범위에서 한다.
+  const [publishTarget, setPublishTarget] = useState<GeneralSchedule | null>(null)
+
+  const handleToggleVisibility = (event: GeneralSchedule) => {
+    if (event.isPublic) void applyVisibility(event, false)
+    else if (event.seventyOnly === true) setPublishTarget(event)
+    else void applyVisibility(event, true)
   }
 
   // 옛 CalendarPage는 여기서 "행사 일정 페이지에서 삭제할 수 있습니다"라는 하드코딩
@@ -296,6 +309,7 @@ export function SchedulesPage() {
                   size="sm"
                   onClick={exportCsv}
                   title={t('calendar.exportCsv')}
+                  aria-label={t('calendar.exportCsv')}
                 >
                   <Download size={14} />
                 </Button>
@@ -307,6 +321,7 @@ export function SchedulesPage() {
                   onClick={handleManualSync}
                   loading={syncing}
                   title={t('calendar.syncTitle')}
+                  aria-label={t('calendar.syncTitle')}
                 >
                   <RefreshCw size={14} />
                 </Button>
@@ -338,6 +353,9 @@ export function SchedulesPage() {
         <SwipeOpenRowProvider>
           {loading ? (
             <LoadingState />
+          ) : loadError ? (
+            // 불러오기 실패를 빈 목록으로 보여주면 "일정이 없다"로 읽힌다 — 실패라고 말하고 다시 시도하게 한다.
+            <ErrorState onRetry={() => window.location.reload()} />
           ) : view === 'list' ? (
             <ScheduleListPanel
               items={items}
@@ -400,6 +418,19 @@ export function SchedulesPage() {
             }}
           />
         )}
+        <ConfirmSheet
+          open={publishTarget !== null}
+          title={t('generalSchedule.makePublicTitle')}
+          subject={publishTarget?.title}
+          message={t('generalSchedule.makePublicBody')}
+          confirmLabel={t('generalSchedule.makePublicBtn')}
+          onConfirm={() => {
+            const target = publishTarget
+            setPublishTarget(null)
+            if (target) void applyVisibility(target, true)
+          }}
+          onCancel={() => setPublishTarget(null)}
+        />
         <GeneralScheduleDetailSheet
           event={detailTarget}
           attendances={

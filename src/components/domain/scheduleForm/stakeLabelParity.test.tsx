@@ -58,6 +58,8 @@ vi.mock('@/components/domain/ProjectPicker/ProjectPicker', () => ({
 vi.mock('@/components/domain/scheduleForm/ZoomLinkPicker', () => ({
   ZoomLinkPicker: () => <div data-testid="zoom-link-picker" />,
 }))
+// 두 모달의 확인창(ConfirmSheet)이 화면 폭으로 모양을 고른다 — jsdom에는 matchMedia가 없다.
+vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
 vi.mock('react-dom', () => ({
   createPortal: (node: React.ReactNode) => node,
 }))

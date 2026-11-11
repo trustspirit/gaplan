@@ -25,6 +25,8 @@ vi.mock('react-i18next', () => ({
   }),
   initReactI18next: { type: '3rdParty', init: vi.fn() },
 }))
+// 확인창(ConfirmSheet)이 화면 폭으로 모양을 고른다 — jsdom에는 matchMedia가 없다.
+vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 vi.mock('@/services/generalScheduleService', () => ({
   createGeneralSchedule: vi.fn().mockResolvedValue(undefined),
@@ -90,27 +92,29 @@ describe('GeneralScheduleFormModal 뒤로 가기', () => {
 
   it('입력이 있는 상태에서 뒤로를 누르면 확인을 묻고, 취소하면 onBack을 부르지 않는다', () => {
     const onBack = vi.fn()
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
     render(<GeneralScheduleFormModal onBack={onBack} onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), {
       target: { value: '컨퍼런스' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'common.back' }))
-    expect(confirmSpy).toHaveBeenCalledWith('common.discardChanges')
+    // 앱의 확인창이 뜬다. "계속 작성"을 누르면 폼에 그대로 남는다.
+    expect(screen.getByRole('dialog', { name: 'confirm.discardTitle' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'confirm.keepEditing' }))
     expect(onBack).not.toHaveBeenCalled()
-    confirmSpy.mockRestore()
+    expect(screen.queryByRole('dialog', { name: 'confirm.discardTitle' })).toBeNull()
   })
 
   it('확인 대화상자에서 승인하면 onBack이 불린다', () => {
     const onBack = vi.fn()
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     render(<GeneralScheduleFormModal onBack={onBack} onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), {
       target: { value: '컨퍼런스' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'common.back' }))
+    // 묻기 전에는 나가지 않고, "버리기"를 눌러야 나간다.
+    expect(onBack).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'confirm.discardBtn' }))
     expect(onBack).toHaveBeenCalled()
-    confirmSpy.mockRestore()
   })
 })
 
@@ -222,7 +226,6 @@ describe('GeneralScheduleFormModal 여러 날 행사(종료일)', () => {
   })
 
   it('달력에서 날짜만 고치고 닫으려 하면 dirty 확인을 묻는다', () => {
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const onClose = vi.fn()
     render(
       <GeneralScheduleFormModal
@@ -241,9 +244,9 @@ describe('GeneralScheduleFormModal 여러 날 행사(종료일)', () => {
     )
     fireEvent.click(screen.getByRole('button', { name: '2026-09-04' }))
     fireEvent.click(screen.getByLabelText('common.close'))
-    expect(confirmSpy).toHaveBeenCalledWith('common.discardChanges')
+    expect(onClose).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'confirm.discardBtn' }))
     expect(onClose).toHaveBeenCalled()
-    confirmSpy.mockRestore()
   })
 })
 

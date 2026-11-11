@@ -37,7 +37,7 @@ export function AdminHome() {
   const viewSeventyUid = useAtomValue(seventyViewAtom)
   const scheduleSeventyUid = resolveScopedScheduleSeventyUid(user, viewSeventyUid)
   useTopBar({ subtext: t('admin.dashboard'), helpInfoKey: 'pageHelp.dashboardAdmin' })
-  const { schedules, loading: schedulesLoading } = useSchedules(
+  const { schedules, loading: schedulesLoading, error: schedulesError } = useSchedules(
     scheduleSeventyUid ? { seventyUid: scheduleSeventyUid } : {},
   )
   const { getUnitName, getWardName } = useUnits()
@@ -104,6 +104,7 @@ export function AdminHome() {
             schedules={rest}
             today={today}
             loading={schedulesLoading}
+            error={!!schedulesError}
             action={
               <div className={styles.headerActions}>
                 <Button

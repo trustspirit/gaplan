@@ -28,6 +28,7 @@ import { DetailSection } from '../scheduleForm/DetailSection'
 import styles from './ScheduleFormModal.module.scss'
 import { canBeSeventyOnly } from '@/utils/seventyOnly'
 import { isMultiDaySchedule } from '@/utils/scheduleDates'
+import { useDiscardGuard } from '@/hooks/useDiscardGuard'
 
 const adminCreateScheduleFn = httpsCallable(functions, 'adminCreateSchedule')
 
@@ -80,16 +81,14 @@ export function ScheduleFormModal({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const requestClose = () => {
-    if (isDirty && !window.confirm(t('common.discardChanges'))) return
-    onClose()
-  }
+  // 작성 중인 내용이 있으면 닫기 전에 묻는다(바깥 탭·Escape·닫기 버튼 모두).
+  const { guard: guardDiscard, sheet: discardSheet } = useDiscardGuard(isDirty)
+  const requestClose = () => guardDiscard(onClose)
 
   // 뒤로 가기도 닫기와 같은 dirty 확인을 태운다 — 입력을 조용히 버리지 않는다.
   const requestBack = () => {
     if (!onBack) return
-    if (isDirty && !window.confirm(t('common.discardChanges'))) return
-    onBack()
+    guardDiscard(onBack)
   }
 
   const sheetRef = useRef<HTMLDivElement>(null)
@@ -336,7 +335,9 @@ export function ScheduleFormModal({
       })
     : undefined
 
-  return createPortal(
+  return (
+    <>
+      {createPortal(
     <div className={styles.overlay} onClick={requestClose}>
       <div
         ref={sheetRef}
@@ -370,8 +371,6 @@ export function ScheduleFormModal({
             <X size={18} />
           </button>
         </div>
-
-        {error && <div className={styles.errorBanner}>{error}</div>}
 
         <form onSubmit={handleSave}>
           <div className={styles.fields}>
@@ -431,7 +430,10 @@ export function ScheduleFormModal({
             </div>
           </div>
 
+          {/* 오류는 붙박이 바닥글 안, 저장 버튼 바로 위에 둔다. 폼 맨 위에 있으면 아래로 내린
+              상태에서 저장을 눌렀을 때 화면에 아무 변화가 없어 버튼이 안 먹는 것처럼 보인다. */}
           <div className={styles.footer}>
+            {error && <div className={styles.errorBanner} role="alert">{error}</div>}
             <Button variant="ghost" onClick={requestClose} disabled={saving}>
               {t('common.cancel')}
             </Button>
@@ -443,5 +445,8 @@ export function ScheduleFormModal({
       </div>
     </div>,
     document.body,
+      )}
+      {discardSheet}
+    </>
   )
 }

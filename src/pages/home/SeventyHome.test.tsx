@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import dayjs from 'dayjs'
 import type { AppUser, Schedule } from '@/types'
@@ -111,7 +111,7 @@ describe('SeventyHome', () => {
     render(<SeventyHome />)
     await userEvent.click(screen.getByRole('button', { name: 'common.more' }))
     await userEvent.click(screen.getByRole('button', { name: 'common.delete' }))
-    await userEvent.click(screen.getByRole('button', { name: '삭제' }))
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'confirm.deleteTitle' })).getByRole('button', { name: 'common.delete' }))
 
     expect(scheduleDelete).toHaveBeenCalledWith(
       's1',

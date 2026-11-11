@@ -84,6 +84,8 @@ vi.mock('react-dom', () => ({
 vi.mock('@/components/domain/DateRangePicker/DateRangePicker', async () => ({
   DateRangePicker: (await import('@/components/domain/DateRangePicker/testing')).DateRangePickerStub,
 }))
+// 확인창(ConfirmSheet)이 화면 폭으로 모양을 고른다 — jsdom에는 matchMedia가 없다.
+vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 import { toast } from 'sonner'
@@ -1137,7 +1139,6 @@ describe('ScheduleFormModal 뒤로 가기 · 세그먼트 제거', () => {
   // 뒤로 가기는 닫기와 같은 dirty 확인을 태워야 한다 — 입력을 조용히 버리지 않는다.
   it('입력이 있는 상태에서 뒤로를 누르면 확인을 묻고, 취소하면 onBack을 부르지 않는다', () => {
     const onBack = vi.fn()
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
     render(
       <ScheduleFormModal fixedType="ward_visit" onBack={onBack} onClose={vi.fn()} onSaved={vi.fn()} />,
     )
@@ -1145,14 +1146,15 @@ describe('ScheduleFormModal 뒤로 가기 · 세그먼트 제거', () => {
       target: { value: '2026-09-01' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'common.back' }))
-    expect(confirmSpy).toHaveBeenCalledWith('common.discardChanges')
+    // 앱의 확인창이 뜬다. "계속 작성"을 누르면 폼에 그대로 남는다.
+    expect(screen.getByRole('dialog', { name: 'confirm.discardTitle' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'confirm.keepEditing' }))
     expect(onBack).not.toHaveBeenCalled()
-    confirmSpy.mockRestore()
+    expect(screen.queryByRole('dialog', { name: 'confirm.discardTitle' })).toBeNull()
   })
 
   it('확인 대화상자에서 승인하면 onBack이 불린다', () => {
     const onBack = vi.fn()
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     render(
       <ScheduleFormModal fixedType="ward_visit" onBack={onBack} onClose={vi.fn()} onSaved={vi.fn()} />,
     )
@@ -1160,8 +1162,10 @@ describe('ScheduleFormModal 뒤로 가기 · 세그먼트 제거', () => {
       target: { value: '2026-09-01' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'common.back' }))
+    // 묻기 전에는 나가지 않고, "버리기"를 눌러야 나간다.
+    expect(onBack).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'confirm.discardBtn' }))
     expect(onBack).toHaveBeenCalled()
-    confirmSpy.mockRestore()
   })
 })
 

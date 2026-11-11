@@ -38,7 +38,7 @@ export function PresidentHome() {
     helpInfoKey: 'pageHelp.dashboardPresident',
   })
 
-  const { schedules, loading: schedulesLoading } = useSchedules({ presidentUid: user.uid })
+  const { schedules, loading: schedulesLoading, error: schedulesError } = useSchedules({ presidentUid: user.uid })
   const { getUnitName } = useUnits()
   const [restOpen, setRestOpen] = useState(false)
   const restRegionId = useId()
@@ -106,6 +106,7 @@ export function PresidentHome() {
           <ScheduleListCard
             schedules={upcoming}
             loading={schedulesLoading}
+            error={!!schedulesError}
             getUnitName={getUnitName}
             today={today}
             showCalendarAdd

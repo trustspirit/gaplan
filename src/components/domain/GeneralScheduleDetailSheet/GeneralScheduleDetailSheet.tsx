@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { Building2, MoonStar, CalendarDays, Clock, Globe, GlobeLock, Lock, Pencil, Trash2, UserCheck } from 'lucide-react'
+import { Building2, MoonStar, CalendarDays, Clock, Globe, GlobeLock, Lock, Pencil, Trash2, UserCheck, X } from 'lucide-react'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
-import { useIsMobile } from '@/hooks/useIsMobile'
-import { BottomSheet } from '@/components/ui/BottomSheet/BottomSheet'
-import { Modal } from '@/components/ui/Modal/Modal'
+import { ResponsiveDialog } from '@/components/ui/ResponsiveDialog/ResponsiveDialog'
 import { DeleteConfirmSheet } from '@/components/ui'
 import type { GeneralSchedule, Schedule } from '@/types'
 import { eventVisibilityOf, formatEventDateRange } from '@/types'
@@ -40,7 +38,6 @@ export function GeneralScheduleDetailSheet({
   onToggleSeventyAttends,
 }: GeneralScheduleDetailSheetProps) {
   const { t } = useTranslation()
-  const isMobile = useIsMobile()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   if (!event) return null
@@ -59,16 +56,23 @@ export function GeneralScheduleDetailSheet({
           <Icon size={18} className={styles.categoryIcon} />
           <h2 className={styles.title}>{event.title}</h2>
         </div>
-        {canManage && (
-          <div className={styles.actions}>
-            <button type="button" className={styles.actionBtn} onClick={onEdit} aria-label={t('common.edit')}>
-              <Pencil size={15} />
-            </button>
-            <button type="button" className={clsx(styles.actionBtn, styles.deleteBtn)} onClick={() => setShowDeleteConfirm(true)} aria-label={t('common.delete')}>
-              <Trash2 size={15} />
-            </button>
-          </div>
-        )}
+        <div className={styles.actions}>
+          {canManage && (
+            <>
+              <button type="button" className={styles.actionBtn} onClick={onEdit} aria-label={t('common.edit')}>
+                <Pencil size={15} />
+              </button>
+              <button type="button" className={clsx(styles.actionBtn, styles.deleteBtn)} onClick={() => setShowDeleteConfirm(true)} aria-label={t('common.delete')}>
+                <Trash2 size={15} />
+              </button>
+            </>
+          )}
+          {/* 이 시트는 자기 제목 줄을 직접 그려서 Modal/BottomSheet의 머리글(닫기 버튼 포함)을 쓰지
+              않는다. 닫기 버튼이 없으면 바깥을 눌러야만 닫혀서, 여기에 둔다. */}
+          <button type="button" className={styles.actionBtn} onClick={onClose} aria-label={t('common.close')}>
+            <X size={15} />
+          </button>
+        </div>
       </div>
 
       <div className={styles.meta}>
@@ -145,15 +149,10 @@ export function GeneralScheduleDetailSheet({
 
   return (
     <>
-      {isMobile ? (
-        <BottomSheet open={!!event} onClose={onClose} title="">
-          {content}
-        </BottomSheet>
-      ) : (
-        <Modal open={!!event} onClose={onClose}>
-          {content}
-        </Modal>
-      )}
+      {/* 제목 줄은 content가 직접 그리므로 title 대신 aria-label로 이름만 준다. */}
+      <ResponsiveDialog open={!!event} onClose={onClose} aria-label={event.title}>
+        {content}
+      </ResponsiveDialog>
       <DeleteConfirmSheet
         open={showDeleteConfirm}
         description={event.title}

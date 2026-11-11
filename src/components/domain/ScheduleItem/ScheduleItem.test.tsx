@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -102,7 +102,7 @@ describe('ScheduleItem', () => {
     expect(onDelete).not.toHaveBeenCalled()
     expect(screen.getByRole('dialog')).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: '삭제' }))
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'confirm.deleteTitle' })).getByRole('button', { name: 'common.delete' }))
     expect(onDelete).toHaveBeenCalledTimes(1)
   })
 

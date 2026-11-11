@@ -10,7 +10,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { useUpcomingVisits } from '@/hooks/useUpcomingVisits'
 import { ALL_UNITS, REGIONS, getWardsByUnit } from '@/constants/regions'
 import type { Schedule } from '@/types'
-import { DeleteConfirmSheet, Input, Select } from '@/components/ui'
+import { DeleteConfirmSheet, Input, Select, Button } from '@/components/ui'
 import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { buildScheduleTitle, buildScheduleLocation } from '../../../../functions/src/scheduleRules'
@@ -23,6 +23,7 @@ import { DetailSection } from '../scheduleForm/DetailSection'
 import styles from './EditScheduleModal.module.scss'
 import { canBeSeventyOnly } from '@/utils/seventyOnly'
 import { isMultiDaySchedule } from '@/utils/scheduleDates'
+import { useDiscardGuard } from '@/hooks/useDiscardGuard'
 
 const adminEditScheduleFn = httpsCallable(functions, 'adminEditSchedule')
 
@@ -107,10 +108,8 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
 
   // Guard against losing edits to a stray backdrop tap / Escape
   const isDirty = formIsDirty || presidentUid !== (schedule.presidentUid ?? '')
-  const requestClose = () => {
-    if (isDirty && !window.confirm(t('common.discardChanges'))) return
-    onClose()
-  }
+  const { guard: guardDiscard, sheet: discardSheet } = useDiscardGuard(isDirty)
+  const requestClose = () => guardDiscard(onClose)
 
   const sheetRef = useRef<HTMLDivElement>(null)
   // pause the trap while the delete confirm sheet is stacked on top
@@ -272,8 +271,6 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
               </button>
             </div>
 
-            {error && <div className={styles.errorBanner}>{error}</div>}
-
             <div className={styles.fields}>
               {/* Stake/District — 협의 평의회는 대상 CC를 읽기 전용으로 보여 준다. TargetSection에는
                   대상을 아예 넘기지 않는다 — CF도 regionId 변경을 받지 않으므로 바꿀 수단이 없다. */}
@@ -324,18 +321,13 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
 
               {/* President — interview only, optional */}
               {isInterview && (
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>{t('schedule.presidentLabelOptional')}</label>
-                  <select
-                    className={styles.fieldSelect}
-                    value={presidentUid}
-                    onChange={e => setPresidentUid(e.target.value)}
-                    disabled={!target.unitId}
-                  >
-                    <option value="">{t('common.select')}</option>
-                    {presidentOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                </div>
+                <Select
+                  label={t('schedule.presidentLabelOptional')}
+                  value={presidentUid}
+                  onChange={e => setPresidentUid(e.target.value)}
+                  options={presidentOptions}
+                  disabled={!target.unitId}
+                />
               )}
 
               <WhenSection
@@ -355,20 +347,34 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
               />
             </div>
 
+            {/* 오류는 붙박이 바닥글 안, 저장 버튼 바로 위에 둔다 — 폼 맨 위에 있으면 아래로 내린
+                상태에서는 보이지 않는다. */}
             <div className={styles.actions}>
+              {error && <div className={styles.errorBanner} role="alert">{error}</div>}
+              {/* 추가 다이얼로그와 같은 버튼을 쓴다 — 예전에는 여기만 손으로 만든 버튼이라 모양이 달랐고
+                  취소 버튼도 없었다. 삭제는 다른 두 버튼과 떨어뜨려 왼쪽에 둔다. */}
               {onDelete && (
-                <button type="button" className={styles.deleteBtn} onClick={() => setShowDeleteConfirm(true)}>
+                <Button
+                  variant="danger"
+                  className={styles.deleteAction}
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={saving}
+                >
                   {t('common.delete')}
-                </button>
+                </Button>
               )}
-              <button type="button" className={styles.saveBtn} onClick={handleSave} disabled={saving}>
-                {saving ? t('common.loading') : t('common.save')}
-              </button>
+              <Button variant="ghost" onClick={requestClose} disabled={saving}>
+                {t('common.cancel')}
+              </Button>
+              <Button onClick={handleSave} loading={saving}>
+                {t('common.save')}
+              </Button>
             </div>
           </div>
         </div>,
         document.body,
       )}
+      {discardSheet}
       {onDelete && (
         <DeleteConfirmSheet
           open={showDeleteConfirm}

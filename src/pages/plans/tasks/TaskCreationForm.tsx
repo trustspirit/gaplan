@@ -330,7 +330,9 @@ export function TaskCreationForm({ onCreated }: { onCreated?: () => void }) {
           onChange={(e) => setDueDate(e.target.value)}
         />
 
-        <Button type="submit" loading={loading} disabled={!isValid}>
+        {/* 조건이 안 맞아도 버튼을 막지 않는다 — 막으면 왜 안 되는지 알려줄 기회가 없다.
+            누르면 handleCreate가 빠진 항목을 알려준다. */}
+        <Button type="submit" loading={loading}>
           {selectedPresidents.size > 0
             ? t('task.createCount', { count: selectedPresidents.size })
             : t('task.create')}

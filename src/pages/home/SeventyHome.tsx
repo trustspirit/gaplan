@@ -24,7 +24,7 @@ import styles from './HomePage.module.scss'
 export function SeventyHome() {
   const { t } = useTranslation()
   const user = useAtomValue(authUserAtom)!
-  const { schedules, loading: schedulesLoading } = useSchedules({ seventyUid: user.uid })
+  const { schedules, loading: schedulesLoading, error: schedulesError } = useSchedules({ seventyUid: user.uid })
   const { getUnitName, getWardName } = useUnits()
   const [editTarget, setEditTarget] = useState<Schedule | null>(null)
   const { pendingIds: deletingIds, scheduleDelete } = useDeleteWithUndo()
@@ -66,6 +66,7 @@ export function SeventyHome() {
           <ScheduleListCard
             schedules={rest}
             loading={schedulesLoading}
+            error={!!schedulesError}
             getUnitName={getUnitName}
             today={today}
             canEdit

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ZoomLinksCard } from './ZoomLinksCard'
 
@@ -132,7 +132,7 @@ describe('ZoomLinksCard', () => {
     render(<ZoomLinksCard />)
 
     await userEvent.click(screen.getByRole('button', { name: 'common.delete' }))
-    await userEvent.click(screen.getByRole('button', { name: '삭제' }))
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'confirm.deleteTitle' })).getByRole('button', { name: 'common.delete' }))
 
     await waitFor(() => expect(zoomLinksMock.remove).toHaveBeenCalledWith('1'))
   })
@@ -157,7 +157,7 @@ describe('ZoomLinksCard', () => {
     render(<ZoomLinksCard />)
 
     await userEvent.click(screen.getByRole('button', { name: 'common.delete' }))
-    await userEvent.click(screen.getByRole('button', { name: '삭제' }))
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'confirm.deleteTitle' })).getByRole('button', { name: 'common.delete' }))
 
     await waitFor(() => expect(toastMock.error).toHaveBeenCalled())
   })

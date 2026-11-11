@@ -4,6 +4,8 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { DeleteConfirmSheet } from './DeleteConfirmSheet'
 
 vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: vi.fn() }))
+// 문구는 번역 키에서 온다 — 여기서는 키가 그대로 나오게 해 어떤 키를 쓰는지 고정한다.
+vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }))
 
 import { useIsMobile } from '@/hooks/useIsMobile'
 const mockUseIsMobile = useIsMobile as ReturnType<typeof vi.fn>
@@ -22,16 +24,16 @@ describe('DeleteConfirmSheet (desktop)', () => {
     render(
       <DeleteConfirmSheet open={false} onConfirm={onConfirm} onCancel={onCancel} />
     )
-    expect(screen.queryByText('삭제하시겠어요?')).toBeNull()
+    expect(screen.queryByText('confirm.deleteTitle')).toBeNull()
   })
 
   it('open=true 이면 제목과 버튼이 보인다', () => {
     render(
       <DeleteConfirmSheet open onConfirm={onConfirm} onCancel={onCancel} />
     )
-    expect(screen.getByText('삭제하시겠어요?')).toBeDefined()
-    expect(screen.getByText('취소')).toBeDefined()
-    expect(screen.getByText('삭제')).toBeDefined()
+    expect(screen.getByText('confirm.deleteTitle')).toBeDefined()
+    expect(screen.getByText('common.cancel')).toBeDefined()
+    expect(screen.getByText('common.delete')).toBeDefined()
   })
 
   it('description이 있으면 표시된다', () => {
@@ -45,7 +47,7 @@ describe('DeleteConfirmSheet (desktop)', () => {
     render(
       <DeleteConfirmSheet open onConfirm={onConfirm} onCancel={onCancel} />
     )
-    fireEvent.click(screen.getByText('삭제'))
+    fireEvent.click(screen.getByText('common.delete'))
     expect(onConfirm).toHaveBeenCalledTimes(1)
   })
 
@@ -53,7 +55,7 @@ describe('DeleteConfirmSheet (desktop)', () => {
     render(
       <DeleteConfirmSheet open onConfirm={onConfirm} onCancel={onCancel} />
     )
-    fireEvent.click(screen.getByText('취소'))
+    fireEvent.click(screen.getByText('common.cancel'))
     expect(onCancel).toHaveBeenCalledTimes(1)
   })
 })
@@ -73,14 +75,14 @@ describe('DeleteConfirmSheet (mobile)', () => {
       <DeleteConfirmSheet open onConfirm={onConfirm} onCancel={onCancel} />
     )
     // BottomSheet는 open=false여도 DOM에 남아있지만 open=true이면 제목이 보임
-    expect(screen.getByText('삭제하시겠어요?')).toBeDefined()
+    expect(screen.getByText('confirm.deleteTitle')).toBeDefined()
   })
 
   it('모바일에서 삭제 버튼 클릭 시 onConfirm이 호출된다', () => {
     render(
       <DeleteConfirmSheet open onConfirm={onConfirm} onCancel={onCancel} />
     )
-    fireEvent.click(screen.getByText('삭제'))
+    fireEvent.click(screen.getByText('common.delete'))
     expect(onConfirm).toHaveBeenCalledTimes(1)
   })
 })
