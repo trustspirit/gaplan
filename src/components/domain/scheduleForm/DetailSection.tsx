@@ -106,7 +106,7 @@ export function DetailSection({
         <p className={sharedStyles.hint}>{t('schedule.seventyNotesHint')}</p>
       </div>
 
-      {/* 대상이 '기타'인 접견/모임에만 나온다. 협의 평의회·스테이크 회장·와드 감독처럼 대상이
+      {/* 대상이 '기타'인 접견/모임과 대상이 없는 모임에만 나온다. 협의 평의회·스테이크 회장·와드 감독처럼 대상이
           정해진 일정은 공개 범위도 그 대상으로 정해져 있어 고를 것이 없다. */}
       {canBeSeventyOnly({ type, targetKind: state.target.kind }) && (
         <div className={sharedStyles.fieldGroup}>

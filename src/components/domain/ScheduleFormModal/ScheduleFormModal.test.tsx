@@ -1224,6 +1224,36 @@ describe('ScheduleFormModal 여러 날 모임', () => {
     expect(createSpy).not.toHaveBeenCalled()
   })
 
+  // 모임은 대상이 없을 수 있다(내부 모임 등). 대상 유형을 고르지 않고 저장하면 대상 없이 저장된다.
+  it('대상 유형을 고르지 않아도 모임은 저장된다 — targetKind와 unitId를 보내지 않는다', async () => {
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-09-04' } })
+    fireEvent.change(screen.getByLabelText('schedule.customTitleOptional'), { target: { value: '준비 모임' } })
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    const sent = createSpy.mock.calls[0][0] as Record<string, unknown>
+    expect(sent).toMatchObject({ type: 'meeting', date: '2026-09-04', customTitle: '준비 모임' })
+    expect(sent).not.toHaveProperty('targetKind')
+    expect(sent).not.toHaveProperty('unitId')
+  })
+
+  it('대상 없는 모임에서도 칠십인 전용을 고를 수 있다', async () => {
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-09-04' } })
+    fireEvent.click(screen.getByLabelText('schedule.seventyOnlyLabel'))
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({ seventyOnly: true }))
+  })
+
+  it('접견은 여전히 대상을 골라야 저장된다', async () => {
+    render(<ScheduleFormModal fixedType="interview" onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-09-04' } })
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+    expect(await screen.findByText('schedule.errorTargetRequired')).toBeInTheDocument()
+    expect(createSpy).not.toHaveBeenCalled()
+  })
+
   it('날짜가 없으면 저장을 막는다', async () => {
     render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
     fireEvent.click(screen.getByText('schedule.saveBtn'))

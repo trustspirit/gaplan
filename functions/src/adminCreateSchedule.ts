@@ -132,10 +132,10 @@ export const adminCreateSchedule = functions
     if (seventyOnly !== undefined && typeof seventyOnly !== 'boolean') {
       throw new functions.https.HttpsError('invalid-argument', 'seventyOnly must be a boolean')
     }
-    // 칠십인 전용은 대상이 '기타'인 접견/모임에만 둘 수 있다. 방문·협의 평의회·스테이크 회장·
+    // 칠십인 전용은 대상이 '기타'인 접견/모임과 대상이 없는 모임에만 둘 수 있다. 방문·협의 평의회·스테이크 회장·
     // 와드 감독처럼 대상이 정해진 일정은 공개 범위도 그 대상으로 정해져 있다.
     if (seventyOnly === true && !canBeSeventyOnly({ type, targetKind })) {
-      throw new functions.https.HttpsError('invalid-argument', "seventyOnly is only for interview/meeting with targetKind 'other'")
+      throw new functions.https.HttpsError('invalid-argument', "seventyOnly is only for schedules without a defined target (targetKind 'other', or a meeting with none)")
     }
     if (targetKind !== undefined) {
       if (type === 'ward_visit') {

@@ -6,7 +6,9 @@ import { getWardIdByName } from '@/constants/regions'
 import { Select, Input } from '@/components/ui'
 import type { ScheduleFormState } from './useScheduleForm'
 import type { TargetKindChoice, TargetSelection } from './scheduleTargetRules'
-import { questionsFor, resetForKind, stakeLabelKeyFor, targetKindChoicesFor } from './scheduleTargetRules'
+import {
+  questionsFor, resetForKind, stakeLabelKeyFor, targetIsOptionalFor, targetKindChoicesFor,
+} from './scheduleTargetRules'
 // .hint는 ScheduleFormModal의 related-visit 안내문과 같은 클래스다 — 위치만 이 조각
 // 안으로 옮겼을 뿐 마크업은 그대로다(Controller ruling R7, 2026-08-22).
 import styles from '../ScheduleFormModal/ScheduleFormModal.module.scss'
@@ -205,7 +207,9 @@ export function TargetSection({
 
       {!askOnlyUnit && (
         <Select
+          // 모임은 대상이 없을 수 있다 — 맨 위의 빈 선택지가 "대상 없음"이고, 그대로 두고 저장한다.
           label={t('schedule.targetKindLabel')}
+          placeholder={targetIsOptionalFor(type) ? t('schedule.targetKindNone') : undefined}
           value={target.kind}
           onChange={(e) => {
             const nextKind = e.target.value as TargetKindChoice | ''
@@ -229,7 +233,7 @@ export function TargetSection({
 
       {questions.asksUnit && (
         <Select
-          label={t(stakeLabelKeyFor(effectiveKind))}
+          label={t(stakeLabelKeyFor(effectiveKind, type))}
           value={target.unitId}
           onChange={(e) => changeTarget({ unitId: e.target.value, wardName: '' })}
           options={unitOptions}

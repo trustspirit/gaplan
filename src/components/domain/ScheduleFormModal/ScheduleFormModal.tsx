@@ -21,7 +21,7 @@ import { buildNotesWithLeaderContact, stakeTargetLabel, wardTargetLabel } from '
 import { buildScheduleTitle, buildScheduleLocation } from '../../../../functions/src/scheduleRules'
 import { useScheduleForm } from '../scheduleForm/useScheduleForm'
 import type { ScheduleFormState } from '../scheduleForm/useScheduleForm'
-import { toTargetPayload } from '../scheduleForm/scheduleTargetRules'
+import { targetIsOptionalFor, toTargetPayload } from '../scheduleForm/scheduleTargetRules'
 import { TargetSection } from '../scheduleForm/TargetSection'
 import { WhenSection } from '../scheduleForm/WhenSection'
 import { DetailSection } from '../scheduleForm/DetailSection'
@@ -239,7 +239,8 @@ export function ScheduleFormModal({
     // 자동으로 채워주고, 분기 접견(스테이크 회장) 충족 여부를 targetKind로 판정하므로
     // 구조화된 대상이 필요하다)
     if (type === 'interview' || type === 'meeting') {
-      if (!targetPayload.targetKind) {
+      // 모임은 대상 없이 저장할 수 있다. 접견은 대상이 반드시 있어야 한다.
+      if (!targetPayload.targetKind && !targetIsOptionalFor(type)) {
         setError(t('schedule.errorTargetRequired'))
         return
       }

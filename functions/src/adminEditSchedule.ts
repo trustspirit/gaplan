@@ -228,7 +228,7 @@ export const adminEditSchedule = functions
       throw new functions.https.HttpsError('invalid-argument', 'unitId required for ward_visit')
     }
 
-    // 칠십인 전용은 대상이 '기타'인 접견/모임에만 둘 수 있다 — 생성 CF와 같은 규칙.
+    // 칠십인 전용은 대상이 '기타'인 접견/모임과 대상이 없는 모임에만 둘 수 있다 — 생성 CF와 같은 규칙.
     // 수정으로 대상 유형이 '기타'에서 벗어나면 켜져 있던 표시도 함께 끈다. 남겨 두면 화면에는
     // 선택지가 없는데 일정만 계속 CC 캘린더에서 빠져 있게 된다.
     {
@@ -241,7 +241,7 @@ export const adminEditSchedule = functions
       }
       if (!canBeSeventyOnly(effective)) {
         if (allowed.seventyOnly === true) {
-          throw new functions.https.HttpsError('invalid-argument', "seventyOnly is only for interview/meeting with targetKind 'other'")
+          throw new functions.https.HttpsError('invalid-argument', "seventyOnly is only for schedules without a defined target (targetKind 'other', or a meeting with none)")
         }
         if (current.seventyOnly === true) allowed.seventyOnly = false
       }

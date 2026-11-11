@@ -382,7 +382,8 @@
     "allDay": "All day",
     "allDayHint": "Leave the times empty to save an all-day schedule.",
     "errorDateRequired": "Please select a date.",
-    "errorTimePairRequired": "Enter both a start and end time, or leave both empty for an all-day schedule."
+    "errorTimePairRequired": "Enter both a start and end time, or leave both empty for an all-day schedule.",
+    "targetKindNone": "No target"
   },
   "ward": {
     "assignTitle": "Assign Ward/Branch Visit Dates",

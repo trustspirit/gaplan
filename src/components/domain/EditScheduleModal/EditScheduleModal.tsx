@@ -48,7 +48,11 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
   const { state, set, isDirty: formIsDirty } = useScheduleForm({
     type: schedule.type,
     target: {
-      kind: schedule.type === 'ward_visit' ? '' : (schedule.targetKind ?? 'stake_president'),
+      // 대상 유형이 없는 접견은 예전 데이터라 스테이크 회장 접견으로 읽는다. 모임은 대상이
+      // 없을 수 있으므로 없는 그대로 둔다.
+      kind: schedule.type === 'ward_visit'
+        ? ''
+        : (schedule.targetKind ?? (schedule.type === 'meeting' ? '' : 'stake_president')),
       unitId: schedule.unitId ?? '',
       wardName: schedule.wardName ?? '',
       ccRegionId: '',
@@ -214,7 +218,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
           // 빈 문자열이어야 지워진다(생성 CF도 스테이크 없는 일정을 unitId: ''로 저장한다).
           ...(isCcCouncil
             ? {}
-            : { unitId: unitIsOptionalFor(target.kind) ? target.unitId : target.unitId || undefined }),
+            : { unitId: unitIsOptionalFor(target.kind, schedule.type) ? target.unitId : target.unitId || undefined }),
           ...(isVisit ? { wardName: target.wardName || null } : {}),
           ...(isInterview ? { presidentUid: presidentUid || null } : {}),
           ...(!isVisit ? { zoomLink: zoomLink.trim() || null } : {}),

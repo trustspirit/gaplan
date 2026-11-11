@@ -170,6 +170,16 @@ describe('DetailSection', () => {
     },
   )
 
+  it('대상이 없는 모임에는 칠십인 전용 체크가 나온다', () => {
+    renderDetail({ type: 'meeting' })
+    expect(screen.getByLabelText('schedule.seventyOnlyLabel')).toBeInTheDocument()
+  })
+
+  it('대상을 고르지 않은 접견에는 칠십인 전용 체크가 없다', () => {
+    renderDetail({ type: 'interview' })
+    expect(screen.queryByLabelText('schedule.seventyOnlyLabel')).toBeNull()
+  })
+
   it('방문에는 칠십인 전용 체크가 없다', () => {
     renderDetail({ type: 'ward_visit', initialKind: 'other' })
     expect(screen.queryByLabelText('schedule.seventyOnlyLabel')).toBeNull()

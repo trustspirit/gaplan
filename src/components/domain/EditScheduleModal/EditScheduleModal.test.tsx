@@ -546,6 +546,8 @@ describe('EditScheduleModal payload 고정(pin-down) — Task 7', () => {
         location: '2층 회의실',
         projectId: null,
         relatedVisitId: 'v1',
+        // 대상 유형이 없는 모임은 칠십인 전용을 고를 수 있어 그 값도 함께 보낸다.
+        seventyOnly: false,
       },
     })
   })
@@ -808,5 +810,23 @@ describe('EditScheduleModal 종일 일정', () => {
     fireEvent.click(screen.getByText('common.save'))
     expect(await screen.findByText('schedule.errorTimePairRequired')).toBeInTheDocument()
     expect(editSpy).not.toHaveBeenCalled()
+  })
+})
+
+// 모임은 대상이 없을 수 있다. 대상 유형 없이 저장된 모임을 스테이크 회장 대상처럼 읽으면
+// 스테이크가 필수 칸이 되어, 스테이크 없는 모임을 고쳐 저장할 수 없게 된다.
+describe('EditScheduleModal 대상 없는 모임', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('스테이크 없이도 저장되고 unitId를 빈 값으로 보낸다', async () => {
+    const noTarget: Schedule = { ...MEETING_SCHEDULE, unitId: '', relatedVisitId: null }
+    render(<EditScheduleModal schedule={noTarget} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.getByLabelText('schedule.stakeLabelOptional')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('common.save'))
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    const sent = editSpy.mock.calls[0][0] as { updates: Record<string, unknown> }
+    expect(sent.updates.unitId).toBe('')
   })
 })

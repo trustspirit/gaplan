@@ -27,6 +27,12 @@ describe('canBeSeventyOnly', () => {
     expect(canBeSeventyOnly({ type: 'meeting', targetKind: 'ward_bishop' })).toBe(false)
   })
 
+  it('대상이 없는 모임도 된다 — 대상이 정해져 있지 않으니 공개 범위도 고를 수 있다', () => {
+    expect(canBeSeventyOnly({ type: 'meeting', targetKind: null })).toBe(true)
+    expect(canBeSeventyOnly({ type: 'meeting' })).toBe(true)
+    expect(canBeSeventyOnly({ type: 'meeting', targetKind: '' })).toBe(true)
+  })
+
   it('대상 유형이 비어 있는 옛 접견과 방문은 안 된다', () => {
     expect(canBeSeventyOnly({ type: 'interview', targetKind: null })).toBe(false)
     expect(canBeSeventyOnly({ type: 'interview' })).toBe(false)

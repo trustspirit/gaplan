@@ -123,8 +123,18 @@ export function targetKindChoicesFor(type: ScheduleType): TargetKindChoice[] {
  * ward_bishop은 와드가 스테이크에 매달려 있으므로 둘 다 비울 수 없다. cc_council은
  * 스테이크 칸 자체가 뜨지 않는다(questionsFor).
  */
-export function unitIsOptionalFor(kind: TargetKindChoice | ''): boolean {
-  return kind === 'other'
+export function unitIsOptionalFor(kind: TargetKindChoice | '', type?: ScheduleType): boolean {
+  // 대상이 없는 모임도 스테이크에 딸려 있지 않다(예전에 대상 유형 없이 저장된 모임 포함).
+  return kind === 'other' || (type === 'meeting' && kind === '')
+}
+
+/**
+ * 대상 유형을 고르지 않아도 저장할 수 있는 일정 종류인가.
+ * 모임은 대상이 없을 수 있다(내부 모임·준비 모임 등). 접견은 누구를 만나는지가 곧 일정의
+ * 내용이라 대상이 반드시 있어야 한다.
+ */
+export function targetIsOptionalFor(type: ScheduleType): boolean {
+  return type === 'meeting'
 }
 
 /**
@@ -135,8 +145,8 @@ export function unitIsOptionalFor(kind: TargetKindChoice | ''): boolean {
  * stake_president/ward_bishop은 필수, other는 선택. cc_council은 스테이크 칸 자체가
  * 뜨지 않으므로(questionsFor) 실제로 쓰이지 않지만, 함수는 항상 값을 돌려준다.
  */
-export function stakeLabelKeyFor(kind: TargetKindChoice | ''): string {
-  return unitIsOptionalFor(kind) ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel'
+export function stakeLabelKeyFor(kind: TargetKindChoice | '', type?: ScheduleType): string {
+  return unitIsOptionalFor(kind, type) ? 'schedule.stakeLabelOptional' : 'schedule.stakeLabel'
 }
 
 /**
