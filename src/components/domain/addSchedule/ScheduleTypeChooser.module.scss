@@ -3,7 +3,7 @@
 
 .overlay {
   @include dialog-overlay;
-  z-index: 200;
+  z-index: $z-modal;
 }
 
 .sheet {

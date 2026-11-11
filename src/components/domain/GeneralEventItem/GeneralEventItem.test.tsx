@@ -113,3 +113,17 @@ describe('GeneralEventItem', () => {
     expectNoAccentStripe(readFileSync(resolve(__dirname, 'GeneralEventItem.module.scss'), 'utf8'))
   })
 })
+
+// 행사 폼의 카테고리 셀렉트는 빈 선택지를 고를 수 있어, 빈 카테고리로 저장된 행사가 생길 수 있었다.
+// 그 행사 하나가 아이콘을 못 찾아 목록 전체를 오류 화면으로 만들었다.
+describe('GeneralEventItem 알 수 없는 카테고리', () => {
+  it('카테고리가 비어 있어도 줄을 그린다', () => {
+    render(
+      <GeneralEventItem
+        event={{ ...event(), category: '' as unknown as GeneralSchedule['category'] }}
+        onClick={noop}
+      />,
+    )
+    expect(screen.getByText('지역대회')).toBeInTheDocument()
+  })
+})

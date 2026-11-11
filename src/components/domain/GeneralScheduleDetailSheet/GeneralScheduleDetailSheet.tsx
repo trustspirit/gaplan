@@ -46,7 +46,7 @@ export function GeneralScheduleDetailSheet({
   if (!event) return null
 
   const canManage = currentRole === 'admin' || event.createdBy === currentUid
-  const Icon = CATEGORY_ICONS[event.category]
+  const Icon = CATEGORY_ICONS[event.category] ?? CalendarDays
   const visibility = eventVisibilityOf(event)
   // 여러 날 행사는 날짜를 범위로 보여준다(예: "9.3(수) – 9.4(목)") — GeneralEventItem과
   // 같은 범위 조립 규칙(formatEventDateRange)을 공유한다. 하루짜리는 지금 그대로.
@@ -124,13 +124,13 @@ export function GeneralScheduleDetailSheet({
         </div>
       )}
 
-      <div className={styles.attendeesSection}>
-        <p className={styles.attendeesLabel}>
-          {attendances.length > 0
-            ? t('generalSchedule.attendees', { count: attendances.length })
-            : t('generalSchedule.noAttendees')}
-        </p>
-        {attendances.length > 0 && (
+      {/* 예전 "참석 등록" 기록. 지금은 등록 수단이 없어 새 기록이 생기지 않으므로, 남아 있는
+          기록이 있을 때만 보여준다 — 늘 "참석자 없음"으로 나오면 위의 참석 체크와 헷갈린다. */}
+      {attendances.length > 0 && (
+        <div className={styles.attendeesSection}>
+          <p className={styles.attendeesLabel}>
+            {t('generalSchedule.attendees', { count: attendances.length })}
+          </p>
           <div className={styles.attendeesList}>
             {attendances.map(a => (
               <span key={a.id} className={styles.attendeeChip}>
@@ -138,8 +138,8 @@ export function GeneralScheduleDetailSheet({
               </span>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 

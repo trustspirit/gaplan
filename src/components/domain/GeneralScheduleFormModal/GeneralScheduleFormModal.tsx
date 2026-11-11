@@ -123,7 +123,9 @@ export function GeneralScheduleFormModal({
         title:       title.trim(),
         date,
         endDate:     endDate || undefined,
-        category,
+        // 셀렉트의 빈 선택지("선택하세요")를 고른 채 저장할 수 있다 — 빈 카테고리는 목록에서
+        // 아이콘을 못 찾아 화면을 깨뜨리므로 '기타'로 저장한다.
+        category:    category || 'other',
         startTime:   startTime || undefined,
         endTime:     endTime || undefined,
         description: description.trim() || undefined,

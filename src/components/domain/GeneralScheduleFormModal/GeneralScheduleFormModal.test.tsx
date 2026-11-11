@@ -449,3 +449,25 @@ describe('GeneralScheduleFormModal 담당 지역 칠십인 참석', () => {
   })
 })
 
+// 카테고리 셀렉트에는 고를 수 있는 빈 선택지("선택하세요")가 있다. 빈 카테고리로 저장되면
+// 목록이 그 행사의 아이콘을 못 찾는다 — '기타'로 저장한다.
+describe('GeneralScheduleFormModal 빈 카테고리', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.currentUser = {
+      uid: 'seventy-uid', email: 'seventy@test.com', role: 'seventy',
+      name: '칠십인', regionId: 'seoul', createdAt: '2026-01-01',
+    }
+  })
+
+  it('빈 선택지를 고른 채 저장하면 기타로 저장한다', async () => {
+    const { createGeneralSchedule } = await import('@/services/generalScheduleService')
+    render(<GeneralScheduleFormModal initialDate="2026-09-01" onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), { target: { value: '대회' } })
+    fireEvent.change(screen.getByLabelText('generalSchedule.categoryLabel'), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
+    await waitFor(() => expect(createGeneralSchedule).toHaveBeenCalled())
+    expect(vi.mocked(createGeneralSchedule).mock.calls[0][0]).toMatchObject({ category: 'other' })
+  })
+})
+

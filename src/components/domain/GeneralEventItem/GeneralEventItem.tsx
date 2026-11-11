@@ -27,7 +27,8 @@ export function GeneralEventItem({
   onClick,
 }: GeneralEventItemProps) {
   const { t } = useTranslation()
-  const Icon = CATEGORY_ICONS[event.category]
+  // 알 수 없는 카테고리(빈 값 등)가 저장돼 있어도 목록이 통째로 죽지 않게 기본 아이콘을 쓴다.
+  const Icon = CATEGORY_ICONS[event.category] ?? CalendarDays
 
   const seventyOnly = event.seventyOnly === true
 

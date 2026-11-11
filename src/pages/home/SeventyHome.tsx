@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useAtomValue } from 'jotai'
 import dayjs from 'dayjs'
-import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { authUserAtom } from '@/store/authAtom'
 import { useSchedules } from '@/hooks/useSchedules'
@@ -81,7 +80,8 @@ export function SeventyHome() {
         <EditScheduleModal
           schedule={editTarget}
           onClose={() => setEditTarget(null)}
-          onSaved={() => toast.success(t('admin.scheduleEditSuccess'))}
+          // 성공 토스트는 수정 다이얼로그가 띄운다 — 여기서 또 띄우면 두 번 뜬다.
+          onSaved={() => {}}
           onDelete={() => {
             scheduleDelete(
               editTarget.id,

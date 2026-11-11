@@ -101,3 +101,33 @@ describe('GeneralScheduleDetailSheet 담당 지역 칠십인 참석', () => {
     expect(screen.getByText('generalSchedule.seventyAttends')).toBeInTheDocument()
   })
 })
+
+// 예전 "참석 등록" 기록은 지금 새로 생기지 않는다. 기록이 없을 때 "참석자 없음"을 늘 보여주면
+// 새로 생긴 "담당 지역 칠십인 참석" 체크와 헷갈린다.
+describe('GeneralScheduleDetailSheet 예전 참석 기록', () => {
+  const base = {
+    currentUid: 'u1', currentRole: 'seventy',
+    onClose: vi.fn(), onEdit: vi.fn(), onDelete: vi.fn(),
+  }
+
+  it('기록이 없으면 참석자 영역을 그리지 않는다', () => {
+    render(<GeneralScheduleDetailSheet {...base} event={event()} attendances={[]} />)
+    expect(screen.queryByText('generalSchedule.noAttendees')).toBeNull()
+    expect(screen.queryByText('generalSchedule.attendees')).toBeNull()
+  })
+
+  it('남아 있는 기록이 있으면 보여준다', () => {
+    render(
+      <GeneralScheduleDetailSheet
+        {...base}
+        event={event()}
+        attendances={[{
+          id: 'a1', type: 'general_attendance', seventyUid: 'sv', unitId: '', presidentUid: null,
+          date: '2026-09-03', startTime: '00:00', endTime: '23:59', status: 'confirmed',
+          createdBy: 'sv', customTitle: '김칠십',
+        }]}
+      />,
+    )
+    expect(screen.getByText('김칠십')).toBeInTheDocument()
+  })
+})
