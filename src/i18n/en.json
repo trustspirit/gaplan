@@ -760,7 +760,11 @@
     "makePublicBody": "This is a Seventy-only event. Making it public also shows it on CC/stake public pages and calendars.",
     "makePublicBtn": "Make public",
     "shownOnPublic": "Now shown on the public page.",
-    "hiddenFromPublicDone": "Hidden from the public page."
+    "hiddenFromPublicDone": "Hidden from the public page.",
+    "seventyNotesAdd": "Add Seventy-only notes",
+    "seventyNotesEdit": "Edit Seventy-only notes",
+    "seventyNotesSaved": "Seventy-only notes saved.",
+    "seventyNotesFailed": "Failed to save the notes."
   },
   "kakao": {
     "title": "KakaoTalk Calendar",

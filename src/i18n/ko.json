@@ -760,7 +760,11 @@
     "makePublicBody": "칠십인 전용 행사입니다. 공개하면 CC·스테이크 공개 페이지와 캘린더에도 표시됩니다.",
     "makePublicBtn": "공개",
     "shownOnPublic": "공개 페이지에 표시했습니다.",
-    "hiddenFromPublicDone": "공개 페이지에서 숨겼습니다."
+    "hiddenFromPublicDone": "공개 페이지에서 숨겼습니다.",
+    "seventyNotesAdd": "칠십인 전용 메모 추가",
+    "seventyNotesEdit": "칠십인 전용 메모 수정",
+    "seventyNotesSaved": "칠십인 전용 메모를 저장했습니다.",
+    "seventyNotesFailed": "메모 저장에 실패했습니다."
   },
   "kakao": {
     "title": "카카오톡 캘린더",

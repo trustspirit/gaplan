@@ -28,7 +28,8 @@ vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn() }))
 vi.mock('@/firebase', () => ({ db: 'db', functions: 'functions' }))
 
 import {
-  createGeneralSchedule, deleteGeneralSchedule, subscribeToGeneralSchedules, updateGeneralSchedule,
+  createGeneralSchedule, deleteGeneralSchedule, saveGeneralSeventyNotes,
+  subscribeToGeneralSchedules, updateGeneralSchedule,
 } from './generalScheduleService'
 
 describe('createGeneralSchedule', () => {
@@ -185,6 +186,20 @@ describe('칠십인 전용 메모', () => {
 
   it('수정에서 메모를 비우면 메모 문서를 지운다', async () => {
     await updateGeneralSchedule('gs-1', { title: '행사' }, { notes: null, date: '2026-09-02' })
+    expect(pathOf(batchMock.delete.mock.calls[0][0])).toBe('generalScheduleSeventyNotes/gs-1')
+  })
+
+  // 행사 상세 화면에서 메모만 따로 저장한다 — 행사 문서는 건드리지 않는다.
+  it('메모만 저장하면 메모 문서만 쓰고 행사 문서는 건드리지 않는다', async () => {
+    await saveGeneralSeventyNotes('gs-1', ' 상세에서 적은 메모 ', '2026-09-02')
+    expect(pathOf(batchMock.set.mock.calls[0][0])).toBe('generalScheduleSeventyNotes/gs-1')
+    expect(batchMock.set.mock.calls[0][1]).toMatchObject({ date: '2026-09-02', notes: '상세에서 적은 메모' })
+    expect(batchMock.update).not.toHaveBeenCalled()
+    expect(firestoreMocks.updateDoc).not.toHaveBeenCalled()
+  })
+
+  it('메모만 저장할 때 비우면 메모 문서를 지운다', async () => {
+    await saveGeneralSeventyNotes('gs-1', '', '2026-09-02')
     expect(pathOf(batchMock.delete.mock.calls[0][0])).toBe('generalScheduleSeventyNotes/gs-1')
   })
 

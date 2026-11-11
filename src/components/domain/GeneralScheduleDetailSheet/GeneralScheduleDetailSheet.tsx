@@ -4,7 +4,7 @@ import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { ResponsiveDialog } from '@/components/ui/ResponsiveDialog/ResponsiveDialog'
-import { DeleteConfirmSheet } from '@/components/ui'
+import { Button, DeleteConfirmSheet, Textarea } from '@/components/ui'
 import type { GeneralSchedule, Schedule } from '@/types'
 import { eventVisibilityOf, formatEventDateRange } from '@/types'
 import styles from './GeneralScheduleDetailSheet.module.scss'
@@ -25,6 +25,8 @@ interface GeneralScheduleDetailSheetProps {
   onDelete: () => void
   /** 담당 지역 칠십인의 참석 여부를 바꾼다. 넘기면 체크 칸이 나오고, 없으면 참석일 때 배지만 보인다. */
   onToggleSeventyAttends?: (next: boolean) => void
+  /** 칠십인 전용 메모를 저장한다(빈 문자열이면 지운다). 넘기면 이 화면에서 바로 메모를 고칠 수 있다. */
+  onSaveSeventyNotes?: (notes: string) => Promise<void>
 }
 
 export function GeneralScheduleDetailSheet({
@@ -36,9 +38,31 @@ export function GeneralScheduleDetailSheet({
   onEdit,
   onDelete,
   onToggleSeventyAttends,
+  onSaveSeventyNotes,
 }: GeneralScheduleDetailSheetProps) {
   const { t } = useTranslation()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [editingNotes, setEditingNotes] = useState(false)
+  const [notesDraft, setNotesDraft] = useState('')
+  const [savingNotes, setSavingNotes] = useState(false)
+
+  const startEditingNotes = () => {
+    setNotesDraft(event?.seventyNotes ?? '')
+    setEditingNotes(true)
+  }
+
+  const saveNotes = async () => {
+    if (!onSaveSeventyNotes) return
+    setSavingNotes(true)
+    try {
+      await onSaveSeventyNotes(notesDraft.trim())
+      setEditingNotes(false)
+    } catch {
+      // 실패 알림은 호출부가 띄운다. 적던 내용은 남겨 다시 저장할 수 있게 한다.
+    } finally {
+      setSavingNotes(false)
+    }
+  }
 
   if (!event) return null
 
@@ -121,11 +145,42 @@ export function GeneralScheduleDetailSheet({
       {event.description && (
         <p className={styles.description}>{event.description}</p>
       )}
-      {event.seventyNotes?.trim() && (
+      {/* 칠십인 전용 메모. 적을 수 있는 사람(관리자·칠십인·집행서기)은 여기서 바로 고친다 — 행사를
+          만든 사람만 편집 화면을 열 수 있어서, 그 밖의 칠십인은 메모를 적을 방법이 없었다. */}
+      {editingNotes ? (
         <div className={styles.seventyNotes}>
-          <p className={styles.seventyNotesTitle}><Lock size={11} /> {t('generalSchedule.seventyNotesTitle')}</p>
-          <p className={styles.seventyNotesText}>{event.seventyNotes}</p>
+          <Textarea
+            label={t('generalSchedule.seventyNotesTitle')}
+            value={notesDraft}
+            onChange={(e) => setNotesDraft(e.target.value)}
+            rows={3}
+            maxLength={1000}
+            autoFocus
+          />
+          <div className={styles.notesActions}>
+            <Button variant="ghost" size="sm" onClick={() => setEditingNotes(false)} disabled={savingNotes}>
+              {t('common.cancel')}
+            </Button>
+            <Button size="sm" onClick={saveNotes} loading={savingNotes}>
+              {t('common.save')}
+            </Button>
+          </div>
         </div>
+      ) : (
+        <>
+          {event.seventyNotes?.trim() && (
+            <div className={styles.seventyNotes}>
+              <p className={styles.seventyNotesTitle}><Lock size={11} /> {t('generalSchedule.seventyNotesTitle')}</p>
+              <p className={styles.seventyNotesText}>{event.seventyNotes}</p>
+            </div>
+          )}
+          {onSaveSeventyNotes && (
+            <button type="button" className={styles.notesEditBtn} onClick={startEditingNotes}>
+              <Lock size={12} aria-hidden="true" />
+              {t(event.seventyNotes?.trim() ? 'generalSchedule.seventyNotesEdit' : 'generalSchedule.seventyNotesAdd')}
+            </button>
+          )}
+        </>
       )}
 
       {/* 예전 "참석 등록" 기록. 지금은 등록 수단이 없어 새 기록이 생기지 않으므로, 남아 있는

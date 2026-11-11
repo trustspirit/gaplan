@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import dayjs from 'dayjs'
 import type { GeneralSchedule } from '@/types'
 import { GeneralScheduleDetailSheet } from './GeneralScheduleDetailSheet'
@@ -151,5 +151,66 @@ describe('GeneralScheduleDetailSheet 닫기와 이름', () => {
     expect(screen.queryByLabelText('common.edit')).toBeNull()
     screen.getByLabelText('common.close').click()
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+})
+
+// 행사를 만든 사람만 편집 화면을 열 수 있다. 그 밖의 칠십인·집행서기도 칠십인 전용 메모는
+// 상세 화면에서 바로 적는다.
+describe('GeneralScheduleDetailSheet 칠십인 전용 메모 바로 적기', () => {
+  const base = {
+    attendances: [], currentUid: 'u1', currentRole: 'seventy',
+    onClose: vi.fn(), onEdit: vi.fn(), onDelete: vi.fn(),
+  }
+
+  it('메모가 없으면 추가 버튼이, 있으면 수정 버튼이 나온다', () => {
+    const { rerender } = render(
+      <GeneralScheduleDetailSheet {...base} event={event()} onSaveSeventyNotes={vi.fn()} />,
+    )
+    expect(screen.getByRole('button', { name: 'generalSchedule.seventyNotesAdd' })).toBeInTheDocument()
+    rerender(
+      <GeneralScheduleDetailSheet
+        {...base}
+        event={event({ seventyNotes: '전용 메모' })}
+        onSaveSeventyNotes={vi.fn()}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'generalSchedule.seventyNotesEdit' })).toBeInTheDocument()
+    expect(screen.getByText('전용 메모')).toBeInTheDocument()
+  })
+
+  it('수정을 누르면 지금 메모가 채워진 칸이 열리고, 저장하면 다듬은 내용을 넘긴 뒤 닫힌다', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    render(
+      <GeneralScheduleDetailSheet
+        {...base}
+        event={event({ seventyNotes: '전용 메모' })}
+        onSaveSeventyNotes={onSave}
+      />,
+    )
+    screen.getByRole('button', { name: 'generalSchedule.seventyNotesEdit' }).click()
+    const box = await screen.findByLabelText('generalSchedule.seventyNotesTitle')
+    expect(box).toHaveValue('전용 메모')
+    fireEvent.change(box, { target: { value: '  고친 메모  ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'common.save' }))
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith('고친 메모'))
+    await waitFor(() =>
+      expect(screen.queryByLabelText('generalSchedule.seventyNotesTitle')).toBeNull(),
+    )
+  })
+
+  it('저장에 실패하면 적던 내용을 남겨 둔다', async () => {
+    const onSave = vi.fn().mockRejectedValue(new Error('denied'))
+    render(<GeneralScheduleDetailSheet {...base} event={event()} onSaveSeventyNotes={onSave} />)
+    screen.getByRole('button', { name: 'generalSchedule.seventyNotesAdd' }).click()
+    const box = await screen.findByLabelText('generalSchedule.seventyNotesTitle')
+    fireEvent.change(box, { target: { value: '새 메모' } })
+    fireEvent.click(screen.getByRole('button', { name: 'common.save' }))
+    await waitFor(() => expect(onSave).toHaveBeenCalled())
+    expect(screen.getByLabelText('generalSchedule.seventyNotesTitle')).toHaveValue('새 메모')
+  })
+
+  it('적을 수 없는 사람에게는 버튼이 없다', () => {
+    render(<GeneralScheduleDetailSheet {...base} event={event()} />)
+    expect(screen.queryByRole('button', { name: 'generalSchedule.seventyNotesAdd' })).toBeNull()
   })
 })

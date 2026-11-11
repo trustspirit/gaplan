@@ -13,7 +13,9 @@ import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo'
 import { useEffectiveScope } from '@/hooks/useEffectiveScope'
 import { useTopBar } from '@/hooks/useTopBar'
 import { manualCalendarSync, deleteScheduleViaCF } from '@/services/scheduleService'
-import { updateGeneralSchedule, deleteGeneralSchedule } from '@/services/generalScheduleService'
+import {
+  updateGeneralSchedule, deleteGeneralSchedule, saveGeneralSeventyNotes,
+} from '@/services/generalScheduleService'
 import {
   Button,
   LoadingState,
@@ -154,6 +156,21 @@ export function SchedulesPage() {
     } catch {
       setDetailTarget((prev) => (prev && prev.id === event.id ? { ...prev, seventyAttends: !next } : prev))
       toast.error(t('generalSchedule.seventyAttendsFailed'))
+    }
+  }
+
+  // 칠십인 전용 메모를 상세 화면에서 바로 저장한다. 행사를 만든 사람이 아니어도 된다 — 규칙이
+  // 관리자·칠십인·집행서기에게 메모 쓰기를 허용한다. 실패하면 다시 던져 시트가 적던 내용을 남긴다.
+  const handleSaveSeventyNotes = async (event: GeneralSchedule, notes: string) => {
+    try {
+      await saveGeneralSeventyNotes(event.id, notes, event.date)
+      setDetailTarget((prev) =>
+        prev && prev.id === event.id ? { ...prev, seventyNotes: notes || undefined } : prev,
+      )
+      toast.success(t('generalSchedule.seventyNotesSaved'))
+    } catch (err) {
+      toast.error(t('generalSchedule.seventyNotesFailed'))
+      throw err
     }
   }
 
@@ -432,6 +449,8 @@ export function SchedulesPage() {
           onCancel={() => setPublishTarget(null)}
         />
         <GeneralScheduleDetailSheet
+          // 행사가 바뀌면 시트를 새로 만든다 — 앞 행사에서 열어 둔 메모 편집 칸이 다음 행사에 남지 않게.
+          key={detailTarget?.id ?? 'closed'}
           event={detailTarget}
           attendances={
             detailTarget
@@ -445,6 +464,11 @@ export function SchedulesPage() {
           onToggleSeventyAttends={
             canMarkSeventyAttendance(user) && detailTarget
               ? (next) => handleToggleSeventyAttends(detailTarget, next)
+              : undefined
+          }
+          onSaveSeventyNotes={
+            canMarkSeventyAttendance(user) && detailTarget
+              ? (notes) => handleSaveSeventyNotes(detailTarget, notes)
               : undefined
           }
           onClose={() => setDetailTarget(null)}

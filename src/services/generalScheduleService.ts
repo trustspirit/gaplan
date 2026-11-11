@@ -127,6 +127,17 @@ export async function fetchPublicGeneralSchedules(): Promise<GeneralSchedule[]> 
 }
 
 /**
+ * 행사의 칠십인 전용 메모만 따로 저장한다 — 행사 상세 화면에서 바로 적을 때 쓴다. 행사를 만든
+ * 사람이 아니어도 칠십인·집행서기가 쓸 수 있다(firestore.rules). 비우면 메모를 지운다.
+ * @param date 행사 날짜. 공개 페이지가 메모를 날짜 범위로 읽는 데 쓴다.
+ */
+export async function saveGeneralSeventyNotes(id: string, notes: string, date: string): Promise<void> {
+  const batch = writeBatch(db)
+  writeSeventyNotes(batch, id, notes, date)
+  await batch.commit()
+}
+
+/**
  * 행사의 칠십인 전용 메모를 구독한다. 관리자·칠십인·집행서기만 읽을 수 있으므로
  * (firestore.rules) 그 역할일 때만 부른다. 콜백은 행사 id → 메모의 Map을 받는다.
  */

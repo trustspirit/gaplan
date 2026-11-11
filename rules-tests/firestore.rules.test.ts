@@ -332,11 +332,18 @@ describe('generalScheduleSeventyNotes', () => {
     await assertSucceeds(getDoc(doc(as('a1'), 'generalScheduleSeventyNotes/g1')))
   })
 
-  it('lets the event creator and the admin edit the notes, but not another seventy', async () => {
+  // 행사를 만든 사람이 아니어도 칠십인·집행서기는 메모를 고친다 — 행사는 대개 관리자가 만든다.
+  it('lets any seventy, exec secretary and the admin edit or remove the notes', async () => {
     await assertSucceeds(updateDoc(doc(as('s1'), 'generalScheduleSeventyNotes/g1'), { notes: '수정' }))
+    await assertSucceeds(updateDoc(doc(as('s2'), 'generalScheduleSeventyNotes/g1'), { notes: '다른 칠십인' }))
+    await assertSucceeds(updateDoc(doc(as('e1'), 'generalScheduleSeventyNotes/g1'), { notes: '집행서기' }))
     await assertSucceeds(updateDoc(doc(as('a1'), 'generalScheduleSeventyNotes/g1'), { notes: '관리자' }))
-    await assertFails(updateDoc(doc(as('s2'), 'generalScheduleSeventyNotes/g1'), { notes: '남의 것' }))
-    await assertFails(deleteDoc(doc(as('s2'), 'generalScheduleSeventyNotes/g1')))
+    await assertSucceeds(deleteDoc(doc(as('s2'), 'generalScheduleSeventyNotes/g1')))
+  })
+
+  it('refuses a president who writes the notes', async () => {
+    await assertFails(updateDoc(doc(as('p1'), 'generalScheduleSeventyNotes/g1'), { notes: '회장' }))
+    await assertFails(deleteDoc(doc(as('p1'), 'generalScheduleSeventyNotes/g1')))
   })
 
   it('lets a seventy create an event and its notes in one batch', async () => {
