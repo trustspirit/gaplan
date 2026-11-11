@@ -258,7 +258,9 @@
     "wardCount": "{{count}}개 배정 확인",
     "addTimeRange": "시간대 추가",
     "title": "Task 제목",
-    "titlePlaceholder": "예: 2분기 와드 방문"
+    "titlePlaceholder": "예: 2분기 와드 방문",
+    "expireConfirmTitle": "이 Task를 만료할까요?",
+    "expireConfirmBody": "만료하면 회장이 더 이상 응답할 수 없고, 되돌릴 수 없습니다."
   },
   "schedule": {
     "confirmVisit": "방문 일정 확정",
@@ -672,7 +674,12 @@
     "seventyNotesTitle": "칠십인 전용 메모",
     "seventyAttendsLabel": "담당 지역 칠십인 참석",
     "seventyAttends": "칠십인 참석",
-    "seventyAttendsFailed": "참석 여부 변경에 실패했습니다."
+    "seventyAttendsFailed": "참석 여부 변경에 실패했습니다.",
+    "makePublicTitle": "공개 페이지에 표시할까요?",
+    "makePublicBody": "칠십인 전용 행사입니다. 공개하면 CC·스테이크 공개 페이지와 캘린더에도 표시됩니다.",
+    "makePublicBtn": "공개",
+    "shownOnPublic": "공개 페이지에 표시했습니다.",
+    "hiddenFromPublicDone": "공개 페이지에서 숨겼습니다."
   },
   "kakao": {
     "title": "카카오톡 캘린더",
@@ -820,5 +827,13 @@
     "empty": "맞는 것이 없습니다",
     "hint": "↑↓ 이동 · Enter 실행 · Esc 닫기",
     "label": "빠른 이동"
+  },
+  "confirm": {
+    "deleteTitle": "삭제하시겠어요?",
+    "deleteUndoHint": "삭제 직후 잠시 동안은 되돌릴 수 있습니다.",
+    "discardTitle": "작성 중인 내용을 버릴까요?",
+    "discardBody": "저장하지 않은 내용은 사라집니다.",
+    "discardBtn": "버리기",
+    "keepEditing": "계속 작성"
   }
 }

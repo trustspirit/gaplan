@@ -258,7 +258,9 @@
     "submitted": "submitted",
     "slotsCount": "View {{count}}",
     "wardCount": "View {{count}} assignments",
-    "addTimeRange": "Add time slot"
+    "addTimeRange": "Add time slot",
+    "expireConfirmTitle": "Expire this task?",
+    "expireConfirmBody": "The president can no longer respond once it expires, and this cannot be undone."
   },
   "schedule": {
     "confirmVisit": "Confirm Visit Date",
@@ -672,7 +674,12 @@
     "seventyNotesTitle": "Seventy-only notes",
     "seventyAttendsLabel": "Area Seventy attends",
     "seventyAttends": "Seventy attends",
-    "seventyAttendsFailed": "Failed to change attendance."
+    "seventyAttendsFailed": "Failed to change attendance.",
+    "makePublicTitle": "Show on public pages?",
+    "makePublicBody": "This is a Seventy-only event. Making it public also shows it on CC/stake public pages and calendars.",
+    "makePublicBtn": "Make public",
+    "shownOnPublic": "Now shown on the public page.",
+    "hiddenFromPublicDone": "Hidden from the public page."
   },
   "kakao": {
     "title": "KakaoTalk Calendar",
@@ -820,5 +827,13 @@
     "empty": "Nothing matches",
     "hint": "↑↓ move · Enter open · Esc close",
     "label": "Quick jump"
+  },
+  "confirm": {
+    "deleteTitle": "Delete this?",
+    "deleteUndoHint": "You can undo for a moment right after deleting.",
+    "discardTitle": "Discard what you entered?",
+    "discardBody": "Anything you have not saved will be lost.",
+    "discardBtn": "Discard",
+    "keepEditing": "Keep editing"
   }
 }
