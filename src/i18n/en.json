@@ -378,7 +378,11 @@
     "endTimeLastDay": "End time (last day)",
     "seventyNotesLabelOptional": "Seventy-only notes (optional)",
     "seventyNotesHint": "Hidden from presidents, CC/stake public pages and calendars. Shown on the Seventy-only public page.",
-    "seventyNotesTitle": "Seventy-only notes"
+    "seventyNotesTitle": "Seventy-only notes",
+    "allDay": "All day",
+    "allDayHint": "Leave the times empty to save an all-day schedule.",
+    "errorDateRequired": "Please select a date.",
+    "errorTimePairRequired": "Enter both a start and end time, or leave both empty for an all-day schedule."
   },
   "ward": {
     "assignTitle": "Assign Ward/Branch Visit Dates",

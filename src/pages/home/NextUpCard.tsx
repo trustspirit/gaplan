@@ -9,6 +9,7 @@ import { scheduleSubtitle } from '@/utils/scheduleSubtitle'
 import { buildScheduleTitle } from '../../../functions/src/scheduleRules'
 import { relativeWhen } from './nextUpTiming'
 import styles from './HomePage.module.scss'
+import { isAllDaySchedule } from '@/utils/scheduleDates'
 
 export interface NextUpCardProps {
   schedule: Schedule
@@ -65,15 +66,17 @@ export function NextUpCard({
   const safeZoom =
     schedule.zoomLink && /^https?:\/\//i.test(schedule.zoomLink) ? schedule.zoomLink : null
 
+  // 종일 일정은 시작 시각 자리에 "종일"을 넣는다 — 00:00을 그대로 보여주면 자정 일정처럼 읽힌다.
+  const startLabel = isAllDaySchedule(schedule) ? t('schedule.allDay') : schedule.startTime
   const whenLabel =
     when.day === 'today'
-      ? t('home.nextUpToday', { time: schedule.startTime })
+      ? t('home.nextUpToday', { time: startLabel })
       : when.day === 'tomorrow'
-        ? t('home.nextUpTomorrow', { time: schedule.startTime })
+        ? t('home.nextUpTomorrow', { time: startLabel })
         : t('home.nextUpDday', {
             count: when.daysUntil,
             date: dayjs(schedule.date).format('M/D'),
-            time: schedule.startTime,
+            time: startLabel,
           })
 
   // 시작했으면 남은 시간을 세지 않는다 — 음수 분을 보여주느니 진행 중이라고 말한다.

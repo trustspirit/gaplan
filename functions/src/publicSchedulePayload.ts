@@ -2,7 +2,7 @@ import { getScopeUnitIds, getScopeDisplayName, getScopeRegionId } from './region
 import { CC_COUNCIL_TARGET_KIND, isCcCouncilForScope } from './ccCouncil'
 import { generalScheduleInScope } from './generalScheduleScope'
 import { dedupeById, isSeventyOnly } from './seventyOnly'
-import { isMultiDaySchedule } from './scheduleDates'
+import { isAllDaySchedule, isMultiDaySchedule } from './scheduleDates'
 import { SEVENTY_NOTES_COLLECTION } from './seventyNotes'
 
 /**
@@ -74,6 +74,8 @@ export interface PublicSchedule {
   date: string
   // 여러 날 모임의 마지막 날. 빠지면 구독·캘린더는 여러 날로, 공개 일정표는 하루로 보여준다.
   endDate?: string
+  // 종일 일정. startTime/endTime은 00:00/23:59로 채워져 오지만 화면은 "종일"로 보여준다.
+  allDay?: boolean
   startTime: string
   endTime: string
   status: string
@@ -251,6 +253,7 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
         ...(sd.targetKind === CC_COUNCIL_TARGET_KIND ? { targetKind: CC_COUNCIL_TARGET_KIND } : {}),
         date: sd.date,
         ...(isMultiDaySchedule(sd as { date: string; endDate?: string | null }) ? { endDate: sd.endDate } : {}),
+        ...(isAllDaySchedule(sd) ? { allDay: true } : {}),
         startTime: sd.startTime,
         endTime: sd.endTime,
         status: sd.status,

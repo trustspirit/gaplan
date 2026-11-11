@@ -10,9 +10,8 @@ import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
 import { resolveScheduleRegionId } from './scheduleRegion'
 import { buildScheduleTitle, type ScheduleTitleInput } from './scheduleTitle'
-import { buildCalendarEventFields } from './calendarEventBody'
+import { buildCalendarEventFields, googleEventTimes, type GoogleEventTimesInput } from './calendarEventBody'
 import { isSeventyOnly } from './seventyOnly'
-import { scheduleLastDate } from './scheduleDates'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -83,8 +82,7 @@ export const manualCalendarSync = functions
       // 제목이 영원히 같아야 한다.
       const title = buildScheduleTitle(s as ScheduleTitleInput)
 
-      const startDateTime = `${s.date}T${s.startTime}:00+09:00`
-      const endDateTime = `${scheduleLastDate({ date: s.date, endDate: s.endDate })}T${s.endTime}:00+09:00`
+      const { start, end } = googleEventTimes(s as GoogleEventTimesInput)
       const fields = buildCalendarEventFields({
         location: s.location,
         zoomLink: s.zoomLink,
@@ -98,8 +96,8 @@ export const manualCalendarSync = functions
             summary: title,
             ...(fields.description ? { description: fields.description } : {}),
             ...(fields.location ? { location: fields.location } : {}),
-            start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
-            end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
+            start,
+            end,
           },
         })
         await docSnap.ref.update({ googleCalendarEventId: event.data.id })

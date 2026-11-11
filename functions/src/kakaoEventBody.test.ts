@@ -181,3 +181,35 @@ describe('toKakaoTime 입력 검증', () => {
     expect(() => toKakaoTime('2026-08-09', '99:99')).toThrow(/date="2026-08-09" time="99:99"/)
   })
 })
+
+import { kakaoEventTime } from './kakaoEventBody'
+
+// 종일 일정은 all_day: true와 날짜의 자정으로 보내고, 끝은 마지막 날 다음 날이다(카카오 문서의
+// 종일 이벤트 응답 예시와 같은 모양). 00:00/23:59를 시각으로 보내면 자정~자정 직전 일정이 된다.
+describe('kakaoEventTime', () => {
+  it('시간이 있는 일정은 UTC 시각으로 보내고 all_day를 싣지 않는다', () => {
+    expect(kakaoEventTime({ type: 'meeting', date: '2026-08-09', startTime: '10:00', endTime: '11:00' })).toEqual({
+      start_at: '2026-08-09T01:00:00Z',
+      end_at: '2026-08-09T02:00:00Z',
+      time_zone: 'Asia/Seoul',
+    })
+  })
+
+  it('종일 일정은 all_day와 자정으로 보내고 끝은 다음 날이다', () => {
+    expect(
+      kakaoEventTime({ type: 'meeting', date: '2026-08-09', startTime: '00:00', endTime: '23:59', allDay: true }),
+    ).toEqual({
+      start_at: '2026-08-09T00:00:00Z',
+      end_at: '2026-08-10T00:00:00Z',
+      time_zone: 'Asia/Seoul',
+      all_day: true,
+    })
+  })
+
+  it('여러 날 종일 일정의 끝은 마지막 날 다음 날이다', () => {
+    const time = kakaoEventTime({
+      type: 'meeting', date: '2026-08-09', endDate: '2026-08-11', startTime: '00:00', endTime: '23:59', allDay: true,
+    })
+    expect(time.end_at).toBe('2026-08-12T00:00:00Z')
+  })
+})

@@ -149,7 +149,7 @@ export function ProjectDetailPage() {
               <li key={s.id} className={styles.scheduleRow}>
                 <span className={styles.schedDate}>{dayjs(s.date).format('M.D')}</span>
                 <span className={styles.schedText}>
-                  {s.wardName ?? s.customTitle ?? s.type} · {s.startTime}
+                  {s.wardName ?? s.customTitle ?? s.type} · {s.allDay ? t('schedule.allDay') : s.startTime}
                 </span>
               </li>
             ))}

@@ -31,3 +31,22 @@ describe('calendarSyncNeedsUpdate', () => {
     expect(calendarSyncNeedsUpdate(undefined, base)).toBe(true)
   })
 })
+
+import { calendarSyncNeedsUpdate as needsUpdateForAllDay } from './calendarSyncNeedsUpdate'
+
+describe('calendarSyncNeedsUpdate — 종일·여러 날', () => {
+  const base = { date: '2026-12-03', startTime: '00:00', endTime: '23:59' }
+
+  it('종일로 바꾸거나 풀면 다시 보낸다', () => {
+    expect(needsUpdateForAllDay(base, { ...base, allDay: true })).toBe(true)
+    expect(needsUpdateForAllDay({ ...base, allDay: true }, base)).toBe(true)
+  })
+
+  it('allDay가 없는 것과 false는 같은 것으로 본다', () => {
+    expect(needsUpdateForAllDay(base, { ...base, allDay: false })).toBe(false)
+  })
+
+  it('종료일이 바뀌면 다시 보낸다', () => {
+    expect(needsUpdateForAllDay(base, { ...base, endDate: '2026-12-05' })).toBe(true)
+  })
+})

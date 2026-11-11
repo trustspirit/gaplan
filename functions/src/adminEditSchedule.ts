@@ -5,7 +5,7 @@ import { validateRelatedVisit } from './relatedVisit'
 import { CC_COUNCIL_TARGET_KIND } from './ccCouncil'
 import { resolveScheduleLocationForEdit } from './adminScheduleFields'
 import { canBeSeventyOnly } from './seventyOnly'
-import { isMultiDaySchedule } from './scheduleDates'
+import { ALL_DAY_END_TIME, ALL_DAY_START_TIME, isMultiDaySchedule } from './scheduleDates'
 import {
   SEVENTY_NOTES_COLLECTION, SEVENTY_NOTES_MAX_LENGTH, isValidSeventyNotesInput, normalizeSeventyNotes,
 } from './seventyNotes'
@@ -15,6 +15,8 @@ interface AdminEditScheduleRequest {
   updates: {
     date?: string
     endDate?: string | null   // 여러 날 모임의 마지막 날. null이면 하루짜리로 되돌린다
+    // true면 종일 일정으로 바꾼다(시간은 서버가 채운다). false면 startTime/endTime을 함께 보내야 한다.
+    allDay?: boolean
     startTime?: string
     endTime?: string
     notes?: string | null
@@ -78,6 +80,20 @@ export const adminEditSchedule = functions
         throw new functions.https.HttpsError('invalid-argument', 'Invalid endTime format')
       }
       allowed.endTime = updates.endTime
+    }
+    if (updates.allDay !== undefined) {
+      if (typeof updates.allDay !== 'boolean') {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid allDay')
+      }
+      allowed.allDay = updates.allDay
+      if (updates.allDay) {
+        // 종일 일정은 하루의 처음과 끝으로 시간을 채운다 — 요청이 시간을 보냈어도 덮어쓴다.
+        allowed.startTime = ALL_DAY_START_TIME
+        allowed.endTime = ALL_DAY_END_TIME
+      } else if (allowed.startTime === undefined || allowed.endTime === undefined) {
+        // 종일을 풀면서 시간을 안 주면 00:00–23:59가 진짜 시각인 것처럼 남는다.
+        throw new functions.https.HttpsError('invalid-argument', 'startTime and endTime required when allDay is false')
+      }
     }
     if (updates.notes !== undefined) {
       if (updates.notes !== null && (typeof updates.notes !== 'string' || updates.notes.length > 500)) {
@@ -289,7 +305,11 @@ export const adminEditSchedule = functions
       }
     }
 
-    if (allowed.date !== undefined || allowed.startTime !== undefined) {
+    // 같은 시각 겹침 검사. 수정 이후 종일 일정이면 시각이 없으므로 하지 않는다.
+    const allDayAfterEdit = allowed.allDay !== undefined
+      ? allowed.allDay === true
+      : snap.data()?.allDay === true
+    if (!allDayAfterEdit && (allowed.date !== undefined || allowed.startTime !== undefined)) {
       const current = snap.data()!
       const checkDate = (allowed.date as string | undefined) ?? current.date
       const checkStart = (allowed.startTime as string | undefined) ?? current.startTime

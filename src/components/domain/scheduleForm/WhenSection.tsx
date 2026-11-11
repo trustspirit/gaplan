@@ -120,6 +120,7 @@ export function WhenSection({ type, state, onChange, conflictingEvent, hideSabba
           onChange={(e) => onChange({ endTime: e.target.value })}
         />
       </div>
+      <p className={styles.hint}>{t('schedule.allDayHint')}</p>
     </>
   )
 }

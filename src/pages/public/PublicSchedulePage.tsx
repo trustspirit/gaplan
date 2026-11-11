@@ -456,9 +456,13 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
                     // 여러 날 모임은 마지막 날이 지나야 지난 일정이고, 종료 시각 앞에 마지막 날을 붙인다.
                     const lastDate = dayjs(scheduleLastDate(s))
                     const isPast = lastDate.isBefore(dayjs(), 'day')
-                    const endLabel = isMultiDaySchedule(s)
-                      ? `${lastDate.format('M.D')}(${dowLabels[lastDate.day()]}) ${s.endTime}`
-                      : s.endTime
+                    const lastDayLabel = isMultiDaySchedule(s)
+                      ? `${lastDate.format('M.D')}(${dowLabels[lastDate.day()]})`
+                      : null
+                    // 종일 일정은 시각 대신 "종일"로 보여준다(여러 날이면 마지막 날을 붙인다).
+                    const timeLabel = s.allDay
+                      ? lastDayLabel ? `${t('public.allDay')} – ${lastDayLabel}` : t('public.allDay')
+                      : `${s.startTime} – ${lastDayLabel ? `${lastDayLabel} ` : ''}${s.endTime}`
                     const isVisit = s.type === 'ward_visit'
                     const isMeeting = s.type === 'meeting'
                     const unitName = getUnitName(s.unitId, lang)
@@ -499,7 +503,7 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
                               </div>
                               <p className={styles.title}>{displayTitle}</p>
                               <p className={styles.time}>
-                                {s.startTime} – {endLabel}
+                                {timeLabel}
                               </p>
                               {safeZoom && (
                                 <a

@@ -1202,6 +1202,35 @@ describe('ScheduleFormModal 여러 날 모임', () => {
     }))
   })
 
+  // 시간을 정하지 않은 일정은 종일 일정이다. 시간을 둘 다 비우면 저장되고, 하나만 비우면
+  // 입력하다 만 것으로 보고 막는다.
+  it('시간을 둘 다 비우면 종일 일정으로 저장한다 — allDay만 보내고 시간은 보내지 않는다', async () => {
+    openOtherMeeting()
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    const sent = createSpy.mock.calls[0][0] as Record<string, unknown>
+    expect(sent).toMatchObject({ date: '2026-09-04', allDay: true })
+    expect(sent).not.toHaveProperty('startTime')
+    expect(sent).not.toHaveProperty('endTime')
+  })
+
+  it('시간을 하나만 넣으면 저장을 막는다', async () => {
+    openOtherMeeting()
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
+    // 시작을 넣으면 종료가 자동으로 채워진다 — 종료만 다시 비운다.
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '' } })
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+    expect(await screen.findByText('schedule.errorTimePairRequired')).toBeInTheDocument()
+    expect(createSpy).not.toHaveBeenCalled()
+  })
+
+  it('날짜가 없으면 저장을 막는다', async () => {
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+    expect(await screen.findByText('schedule.errorDateRequired')).toBeInTheDocument()
+    expect(createSpy).not.toHaveBeenCalled()
+  })
+
   it('칠십인 전용 메모를 쓰면 payload에 seventyNotes가 실리고, 비우면 실리지 않는다', async () => {
     openOtherMeeting()
     fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })

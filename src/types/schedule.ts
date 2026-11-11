@@ -11,6 +11,9 @@ export interface Schedule {
   presidentUid: string | null
   date: string
   endDate?: string | null     // 여러 날 모임의 마지막 날 (meeting only). 없으면 하루짜리 — utils/scheduleDates.ts
+  // 종일 일정. 이때 startTime/endTime은 00:00/23:59로 채워져 있다(정렬·비교용) —
+  // 화면에는 시각 대신 "종일"로 보여준다. utils/scheduleDates.ts
+  allDay?: boolean
   startTime: string
   endTime: string
   status: ScheduleStatus

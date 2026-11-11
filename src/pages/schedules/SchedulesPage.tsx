@@ -248,8 +248,9 @@ export function SchedulesPage() {
         dow,
         t(`schedule.type.${schedule.type}`),
         title,
-        schedule.startTime,
-        schedule.endTime,
+        // 종일 일정은 시각 칸에 00:00/23:59 대신 "종일"을 적는다.
+        schedule.allDay ? t('schedule.allDay') : schedule.startTime,
+        schedule.allDay ? '' : schedule.endTime,
       ]
     })
     downloadCsv(

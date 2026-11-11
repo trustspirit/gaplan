@@ -378,7 +378,11 @@
     "endTimeLastDay": "종료 시간 (마지막 날)",
     "seventyNotesLabelOptional": "칠십인 전용 메모 (선택)",
     "seventyNotesHint": "회장과 CC·스테이크 공개 페이지, 캘린더에는 보이지 않습니다. 칠십인 전용 공개 페이지에는 표시됩니다.",
-    "seventyNotesTitle": "칠십인 전용 메모"
+    "seventyNotesTitle": "칠십인 전용 메모",
+    "allDay": "종일",
+    "allDayHint": "시간을 비워 두면 종일 일정으로 저장됩니다.",
+    "errorDateRequired": "날짜를 선택해주세요.",
+    "errorTimePairRequired": "시작 시간과 종료 시간을 모두 입력하거나, 종일 일정이면 둘 다 비워 주세요."
   },
   "ward": {
     "assignTitle": "와드/지부 방문 날짜 배정",

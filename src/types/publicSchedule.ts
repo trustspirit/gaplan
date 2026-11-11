@@ -6,6 +6,7 @@ export interface PublicScheduleItem {
   targetKind?: string
   date: string
   endDate?: string    // 여러 날 모임의 마지막 날. 없으면 하루짜리.
+  allDay?: boolean    // 종일 일정 — 시각 대신 "종일"로 보여준다
   startTime: string
   endTime: string
   status: string

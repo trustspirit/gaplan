@@ -9,10 +9,9 @@ import { google } from 'googleapis'
 import { resolveScheduleRegionId } from './scheduleRegion'
 import { buildScheduleTitle } from './scheduleTitle'
 import { isBookkeepingOnlyWrite } from './bookkeepingWrite'
-import { buildCalendarEventFields } from './calendarEventBody'
 import { calendarSyncNeedsUpdate } from './calendarSyncNeedsUpdate'
 import { isSeventyOnly } from './seventyOnly'
-import { scheduleLastDate } from './scheduleDates'
+import { buildCalendarEventFields, googleEventTimes, type GoogleEventTimesInput } from './calendarEventBody'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -90,9 +89,8 @@ export const calendarSync = functions
     const needsUpdate = calendarSyncNeedsUpdate(before, after)
     if (after.googleCalendarEventId && !needsUpdate) return
 
-    const startDateTime = `${after.date}T${after.startTime}:00+09:00`
-    // 여러 날 모임은 마지막 날의 endTime에 끝난다(scheduleDates.ts).
-    const endDateTime = `${scheduleLastDate({ date: after.date, endDate: after.endDate })}T${after.endTime}:00+09:00`
+    // 여러 날 모임은 마지막 날의 endTime에 끝난다. 종일 일정은 시각 없이 날짜로 보낸다(scheduleDates.ts).
+    const { start, end } = googleEventTimes(after as GoogleEventTimesInput)
     const title = buildScheduleTitle(after)
 
     const calendar = getCalendarClient()
@@ -117,8 +115,8 @@ export const calendarSync = functions
             summary: title,
             description: fields.description,
             location: fields.location,
-            start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
-            end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
+            start,
+            end,
           },
         })
       } else {
@@ -128,8 +126,8 @@ export const calendarSync = functions
             summary: title,
             ...(fields.description ? { description: fields.description } : {}),
             ...(fields.location ? { location: fields.location } : {}),
-            start: { dateTime: startDateTime, timeZone: 'Asia/Seoul' },
-            end: { dateTime: endDateTime, timeZone: 'Asia/Seoul' },
+            start,
+            end,
           },
         })
         await change.after.ref.update({ googleCalendarEventId: event.data.id })

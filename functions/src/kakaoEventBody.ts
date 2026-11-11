@@ -1,5 +1,5 @@
 import { buildScheduleTitle, type ScheduleTitleInput } from './scheduleTitle'
-import { scheduleLastDate } from './scheduleDates'
+import { allDayExclusiveEndDate, isAllDaySchedule, scheduleLastDate } from './scheduleDates'
 
 const KAKAO_TITLE_MAX = 50
 
@@ -7,6 +7,7 @@ export interface KakaoTime {
   start_at: string
   end_at: string
   time_zone: string
+  all_day?: boolean
 }
 
 export interface KakaoEventBody {
@@ -18,6 +19,7 @@ export interface KakaoEventBody {
 export interface KakaoScheduleInput extends ScheduleTitleInput {
   date: string
   endDate?: string | null   // 여러 날 모임의 마지막 날
+  allDay?: boolean | null   // 종일 일정 — 시각 없이 날짜로 보낸다
   startTime: string
   endTime: string
   location?: string | null
@@ -61,6 +63,30 @@ export function buildKakaoDescription(p: {
   return lines.length ? lines.join('\n') : undefined
 }
 
+/**
+ * 카카오 이벤트의 time.
+ *
+ * 종일 일정은 all_day: true와 함께 날짜의 자정(00:00:00Z)으로 보내고, 끝은 마지막 날 다음 날이다.
+ * 카카오 문서의 종일 이벤트 응답 예시가 이 모양이다
+ * (start_at "2022-10-27T00:00:00Z", end_at "2022-10-28T00:00:00Z", all_day true).
+ * 요청 쪽 규칙은 문서에서 확인하지 못했다 — 카카오가 이 모양을 거부하면 여기를 고친다.
+ */
+export function kakaoEventTime(schedule: KakaoScheduleInput): KakaoTime {
+  if (isAllDaySchedule(schedule)) {
+    return {
+      start_at: `${schedule.date}T00:00:00Z`,
+      end_at: `${allDayExclusiveEndDate(schedule)}T00:00:00Z`,
+      time_zone: 'Asia/Seoul',
+      all_day: true,
+    }
+  }
+  return {
+    start_at: toKakaoTime(schedule.date, schedule.startTime),
+    end_at: toKakaoTime(scheduleLastDate(schedule), schedule.endTime),
+    time_zone: 'Asia/Seoul',
+  }
+}
+
 export function buildKakaoEventBody(p: {
   schedule: KakaoScheduleInput
   seventyName?: string
@@ -74,11 +100,7 @@ export function buildKakaoEventBody(p: {
   })
   return {
     title: truncateTitle(buildScheduleTitle(schedule)),
-    time: {
-      start_at: toKakaoTime(schedule.date, schedule.startTime),
-      end_at: toKakaoTime(scheduleLastDate(schedule), schedule.endTime),
-      time_zone: 'Asia/Seoul',
-    },
+    time: kakaoEventTime(schedule),
     ...(description ? { description } : {}),
   }
 }
@@ -88,6 +110,7 @@ export function buildKakaoEventBody(p: {
 const SYNCED_FIELDS = [
   'date',
   'endDate',
+  'allDay',
   'startTime',
   'endTime',
   'zoomLink',
@@ -104,6 +127,7 @@ const SYNCED_FIELDS = [
 const FIELD_DEFAULT: Record<(typeof SYNCED_FIELDS)[number], unknown> = {
   date: null,
   endDate: null,
+  allDay: null,
   startTime: null,
   endTime: null,
   zoomLink: null,

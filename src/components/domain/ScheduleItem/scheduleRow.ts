@@ -4,7 +4,7 @@ import type { Schedule } from '@/types'
 import { DOW_LABELS } from '@/utils/date'
 import { scheduleSubtitle } from '@/utils/scheduleSubtitle'
 import { buildScheduleTitle } from '../../../../functions/src/scheduleRules'
-import { isMultiDaySchedule, scheduleLastDate } from '@/utils/scheduleDates'
+import { scheduleLastDate, scheduleTimeLabel } from '@/utils/scheduleDates'
 
 export interface ScheduleRowInput {
   schedule: Schedule
@@ -26,10 +26,6 @@ export function toScheduleRow({
   // 여러 날 모임은 마지막 날이 지나야 지난 일정이다.
   const lastDate = scheduleLastDate(schedule)
   const isPast = lastDate < today
-  // 여러 날이면 종료 시각 앞에 마지막 날을 붙인다(예: "18:00 – 12.5 12:00").
-  const endLabel = isMultiDaySchedule(schedule)
-    ? `${dayjs(lastDate).format('M.D')} ${schedule.endTime}`
-    : schedule.endTime
 
   const title = buildScheduleTitle({
     type: schedule.type,
@@ -50,7 +46,7 @@ export function toScheduleRow({
     lead: { primary: date.format('M.D'), secondary: dow },
     title,
     subtitle,
-    meta: `${schedule.startTime} – ${endLabel}`,
+    meta: scheduleTimeLabel(schedule, t('schedule.allDay')),
     tag: t(`schedule.type.${schedule.type}`),
     dimmed: isPast,
   }

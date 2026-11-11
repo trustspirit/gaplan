@@ -6,7 +6,7 @@ import { buildScheduleTitle } from './scheduleTitle'
 import { generalScheduleInScope } from './generalScheduleScope'
 import { buildGeneralScheduleVEvent } from './generalScheduleIcsEvent'
 import { dedupeById, isSeventyOnly } from './seventyOnly'
-import { scheduleLastDate } from './scheduleDates'
+import { allDayExclusiveEndDate, isAllDaySchedule, scheduleLastDate } from './scheduleDates'
 import { SEVENTY_NOTES_COLLECTION } from './seventyNotes'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
@@ -204,15 +204,22 @@ export const publicScheduleIcs = functions
           wardName: data.wardName,
           customTitle: data.customTitle,
         })
-        const dtstart = toIcsDateTime(data.date, data.startTime)
-        const dtend = toIcsDateTime(scheduleLastDate({ date: data.date, endDate: data.endDate }), data.endTime)
+        // 종일 일정은 시각 없이 날짜로 적고, 끝은 마지막 날 다음 날이다(ICS는 그날을 포함하지 않는다).
+        const dates = { date: data.date as string, endDate: data.endDate as string | null | undefined }
+        const allDay = isAllDaySchedule(data)
+        const dtstartLine = allDay
+          ? `DTSTART;VALUE=DATE:${dates.date.replace(/-/g, '')}`
+          : `DTSTART;TZID=Asia/Seoul:${toIcsDateTime(dates.date, data.startTime)}`
+        const dtendLine = allDay
+          ? `DTEND;VALUE=DATE:${allDayExclusiveEndDate(dates).replace(/-/g, '')}`
+          : `DTEND;TZID=Asia/Seoul:${toIcsDateTime(scheduleLastDate(dates), data.endTime)}`
 
         const lines = [
           'BEGIN:VEVENT',
           `UID:${d.id}@gaplan`,
           `DTSTAMP:${dtstamp}`,
-          `DTSTART;TZID=Asia/Seoul:${dtstart}`,
-          `DTEND;TZID=Asia/Seoul:${dtend}`,
+          dtstartLine,
+          dtendLine,
           `SUMMARY:${escape(summary)}`,
         ]
         const place = typeof data.location === 'string' ? data.location.trim() : ''

@@ -10,7 +10,9 @@ import { layoutDayBlocks } from './layoutDayBlocks'
 import { Button } from '@/components/ui'
 import { swipeDirection, tracksPointer, type SwipePoint } from '@/utils/swipeGesture'
 import styles from './CalendarView.module.scss'
-import { isMultiDaySchedule, scheduleCoversDate, scheduleTimesOnDate } from '@/utils/scheduleDates'
+import {
+  isAllDaySchedule, isMultiDaySchedule, scheduleCoversDate, scheduleTimeLabel, scheduleTimesOnDate,
+} from '@/utils/scheduleDates'
 
 // Day-of-week abbreviations derived from dayjs locale (auto-updates with language switch)
 const getDOW = () => Array.from({ length: 7 }, (_, i) => dayjs().day(i).format('ddd')) as string[]
@@ -328,7 +330,8 @@ export function CalendarView({
                     ).map(({ s: segment, col, cols }) => {
                       // 블록에 적는 시간은 잘린 구간이 아니라 원래 일정의 시간이다.
                       const s = daySchedules.find((orig) => orig.id === segment.id) ?? segment
-                      const multiDay = isMultiDaySchedule(s)
+                      // 종일 일정도 여러 날 구간처럼 격자 높이에 맞춰 자른다(00:00~24:00 구간이다).
+                      const multiDay = isMultiDaySchedule(s) || isAllDaySchedule(s)
                       // 여러 날 구간은 격자(8시~22시) 밖으로 나가지 않게 자른다. 하루짜리는 예전 그대로.
                       const gridHeight = HOURS.length * HOUR_HEIGHT
                       const top = multiDay
@@ -351,7 +354,7 @@ export function CalendarView({
                             color: color.text,
                             borderColor: color.border,
                           }}
-                          title={`${chipLabel(s, getUnitName)} ${s.startTime}–${s.endTime}`}
+                          title={`${chipLabel(s, getUnitName)} ${scheduleTimeLabel(s, t('schedule.allDay'))}`}
                           onClick={(e) => {
                             e.stopPropagation()
                             if (!isBlocked) onDateClick?.(dateStr)
@@ -361,7 +364,7 @@ export function CalendarView({
                             {chipLabel(s, getUnitName)}
                           </span>
                           <span className={styles.scheduleBlockTime}>
-                            {s.startTime}–{s.endTime}
+                            {isAllDaySchedule(s) ? t('schedule.allDay') : `${s.startTime}–${s.endTime}`}
                           </span>
                         </div>
                       )

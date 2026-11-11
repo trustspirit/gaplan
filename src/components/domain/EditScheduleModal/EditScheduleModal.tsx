@@ -56,8 +56,9 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
     },
     date: schedule.date,
     endDate: isMultiDaySchedule(schedule) ? (schedule.endDate as string) : '',
-    startTime: schedule.startTime,
-    endTime: schedule.endTime,
+    // 종일 일정은 저장된 00:00/23:59를 칸에 채우지 않는다 — 비어 있는 것이 곧 종일이다.
+    startTime: schedule.allDay ? '' : schedule.startTime,
+    endTime: schedule.allDay ? '' : schedule.endTime,
     notes: schedule.notes ?? '',
     zoomLink: schedule.zoomLink ?? '',
     customTitle: schedule.customTitle ?? '',
@@ -185,6 +186,12 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
   const autoLocation = buildScheduleLocation({ ...autoParts, zoomLink })
 
   const handleSave = async () => {
+    // 시간을 둘 다 비우면 종일 일정이다. 하나만 비운 것은 입력하다 만 것으로 보고 막는다.
+    const allDay = !startTime && !endTime
+    if (!allDay && (!startTime || !endTime)) {
+      setError(t('schedule.errorTimePairRequired'))
+      return
+    }
     setSaving(true)
     setError(null)
     try {
@@ -196,8 +203,10 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
           ...(schedule.type === 'meeting'
             ? { endDate: isMultiDaySchedule({ date, endDate: state.endDate }) ? state.endDate : null }
             : {}),
-          startTime,
-          endTime,
+          // 시간을 둘 다 비우면 종일 일정이다. 종일이었다가 시간을 넣으면 allDay: false와 함께 보낸다.
+          ...(allDay
+            ? { allDay: true }
+            : { ...(schedule.allDay ? { allDay: false } : {}), startTime, endTime }),
           notes: notes || null,
           // 스테이크/지방부가 선택인 대상 유형(기타 — 단체 모임 등)은 비운 채로도 저장돼야
           // 한다. undefined로 보내면 JSON 직렬화에서 키가 통째로 빠져 CF가 "이 필드는 안

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
-  isMultiDaySchedule, scheduleCoversDate, scheduleLastDate, scheduleTimesOnDate,
+  addOneDay, allDayExclusiveEndDate, isAllDaySchedule, isMultiDaySchedule,
+  scheduleCoversDate, scheduleLastDate, scheduleTimesOnDate,
 } from './scheduleDates'
 
 const oneDay = { date: '2026-12-03', startTime: '10:00', endTime: '12:00' }
@@ -54,5 +55,34 @@ describe('scheduleTimesOnDate', () => {
 
   it('마지막 날은 자정부터 종료 시각까지', () => {
     expect(scheduleTimesOnDate(threeDays, '2026-12-05')).toEqual({ startTime: '00:00', endTime: '12:00' })
+  })
+})
+
+// 시간을 정하지 않은 일정은 allDay: true다. startTime/endTime은 00:00/23:59로 채워져 있지만
+// 화면과 캘린더는 allDay를 보고 시각 없이 다룬다.
+describe('종일 일정', () => {
+  it('allDay가 정확히 true일 때만 종일이다', () => {
+    expect(isAllDaySchedule({ allDay: true })).toBe(true)
+    expect(isAllDaySchedule({ allDay: false })).toBe(false)
+    expect(isAllDaySchedule({})).toBe(false)
+    expect(isAllDaySchedule(undefined)).toBe(false)
+  })
+
+  it('addOneDay는 달과 해를 넘긴다', () => {
+    expect(addOneDay('2026-12-03')).toBe('2026-12-04')
+    expect(addOneDay('2026-11-30')).toBe('2026-12-01')
+    expect(addOneDay('2026-12-31')).toBe('2027-01-01')
+    expect(addOneDay('2028-02-28')).toBe('2028-02-29')
+  })
+
+  it('캘린더에서 끝나는 날은 마지막 날 다음 날이다 — 하루짜리도, 여러 날도', () => {
+    expect(allDayExclusiveEndDate({ date: '2026-12-03' })).toBe('2026-12-04')
+    expect(allDayExclusiveEndDate({ date: '2026-12-03', endDate: '2026-12-05' })).toBe('2026-12-06')
+  })
+
+  it('종일 일정은 걸쳐 있는 모든 날에 하루 종일을 차지한다', () => {
+    const allDay = { date: '2026-12-03', endDate: '2026-12-04', startTime: '00:00', endTime: '23:59', allDay: true }
+    expect(scheduleTimesOnDate(allDay, '2026-12-03')).toEqual({ startTime: '00:00', endTime: '24:00' })
+    expect(scheduleTimesOnDate(allDay, '2026-12-04')).toEqual({ startTime: '00:00', endTime: '24:00' })
   })
 })

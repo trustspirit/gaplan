@@ -212,12 +212,18 @@ export function ScheduleFormModal({
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault()
     setError(null)
-    if (!date || !startTime || !endTime) {
-      setError(t('schedule.errorDateTimeRequired'))
+    if (!date) {
+      setError(t('schedule.errorDateRequired'))
+      return
+    }
+    // 시간을 둘 다 비우면 종일 일정이다. 하나만 비운 것은 입력하다 만 것으로 보고 막는다.
+    const allDay = !startTime && !endTime
+    if (!allDay && (!startTime || !endTime)) {
+      setError(t('schedule.errorTimePairRequired'))
       return
     }
     // 여러 날 모임은 시작 시각이 첫날, 종료 시각이 마지막 날이라 서로 비교하지 않는다.
-    if (!isMultiDaySchedule({ date, endDate: state.endDate }) && startTime >= endTime) {
+    if (!allDay && !isMultiDaySchedule({ date, endDate: state.endDate }) && startTime >= endTime) {
       setError(t('admin.scheduleTimeError'))
       return
     }
@@ -295,8 +301,7 @@ export function ScheduleFormModal({
         ...(type === 'meeting' && isMultiDaySchedule({ date, endDate: state.endDate })
           ? { endDate: state.endDate }
           : {}),
-        startTime,
-        endTime,
+        ...(allDay ? { allDay: true } : { startTime, endTime }),
         ...(finalNotes.trim() ? { notes: finalNotes.trim() } : {}),
         ...(zoomLink.trim() && type !== 'ward_visit' ? { zoomLink: zoomLink.trim() } : {}),
         ...(customTitle.trim() && type !== 'ward_visit' ? { customTitle: customTitle.trim() } : {}),

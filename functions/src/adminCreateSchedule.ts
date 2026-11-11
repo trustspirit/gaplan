@@ -5,7 +5,7 @@ import { validateRelatedVisit } from './relatedVisit'
 import { buildCcCouncilTitle, isKnownRegionId } from './ccCouncil'
 import { resolveScheduleLocation } from './adminScheduleFields'
 import { canBeSeventyOnly } from './seventyOnly'
-import { isMultiDaySchedule } from './scheduleDates'
+import { ALL_DAY_END_TIME, ALL_DAY_START_TIME, isMultiDaySchedule } from './scheduleDates'
 import {
   SEVENTY_NOTES_COLLECTION, SEVENTY_NOTES_MAX_LENGTH, isValidSeventyNotesInput, normalizeSeventyNotes,
 } from './seventyNotes'
@@ -19,8 +19,10 @@ interface AdminCreateScheduleRequest {
   presidentUid?: string
   date: string
   endDate?: string   // 여러 날 모임의 마지막 날 (meeting only). scheduleDates.ts 참고
-  startTime: string
-  endTime: string
+  // 종일 일정이면 allDay: true로 보내고 시간은 보내지 않는다(scheduleDates.ts).
+  allDay?: boolean
+  startTime?: string
+  endTime?: string
   notes?: string
   zoomLink?: string
   location?: string
@@ -41,7 +43,7 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const { type, seventyUid, unitId, regionId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, location, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId, seventyOnly, endDate, seventyNotes } = data
+    const { type, seventyUid, unitId, regionId, wardName, presidentUid, date, notes, zoomLink, location, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId, seventyOnly, endDate, seventyNotes } = data
 
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
@@ -49,7 +51,15 @@ export const adminCreateSchedule = functions
     if (!DATE_RE.test(date)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid date format (YYYY-MM-DD)')
     }
-    if (!TIME_RE.test(startTime) || !TIME_RE.test(endTime)) {
+    if (data.allDay !== undefined && typeof data.allDay !== 'boolean') {
+      throw new functions.https.HttpsError('invalid-argument', 'allDay must be a boolean')
+    }
+    // 종일 일정은 시간을 받지 않고 하루의 처음과 끝으로 채운다.
+    const allDay = data.allDay === true
+    const startTime = allDay ? ALL_DAY_START_TIME : data.startTime
+    const endTime = allDay ? ALL_DAY_END_TIME : data.endTime
+    if (typeof startTime !== 'string' || typeof endTime !== 'string' ||
+      !TIME_RE.test(startTime) || !TIME_RE.test(endTime)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid time format (HH:mm)')
     }
     // 여러 날은 모임만 된다. 접견·방문은 하루 안에 끝나는 일정이다.
@@ -211,14 +221,16 @@ export const adminCreateSchedule = functions
       relatedVisitWardName = visitData?.wardName
     }
 
-    const existing = await db.collection('schedules')
+    // 같은 시각에 확정된 일정이 이미 있으면 막는다. 종일 일정은 시각이 없으므로 이 검사를 하지
+    // 않는다 — 같은 날 종일 일정이 둘 있어도(예: 종일 모임 + 종일 방문) 겹침이 아니다.
+    const existing = allDay ? null : await db.collection('schedules')
       .where('seventyUid', '==', seventyUid)
       .where('date', '==', date)
       .where('startTime', '==', startTime)
       .where('status', '==', 'confirmed')
       .limit(1)
       .get()
-    if (!existing.empty) {
+    if (existing && !existing.empty) {
       throw new functions.https.HttpsError('already-exists', '해당 시간에 이미 확정된 일정이 있습니다.')
     }
 
@@ -241,6 +253,7 @@ export const adminCreateSchedule = functions
       presidentUid: presidentUid ?? null,
       date,
       endDate: multiDay ? endDate : null,
+      allDay,
       startTime,
       endTime,
       notes: notes ?? null,

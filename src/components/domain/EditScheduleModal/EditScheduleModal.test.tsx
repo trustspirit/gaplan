@@ -764,3 +764,49 @@ describe('EditScheduleModal 칠십인 전용 메모', () => {
     expect(sentUpdates().seventyNotes).toBeNull()
   })
 })
+
+// 종일 일정은 00:00/23:59로 저장돼 있지만 폼에는 시간 칸을 비워 보여준다 — 비어 있는 것이 곧 종일이다.
+describe('EditScheduleModal 종일 일정', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const ALL_DAY: Schedule = { ...MEETING_SCHEDULE, allDay: true, startTime: '00:00', endTime: '23:59' }
+  const sentUpdates = () => (editSpy.mock.calls[0][0] as { updates: Record<string, unknown> }).updates
+
+  it('종일 일정을 열면 시간 칸이 비어 있고, 그대로 저장하면 allDay만 보낸다', async () => {
+    render(<EditScheduleModal schedule={ALL_DAY} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.getByLabelText('common.startTime')).toHaveValue('')
+    expect(screen.getByLabelText('common.endTime')).toHaveValue('')
+    fireEvent.click(screen.getByText('common.save'))
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(sentUpdates()).toMatchObject({ allDay: true })
+    expect(sentUpdates()).not.toHaveProperty('startTime')
+  })
+
+  it('종일 일정에 시간을 넣으면 allDay: false와 시간을 함께 보낸다', async () => {
+    render(<EditScheduleModal schedule={ALL_DAY} onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '10:00' } })
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '11:00' } })
+    fireEvent.click(screen.getByText('common.save'))
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(sentUpdates()).toMatchObject({ allDay: false, startTime: '10:00', endTime: '11:00' })
+  })
+
+  it('시간이 있던 일정의 시간을 둘 다 비우면 종일로 바꾼다', async () => {
+    render(<EditScheduleModal schedule={MEETING_SCHEDULE} onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '' } })
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '' } })
+    fireEvent.click(screen.getByText('common.save'))
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(sentUpdates()).toMatchObject({ allDay: true })
+  })
+
+  it('시간을 하나만 비우면 저장을 막는다', async () => {
+    render(<EditScheduleModal schedule={MEETING_SCHEDULE} onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '' } })
+    fireEvent.click(screen.getByText('common.save'))
+    expect(await screen.findByText('schedule.errorTimePairRequired')).toBeInTheDocument()
+    expect(editSpy).not.toHaveBeenCalled()
+  })
+})

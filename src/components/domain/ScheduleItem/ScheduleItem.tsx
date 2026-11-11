@@ -25,7 +25,7 @@ import { ScheduleActionMenu } from './ScheduleActionMenu'
 import { useSwipeOpenRow } from './swipeOpenRowContext'
 import { buildScheduleTitle } from '../../../../functions/src/scheduleRules'
 import styles from './ScheduleItem.module.scss'
-import { scheduleLastDate } from '@/utils/scheduleDates'
+import { allDayExclusiveEndDate, isAllDaySchedule, scheduleLastDate } from '@/utils/scheduleDates'
 
 // Fix 2 (controller ruling): this used to build its own, fifth title format
 // (`와드 방문 - X` / `접견 - X` / `모임 - X`) — the same shared rule the row,
@@ -40,8 +40,14 @@ function buildGCalUrl(schedule: Schedule, unitName: string, wardLabel?: string):
     targetKind: schedule.targetKind ?? null,
     customTitle: schedule.customTitle ?? null,
   })
-  const start = `${schedule.date.replace(/-/g, '')}T${schedule.startTime.replace(':', '')}00`
-  const end = `${scheduleLastDate(schedule).replace(/-/g, '')}T${schedule.endTime.replace(':', '')}00`
+  // 종일 일정은 시각 없이 날짜로 넘긴다 — 끝은 마지막 날 다음 날(구글은 그날을 포함하지 않는다).
+  const compact = (d: string) => d.replace(/-/g, '')
+  const start = isAllDaySchedule(schedule)
+    ? compact(schedule.date)
+    : `${compact(schedule.date)}T${schedule.startTime.replace(':', '')}00`
+  const end = isAllDaySchedule(schedule)
+    ? compact(allDayExclusiveEndDate(schedule))
+    : `${compact(scheduleLastDate(schedule))}T${schedule.endTime.replace(':', '')}00`
   const params = new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${start}/${end}` })
   // Use the schedule's own location when it has one; never invent one for
   // this URL (no derivation via buildScheduleLocation).
