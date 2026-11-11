@@ -3,18 +3,26 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useVisitStats } from '@/hooks/useVisitStats'
 import { useTopBar } from '@/hooks/useTopBar'
-import { Card, CardHeader, CardBody, Button, Skeleton } from '@/components/ui'
+import { Card, CardHeader, CardBody, Button, Skeleton, StatCard } from '@/components/ui'
 import { StatsFilterBar } from '@/components/domain/stats/StatsFilterBar'
-import { VisitCountBarChart } from '@/components/domain/stats/VisitCountBarChart'
 import { MonthlyTrendChart } from '@/components/domain/stats/MonthlyTrendChart'
-import { LastVisitList } from '@/components/domain/stats/LastVisitList'
-import { StaleWardsCard } from '@/components/domain/stats/StaleWardsCard'
+import { RegionCoverageChart } from '@/components/domain/stats/RegionCoverageChart'
+import { WardCoverageGrid } from '@/components/domain/stats/WardCoverageGrid'
+import { VisitPriorityList } from '@/components/domain/stats/VisitPriorityList'
+import { InterviewStatusTable } from '@/components/domain/stats/InterviewStatusTable'
 import { REGIONS } from '@/constants/regions'
 import { useEffectiveScope } from '@/hooks/useEffectiveScope'
 import { ROUTES } from '@/router/routes'
 import type { StatsFilters } from '@/utils/visitStats'
+import { coveragePercent } from '@/utils/visitInsights'
 import styles from './StatsPage.module.scss'
 
+/**
+ * 방문·접견 통계. 이 페이지가 답하는 질문은 넷이다:
+ *   CC별로 방문이 고르게 갔는가 / 스테이크·와드별로 고르게 갔는가 /
+ *   방문 계획을 세울 때 어디부터 갈 것인가 / 스테이크 회장 접견을 했는가.
+ * 예전에는 방문 횟수만 세는 막대그래프였다 — 횟수로는 "어디가 빠졌는지"가 보이지 않는다.
+ */
 export function StatsPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -34,7 +42,12 @@ export function StatsPage() {
     period: '6m',
   })
 
-  const { stats, loading, error, reload } = useVisitStats(filters)
+  const { stats, insights, loading, error, reload } = useVisitStats(filters)
+  const { summary } = insights
+
+  // 와드를 누르면 그 와드를 들고 방문 계획으로 간다.
+  const planVisit = (ward: { name: string }) =>
+    navigate(ROUTES.planVisits, { state: { wardName: ward.name } })
 
   return (
     <div className={styles.page}>
@@ -46,16 +59,21 @@ export function StatsPage() {
       />
 
       {loading ? (
-        // skeletons match the chart grid so content doesn't jump on load
-        <div className={styles.grid}>
-          {[1, 2, 3, 4].map((i) => (
+        // skeletons match the layout so content doesn't jump on load
+        <>
+          <div className={styles.summary}>
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} height="92px" />
+            ))}
+          </div>
+          {[1, 2].map((i) => (
             <Card key={i}>
               <CardBody>
-                <Skeleton height="280px" />
+                <Skeleton height="240px" />
               </CardBody>
             </Card>
           ))}
-        </div>
+        </>
       ) : error ? (
         <div className={styles.errorBanner} role="alert">
           <span>{t('stats.loadFailed')}</span>
@@ -65,17 +83,45 @@ export function StatsPage() {
         </div>
       ) : (
         <>
+          <div className={styles.summary}>
+            <StatCard
+              label={t('stats.summaryVisits')}
+              value={summary.visits}
+              unit={t('stats.summaryVisitsUnit')}
+            />
+            <StatCard
+              label={t('stats.summaryCoverage')}
+              value={coveragePercent(summary.wardsVisited, summary.wardsTotal)}
+              unit="%"
+              note={t('stats.summaryCoverageNote', {
+                visited: summary.wardsVisited,
+                total: summary.wardsTotal,
+              })}
+            />
+            <StatCard
+              label={t('stats.summaryNever')}
+              value={summary.wardsNeverVisited}
+              unit={t('stats.summaryNeverUnit')}
+              note={t('stats.summaryNeverNote')}
+              tone={summary.wardsNeverVisited > 0 ? 'warning' : 'neutral'}
+            />
+            <StatCard
+              label={t('stats.summaryInterview')}
+              value={coveragePercent(summary.interviewUnitsDone, summary.interviewUnitsTotal)}
+              unit="%"
+              note={t('stats.summaryInterviewNote', {
+                done: summary.interviewUnitsDone,
+                total: summary.interviewUnitsTotal,
+              })}
+            />
+          </div>
+
           <div className={styles.grid}>
             <Card>
-              <CardHeader title={t('stats.byRegion')} />
+              <CardHeader title={t('stats.regionCoverageTitle')} />
               <CardBody>
-                <VisitCountBarChart data={stats.byRegion} />
-              </CardBody>
-            </Card>
-            <Card>
-              <CardHeader title={t('stats.byUnit')} />
-              <CardBody>
-                <VisitCountBarChart data={stats.byUnit} />
+                <p className={styles.desc}>{t('stats.regionCoverageDesc')}</p>
+                <RegionCoverageChart regions={insights.regions} />
               </CardBody>
             </Card>
             <Card>
@@ -84,25 +130,32 @@ export function StatsPage() {
                 <MonthlyTrendChart data={stats.monthlyTrend} />
               </CardBody>
             </Card>
-            <Card>
-              <CardHeader title={t('stats.lastVisit')} />
-              <CardBody>
-                <LastVisitList entries={stats.lastVisit} />
-              </CardBody>
-            </Card>
           </div>
 
           <Card>
-            <CardHeader title={t('stats.staleTitle')} />
+            <CardHeader title={t('stats.wardGridTitle')} />
             <CardBody>
-              <StaleWardsCard
-                entries={stats.staleTopN}
-                onSelect={(entry) =>
-                  navigate(ROUTES.planVisits, { state: { wardName: entry.name } })
-                }
-              />
+              <p className={styles.desc}>{t('stats.wardGridDesc')}</p>
+              <WardCoverageGrid units={insights.units} onSelect={planVisit} />
             </CardBody>
           </Card>
+
+          <div className={styles.grid}>
+            <Card>
+              <CardHeader title={t('stats.priorityTitle')} />
+              <CardBody>
+                <p className={styles.desc}>{t('stats.priorityDesc')}</p>
+                <VisitPriorityList wards={insights.priority} onSelect={planVisit} />
+              </CardBody>
+            </Card>
+            <Card>
+              <CardHeader title={t('stats.interviewTitle')} />
+              <CardBody>
+                <p className={styles.desc}>{t('stats.interviewDesc')}</p>
+                <InterviewStatusTable rows={insights.interviews} />
+              </CardBody>
+            </Card>
+          </div>
         </>
       )}
     </div>

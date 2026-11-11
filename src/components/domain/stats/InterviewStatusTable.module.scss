@@ -1,0 +1,91 @@
+@use '@/styles/variables' as *;
+
+// 좁은 화면에서는 표만 가로로 밀린다 — 페이지 전체가 옆으로 밀리지 않게 한다.
+.scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  // 두 칸 배치의 카드 안(약 480px)에는 그대로 들어가고, 그보다 좁으면 표만 가로로 밀린다.
+  min-width: 460px;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+
+  th,
+  td {
+    padding: $space-2;
+    border-bottom: 1px solid $color-border;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  thead th {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text-muted;
+    white-space: nowrap;
+  }
+}
+
+.quarterHead,
+.cell {
+  text-align: center !important;
+}
+
+// 이번 분기 열은 옅게 깔아 눈이 먼저 가게 한다.
+.current {
+  background: $color-bg;
+}
+
+.unit {
+  font-weight: $font-weight-normal;
+}
+
+.unitName {
+  display: block;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.region {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: $font-size-xs;
+  white-space: nowrap;
+}
+
+// 글자는 본문 색 계열로 두고, 상태는 아이콘과 낱말이 함께 전한다.
+.done {
+  color: $color-text;
+  font-weight: $font-weight-semibold;
+}
+
+.scheduled {
+  color: $color-text;
+}
+
+.none {
+  color: $color-text-muted;
+}
+
+.lastHead,
+.last {
+  text-align: right !important;
+  white-space: nowrap;
+  color: $color-text-muted;
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}

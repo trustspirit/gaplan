@@ -28,9 +28,18 @@ vi.mock('@/hooks/useEffectiveScope', () => ({
   useEffectiveScope: () => ({ regionIds: null, actingSeventyUid: null }),
 }))
 
+const emptyInsights = {
+  summary: {
+    visits: 0, wardsTotal: 0, wardsVisited: 0, wardsNeverVisited: 0,
+    interviewUnitsTotal: 0, interviewUnitsDone: 0,
+  },
+  regions: [], units: [], priority: [], interviews: [],
+}
+
 vi.mock('@/hooks/useVisitStats', () => ({
   useVisitStats: () => ({
     stats: emptyStats,
+    insights: emptyInsights,
     loading: false,
     error: new Error('permission denied'),
     reload: vi.fn(),
@@ -46,6 +55,8 @@ vi.mock('@/components/ui', () => ({
   Card: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
   CardHeader: ({ title }: { title: string }) => <h3>{title}</h3>,
   CardBody: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Skeleton: () => <div />,
+  StatCard: ({ label }: { label: string }) => <div>{label}</div>,
   Button: (
     props: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string; size?: string },
   ) => {
@@ -59,17 +70,20 @@ vi.mock('@/components/ui', () => ({
 vi.mock('@/components/domain/stats/StatsFilterBar', () => ({
   StatsFilterBar: () => <div />,
 }))
-vi.mock('@/components/domain/stats/VisitCountBarChart', () => ({
-  VisitCountBarChart: () => <div />,
-}))
 vi.mock('@/components/domain/stats/MonthlyTrendChart', () => ({
   MonthlyTrendChart: () => <div />,
 }))
-vi.mock('@/components/domain/stats/LastVisitList', () => ({
-  LastVisitList: () => <div />,
+vi.mock('@/components/domain/stats/RegionCoverageChart', () => ({
+  RegionCoverageChart: () => <div />,
 }))
-vi.mock('@/components/domain/stats/StaleWardsCard', () => ({
-  StaleWardsCard: () => <div />,
+vi.mock('@/components/domain/stats/WardCoverageGrid', () => ({
+  WardCoverageGrid: () => <div />,
+}))
+vi.mock('@/components/domain/stats/VisitPriorityList', () => ({
+  VisitPriorityList: () => <div />,
+}))
+vi.mock('@/components/domain/stats/InterviewStatusTable', () => ({
+  InterviewStatusTable: () => <div />,
 }))
 
 import { StatsPage } from './StatsPage'

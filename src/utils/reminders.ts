@@ -61,6 +61,20 @@ export function interviewReminderKey(unitId: string, quarterStart: string) {
   return `interview:${unitId}:${quarterStart}`
 }
 
+/**
+ * 분기 접견으로 치는 일정인가 — 스테이크/지방부 회장과의 접견·모임만 해당한다.
+ * targetKind가 아예 없는 옛 문서(interview/meeting, wardId 없음)는 스테이크 회장 대상으로 본다.
+ * 리마인더와 통계의 접견 현황이 같은 기준을 쓰도록 여기 하나로 둔다 — 둘이 어긋나면
+ * 리마인더는 "접견 필요"라는데 통계는 "했음"으로 나온다.
+ */
+export function isStakePresidentContact(s: Schedule): boolean {
+  return (
+    (s.type === 'interview' || s.type === 'meeting') &&
+    ACTIVE(s) &&
+    (s.targetKind === 'stake_president' || (s.targetKind === undefined && !s.wardId))
+  )
+}
+
 export function computeInterviewReminders(
   units: { id: string; name: string }[],
   presidentNameByUnit: Map<string, string>,
@@ -70,15 +84,9 @@ export function computeInterviewReminders(
 ): InterviewReminder[] {
   const q = currentQuarter(today)
   const sev = interviewSeverity(q.daysLeft)
-  // 분기 접견은 스테이크/지방부 회장과의 접견/모임으로만 충족.
-  // targetKind 없는 레거시(interview/meeting, wardId 없음)는 스테이크장 대상으로 간주(back-compat).
-  const isStakeTarget = (s: Schedule) =>
-    s.targetKind === 'stake_president' || (s.targetKind === undefined && !s.wardId)
   const hasContact = (unitId: string) => schedules.some(s =>
-    (s.type === 'interview' || s.type === 'meeting') &&
+    isStakePresidentContact(s) &&
     s.unitId === unitId &&
-    ACTIVE(s) &&
-    isStakeTarget(s) &&
     s.date >= q.start && s.date <= q.end,
   )
   return units

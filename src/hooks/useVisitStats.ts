@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import { authUserAtom } from '@/store/authAtom'
 import { fetchScopedSchedulesInRange } from '@/services/scheduleService'
 import { computeVisitStats, type StatsFilters, type VisitStats } from '@/utils/visitStats'
+import { computeVisitInsights, type VisitInsights } from '@/utils/visitInsights'
 import { useEffectiveScope } from '@/hooks/useEffectiveScope'
 import { seventyViewAtom } from '@/store/seventyViewAtom'
 import { resolveAdminViewSeventyUid } from '@/utils/scope'
@@ -44,8 +45,15 @@ export function useVisitStats(filters: StatsFilters) {
     [schedules, filters, allowedRegionIds, today, scope.actingSeventyUid],
   )
 
+  // 범위·우선순위·접견 현황. 같은 일정 목록에서 계산한다(visitInsights.ts).
+  const insights: VisitInsights = useMemo(
+    () => computeVisitInsights(schedules, filters, allowedRegionIds, today, { actingSeventyUid: scope.actingSeventyUid }),
+    [schedules, filters, allowedRegionIds, today, scope.actingSeventyUid],
+  )
+
   return {
     stats,
+    insights,
     loading,
     error,
     reload: () => setReloadKey(key => key + 1),

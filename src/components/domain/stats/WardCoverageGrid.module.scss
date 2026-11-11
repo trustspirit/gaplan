@@ -1,0 +1,137 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-3;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.plannedIcon {
+  color: $color-text-muted;
+}
+
+.region {
+  margin: $space-2 0 $space-2;
+  padding-bottom: $space-1;
+  border-bottom: 1px solid $color-border;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+}
+
+.unitHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $space-2;
+  margin-bottom: $space-1;
+}
+
+.unitName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.unitCount {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  white-space: nowrap;
+}
+
+// 칸 너비는 와드 이름이 한 줄에 들어갈 만큼만 잡고, 남는 폭은 고르게 나눈다.
+.cells {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-1;
+  width: 100%;
+  min-height: 34px;
+  padding: 4px $space-2;
+  border: 1px solid transparent;
+  border-radius: $border-radius-md;
+  font-size: $font-size-xs;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  @media (pointer: coarse) {
+    min-height: 44px;
+  }
+}
+
+.cellName {
+  min-width: 0;
+  @include truncate;
+}
+
+.cellMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.cellCount {
+  font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
+}
+
+// 방문 횟수 단계 — 한 색의 옅음에서 진함으로. 0회는 채우지 않고 테두리만 둬서 "비어 있음"으로 읽힌다.
+.lv0 {
+  background: $color-surface;
+  border-color: $color-border-strong;
+  border-style: dashed;
+  color: $color-text-muted;
+}
+
+.lv1 {
+  background: color-mix(in srgb, $color-primary 16%, $color-surface);
+  color: $color-text;
+}
+
+.lv2 {
+  background: $color-primary;
+  color: $color-surface;
+}
+
+.empty {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}

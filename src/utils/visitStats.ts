@@ -40,7 +40,7 @@ export const STALE_TOP_N = 10
 const COUNT_TYPES: Schedule['type'][] = ['ward_visit']
 // Interviews count toward unit recency (last-contact date) but NOT toward visit counts
 const RECENCY_TYPES: Schedule['type'][] = ['ward_visit', 'interview']
-const ACTIVE_STATUS: Schedule['status'][] = ['confirmed', 'pending']
+export const ACTIVE_STATUS: Schedule['status'][] = ['confirmed', 'pending']
 
 export function periodStart(period: StatsPeriod, today: string): string {
   const t = dayjs(today)
@@ -59,7 +59,7 @@ export function severityOf(daysSince: number | null): Severity {
   return 'red'
 }
 
-function inRegionScope(
+export function inRegionScope(
   regionId: string | undefined,
   allowedRegionIds: string[] | null,
   selected: string | 'all',
@@ -70,7 +70,7 @@ function inRegionScope(
   return true
 }
 
-function inScheduleScope(
+export function inScheduleScope(
   schedule: Schedule,
   allowedRegionIds: string[] | null,
   selected: string | 'all',

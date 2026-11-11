@@ -1,0 +1,117 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  width: 100%;
+  min-height: 44px;
+  padding: $space-2 $space-1;
+  border: none;
+  border-bottom: 1px solid $color-border;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: $color-text;
+
+  &:hover {
+    background: $color-bg;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.rank {
+  flex-shrink: 0;
+  width: 22px;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.names {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  @include truncate;
+}
+
+.unit {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  @include truncate;
+}
+
+.planned {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  padding: 1px $space-2;
+  border-radius: $border-radius-full;
+  background: color-mix(in srgb, $color-primary 10%, $color-surface);
+  font-size: $font-size-xs;
+  color: $color-text;
+  white-space: nowrap;
+}
+
+.since {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  font-size: $font-size-sm;
+  white-space: nowrap;
+
+  strong {
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.date {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: $color-text-muted;
+}
+
+.more {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin-top: $space-2;
+  border: none;
+  background: none;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-primary;
+  cursor: pointer;
+
+  &:hover {
+    background: $color-bg;
+  }
+}
+
+.empty {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}

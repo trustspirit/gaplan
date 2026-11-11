@@ -15,13 +15,33 @@
   }
 }
 
-.grid {
+.summary {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: $space-4;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: $space-3;
 
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// 카드마다 "이 그림이 무엇을 재는가"를 한 줄로 적는다.
+.desc {
+  margin: 0 0 $space-3;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  line-height: $line-height-loose;
+}
+
+.grid {
+  display: grid;
+  // minmax(0, …)이어야 표·칸 격자처럼 넓은 내용이 칸을 밀어내지 않는다.
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: $space-4;
+  align-items: start;
+
+  @media (max-width: 768px) {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
