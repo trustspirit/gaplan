@@ -211,4 +211,22 @@ describe('buildPublicSchedulePayload', () => {
       expect(payload.generalSchedules[0]).not.toHaveProperty('seventyNotes')
     })
   })
+
+  // 담당 지역 칠십인의 참석 여부는 숨길 정보가 아니다 — 스테이크 회원이 보는 유닛 링크에도 실린다.
+  describe('담당 지역 칠십인 참석', () => {
+    const generals = [
+      { id: 'g1', data: () => ({ title: '대회', date: '2999-01-01', category: 'conference', isPublic: true, seventyOnly: false, seventyAttends: true }) },
+      { id: 'g2', data: () => ({ title: '금식', date: '2999-01-02', category: 'fasting', isPublic: true, seventyOnly: false }) },
+    ]
+
+    it.each([
+      ['전체 공유', { tokens: { tok: '__all__' } }],
+      ['유닛 링크', { tokens: { tok: 'seoul-east-stake' }, units: { 'seoul-east-stake': { enabled: true } } }],
+    ])('%s에서 참석하는 행사에만 seventyAttends가 실린다', async (_name, scope) => {
+      const db = setupFirestore({ ...scope, generals })
+      const payload = await buildPublicSchedulePayload(db, 'tok')
+      expect(payload.generalSchedules[0]).toMatchObject({ id: 'g1', seventyAttends: true })
+      expect(payload.generalSchedules[1]).not.toHaveProperty('seventyAttends')
+    })
+  })
 })

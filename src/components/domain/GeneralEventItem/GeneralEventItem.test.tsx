@@ -77,6 +77,14 @@ describe('GeneralEventItem', () => {
     expect(screen.getByLabelText('generalSchedule.showToPublic')).toBeInTheDocument()
   })
 
+  it('marks an event the area seventy attends with a badge', () => {
+    const { rerender } = render(<GeneralEventItem event={event()} onClick={noop} />)
+    expect(screen.queryByText('generalSchedule.seventyAttends')).not.toBeInTheDocument()
+
+    rerender(<GeneralEventItem event={event({ seventyAttends: true })} onClick={noop} />)
+    expect(screen.getByText('generalSchedule.seventyAttends')).toBeInTheDocument()
+  })
+
   it('marks a seventy-only event with a badge and leaves other events unmarked', () => {
     const { rerender } = render(<GeneralEventItem event={event({ isPublic: false })} onClick={noop} />)
     expect(screen.queryByText('generalSchedule.seventyOnly')).not.toBeInTheDocument()

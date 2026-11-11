@@ -48,6 +48,7 @@ export function GeneralScheduleFormModal({
   const [endTime, setEndTime]         = useState(initialData?.endTime ?? '')
   const [description, setDescription] = useState(initialData?.description ?? '')
   const [seventyNotes, setSeventyNotes] = useState(initialData?.seventyNotes ?? '')
+  const [seventyAttends, setSeventyAttends] = useState(initialData?.seventyAttends === true)
   const initialVisibility: EventVisibility = initialData ? eventVisibilityOf(initialData) : 'private'
   const [visibility, setVisibility]   = useState<EventVisibility>(initialVisibility)
   const [saving, setSaving]           = useState(false)
@@ -81,6 +82,7 @@ export function GeneralScheduleFormModal({
     endTime !== (initialData?.endTime ?? '') ||
     description !== (initialData?.description ?? '') ||
     seventyNotes !== (initialData?.seventyNotes ?? '') ||
+    seventyAttends !== (initialData?.seventyAttends === true) ||
     visibility !== initialVisibility ||
     JSON.stringify(targetRegionIds) !== JSON.stringify(initialData?.targetRegionIds ?? []) ||
     JSON.stringify(targetUnitIds) !== JSON.stringify(initialData?.targetUnitIds ?? [])
@@ -125,6 +127,7 @@ export function GeneralScheduleFormModal({
         startTime:   startTime || undefined,
         endTime:     endTime || undefined,
         description: description.trim() || undefined,
+        seventyAttends,
         // 공개 범위는 관리자·집행서기만 정한다. 그 밖의 작성자(칠십인)는 공개로 올릴 수 없고,
         // 관리자가 칠십인 전용으로 해 둔 표시는 그대로 지킨다 — 끄면 회장에게 보이게 된다.
         ...(canUseAdminTools(user)
@@ -242,6 +245,15 @@ export function GeneralScheduleFormModal({
             rows={3}
             maxLength={500}
           />
+          {/* 담당 지역 칠십인의 참석 여부 — 공개 페이지에도 배지로 나간다. */}
+          <label className={styles.checkboxRow}>
+            <input
+              type="checkbox"
+              checked={seventyAttends}
+              onChange={e => setSeventyAttends(e.target.checked)}
+            />
+            <span>{t('generalSchedule.seventyAttendsLabel')}</span>
+          </label>
           {/* 설명은 회장과 공개 페이지에도 나간다. 이 칸은 칠십인 쪽(칠십인·집행서기·관리자)과
               칠십인 전용 공개 페이지에만 보인다. */}
           <div>

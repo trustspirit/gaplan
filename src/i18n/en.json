@@ -669,7 +669,10 @@
     "nextMonth": "Next month",
     "seventyNotesLabel": "Seventy-only notes (optional)",
     "seventyNotesHint": "Hidden from presidents, CC/stake public pages and calendars. Shown on the Seventy-only public page.",
-    "seventyNotesTitle": "Seventy-only notes"
+    "seventyNotesTitle": "Seventy-only notes",
+    "seventyAttendsLabel": "Area Seventy attends",
+    "seventyAttends": "Seventy attends",
+    "seventyAttendsFailed": "Failed to change attendance."
   },
   "kakao": {
     "title": "KakaoTalk Calendar",

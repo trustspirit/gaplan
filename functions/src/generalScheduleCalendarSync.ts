@@ -99,6 +99,7 @@ export const generalScheduleCalendarSync = functions
         startTime: after?.startTime,
         endTime: after?.endTime,
         endDate: after?.endDate,
+        seventyAttends: after?.seventyAttends === true,
       }
       const body = generalScheduleEventBody(gs)
       const requestBody: calendar_v3.Schema$Event = {

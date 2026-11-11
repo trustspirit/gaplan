@@ -8,6 +8,7 @@ import { buildGeneralScheduleVEvent } from './generalScheduleIcsEvent'
 import { dedupeById, isSeventyOnly } from './seventyOnly'
 import { allDayExclusiveEndDate, isAllDaySchedule, scheduleLastDate } from './scheduleDates'
 import { GENERAL_SEVENTY_NOTES_COLLECTION, SEVENTY_NOTES_COLLECTION } from './seventyNotes'
+import { withSeventyAttendsLine } from './generalScheduleEventBody'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -271,9 +272,13 @@ export const publicScheduleIcs = functions
             endDate: data.endDate,
             startTime: data.startTime,
             endTime: data.endTime,
-            ...(unitIds === null && generalSeventyNotesById.has(d.id)
-              ? { description: `[칠십인 전용] ${generalSeventyNotesById.get(d.id)}` }
-              : {}),
+            // 설명: 담당 지역 칠십인 참석 여부(모든 구독), 그 아래 칠십인 전용 메모(전체 공유만).
+            description: withSeventyAttendsLine(
+              unitIds === null && generalSeventyNotesById.has(d.id)
+                ? `[칠십인 전용] ${generalSeventyNotesById.get(d.id)}`
+                : null,
+              data.seventyAttends === true,
+            ) ?? undefined,
           }, dtstamp))
         })
 

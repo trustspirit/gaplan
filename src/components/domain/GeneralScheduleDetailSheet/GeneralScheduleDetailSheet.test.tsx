@@ -64,3 +64,40 @@ describe('GeneralScheduleDetailSheet 여러 날 행사', () => {
     expect(screen.getByText(expected)).toBeInTheDocument()
   })
 })
+
+// 담당 지역 칠십인의 참석 여부. 표시할 수 있는 사람에게는 체크 칸, 그 밖에는 참석일 때만 배지다.
+describe('GeneralScheduleDetailSheet 담당 지역 칠십인 참석', () => {
+  const base = {
+    attendances: [], currentUid: 'u1', currentRole: 'seventy',
+    onClose: vi.fn(), onEdit: vi.fn(), onDelete: vi.fn(),
+  }
+
+  it('onToggleSeventyAttends가 있으면 체크 칸이 나오고 누르면 바뀔 값을 넘긴다', async () => {
+    const onToggle = vi.fn()
+    render(<GeneralScheduleDetailSheet {...base} event={event()} onToggleSeventyAttends={onToggle} />)
+    const box = screen.getByLabelText('generalSchedule.seventyAttendsLabel')
+    expect(box).not.toBeChecked()
+    box.click()
+    expect(onToggle).toHaveBeenCalledWith(true)
+  })
+
+  it('참석으로 표시된 행사는 체크된 채로 열린다', () => {
+    render(
+      <GeneralScheduleDetailSheet
+        {...base}
+        event={event({ seventyAttends: true })}
+        onToggleSeventyAttends={vi.fn()}
+      />,
+    )
+    expect(screen.getByLabelText('generalSchedule.seventyAttendsLabel')).toBeChecked()
+  })
+
+  it('표시할 수 없는 사람에게는 참석일 때만 배지를 보여준다', () => {
+    const { rerender } = render(<GeneralScheduleDetailSheet {...base} event={event()} />)
+    expect(screen.queryByLabelText('generalSchedule.seventyAttendsLabel')).toBeNull()
+    expect(screen.queryByText('generalSchedule.seventyAttends')).toBeNull()
+
+    rerender(<GeneralScheduleDetailSheet {...base} event={event({ seventyAttends: true })} />)
+    expect(screen.getByText('generalSchedule.seventyAttends')).toBeInTheDocument()
+  })
+})

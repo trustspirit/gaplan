@@ -17,6 +17,8 @@ export interface GeneralScheduleForCalendar {
   endTime?: string   // HH:mm
   // 여러 날에 걸친 행사의 종료일. 없으면 date 하루짜리로 취급한다.
   endDate?: string    // YYYY-MM-DD
+  // 담당 지역 칠십인이 참석하는 행사. 설명 첫 줄에 적어 캘린더에서도 알 수 있게 한다.
+  seventyAttends?: boolean | null
 }
 
 export type CalendarEventTime = { date: string } | { dateTime: string; timeZone: string }
@@ -28,8 +30,23 @@ export interface GeneralScheduleEventBody {
   end: CalendarEventTime
 }
 
+export const SEVENTY_ATTENDS_LINE = '지역 칠십인 참석'
+
+/**
+ * 담당 지역 칠십인이 참석하는 행사면 설명 맨 위에 그 사실을 한 줄로 적는다. 구글 캘린더와
+ * ICS 구독은 배지를 보여줄 방법이 없어 설명에 넣는다 — 두 경로가 같은 문구를 쓴다.
+ */
+export function withSeventyAttendsLine(
+  description: string | null | undefined,
+  seventyAttends: boolean | null | undefined,
+): string | null {
+  const text = description?.trim() || null
+  if (seventyAttends !== true) return text
+  return text ? `${SEVENTY_ATTENDS_LINE}\n${text}` : SEVENTY_ATTENDS_LINE
+}
+
 export function generalScheduleEventBody(gs: GeneralScheduleForCalendar): GeneralScheduleEventBody {
-  const description = gs.description ?? undefined
+  const description = withSeventyAttendsLine(gs.description, gs.seventyAttends) ?? undefined
 
   if (gs.startTime) {
     // 행사는 endTime이 선택이라 시작만 있는 문서가 실제로 존재한다. 같은 시각으로 채우면

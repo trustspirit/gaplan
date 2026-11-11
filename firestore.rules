@@ -151,7 +151,13 @@ service cloud.firestore {
       allow update: if isAdmin()
         || ((isSeventy() || isExecSecretary())
             && resource.data.createdBy == request.auth.uid
-            && request.resource.data.createdBy == resource.data.createdBy);
+            && request.resource.data.createdBy == resource.data.createdBy)
+        // 담당 지역 칠십인의 참석 여부는 행사를 만든 사람이 아니어도 칠십인·집행서기가 표시한다 —
+        // 스테이크 대회 같은 행사는 대개 관리자가 만들고, 참석할지는 칠십인이 정한다.
+        // 그 한 필드만 바꾸는 수정에 한한다.
+        || ((isSeventy() || isExecSecretary())
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seventyAttends'])
+            && request.resource.data.seventyAttends is bool);
       allow delete: if isAdmin()
         || ((isSeventy() || isExecSecretary()) && resource.data.createdBy == request.auth.uid);
     }

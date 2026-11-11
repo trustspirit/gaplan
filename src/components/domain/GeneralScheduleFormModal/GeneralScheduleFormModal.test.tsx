@@ -414,3 +414,38 @@ describe('GeneralScheduleFormModal 칠십인 전용 메모', () => {
   })
 })
 
+// 담당 지역 칠십인의 참석 여부 — 공개 페이지에도 배지로 나가는 값이다.
+describe('GeneralScheduleFormModal 담당 지역 칠십인 참석', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.currentUser = {
+      uid: 'seventy-uid', email: 'seventy@test.com', role: 'seventy',
+      name: '칠십인', regionId: 'seoul', createdAt: '2026-01-01',
+    }
+  })
+
+  it('체크하지 않으면 false로, 체크하면 true로 저장한다', async () => {
+    const { createGeneralSchedule } = await import('@/services/generalScheduleService')
+    render(<GeneralScheduleFormModal initialDate="2026-09-01" onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), { target: { value: '대회' } })
+    fireEvent.click(screen.getByLabelText('generalSchedule.seventyAttendsLabel'))
+    fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
+    await waitFor(() => expect(createGeneralSchedule).toHaveBeenCalled())
+    expect(vi.mocked(createGeneralSchedule).mock.calls[0][0]).toMatchObject({ seventyAttends: true })
+  })
+
+  it('참석으로 표시된 행사를 열면 체크되어 있다', () => {
+    render(
+      <GeneralScheduleFormModal
+        initialData={{
+          id: 'g1', title: '대회', date: '2026-09-03', category: 'conference',
+          createdBy: 'seventy-uid', createdAt: '2026-08-01', isPublic: false, seventyAttends: true,
+        }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+    expect(screen.getByLabelText('generalSchedule.seventyAttendsLabel')).toBeChecked()
+  })
+})
+

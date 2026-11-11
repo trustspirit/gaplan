@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Building2, MoonStar, CalendarDays, Clock, Globe, GlobeLock, Lock, Pencil, Trash2 } from 'lucide-react'
+import { Building2, MoonStar, CalendarDays, Clock, Globe, GlobeLock, Lock, Pencil, Trash2, UserCheck } from 'lucide-react'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
@@ -25,6 +25,8 @@ interface GeneralScheduleDetailSheetProps {
   onClose: () => void
   onEdit: () => void
   onDelete: () => void
+  /** 담당 지역 칠십인의 참석 여부를 바꾼다. 넘기면 체크 칸이 나오고, 없으면 참석일 때 배지만 보인다. */
+  onToggleSeventyAttends?: (next: boolean) => void
 }
 
 export function GeneralScheduleDetailSheet({
@@ -35,6 +37,7 @@ export function GeneralScheduleDetailSheet({
   onClose,
   onEdit,
   onDelete,
+  onToggleSeventyAttends,
 }: GeneralScheduleDetailSheetProps) {
   const { t } = useTranslation()
   const isMobile = useIsMobile()
@@ -92,6 +95,24 @@ export function GeneralScheduleDetailSheet({
           <Clock size={14} className={styles.infoIcon} />
           <span>{event.startTime} – {event.endTime}</span>
         </div>
+      )}
+      {/* 담당 지역 칠십인의 참석 여부. 표시할 수 있는 사람(관리자·칠십인·집행서기)에게는 체크 칸,
+          그 밖에는 참석일 때만 배지. */}
+      {onToggleSeventyAttends ? (
+        <label className={styles.attendCheck}>
+          <input
+            type="checkbox"
+            checked={event.seventyAttends === true}
+            onChange={(e) => onToggleSeventyAttends(e.target.checked)}
+          />
+          <span>{t('generalSchedule.seventyAttendsLabel')}</span>
+        </label>
+      ) : (
+        event.seventyAttends === true && (
+          <p className={styles.attendBadge}>
+            <UserCheck size={13} /> {t('generalSchedule.seventyAttends')}
+          </p>
+        )
       )}
       {event.description && (
         <p className={styles.description}>{event.description}</p>

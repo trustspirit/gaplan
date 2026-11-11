@@ -359,3 +359,33 @@ describe('generalScheduleSeventyNotes', () => {
     await assertSucceeds(batch.commit())
   })
 })
+
+// 담당 지역 칠십인의 참석 여부는 행사를 만든 사람이 아니어도 칠십인·집행서기가 표시한다 —
+// 스테이크 대회 같은 행사는 대개 관리자가 만든다. 그 한 필드만 바꾸는 수정에 한한다.
+describe('generalSchedules — 담당 지역 칠십인 참석', () => {
+  beforeEach(async () => {
+    await seed('users/s1', { role: 'seventy' })
+    await seed('users/e1', { role: 'exec_secretary' })
+    await seed('users/a1', { role: 'admin' })
+    await seed('users/p1', { role: 'president' })
+    await seed('generalSchedules/g1', { title: '대회', createdBy: 'a1', isPublic: true, seventyOnly: false, date: '2026-12-01' })
+  })
+
+  it('lets a seventy and an exec secretary mark attendance on an event they did not create', async () => {
+    await assertSucceeds(updateDoc(doc(as('s1'), 'generalSchedules/g1'), { seventyAttends: true }))
+    await assertSucceeds(updateDoc(doc(as('e1'), 'generalSchedules/g1'), { seventyAttends: false }))
+  })
+
+  it('refuses a non-creator who changes anything else along with it', async () => {
+    await assertFails(updateDoc(doc(as('s1'), 'generalSchedules/g1'), { seventyAttends: true, title: '바꿈' }))
+    await assertFails(updateDoc(doc(as('s1'), 'generalSchedules/g1'), { isPublic: false }))
+  })
+
+  it('refuses a value that is not a boolean', async () => {
+    await assertFails(updateDoc(doc(as('s1'), 'generalSchedules/g1'), { seventyAttends: 'yes' }))
+  })
+
+  it('refuses a president', async () => {
+    await assertFails(updateDoc(doc(as('p1'), 'generalSchedules/g1'), { seventyAttends: true }))
+  })
+})

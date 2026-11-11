@@ -30,7 +30,7 @@ import { GeneralScheduleDetailSheet } from '@/components/domain/GeneralScheduleD
 import { AddScheduleFlow } from '@/components/domain/addSchedule/AddScheduleFlow'
 import { addScheduleChoicesFor } from '@/components/domain/addSchedule/addScheduleChoices'
 import { REGIONS } from '@/constants/regions'
-import { canUseAdminTools } from '@/utils/permissions'
+import { canMarkSeventyAttendance, canUseAdminTools } from '@/utils/permissions'
 import type { GeneralSchedule, Schedule } from '@/types'
 import { ScheduleFilterBar } from './ScheduleFilterBar'
 import { ScheduleCalendarPanel } from './ScheduleCalendarPanel'
@@ -142,6 +142,18 @@ export function SchedulesPage() {
         : [],
     [generalSchedules, kinds, deletingIds, regionId],
   )
+
+  // 담당 지역 칠십인의 참석 여부. 그 한 필드만 고친다 — 행사를 만든 사람이 아니어도 규칙이 허용한다.
+  // 상세 시트는 detailTarget(열 때의 사본)을 보고 있으므로 그 사본도 같이 고쳐 체크가 바로 바뀌게 한다.
+  const handleToggleSeventyAttends = async (event: GeneralSchedule, next: boolean) => {
+    setDetailTarget((prev) => (prev && prev.id === event.id ? { ...prev, seventyAttends: next } : prev))
+    try {
+      await updateGeneralSchedule(event.id, { seventyAttends: next })
+    } catch {
+      setDetailTarget((prev) => (prev && prev.id === event.id ? { ...prev, seventyAttends: !next } : prev))
+      toast.error(t('generalSchedule.seventyAttendsFailed'))
+    }
+  }
 
   const handleToggleVisibility = async (event: GeneralSchedule) => {
     try {
@@ -399,6 +411,11 @@ export function SchedulesPage() {
           }
           currentUid={user.uid}
           currentRole={user.role}
+          onToggleSeventyAttends={
+            canMarkSeventyAttendance(user) && detailTarget
+              ? (next) => handleToggleSeventyAttends(detailTarget, next)
+              : undefined
+          }
           onClose={() => setDetailTarget(null)}
           onEdit={() => {
             const target = detailTarget

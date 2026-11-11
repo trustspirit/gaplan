@@ -102,6 +102,8 @@ export interface PublicGeneralSchedule {
   isPublic: true
   // 칠십인 전용 메모 — 전체 공유(칠십인 전용 페이지)에서만 실린다.
   seventyNotes?: string
+  // 담당 지역 칠십인이 참석하는 행사. 모든 공개 페이지에 실린다 — 숨길 정보가 아니다.
+  seventyAttends?: boolean
 }
 
 export interface PublicSchedulePayload {
@@ -307,6 +309,7 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
         ...(data.endTime ? { endTime: data.endTime } : {}),
         category: data.category,
         isPublic: true,
+        ...(data.seventyAttends === true ? { seventyAttends: true } : {}),
         ...(unitIds === null && generalSeventyNotesById.has(d.id)
           ? { seventyNotes: generalSeventyNotesById.get(d.id) }
           : {}),

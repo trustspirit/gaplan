@@ -90,3 +90,28 @@ describe('a multi-day event that also has times', () => {
     expect(body.end).toEqual({ dateTime: '2026-09-04T09:00:00+09:00', timeZone: 'Asia/Seoul' })
   })
 })
+
+import { withSeventyAttendsLine } from './generalScheduleEventBody'
+
+// 담당 지역 칠십인이 참석하는 행사는 캘린더 설명 맨 위에 그 사실을 적는다 — 구글 캘린더와
+// ICS 구독에는 배지를 보여줄 방법이 없다.
+describe('담당 지역 칠십인 참석', () => {
+  it('참석이면 설명 맨 위에 한 줄을 넣는다', () => {
+    expect(withSeventyAttendsLine('장소: 본부', true)).toBe('지역 칠십인 참석\n장소: 본부')
+  })
+
+  it('설명이 없어도 참석 한 줄은 넣는다', () => {
+    expect(withSeventyAttendsLine(null, true)).toBe('지역 칠십인 참석')
+    expect(withSeventyAttendsLine('   ', true)).toBe('지역 칠십인 참석')
+  })
+
+  it('참석이 아니면 설명을 그대로 둔다', () => {
+    expect(withSeventyAttendsLine('장소: 본부', false)).toBe('장소: 본부')
+    expect(withSeventyAttendsLine(null, undefined)).toBeNull()
+  })
+
+  it('구글 캘린더 이벤트 설명에 반영된다', () => {
+    const body = generalScheduleEventBody({ title: '스테이크 대회', date: '2026-09-01', seventyAttends: true })
+    expect(body.description).toBe('지역 칠십인 참석')
+  })
+})

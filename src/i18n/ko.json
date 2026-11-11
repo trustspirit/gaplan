@@ -669,7 +669,10 @@
     "nextMonth": "다음 달",
     "seventyNotesLabel": "칠십인 전용 메모 (선택)",
     "seventyNotesHint": "회장과 CC·스테이크 공개 페이지, 캘린더에는 보이지 않습니다. 칠십인 전용 공개 페이지에는 표시됩니다.",
-    "seventyNotesTitle": "칠십인 전용 메모"
+    "seventyNotesTitle": "칠십인 전용 메모",
+    "seventyAttendsLabel": "담당 지역 칠십인 참석",
+    "seventyAttends": "칠십인 참석",
+    "seventyAttendsFailed": "참석 여부 변경에 실패했습니다."
   },
   "kakao": {
     "title": "카카오톡 캘린더",

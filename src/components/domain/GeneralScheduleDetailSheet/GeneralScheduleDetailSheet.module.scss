@@ -96,6 +96,26 @@
   line-height: $line-height-loose;
 }
 
+.attendCheck {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin: $space-3 0;
+  font-size: $font-size-sm;
+  color: $color-text;
+  cursor: pointer;
+}
+
+.attendBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: $space-3 0;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-primary;
+}
+
 .seventyNotes {
   margin: $space-3 0;
   padding: $space-2 $space-3;

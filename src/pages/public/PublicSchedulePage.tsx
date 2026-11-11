@@ -437,6 +437,12 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
                                   />
                                   {catLabel}
                                 </span>
+                                {gs.seventyAttends && (
+                                  <span className={styles.presidentBadge}>
+                                    <UserCheck size={10} />
+                                    <span>{t('public.seventyAttends')}</span>
+                                  </span>
+                                )}
                                 <p className={styles.title}>{gs.title}</p>
                                 {gs.startTime && gs.endTime && (
                                   <p className={styles.time}>

@@ -29,6 +29,7 @@ export interface PublicGeneralScheduleItem {
   endTime?: string
   category: PublicGeneralScheduleCategory
   isPublic: true
+  seventyAttends?: boolean   // 담당 지역 칠십인이 참석하는 행사
   seventyNotes?: string   // 칠십인 전용 메모 — 칠십인 전용 페이지(전체 공유)에서만 온다
 }
 
