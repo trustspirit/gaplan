@@ -14,22 +14,18 @@ export const EMPTY_DATE_RANGE: DateRange = { start: '', end: '' }
 /**
  * 지금 선택이 `current`일 때 `clicked` 날짜를 누르면 선택이 무엇이 되는가.
  *
- * 이미 정해진 것(이 둘은 dateRange.test.ts가 검사한다):
- *   - 아무것도 고르지 않은 상태에서 누르면 그날 하루짜리가 된다.
- *   - 시작일만 있는 상태에서 그보다 뒤 날짜를 누르면 그날이 종료일이 된다.
+ *   - 아무것도 고르지 않았으면 그날 하루짜리가 된다.
+ *   - 시작일만 있고 그보다 뒤 날짜를 누르면 그날이 종료일이 된다.
+ *   - 그 밖에는(시작일보다 앞이나 같은 날을 눌렀거나, 이미 범위가 있는데 또 눌렀으면)
+ *     누른 날부터 새로 시작한다. 범위를 고치려면 처음부터 다시 누른다 — 어느 쪽 끝이 옮겨질지
+ *     짐작하게 하지 않는다.
  *
  * 날짜는 YYYY-MM-DD 문자열이라 `<`, `>`로 바로 비교할 수 있다.
  */
 export function nextDateRange(current: DateRange, clicked: string): DateRange {
-  // 시작일만 있고 그보다 뒤를 눌렀다 → 범위가 완성된다.
   if (current.start && !current.end && clicked > current.start) {
     return { start: current.start, end: clicked }
   }
-
-  // TODO(사용자 결정): 아래 세 경우는 아직 정하지 않았다. 지금은 셋 다 "누른 날부터 새로 시작"이다.
-  //   1. 시작일만 있는데 그보다 **앞** 날짜를 눌렀다 → 시작일을 옮긴다? 두 날을 맞바꿔 범위로 만든다?
-  //   2. 시작일만 있는데 **같은 날**을 다시 눌렀다 → 그대로 하루짜리? 선택을 지운다?
-  //   3. 범위가 이미 있는데 또 눌렀다 → 누른 날부터 새로 시작? 가까운 쪽 끝을 옮긴다?
   return { start: clicked, end: '' }
 }
 

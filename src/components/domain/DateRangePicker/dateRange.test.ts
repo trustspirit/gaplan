@@ -14,6 +14,22 @@ describe('nextDateRange', () => {
   })
 })
 
+describe('nextDateRange — 다시 누르기', () => {
+  it('시작일만 있는데 그보다 앞 날짜를 누르면 그날부터 새로 시작한다', () => {
+    expect(nextDateRange({ start: '2026-12-03', end: '' }, '2026-12-01')).toEqual({ start: '2026-12-01', end: '' })
+  })
+
+  it('시작일만 있는데 같은 날을 다시 누르면 그대로 하루짜리다', () => {
+    expect(nextDateRange({ start: '2026-12-03', end: '' }, '2026-12-03')).toEqual({ start: '2026-12-03', end: '' })
+  })
+
+  it('범위가 이미 있으면 어디를 눌러도 그날부터 새로 시작한다', () => {
+    const range = { start: '2026-12-03', end: '2026-12-05' }
+    expect(nextDateRange(range, '2026-12-04')).toEqual({ start: '2026-12-04', end: '' })
+    expect(nextDateRange(range, '2026-12-10')).toEqual({ start: '2026-12-10', end: '' })
+  })
+})
+
 describe('isInDateRange', () => {
   it('선택이 없으면 어느 날도 범위 안이 아니다', () => {
     expect(isInDateRange(EMPTY_DATE_RANGE, '2026-12-03')).toBe(false)
