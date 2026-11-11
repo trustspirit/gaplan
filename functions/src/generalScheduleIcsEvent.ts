@@ -19,6 +19,8 @@ export interface GeneralScheduleForIcs {
   // 여러 날에 걸친 행사의 종료일. 없으면 date 하루짜리로 취급한다 —
   // generalScheduleEventBody.ts(구글 캘린더 동기화)의 같은 필드와 나란히 간다.
   endDate?: string    // YYYY-MM-DD
+  // 이벤트 설명. 칠십인 전용 페이지의 구독에서 칠십인 전용 메모를 싣는 데 쓴다.
+  description?: string
 }
 
 function escapeIcs(str: string): string {
@@ -77,6 +79,7 @@ export function buildGeneralScheduleVEvent(gs: GeneralScheduleForIcs, dtstamp: s
   }
 
   lines.push(`SUMMARY:${escapeIcs(gs.title)}`)
+  if (gs.description?.trim()) lines.push(`DESCRIPTION:${escapeIcs(gs.description.trim())}`)
   lines.push('END:VEVENT')
 
   return lines.join('\r\n')

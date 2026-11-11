@@ -96,6 +96,12 @@ export function GeneralScheduleDetailSheet({
       {event.description && (
         <p className={styles.description}>{event.description}</p>
       )}
+      {event.seventyNotes?.trim() && (
+        <div className={styles.seventyNotes}>
+          <p className={styles.seventyNotesTitle}><Lock size={11} /> {t('generalSchedule.seventyNotesTitle')}</p>
+          <p className={styles.seventyNotesText}>{event.seventyNotes}</p>
+        </div>
+      )}
 
       <div className={styles.attendeesSection}>
         <p className={styles.attendeesLabel}>

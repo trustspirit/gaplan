@@ -356,3 +356,61 @@ describe('GeneralScheduleFormModal 공개설정 권한', () => {
     })
   })
 })
+
+// 칠십인 전용 메모는 설명과 다른 칸이다 — 설명은 회장과 공개 페이지에도 나간다.
+describe('GeneralScheduleFormModal 칠십인 전용 메모', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.currentUser = {
+      uid: 'seventy-uid', email: 'seventy@test.com', role: 'seventy',
+      name: '칠십인', regionId: 'seoul', createdAt: '2026-01-01',
+    }
+  })
+
+  const existing = {
+    id: 'g1', title: '수련회', date: '2026-09-03', category: 'conference' as const,
+    createdBy: 'seventy-uid', createdAt: '2026-08-01', isPublic: false,
+  }
+
+  it('새 행사에 메모를 쓰면 행사와 함께 넘긴다', async () => {
+    const { createGeneralSchedule } = await import('@/services/generalScheduleService')
+    render(<GeneralScheduleFormModal initialDate="2026-09-01" onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), { target: { value: '모임' } })
+    fireEvent.change(screen.getByLabelText('generalSchedule.seventyNotesLabel'), { target: { value: ' 전용 메모 ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
+    await waitFor(() => expect(createGeneralSchedule).toHaveBeenCalled())
+    expect(vi.mocked(createGeneralSchedule).mock.calls[0][1]).toBe('전용 메모')
+    expect(vi.mocked(createGeneralSchedule).mock.calls[0][0]).not.toHaveProperty('seventyNotes')
+  })
+
+  it('건드리지 않은 메모는 수정 저장에서 넘기지 않는다', async () => {
+    const { updateGeneralSchedule } = await import('@/services/generalScheduleService')
+    render(
+      <GeneralScheduleFormModal
+        initialData={{ ...existing, seventyNotes: '전용 메모' }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+    expect(screen.getByLabelText('generalSchedule.seventyNotesLabel')).toHaveValue('전용 메모')
+    fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
+    await waitFor(() => expect(updateGeneralSchedule).toHaveBeenCalled())
+    expect(vi.mocked(updateGeneralSchedule).mock.calls[0][2]).toBeUndefined()
+  })
+
+  it('메모를 비우면 지우라고 넘긴다', async () => {
+    const { updateGeneralSchedule } = await import('@/services/generalScheduleService')
+    render(
+      <GeneralScheduleFormModal
+        initialData={{ ...existing, seventyNotes: '전용 메모' }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+    fireEvent.change(screen.getByLabelText('generalSchedule.seventyNotesLabel'), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
+    await waitFor(() => expect(updateGeneralSchedule).toHaveBeenCalled())
+    expect(vi.mocked(updateGeneralSchedule).mock.calls[0][2]).toEqual({ notes: null, date: '2026-09-03' })
+  })
+})
+

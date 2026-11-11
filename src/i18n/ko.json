@@ -666,7 +666,10 @@
     "dateRangeHint": "시작일을 누른 뒤 종료일을 누르세요. 하루짜리는 한 번만 누르면 됩니다.",
     "dateRangeEmpty": "날짜를 선택하세요",
     "prevMonth": "이전 달",
-    "nextMonth": "다음 달"
+    "nextMonth": "다음 달",
+    "seventyNotesLabel": "칠십인 전용 메모 (선택)",
+    "seventyNotesHint": "회장과 CC·스테이크 공개 페이지, 캘린더에는 보이지 않습니다. 칠십인 전용 공개 페이지에는 표시됩니다.",
+    "seventyNotesTitle": "칠십인 전용 메모"
   },
   "kakao": {
     "title": "카카오톡 캘린더",

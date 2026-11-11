@@ -116,6 +116,21 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // 행사의 칠십인 전용 메모. 행사 문서는 회장도 읽으므로 메모만 따로 둔다. 읽는 사람은 칠십인
+    // 전용 행사를 볼 수 있는 사람과 같고, 쓰는 사람은 그 행사를 고칠 수 있는 사람과 같다
+    // (관리자, 또는 그 행사를 만든 칠십인·집행서기). 행사와 메모를 한 배치로 쓰므로 만들 때는
+    // getAfter로 "이 배치가 끝난 뒤의 행사"를 보고, 지울 때는 행사가 같은 배치에서 함께 지워질 수
+    // 있으니 get으로 "지우기 전의 행사"를 본다.
+    match /generalScheduleSeventyNotes/{scheduleId} {
+      allow read: if isAdmin() || isSeventy() || isExecSecretary();
+      allow create, update: if isAdmin()
+        || ((isSeventy() || isExecSecretary())
+            && getAfter(/databases/$(database)/documents/generalSchedules/$(scheduleId)).data.createdBy == request.auth.uid);
+      allow delete: if isAdmin()
+        || ((isSeventy() || isExecSecretary())
+            && get(/databases/$(database)/documents/generalSchedules/$(scheduleId)).data.createdBy == request.auth.uid);
+    }
+
     match /generalSchedules/{scheduleId} {
       // 칠십인 전용 행사(seventyOnly)는 관리자·칠십인·집행서기만 읽는다. 그 밖의 로그인 사용자
       // (회장 등)는 seventyOnly가 false인 행사만 읽는다 — 그래서 회장 계정의 목록 조회는

@@ -33,6 +33,7 @@ function setupFirestore(opts: {
   schedules?: Array<{ id: string; data: () => unknown }>
   generals?: Array<{ id: string; data: () => unknown }>
   seventyNotes?: Array<{ id: string; data: () => unknown }>
+  generalSeventyNotes?: Array<{ id: string; data: () => unknown }>
 }): FirestoreLike {
   const docMock = vi.fn((path: string) => ({
     get: async () => {
@@ -48,7 +49,9 @@ function setupFirestore(opts: {
         ? (opts.schedules ?? [])
         : name === 'scheduleSeventyNotes'
           ? (opts.seventyNotes ?? [])
-          : (opts.generals ?? []),
+          : name === 'generalScheduleSeventyNotes'
+            ? (opts.generalSeventyNotes ?? [])
+            : (opts.generals ?? []),
     ),
   )
   return { doc: docMock, collection: collectionMock }
@@ -180,6 +183,32 @@ describe('buildPublicSchedulePayload', () => {
       expect(payload.schedules).toHaveLength(1)
       expect(payload.schedules[0]).not.toHaveProperty('seventyNotes')
       expect(payload.schedules[0].notes).toBe('일반 메모')
+    })
+  })
+
+  // 행사의 칠십인 전용 메모도 같은 규칙이다 — 칠십인 전용 페이지에만 붙여 내보낸다.
+  describe('행사의 칠십인 전용 메모', () => {
+    const generals = [
+      { id: 'g1', data: () => ({ title: '대회', date: '2999-01-01', category: 'conference', isPublic: true, seventyOnly: false }) },
+    ]
+    const generalSeventyNotes = [{ id: 'g1', data: () => ({ date: '2999-01-01', notes: '행사 전용 메모' }) }]
+
+    it('전체 공유 토큰은 행사에 칠십인 전용 메모를 붙여 내보낸다', async () => {
+      const db = setupFirestore({ tokens: { tok: '__all__' }, generals, generalSeventyNotes })
+      const payload = await buildPublicSchedulePayload(db, 'tok')
+      expect(payload.generalSchedules[0]).toMatchObject({ id: 'g1', seventyNotes: '행사 전용 메모' })
+    })
+
+    it('유닛 링크는 행사의 칠십인 전용 메모를 내보내지 않는다', async () => {
+      const db = setupFirestore({
+        tokens: { tok: 'seoul-east-stake' },
+        units: { 'seoul-east-stake': { enabled: true } },
+        generals,
+        generalSeventyNotes,
+      })
+      const payload = await buildPublicSchedulePayload(db, 'tok')
+      expect(payload.generalSchedules).toHaveLength(1)
+      expect(payload.generalSchedules[0]).not.toHaveProperty('seventyNotes')
     })
   })
 })

@@ -29,6 +29,7 @@ export interface PublicGeneralScheduleItem {
   endTime?: string
   category: PublicGeneralScheduleCategory
   isPublic: true
+  seventyNotes?: string   // 칠십인 전용 메모 — 칠십인 전용 페이지(전체 공유)에서만 온다
 }
 
 export interface PublicSchedulePageData {

@@ -666,7 +666,10 @@
     "dateRangeHint": "Tap the start date, then the end date. For a one-day event, tap once.",
     "dateRangeEmpty": "Select a date",
     "prevMonth": "Previous month",
-    "nextMonth": "Next month"
+    "nextMonth": "Next month",
+    "seventyNotesLabel": "Seventy-only notes (optional)",
+    "seventyNotesHint": "Hidden from presidents, CC/stake public pages and calendars. Shown on the Seventy-only public page.",
+    "seventyNotesTitle": "Seventy-only notes"
   },
   "kakao": {
     "title": "KakaoTalk Calendar",

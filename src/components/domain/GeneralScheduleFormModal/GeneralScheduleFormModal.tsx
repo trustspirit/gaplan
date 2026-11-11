@@ -47,6 +47,7 @@ export function GeneralScheduleFormModal({
   const [startTime, setStartTime]     = useState(initialData?.startTime ?? '')
   const [endTime, setEndTime]         = useState(initialData?.endTime ?? '')
   const [description, setDescription] = useState(initialData?.description ?? '')
+  const [seventyNotes, setSeventyNotes] = useState(initialData?.seventyNotes ?? '')
   const initialVisibility: EventVisibility = initialData ? eventVisibilityOf(initialData) : 'private'
   const [visibility, setVisibility]   = useState<EventVisibility>(initialVisibility)
   const [saving, setSaving]           = useState(false)
@@ -79,6 +80,7 @@ export function GeneralScheduleFormModal({
     startTime !== (initialData?.startTime ?? '') ||
     endTime !== (initialData?.endTime ?? '') ||
     description !== (initialData?.description ?? '') ||
+    seventyNotes !== (initialData?.seventyNotes ?? '') ||
     visibility !== initialVisibility ||
     JSON.stringify(targetRegionIds) !== JSON.stringify(initialData?.targetRegionIds ?? []) ||
     JSON.stringify(targetUnitIds) !== JSON.stringify(initialData?.targetUnitIds ?? [])
@@ -133,9 +135,20 @@ export function GeneralScheduleFormModal({
       }
       if (initialData) {
         // 작성자는 만들 때 한 번만 정한다 — 수정한 사람으로 바꾸면 원래 작성자가 관리 권한을 잃는다.
-        await updateGeneralSchedule(initialData.id, payload)
+        // 칠십인 전용 메모는 고쳤을 때만 쓴다. 메모는 행사와 따로 읽어 오므로 폼이 열린 순간
+        // 아직 안 왔을 수 있다 — 건드리지 않은 빈 칸을 쓰면 있던 메모를 지운다.
+        const notesChanged = seventyNotes.trim() !== (initialData.seventyNotes ?? '').trim()
+        await updateGeneralSchedule(
+          initialData.id,
+          payload,
+          notesChanged ? { notes: seventyNotes.trim() || null, date } : undefined,
+        )
       } else {
-        await createGeneralSchedule({ ...payload, createdBy: user.uid })
+        // 메모가 있을 때만 두 번째 인자를 넘긴다 — 없으면 행사 문서 하나만 쓴다.
+        await createGeneralSchedule(
+          { ...payload, createdBy: user.uid },
+          ...(seventyNotes.trim() ? [seventyNotes.trim()] : []),
+        )
       }
       toast.success(t('generalSchedule.savedSuccess'))
       onSaved()
@@ -229,6 +242,18 @@ export function GeneralScheduleFormModal({
             rows={3}
             maxLength={500}
           />
+          {/* 설명은 회장과 공개 페이지에도 나간다. 이 칸은 칠십인 쪽(칠십인·집행서기·관리자)과
+              칠십인 전용 공개 페이지에만 보인다. */}
+          <div>
+            <Textarea
+              label={t('generalSchedule.seventyNotesLabel')}
+              value={seventyNotes}
+              onChange={e => setSeventyNotes(e.target.value)}
+              rows={2}
+              maxLength={1000}
+            />
+            <p className={styles.fieldHint}>{t('generalSchedule.seventyNotesHint')}</p>
+          </div>
           {canUseAdminTools(user) && (
             <Select
               label={t('generalSchedule.visibilityLabel')}

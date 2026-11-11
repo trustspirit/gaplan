@@ -7,7 +7,7 @@ import { generalScheduleInScope } from './generalScheduleScope'
 import { buildGeneralScheduleVEvent } from './generalScheduleIcsEvent'
 import { dedupeById, isSeventyOnly } from './seventyOnly'
 import { allDayExclusiveEndDate, isAllDaySchedule, scheduleLastDate } from './scheduleDates'
-import { SEVENTY_NOTES_COLLECTION } from './seventyNotes'
+import { GENERAL_SEVENTY_NOTES_COLLECTION, SEVENTY_NOTES_COLLECTION } from './seventyNotes'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -151,7 +151,19 @@ export const publicScheduleIcs = functions
               })
           : null
 
-      const [schedulesSnap, ccSnap, generalSnap, seventyOnlySnap, seventyNotesSnap] = await Promise.all([
+      const generalSeventyNotesQuery =
+        unitIds === null
+          ? admin.firestore()
+              .collection(GENERAL_SEVENTY_NOTES_COLLECTION)
+              .where('date', '>=', cutoffStr)
+              .get()
+              .catch((err: unknown) => {
+                console.error('publicScheduleIcs: event seventy notes query failed', err)
+                return null
+              })
+          : null
+
+      const [schedulesSnap, ccSnap, generalSnap, seventyOnlySnap, seventyNotesSnap, generalSeventyNotesSnap] = await Promise.all([
         schedulesQuery
           .where('status', '==', 'confirmed')
           .where('date', '>=', cutoffStr)
@@ -166,7 +178,14 @@ export const publicScheduleIcs = functions
           .get(),
         seventyOnlyQuery,
         seventyNotesQuery,
+        generalSeventyNotesQuery,
       ])
+
+      const generalSeventyNotesById = new Map<string, string>()
+      for (const d of generalSeventyNotesSnap?.docs ?? []) {
+        const notes = d.data().notes
+        if (typeof notes === 'string' && notes.trim()) generalSeventyNotesById.set(d.id, notes)
+      }
 
       const seventyNotesById = new Map<string, string>()
       for (const d of seventyNotesSnap?.docs ?? []) {
@@ -252,6 +271,9 @@ export const publicScheduleIcs = functions
             endDate: data.endDate,
             startTime: data.startTime,
             endTime: data.endTime,
+            ...(unitIds === null && generalSeventyNotesById.has(d.id)
+              ? { description: `[칠십인 전용] ${generalSeventyNotesById.get(d.id)}` }
+              : {}),
           }, dtstamp))
         })
 

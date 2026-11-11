@@ -7,7 +7,7 @@ import {
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
 import {
-  collection, doc, getDoc, getDocs, query, setDoc, updateDoc, deleteDoc, where,
+  collection, doc, getDoc, getDocs, query, setDoc, updateDoc, deleteDoc, where, writeBatch,
 } from 'firebase/firestore'
 
 // `npm run test:rules`로 돈다 — Firestore 에뮬레이터가 있어야 해서 기본 `npm test`에는 없다.
@@ -303,5 +303,59 @@ describe('scheduleSeventyNotes', () => {
   it('keeps the notes from visitors who are not signed in', async () => {
     const anon = env.unauthenticatedContext().firestore()
     await assertFails(getDoc(doc(anon, 'scheduleSeventyNotes/sch1')))
+  })
+})
+
+// 행사의 칠십인 전용 메모. 읽는 사람은 관리자·칠십인·집행서기, 쓰는 사람은 그 행사를 고칠 수
+// 있는 사람(관리자, 또는 그 행사를 만든 칠십인·집행서기)이다.
+describe('generalScheduleSeventyNotes', () => {
+  beforeEach(async () => {
+    await seed('users/s1', { role: 'seventy' })
+    await seed('users/s2', { role: 'seventy' })
+    await seed('users/e1', { role: 'exec_secretary' })
+    await seed('users/a1', { role: 'admin' })
+    await seed('users/p1', { role: 'president' })
+    await seed('generalSchedules/g1', { title: '행사', createdBy: 's1', isPublic: false, seventyOnly: false, date: '2026-12-01' })
+    await seed('generalScheduleSeventyNotes/g1', { date: '2026-12-01', notes: '전용 메모' })
+  })
+
+  it('hides the notes from a president and from visitors who are not signed in', async () => {
+    await assertFails(getDoc(doc(as('p1'), 'generalScheduleSeventyNotes/g1')))
+    await assertFails(getDocs(collection(as('p1'), 'generalScheduleSeventyNotes')))
+    const anon = env.unauthenticatedContext().firestore()
+    await assertFails(getDoc(doc(anon, 'generalScheduleSeventyNotes/g1')))
+  })
+
+  it('shows the notes to any seventy, exec secretary and admin', async () => {
+    await assertSucceeds(getDocs(collection(as('s2'), 'generalScheduleSeventyNotes')))
+    await assertSucceeds(getDoc(doc(as('e1'), 'generalScheduleSeventyNotes/g1')))
+    await assertSucceeds(getDoc(doc(as('a1'), 'generalScheduleSeventyNotes/g1')))
+  })
+
+  it('lets the event creator and the admin edit the notes, but not another seventy', async () => {
+    await assertSucceeds(updateDoc(doc(as('s1'), 'generalScheduleSeventyNotes/g1'), { notes: '수정' }))
+    await assertSucceeds(updateDoc(doc(as('a1'), 'generalScheduleSeventyNotes/g1'), { notes: '관리자' }))
+    await assertFails(updateDoc(doc(as('s2'), 'generalScheduleSeventyNotes/g1'), { notes: '남의 것' }))
+    await assertFails(deleteDoc(doc(as('s2'), 'generalScheduleSeventyNotes/g1')))
+  })
+
+  it('lets a seventy create an event and its notes in one batch', async () => {
+    const db = as('s2')
+    const batch = writeBatch(db)
+    batch.set(doc(db, 'generalSchedules/g2'), { title: '새 행사', createdBy: 's2', isPublic: false, seventyOnly: false, date: '2026-12-05' })
+    batch.set(doc(db, 'generalScheduleSeventyNotes/g2'), { date: '2026-12-05', notes: '메모' })
+    await assertSucceeds(batch.commit())
+  })
+
+  it('refuses notes for an event that does not exist', async () => {
+    await assertFails(setDoc(doc(as('s2'), 'generalScheduleSeventyNotes/nope'), { date: '2026-12-05', notes: '메모' }))
+  })
+
+  it('lets the creator delete the event and its notes in one batch', async () => {
+    const db = as('s1')
+    const batch = writeBatch(db)
+    batch.delete(doc(db, 'generalSchedules/g1'))
+    batch.delete(doc(db, 'generalScheduleSeventyNotes/g1'))
+    await assertSucceeds(batch.commit())
   })
 })

@@ -1,10 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { addDoc } from 'firebase/firestore'
+
+// 행사와 칠십인 전용 메모는 한 배치로 쓴다 — 생성은 addDoc이 아니라 batch.set이다.
+const batchMock = vi.hoisted(() => ({
+  set: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  commit: vi.fn().mockResolvedValue(undefined),
+}))
 
 const firestoreMocks = vi.hoisted(() => ({
-  addDoc: vi.fn().mockResolvedValue({ id: 'new-id' }),
   collection: vi.fn((...args: unknown[]) => ({ kind: 'collection', args })),
-  doc: vi.fn((...args: unknown[]) => ({ kind: 'doc', args })),
+  // doc(collectionRef)는 새 id를 만들고, doc(db, 'col', id)는 그 문서를 가리킨다.
+  doc: vi.fn((...args: unknown[]) => ({ kind: 'doc', args, id: 'new-id', path: args.slice(1).join('/') })),
+  writeBatch: vi.fn(() => batchMock),
+  getDocs: vi.fn().mockResolvedValue({ docs: [] }),
   updateDoc: vi.fn().mockResolvedValue(undefined),
   serverTimestamp: vi.fn(() => 'server-timestamp'),
   deleteField: vi.fn(() => 'delete-field'),
@@ -19,7 +28,7 @@ vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn() }))
 vi.mock('@/firebase', () => ({ db: 'db', functions: 'functions' }))
 
 import {
-  createGeneralSchedule, subscribeToGeneralSchedules, updateGeneralSchedule,
+  createGeneralSchedule, deleteGeneralSchedule, subscribeToGeneralSchedules, updateGeneralSchedule,
 } from './generalScheduleService'
 
 describe('createGeneralSchedule', () => {
@@ -41,8 +50,8 @@ describe('createGeneralSchedule', () => {
       isPublic: false,
     })
 
-    expect(addDoc).toHaveBeenCalled()
-    const payload = firestoreMocks.addDoc.mock.calls[0][1] as Record<string, unknown>
+    expect(batchMock.commit).toHaveBeenCalled()
+    const payload = batchMock.set.mock.calls[0][1] as Record<string, unknown>
     const undefinedKeys = Object.keys(payload).filter(k => payload[k] === undefined)
     expect(undefinedKeys).toEqual([])
   })
@@ -61,12 +70,12 @@ describe('createGeneralSchedule — seventyOnly', () => {
 
   it('seventyOnly를 넘기지 않아도 false로 쓴다', async () => {
     await createGeneralSchedule(base)
-    expect(firestoreMocks.addDoc.mock.calls[0][1]).toMatchObject({ seventyOnly: false })
+    expect(batchMock.set.mock.calls[0][1]).toMatchObject({ seventyOnly: false })
   })
 
   it('칠십인 전용 행사는 true로 쓴다', async () => {
     await createGeneralSchedule({ ...base, seventyOnly: true })
-    expect(firestoreMocks.addDoc.mock.calls[0][1]).toMatchObject({ seventyOnly: true })
+    expect(batchMock.set.mock.calls[0][1]).toMatchObject({ seventyOnly: true })
   })
 })
 
@@ -134,3 +143,55 @@ describe('updateGeneralSchedule', () => {
     expect(firestoreMocks.updateDoc.mock.calls[0][1]).toEqual({ isPublic: true })
   })
 })
+
+// 칠십인 전용 메모는 행사 문서의 필드가 아니다 — 회장이 행사 문서를 읽기 때문에
+// generalScheduleSeventyNotes/{id}에 따로 쓴다.
+describe('칠십인 전용 메모', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const base = {
+    title: '전체 야유회', date: '2026-09-01', category: 'other' as const, createdBy: 'uid-1', isPublic: false,
+  }
+  const pathOf = (ref: unknown) => (ref as { path: string }).path
+
+  it('만들 때 메모가 있으면 행사와 메모를 한 배치로 쓰고, 메모는 행사 문서에 넣지 않는다', async () => {
+    await createGeneralSchedule(base, '  전용 메모  ')
+    expect(batchMock.set).toHaveBeenCalledTimes(2)
+    expect(batchMock.set.mock.calls[0][1]).not.toHaveProperty('seventyNotes')
+    expect(pathOf(batchMock.set.mock.calls[1][0])).toBe('generalScheduleSeventyNotes/new-id')
+    expect(batchMock.set.mock.calls[1][1]).toMatchObject({ date: '2026-09-01', notes: '전용 메모' })
+  })
+
+  it('만들 때 메모가 없으면 메모 문서를 쓰지 않는다', async () => {
+    await createGeneralSchedule(base)
+    expect(batchMock.set).toHaveBeenCalledTimes(1)
+  })
+
+  it('수정에서 메모를 넘기지 않으면 메모를 건드리지 않는다 — 공개 전환 같은 부분 수정', async () => {
+    await updateGeneralSchedule('gs-1', { isPublic: true })
+    expect(firestoreMocks.updateDoc).toHaveBeenCalled()
+    expect(batchMock.set).not.toHaveBeenCalled()
+    expect(batchMock.delete).not.toHaveBeenCalled()
+  })
+
+  it('수정에서 메모를 넘기면 행사 날짜와 함께 쓴다', async () => {
+    await updateGeneralSchedule('gs-1', { title: '행사' }, { notes: '새 메모', date: '2026-09-02' })
+    expect(pathOf(batchMock.set.mock.calls[0][0])).toBe('generalScheduleSeventyNotes/gs-1')
+    expect(batchMock.set.mock.calls[0][1]).toMatchObject({ date: '2026-09-02', notes: '새 메모' })
+    expect(batchMock.commit).toHaveBeenCalled()
+  })
+
+  it('수정에서 메모를 비우면 메모 문서를 지운다', async () => {
+    await updateGeneralSchedule('gs-1', { title: '행사' }, { notes: null, date: '2026-09-02' })
+    expect(pathOf(batchMock.delete.mock.calls[0][0])).toBe('generalScheduleSeventyNotes/gs-1')
+  })
+
+  it('행사를 지우면 메모도 함께 지운다', async () => {
+    await deleteGeneralSchedule('gs-1')
+    const deleted = batchMock.delete.mock.calls.map((c) => pathOf(c[0]))
+    expect(deleted).toEqual(expect.arrayContaining(['generalSchedules/gs-1', 'generalScheduleSeventyNotes/gs-1']))
+  })
+})
+

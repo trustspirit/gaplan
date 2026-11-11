@@ -445,6 +445,22 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
                                 )}
                               </div>
                             </div>
+                            {/* 칠십인 전용 메모는 칠십인 전용 페이지에서만 온다. 행사에는 펼침 버튼이
+                                없으므로 줄 아래에 바로 보여준다. */}
+                            {gs.seventyNotes?.trim() && (
+                              <div className={styles.notesPanel}>
+                                <div className={styles.seventyNotes}>
+                                  <p className={styles.seventyNotesTitle}>
+                                    <Lock size={11} /> {t('public.seventyNotesTitle')}
+                                  </p>
+                                  <NotesText
+                                    text={gs.seventyNotes.trim()}
+                                    linkClass={styles.notesLink}
+                                    textClass={styles.notesText}
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </Fragment>
                       )

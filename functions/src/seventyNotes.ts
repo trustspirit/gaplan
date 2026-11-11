@@ -18,6 +18,12 @@
 export const SEVENTY_NOTES_COLLECTION = 'scheduleSeventyNotes'
 export const SEVENTY_NOTES_MAX_LENGTH = 1000
 
+// 행사(generalSchedules)의 칠십인 전용 메모. 행사 문서도 회장이 읽으므로 같은 이유로 따로 둔다.
+// 문서 모양: { date, notes } — 행사는 한 칠십인의 것이 아니라서 seventyUid가 없고,
+// 관리자·칠십인·집행서기 누구나 읽는다(칠십인 전용 행사를 볼 수 있는 사람과 같다).
+// 행사는 Cloud Functions를 거치지 않고 브라우저가 직접 쓰므로 이 문서도 브라우저가 쓴다.
+export const GENERAL_SEVENTY_NOTES_COLLECTION = 'generalScheduleSeventyNotes'
+
 /** 앞뒤 공백을 걷어낸 메모. 비어 있으면 null(= 메모 없음, 문서를 지운다). */
 export function normalizeSeventyNotes(value: string | null | undefined): string | null {
   const trimmed = typeof value === 'string' ? value.trim() : ''

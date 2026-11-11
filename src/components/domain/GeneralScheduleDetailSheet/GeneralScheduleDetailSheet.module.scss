@@ -96,6 +96,32 @@
   line-height: $line-height-loose;
 }
 
+.seventyNotes {
+  margin: $space-3 0;
+  padding: $space-2 $space-3;
+  background: $color-bg;
+  border-radius: $border-radius-md;
+}
+
+.seventyNotesTitle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 2px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+}
+
+.seventyNotesText {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+}
+
 .attendeesSection { margin: $space-4 0; }
 
 .attendeesLabel {

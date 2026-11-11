@@ -18,6 +18,9 @@ export interface GeneralSchedule {
   // 켜져 있으면 isPublic은 항상 false다 — 이 필드를 모르는 경로가 비공개로 취급하게 하려는 것이다.
   // 옛 문서에는 필드가 없을 수 있다(없음 = false).
   seventyOnly?: boolean
+  // 칠십인 전용 메모. 행사 문서에는 없다 — generalScheduleSeventyNotes/{id}에서 읽어
+  // useGeneralSchedules가 붙여 준다(관리자·칠십인·집행서기만). 회장에게는 항상 비어 있다.
+  seventyNotes?: string
   targetRegionIds?: string[]   // empty = org-wide
   targetUnitIds?: string[]     // empty = no unit restriction
 }

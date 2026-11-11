@@ -54,6 +54,12 @@
   cursor: pointer;
 }
 
+.fieldHint {
+  margin: $space-1 0 0;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
 .error {
   font-size: $font-size-sm;
   color: $color-danger;

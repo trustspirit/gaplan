@@ -3,7 +3,7 @@ import { CC_COUNCIL_TARGET_KIND, isCcCouncilForScope } from './ccCouncil'
 import { generalScheduleInScope } from './generalScheduleScope'
 import { dedupeById, isSeventyOnly } from './seventyOnly'
 import { isAllDaySchedule, isMultiDaySchedule } from './scheduleDates'
-import { SEVENTY_NOTES_COLLECTION } from './seventyNotes'
+import { GENERAL_SEVENTY_NOTES_COLLECTION, SEVENTY_NOTES_COLLECTION } from './seventyNotes'
 
 /**
  * "이 토큰이 무엇을 볼 수 있는가"의 유일한 판정.
@@ -100,6 +100,8 @@ export interface PublicGeneralSchedule {
   endTime?: string
   category: 'conference' | 'fasting' | 'other'
   isPublic: true
+  // 칠십인 전용 메모 — 전체 공유(칠십인 전용 페이지)에서만 실린다.
+  seventyNotes?: string
 }
 
 export interface PublicSchedulePayload {
@@ -205,7 +207,19 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
           })
       : null
 
-  const [snap, generalSnap, ccSnap, seventyOnlySnap, seventyNotesSnap] = await Promise.all([
+  const generalSeventyNotesQuery =
+    unitIds === null
+      ? db
+          .collection(GENERAL_SEVENTY_NOTES_COLLECTION)
+          .where('date', '>=', cutoffStr)
+          .get()
+          .catch((err: unknown) => {
+            console.error('[publicSchedulePayload] event seventy notes query failed', err)
+            return null
+          })
+      : null
+
+  const [snap, generalSnap, ccSnap, seventyOnlySnap, seventyNotesSnap, generalSeventyNotesSnap] = await Promise.all([
     query
       .where('status', '==', 'confirmed')
       .where('date', '>=', cutoffStr)
@@ -220,7 +234,14 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
     ccQuery,
     seventyOnlyQuery,
     seventyNotesQuery,
+    generalSeventyNotesQuery,
   ])
+
+  const generalSeventyNotesById = new Map<string, string>()
+  for (const d of generalSeventyNotesSnap?.docs ?? []) {
+    const notes = d.data().notes
+    if (typeof notes === 'string' && notes.trim()) generalSeventyNotesById.set(d.id, notes)
+  }
 
   const seventyNotesById = new Map<string, string>()
   for (const d of seventyNotesSnap?.docs ?? []) {
@@ -286,6 +307,9 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
         ...(data.endTime ? { endTime: data.endTime } : {}),
         category: data.category,
         isPublic: true,
+        ...(unitIds === null && generalSeventyNotesById.has(d.id)
+          ? { seventyNotes: generalSeventyNotesById.get(d.id) }
+          : {}),
       }
     })
 
