@@ -92,14 +92,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  flex-shrink: 0;
   padding: 0;
   border: none;
   border-radius: $border-radius-md;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
+  @include icon-button(24px);
 
   &:hover {
     background: var(--surface-sunken);
@@ -115,14 +115,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  flex-shrink: 0;
   padding: 0;
   border: 1px solid var(--border);
   border-radius: $border-radius-md;
   background: var(--surface);
   color: var(--text-muted);
   cursor: pointer;
+  @include icon-button(32px);
 
   &:hover {
     background: var(--surface-sunken);

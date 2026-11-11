@@ -1,4 +1,5 @@
 @use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
 
 .page {
   min-height: 100dvh;
@@ -9,6 +10,17 @@
 
   @media (max-width: 600px) {
     padding-top: 3rem;
+  }
+
+  // 터치 화면에서는 머리글의 언어·새로고침 버튼이 44px가 되어 고정 머리글이 그만큼
+  // 높아진다(패딩 16+44+16 = 76px, 좁은 화면 8+44+8 = 60px). 본문이 그 밑으로
+  // 들어가지 않도록 여백을 같이 늘린다 — 머리글과의 간격 4px은 그대로다.
+  @media (pointer: coarse) {
+    padding-top: 5rem;
+  }
+
+  @media (pointer: coarse) and (max-width: 600px) {
+    padding-top: 4rem;
   }
 }
 
@@ -73,7 +85,11 @@
   font-weight: $font-weight-semibold;
   color: #fff;
   margin: 0;
-  white-space: nowrap;
+  // 긴 단위 이름이 머리글을 화면보다 넓게 밀지 않도록 줄어들 수 있게 하고 말줄임한다.
+  // 버튼 묶음(.headerActions)은 줄어들지 않으므로 좁아지는 것은 제목뿐이다.
+  flex: 0 1 auto;
+  min-width: 0;
+  @include truncate;
 
   @media (max-width: 600px) {
     font-size: $font-size-md;
@@ -169,28 +185,11 @@
   align-items: stretch;
 }
 
+// 행 앞의 4px 색 바는 스펙 §3이 금지한 왼쪽 액센트 스트라이프다. 마크업(TSX)에는 요소가
+// 남아 있으므로 여기서 그리지 않게만 한다 — 종류는 날짜 칸(.dateCol)의 배경·글자색과
+// 행 안의 종류 이름(.typeBadge)이 알린다.
 .colorBar {
-  width: 4px;
-  flex-shrink: 0;
-
-  &[data-type='visit'] {
-    background: $color-primary;
-  }
-  &[data-type='interview'] {
-    background: $color-warning;
-  }
-  &[data-type='meeting'] {
-    background: $color-success;
-  }
-  &[data-type='conference'] {
-    background: $color-warning;
-  }
-  &[data-type='fasting'] {
-    background: $color-purple;
-  }
-  &[data-type='other'] {
-    background: $neutral-600;
-  }
+  display: none;
 }
 
 .dateCol {
@@ -201,15 +200,21 @@
   padding: $space-2 $space-3;
   min-width: 44px;
   flex-shrink: 0;
+  color: $color-text;
 
+  // 방문·접견·모임은 달력 칩과 같은 토큰을 쓴다(_variables.scss의 $schedule-*).
+  // 예전에는 여기서만 접견이 주황, 모임이 초록이었다.
   &[data-type='visit'] {
-    background: rgba($color-primary, 0.06);
+    background: $schedule-ward-visit-bg;
+    color: $schedule-ward-visit-text;
   }
   &[data-type='interview'] {
-    background: rgba($color-warning, 0.06);
+    background: $schedule-interview-bg;
+    color: $schedule-interview-text;
   }
   &[data-type='meeting'] {
-    background: rgba($color-success, 0.06);
+    background: $schedule-meeting-bg;
+    color: $schedule-meeting-text;
   }
   &[data-type='conference'] {
     background: rgba($color-warning, 0.06);
@@ -225,7 +230,8 @@
 .date {
   font-size: $font-size-sm;
   font-weight: $font-weight-semibold;
-  color: $color-text;
+  // 날짜 칸이 정한 종류 색을 따른다(종류가 없으면 $color-text).
+  color: inherit;
   line-height: 1;
 }
 
@@ -505,6 +511,12 @@
     background 0.15s,
     border-color 0.15s;
   flex-shrink: 0;
+
+  // 터치 화면에서는 44×44px 이상. 알약 모양(테두리·모서리)은 그대로 두고 상자만 키운다.
+  @media (pointer: coarse) {
+    min-width: $touch-target-min;
+    min-height: $touch-target-min;
+  }
 
   &:hover {
     background: rgba(255, 255, 255, 0.15);

@@ -47,6 +47,22 @@ $color-sidebar-text: #9fb8ce;
 $color-border-strong: $neutral-300;
 $color-surface-sunken: $neutral-50;
 
+// 일정 종류별 색 — 달력 칩·목록 행 아이콘·공개 페이지 날짜 칸이 같은 종류를 서로 다른
+// 색으로 그리고 있었다. 달력(CalendarView)의 팔레트를 기준으로 삼아 여기 한 번만 적는다.
+// TSX 인라인 스타일은 _tokens.scss의 var(--schedule-*)로 같은 값을 읽는다.
+$schedule-ward-visit-bg: #e7f2f6;
+$schedule-ward-visit-text: #0f5f78;
+$schedule-ward-visit-border: #99c9d8;
+$schedule-interview-bg: #f1ecfb;
+$schedule-interview-text: #5f3ea8;
+$schedule-interview-border: #c4b5fd;
+$schedule-meeting-bg: #fff3df;
+$schedule-meeting-text: #8a4b0f;
+$schedule-meeting-border: #f8c471;
+$schedule-general-attendance-bg: #fef3c7;
+$schedule-general-attendance-text: #92400e;
+$schedule-general-attendance-border: #fde68a;
+
 // Typography
 $font-family:
   'Inter',

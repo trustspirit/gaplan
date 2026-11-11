@@ -81,8 +81,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  flex-shrink: 0;
   border: none;
   background: none;
   border-radius: $border-radius-md;
@@ -91,6 +90,7 @@
   transition:
     background 0.12s,
     color 0.12s;
+  @include icon-button(28px);
   &:hover {
     background: var(--surface-sunken);
     color: var(--text);

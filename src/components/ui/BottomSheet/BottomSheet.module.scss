@@ -1,4 +1,5 @@
 @use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
 .overlay {
   position: fixed;
   inset: 0;
@@ -62,10 +63,16 @@
   align-items: center;
   justify-content: center;
   color: $color-text-muted;
-  width: 32px;
-  height: 32px;
+  flex-shrink: 0;
   border-radius: $border-radius-md;
   margin: -4px;
+  @include icon-button(32px);
+
+  // 상자가 44px로 커진 만큼 음수 여백도 키워 머리글 높이는 그대로 둔다
+  // (32 - 2×4 = 44 - 2×10 = 24px). 커진 영역은 머리글 패딩 안으로 들어간다.
+  @media (pointer: coarse) {
+    margin: -10px;
+  }
   &:hover {
     background: $color-bg;
   }

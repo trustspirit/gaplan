@@ -25,17 +25,14 @@
 }
 
 .errorBanner {
-  margin: $space-3 $dialog-gutter 0;
+  margin: 0;
+  // 바닥글(가로 flex)의 첫 줄을 통째로 차지하고, 버튼들은 그 아래 줄로 내려간다.
+  flex: 1 0 100%;
   padding: $space-3 $space-4;
   background: $color-highlight-danger;
   color: $color-danger;
   border-radius: $border-radius-md;
   font-size: $font-size-sm;
-  flex-shrink: 0;
-
-  @include mobile {
-    margin: $space-3 $space-3 0;
-  }
 }
 
 .fields {
@@ -188,33 +185,14 @@
 
 .actions {
   @include dialog-footer;
+  flex-wrap: wrap;
 }
 
-.saveBtn {
-  background: $color-primary;
-  color: white;
-  border: none;
-  border-radius: $border-radius-md;
-  padding: $space-2 $space-6;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-semibold;
-  cursor: pointer;
-  min-height: 44px;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+// 삭제는 취소·저장과 떨어뜨려 왼쪽 끝에 둔다 — 저장하려다 삭제를 누르지 않게.
+// 모바일에서는 세 버튼이 폭을 나눠 가지므로(dialog-footer) 밀어낼 자리가 없다.
+.deleteAction {
+  @include desktop {
+    margin-right: auto;
   }
 }
 
-.deleteBtn {
-  background: $color-highlight-danger;
-  color: $color-danger;
-  border: 1px solid rgba(220, 38, 38, 0.25);
-  border-radius: $border-radius-md;
-  padding: $space-2 $space-4;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-semibold;
-  cursor: pointer;
-  min-height: 44px;
-}

@@ -55,10 +55,10 @@
 }
 .close {
   @include flex-center;
-  width: 32px;
-  height: 32px;
+  flex-shrink: 0;
   border-radius: $border-radius-md;
   color: $color-text-muted;
+  @include icon-button(32px);
   &:hover {
     background: $color-border;
   }

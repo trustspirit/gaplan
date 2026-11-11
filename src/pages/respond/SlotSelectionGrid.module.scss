@@ -8,16 +8,16 @@
 }
 
 .dateGroup {
-  background: white;
+  background: $color-surface;
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid $color-border;
   overflow: hidden;
 }
 
 .dateHeader {
   padding: 12px 16px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: $neutral-50;
+  border-bottom: 1px solid $color-border;
   font-weight: 600;
   font-size: 14px;
   color: $color-sidebar;
@@ -36,10 +36,10 @@
 
 .slotButton {
   padding: 10px 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid $color-border-strong;
   border-radius: 8px;
-  background: white;
-  font-size: 13px;
+  background: $color-surface;
+  font-size: $font-size-sm;
   cursor: pointer;
   text-align: center;
   min-height: 44px;
@@ -53,7 +53,7 @@
   &.selected {
     background: $color-primary;
     border-color: $color-primary;
-    color: white;
+    color: $color-surface;
     font-weight: 600;
   }
 }

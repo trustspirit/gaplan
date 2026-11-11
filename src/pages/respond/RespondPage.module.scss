@@ -3,7 +3,7 @@
 
 // This external-facing page keeps its own lighter gray background
 // (intentionally not the app's $color-bg); reused below by .submitSection
-$respond-page-bg: #f9fafb;
+$respond-page-bg: $neutral-50;
 
 .page {
   min-height: 100dvh;
@@ -15,7 +15,7 @@ $respond-page-bg: #f9fafb;
 .header {
   position: relative;
   background: $color-sidebar;
-  color: white;
+  color: $color-surface;
   padding: 16px;
   text-align: center;
 }
@@ -31,14 +31,14 @@ $respond-page-bg: #f9fafb;
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: $border-radius-md;
   background: none;
-  color: white;
+  color: $color-surface;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
 
 .headerTitle {
-  font-size: 16px;
+  font-size: $font-size-base;
   font-weight: 700;
 }
 
@@ -61,15 +61,15 @@ $respond-page-bg: #f9fafb;
 }
 
 .taskCard {
-  background: white;
+  background: $color-surface;
   border-radius: 12px;
   padding: 16px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid $color-border;
   margin-bottom: 20px;
 }
 
 .taskTitle {
-  font-size: 18px;
+  font-size: $font-size-md;
   font-weight: 700;
   color: $color-sidebar;
   margin-bottom: 6px;
@@ -77,7 +77,7 @@ $respond-page-bg: #f9fafb;
 
 .taskNote {
   font-size: 14px;
-  color: #6b7280;
+  color: $neutral-600;
   line-height: 1.5;
 }
 
@@ -115,12 +115,17 @@ $respond-page-bg: #f9fafb;
 
 .wardDateSelect {
   flex: 1;
-  border: 1px solid #d1d5db;
+  border: 1px solid $color-border-strong;
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 14px;
   min-height: 44px;
-  background: white;
+  background: $color-surface;
+
+  // 16px 아래면 iOS Safari가 포커스할 때 화면을 확대한다.
+  @include mobile {
+    font-size: $font-size-base;
+  }
 }
 
 .submitSection {
@@ -136,28 +141,28 @@ $respond-page-bg: #f9fafb;
 .submitBtn {
   width: 100%;
   background: $color-primary;
-  color: white;
+  color: $color-surface;
   border: none;
   border-radius: 12px;
   padding: 16px;
-  font-size: 16px;
+  font-size: $font-size-base;
   font-weight: 700;
   cursor: pointer;
   min-height: 52px;
   transition: background 0.15s;
 
   &:disabled {
-    background: #9ca3af;
+    background: $neutral-500;
     cursor: not-allowed;
   }
 }
 
 .errorBanner {
   padding: 12px 16px;
-  background: #fef2f2;
+  background: $color-danger-weak;
   border: 1px solid #fecaca;
   border-radius: 8px;
-  color: #dc2626;
+  color: $color-danger;
   font-size: 14px;
   margin-bottom: 16px;
 }
@@ -182,7 +187,7 @@ $respond-page-bg: #f9fafb;
   justify-content: center;
   min-height: 60vh;
   font-size: 14px;
-  color: #9ca3af;
+  color: $neutral-500;
 }
 
 .successBox {
@@ -201,12 +206,12 @@ $respond-page-bg: #f9fafb;
 }
 
 .successTitle {
-  font-size: 20px;
+  font-size: $font-size-lg;
   font-weight: 700;
   color: $color-sidebar;
 }
 
 .successSub {
   font-size: 14px;
-  color: #6b7280;
+  color: $neutral-600;
 }

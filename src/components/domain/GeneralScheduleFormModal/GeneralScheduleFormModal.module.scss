@@ -64,10 +64,13 @@
   font-size: $font-size-sm;
   color: $color-danger;
   margin: 0;
+  // 바닥글(가로 flex)의 첫 줄을 통째로 차지하고, 버튼들은 그 아래 줄로 내려간다.
+  flex: 1 0 100%;
 }
 
 .footer {
   @include dialog-footer;
+  flex-wrap: wrap;
   // 폼의 좌우 여백 밖으로 나가 패널 폭 전체에 구분선을 긋는다.
   margin: 0 calc(-1 * #{$dialog-gutter});
 }
@@ -107,6 +110,7 @@
   padding: 3px $space-2;
   border: 1px solid $color-border;
   border-radius: $border-radius-sm;
+  @include touch-min-height;
 
   input[type='checkbox'] {
     margin: 0;

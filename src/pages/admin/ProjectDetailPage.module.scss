@@ -1,4 +1,5 @@
 @use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
 
 .page {
   display: flex;
@@ -25,6 +26,11 @@
   font-size: $font-size-sm;
   background: $color-surface;
   color: $color-text;
+
+  // 16px 아래면 iOS Safari가 포커스할 때 화면을 확대한다.
+  @include mobile {
+    font-size: $font-size-base;
+  }
 }
 .actions {
   display: flex;

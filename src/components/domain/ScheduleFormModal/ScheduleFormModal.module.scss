@@ -42,7 +42,9 @@ form :global(textarea) {
 }
 
 .errorBanner {
-  margin: $space-3 $dialog-gutter 0;
+  margin: 0;
+  // 바닥글(가로 flex)의 첫 줄을 통째로 차지하고, 버튼들은 그 아래 줄로 내려간다.
+  flex: 1 0 100%;
   padding: $space-3 $space-4;
   background: $color-highlight-danger;
   color: $color-danger;
@@ -196,12 +198,13 @@ form :global(textarea) {
 
 .footer {
   @include dialog-footer;
+  flex-wrap: wrap;
 }
 
 .hint {
   margin: -4px 0 0;
   font-size: 12px;
-  color: var(--color-text-secondary, #6b7280);
+  color: $color-text-muted;
 }
 
 .conflictWarning {

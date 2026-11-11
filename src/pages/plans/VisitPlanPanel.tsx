@@ -66,10 +66,7 @@ export function VisitPlanPanel() {
               label={t('visitPlan.seventy')}
               value={seventyUid}
               onChange={(e) => setSeventyUid(e.target.value)}
-              options={[
-                { value: '', label: '—' },
-                ...seventies.map((s) => ({ value: s.uid, label: s.name })),
-              ]}
+              options={seventies.map((s) => ({ value: s.uid, label: s.name }))}
             />
             <Button
               onClick={handleCreate}

@@ -24,9 +24,9 @@
   flex-shrink: 0;
 }
 
-.green  { background: #22c55e; }
-.amber  { background: #f59e0b; }
-.red    { background: #ef4444; }
+.green  { background: $color-success; }
+.amber  { background: $color-warning; }
+.red    { background: $color-danger; }
 
 .name {
   flex: 1;

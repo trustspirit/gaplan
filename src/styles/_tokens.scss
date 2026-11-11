@@ -35,6 +35,20 @@
   --sidebar-active: #{$color-sidebar-active};
   --sidebar-text: #{$color-sidebar-text};
 
+  // 일정 종류별 색. CalendarView.tsx가 인라인 스타일로 읽어야 해서 커스텀 프로퍼티로 내보낸다.
+  --schedule-ward-visit-bg: #{$schedule-ward-visit-bg};
+  --schedule-ward-visit-text: #{$schedule-ward-visit-text};
+  --schedule-ward-visit-border: #{$schedule-ward-visit-border};
+  --schedule-interview-bg: #{$schedule-interview-bg};
+  --schedule-interview-text: #{$schedule-interview-text};
+  --schedule-interview-border: #{$schedule-interview-border};
+  --schedule-meeting-bg: #{$schedule-meeting-bg};
+  --schedule-meeting-text: #{$schedule-meeting-text};
+  --schedule-meeting-border: #{$schedule-meeting-border};
+  --schedule-general-attendance-bg: #{$schedule-general-attendance-bg};
+  --schedule-general-attendance-text: #{$schedule-general-attendance-text};
+  --schedule-general-attendance-border: #{$schedule-general-attendance-border};
+
   // Alias. src/pages/home/CalendarBanner.tsx and src/pages/plans/tasks/tasks.module.scss already read
   // var(--color-primary, <fallback>) and until now always hit the fallback.
   --color-primary: #{$color-primary};

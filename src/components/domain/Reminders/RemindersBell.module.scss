@@ -1,4 +1,5 @@
 @use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
 
 .wrap {
   position: relative;
@@ -10,18 +11,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  flex-shrink: 0;
   border: none;
   background: none;
   cursor: pointer;
   color: $color-text-muted;
   border-radius: $border-radius-md;
   transition: background 0.12s, color 0.12s;
+  @include icon-button(32px);
 
+  // 종은 흰 상단 바 위에 놓인다 — TopBar의 .helpBtn과 같은 hover를 쓴다.
   &:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: $color-text-light;
+    background: $color-bg;
+    color: $color-text;
   }
 }
 
@@ -33,6 +35,12 @@
   height: 8px;
   background: $color-danger;
   border-radius: $border-radius-full;
+
+  // 버튼 상자가 44px로 커져도 점이 종 아이콘 모서리에 붙어 있도록 6px씩 안으로 옮긴다.
+  @media (pointer: coarse) {
+    top: 10px;
+    right: 10px;
+  }
 }
 
 .dropdown {
