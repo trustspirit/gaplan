@@ -1,5 +1,6 @@
 import dayjs from 'dayjs'
 import type { Schedule } from '@/types'
+import { scheduleLastDate } from '@/utils/scheduleDates'
 
 const ACTIVE = (s: Schedule) => s.status === 'confirmed' || s.status === 'pending'
 
@@ -12,7 +13,8 @@ export function selectGlanceSchedules(
   const horizon = dayjs(today).add(days, 'day').format('YYYY-MM-DD')
 
   const upcoming = schedules
-    .filter(s => ACTIVE(s) && s.date >= today)
+    // 여러 날 모임은 마지막 날까지 다가오는 일정에 남는다.
+    .filter(s => ACTIVE(s) && scheduleLastDate(s) >= today)
     .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
 
   const within = upcoming.filter(s => s.date <= horizon)
@@ -41,7 +43,7 @@ export interface NextUpSplit {
  */
 export function splitNextUp(schedules: Schedule[], now: string): NextUpSplit {
   const ongoingIndex = schedules.findIndex(
-    (s) => `${s.date}T${s.startTime}` <= now && now < `${s.date}T${s.endTime}`,
+    (s) => `${s.date}T${s.startTime}` <= now && now < `${scheduleLastDate(s)}T${s.endTime}`,
   )
   const index = ongoingIndex >= 0 ? ongoingIndex : schedules.findIndex((s) => `${s.date}T${s.startTime}` > now)
 

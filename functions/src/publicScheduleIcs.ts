@@ -6,6 +6,7 @@ import { buildScheduleTitle } from './scheduleTitle'
 import { generalScheduleInScope } from './generalScheduleScope'
 import { buildGeneralScheduleVEvent } from './generalScheduleIcsEvent'
 import { dedupeById, isSeventyOnly } from './seventyOnly'
+import { scheduleLastDate } from './scheduleDates'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -183,7 +184,7 @@ export const publicScheduleIcs = functions
           customTitle: data.customTitle,
         })
         const dtstart = toIcsDateTime(data.date, data.startTime)
-        const dtend = toIcsDateTime(data.date, data.endTime)
+        const dtend = toIcsDateTime(scheduleLastDate({ date: data.date, endDate: data.endDate }), data.endTime)
 
         const lines = [
           'BEGIN:VEVENT',

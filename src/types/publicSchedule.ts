@@ -5,6 +5,7 @@ export interface PublicScheduleItem {
   regionId?: string   // 협의 평의회: unitId 대신 CC로 범위를 표현한다
   targetKind?: string
   date: string
+  endDate?: string    // 여러 날 모임의 마지막 날. 없으면 하루짜리.
   startTime: string
   endTime: string
   status: string

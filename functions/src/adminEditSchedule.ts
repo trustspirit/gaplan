@@ -5,11 +5,13 @@ import { validateRelatedVisit } from './relatedVisit'
 import { CC_COUNCIL_TARGET_KIND } from './ccCouncil'
 import { resolveScheduleLocationForEdit } from './adminScheduleFields'
 import { canBeSeventyOnly } from './seventyOnly'
+import { isMultiDaySchedule } from './scheduleDates'
 
 interface AdminEditScheduleRequest {
   scheduleId: string
   updates: {
     date?: string
+    endDate?: string | null   // 여러 날 모임의 마지막 날. null이면 하루짜리로 되돌린다
     startTime?: string
     endTime?: string
     notes?: string | null
@@ -54,6 +56,12 @@ export const adminEditSchedule = functions
         throw new functions.https.HttpsError('invalid-argument', 'Invalid date format')
       }
       allowed.date = updates.date
+    }
+    if (updates.endDate !== undefined) {
+      if (updates.endDate !== null && (typeof updates.endDate !== 'string' || !DATE_RE.test(updates.endDate))) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid endDate format')
+      }
+      allowed.endDate = updates.endDate
     }
     if (updates.startTime !== undefined) {
       if (typeof updates.startTime !== 'string' || !TIME_RE.test(updates.startTime)) {
@@ -226,11 +234,32 @@ export const adminEditSchedule = functions
       throw new functions.https.HttpsError('invalid-argument', 'cannot convert an existing schedule to cc_council')
     }
 
-    if (allowed.startTime !== undefined || allowed.endTime !== undefined) {
+    // 날짜·시간은 수정 이후 상태(기존 문서 + 이번 수정)로 함께 검사한다. 종료일만 지워
+    // 하루짜리로 되돌리는 수정도 시간 순서를 다시 봐야 한다 — 여러 날일 때는 허용되던
+    // '18:00 시작 – 12:00 종료'가 하루짜리에서는 뒤집힌 시간이다.
+    if (
+      allowed.date !== undefined || allowed.endDate !== undefined ||
+      allowed.startTime !== undefined || allowed.endTime !== undefined
+    ) {
       const current = snap.data()!
+      const effectiveDate = (allowed.date as string | undefined) ?? (current.date as string)
+      const effectiveEndDate = allowed.endDate !== undefined
+        ? (allowed.endDate as string | null)
+        : ((current.endDate as string | null | undefined) ?? null)
+      // 여러 날은 모임만 된다 — 생성 CF와 같은 규칙.
+      if (allowed.endDate && current.type !== 'meeting') {
+        throw new functions.https.HttpsError('invalid-argument', 'endDate is only for meeting')
+      }
+      if (effectiveEndDate && effectiveEndDate < effectiveDate) {
+        throw new functions.https.HttpsError('invalid-argument', 'endDate must not be before date')
+      }
+      const multiDay = isMultiDaySchedule({ date: effectiveDate, endDate: effectiveEndDate })
+      // 시작일과 같은 종료일은 하루짜리다 — 저장도 하루짜리 모양(null)으로 맞춘다.
+      if (effectiveEndDate && !multiDay) allowed.endDate = null
+
       const effectiveStart = (allowed.startTime as string | undefined) ?? current.startTime
       const effectiveEnd = (allowed.endTime as string | undefined) ?? current.endTime
-      if (effectiveStart >= effectiveEnd) {
+      if (!multiDay && effectiveStart >= effectiveEnd) {
         throw new functions.https.HttpsError('invalid-argument', 'endTime must be after startTime')
       }
     }

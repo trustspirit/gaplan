@@ -10,6 +10,7 @@ export interface Schedule {
   regionId?: string   // CC(협의 평의회) 단위 일정 — cc_council 모임에만 채워지고 unitId는 빈 값이다
   presidentUid: string | null
   date: string
+  endDate?: string | null     // 여러 날 모임의 마지막 날 (meeting only). 없으면 하루짜리 — utils/scheduleDates.ts
   startTime: string
   endTime: string
   status: ScheduleStatus

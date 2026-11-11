@@ -2,6 +2,7 @@ import { getScopeUnitIds, getScopeDisplayName, getScopeRegionId } from './region
 import { CC_COUNCIL_TARGET_KIND, isCcCouncilForScope } from './ccCouncil'
 import { generalScheduleInScope } from './generalScheduleScope'
 import { dedupeById, isSeventyOnly } from './seventyOnly'
+import { isMultiDaySchedule } from './scheduleDates'
 
 /**
  * "이 토큰이 무엇을 볼 수 있는가"의 유일한 판정.
@@ -70,6 +71,8 @@ export interface PublicSchedule {
   regionId?: string
   targetKind?: string
   date: string
+  // 여러 날 모임의 마지막 날. 빠지면 구독·캘린더는 여러 날로, 공개 일정표는 하루로 보여준다.
+  endDate?: string
   startTime: string
   endTime: string
   status: string
@@ -222,6 +225,7 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
         ...(sd.regionId ? { regionId: sd.regionId } : {}),
         ...(sd.targetKind === CC_COUNCIL_TARGET_KIND ? { targetKind: CC_COUNCIL_TARGET_KIND } : {}),
         date: sd.date,
+        ...(isMultiDaySchedule(sd as { date: string; endDate?: string | null }) ? { endDate: sd.endDate } : {}),
         startTime: sd.startTime,
         endTime: sd.endTime,
         status: sd.status,

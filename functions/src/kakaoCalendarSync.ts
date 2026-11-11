@@ -10,6 +10,7 @@ import {
 import { filterTargetSecretaries, type SecretaryDoc } from './kakaoTargets'
 import { decideKakaoSyncAction, isPastScheduleDate } from './kakaoSyncAction'
 import { isBookkeepingOnlyWrite } from './bookkeepingWrite'
+import { scheduleLastDate } from './scheduleDates'
 
 async function deleteAll(eventIds: Record<string, string>, scheduleId: string): Promise<void> {
   // 일정 하나가 여러 집행서기의 캘린더에 각각 존재한다.
@@ -107,7 +108,10 @@ export const kakaoCalendarSync = functions
     // 톡캘린더가 과거 일정으로 뒤덮이고, 앱에는 되돌릴 방법이 없다.
     // 수정/삭제는 계속 동작해야 한다 — 이미 남의 캘린더에 들어간 이벤트는
     // 끝까지 정확해야 하므로 생성만 막는다.
-    const isPast = isPastScheduleDate(after.date as string)
+    // 여러 날 모임은 마지막 날이 지나야 지난 일정이다.
+    const isPast = isPastScheduleDate(
+      after.date ? scheduleLastDate({ date: after.date as string, endDate: after.endDate as string | null | undefined }) : undefined,
+    )
 
     for (const uid of targetUids) {
       const existingEventId = existingIds[uid]

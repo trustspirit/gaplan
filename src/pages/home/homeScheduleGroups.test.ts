@@ -66,3 +66,14 @@ describe('groupByWhen', () => {
     expect(groupByWhen([], THU).size).toBe(0)
   })
 })
+
+// 어제 시작해 아직 진행 중인 여러 날 모임은 시작일로 묶으면 「이번 주」로 밀린다 —
+// 지금 하고 있는 일정이므로 「오늘」에 둔다.
+describe('groupByWhen — 여러 날 모임', () => {
+  it('어제 시작해 진행 중인 모임은 오늘 그룹에 들어간다', () => {
+    const ongoing: Schedule = { ...s('m', '2026-07-01'), type: 'meeting', endDate: '2026-07-03' }
+    const out = groupByWhen([ongoing, s('today', THU)], THU)
+    expect(keys(out)).toEqual(['today'])
+    expect(out.get('today')!.map(x => x.id)).toEqual(['m', 'today'])
+  })
+})

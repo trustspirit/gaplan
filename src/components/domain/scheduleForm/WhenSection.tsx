@@ -4,6 +4,9 @@ import { Input } from '@/components/ui'
 import type { ScheduleFormState } from './useScheduleForm'
 import { nextEndTime, DEFAULT_DURATION_MINUTES } from './scheduleTimeRules'
 import styles from '../ScheduleFormModal/ScheduleFormModal.module.scss'
+import { DateRangePicker } from '@/components/domain/DateRangePicker/DateRangePicker'
+import { isMultiDaySchedule } from '@/utils/scheduleDates'
+import dayjs from 'dayjs'
 
 export interface WhenSectionProps {
   type: ScheduleType
@@ -31,7 +34,10 @@ export interface WhenSectionProps {
  */
 export function WhenSection({ type, state, onChange, conflictingEvent, hideSabbathToggle }: WhenSectionProps) {
   const { t } = useTranslation()
-  const { date, startTime, endTime, isSabbath, presidentAccompanied } = state
+  const { date, endDate, startTime, endTime, isSabbath, presidentAccompanied } = state
+
+  // 여러 날 모임에서는 시작 시각이 첫날, 종료 시각이 마지막 날의 것이다 — 라벨로 알려준다.
+  const multiDay = type === 'meeting' && isMultiDaySchedule({ date, endDate })
 
   const handleSabbathToggle = (checked: boolean) => {
     onChange(checked ? { isSabbath: checked, startTime: '10:00', endTime: '12:00' } : { isSabbath: checked })
@@ -65,12 +71,23 @@ export function WhenSection({ type, state, onChange, conflictingEvent, hideSabba
         </label>
       )}
 
-      <Input
-        type="date"
-        label={t('schedule.dateLabel')}
-        value={date}
-        onChange={(e) => onChange({ date: e.target.value })}
-      />
+      {/* 모임은 여러 날에 걸칠 수 있어 달력 하나에서 시작일과 종료일을 고른다. 접견·방문은
+          하루 안에 끝나는 일정이라 날짜 한 칸 그대로다. */}
+      {type === 'meeting' ? (
+        <DateRangePicker
+          label={t('schedule.dateLabel')}
+          value={{ start: date, end: endDate }}
+          onChange={({ start, end }) => onChange({ date: start, endDate: end })}
+          formatDay={(d) => dayjs(d).format(t('generalSchedule.dateFormat'))}
+        />
+      ) : (
+        <Input
+          type="date"
+          label={t('schedule.dateLabel')}
+          value={date}
+          onChange={(e) => onChange({ date: e.target.value })}
+        />
+      )}
 
       {conflictingEvent && (
         <div className={styles.conflictWarning}>
@@ -81,7 +98,7 @@ export function WhenSection({ type, state, onChange, conflictingEvent, hideSabba
       <div className={styles.timeRow}>
         <Input
           type="time"
-          label={t('common.startTime')}
+          label={multiDay ? t('schedule.startTimeFirstDay') : t('common.startTime')}
           value={startTime}
           onChange={(e) => {
             const v = e.target.value
@@ -98,7 +115,7 @@ export function WhenSection({ type, state, onChange, conflictingEvent, hideSabba
         />
         <Input
           type="time"
-          label={t('common.endTime')}
+          label={multiDay ? t('schedule.endTimeLastDay') : t('common.endTime')}
           value={endTime}
           onChange={(e) => onChange({ endTime: e.target.value })}
         />

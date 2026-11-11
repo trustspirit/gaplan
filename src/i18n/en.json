@@ -373,7 +373,9 @@
     "groupThisWeek": "This week",
     "groupLater": "Later",
     "seventyOnlyLabel": "Seventy only",
-    "seventyOnlyHint": "Shown only on the Seventy-only public page; not added to the CC Google calendar."
+    "seventyOnlyHint": "Shown only on the Seventy-only public page; not added to the CC Google calendar.",
+    "startTimeFirstDay": "Start time (first day)",
+    "endTimeLastDay": "End time (last day)"
   },
   "ward": {
     "assignTitle": "Assign Ward/Branch Visit Dates",

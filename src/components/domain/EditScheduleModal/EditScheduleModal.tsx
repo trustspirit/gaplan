@@ -22,6 +22,7 @@ import { WhenSection } from '../scheduleForm/WhenSection'
 import { DetailSection } from '../scheduleForm/DetailSection'
 import styles from './EditScheduleModal.module.scss'
 import { canBeSeventyOnly } from '@/utils/seventyOnly'
+import { isMultiDaySchedule } from '@/utils/scheduleDates'
 
 const adminEditScheduleFn = httpsCallable(functions, 'adminEditSchedule')
 
@@ -53,6 +54,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
       freeText: '',
     },
     date: schedule.date,
+    endDate: isMultiDaySchedule(schedule) ? (schedule.endDate as string) : '',
     startTime: schedule.startTime,
     endTime: schedule.endTime,
     notes: schedule.notes ?? '',
@@ -188,6 +190,10 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
         scheduleId: schedule.id,
         updates: {
           date,
+          // 모임만 여러 날일 수 있다. 종료일을 지웠으면 null로 보내 하루짜리로 되돌린다.
+          ...(schedule.type === 'meeting'
+            ? { endDate: isMultiDaySchedule({ date, endDate: state.endDate }) ? state.endDate : null }
+            : {}),
           startTime,
           endTime,
           notes: notes || null,

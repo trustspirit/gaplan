@@ -79,6 +79,11 @@ vi.mock('@/components/domain/scheduleForm/ZoomLinkPicker', () => ({
 vi.mock('react-dom', () => ({
   createPortal: (node: React.ReactNode) => node,
 }))
+// 모임의 날짜는 달력(DateRangePicker)으로 고른다. 달력 칸을 누르는 일은 그 컴포넌트의 테스트가
+// 고정하므로 여기서는 날짜 입력칸 대역으로 값을 직접 넣는다(종료일 칸은 '<label>-end').
+vi.mock('@/components/domain/DateRangePicker/DateRangePicker', async () => ({
+  DateRangePicker: (await import('@/components/domain/DateRangePicker/testing')).DateRangePickerStub,
+}))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 import { toast } from 'sonner'
@@ -1159,3 +1164,56 @@ describe('ScheduleFormModal 뒤로 가기 · 세그먼트 제거', () => {
     confirmSpy.mockRestore()
   })
 })
+
+// 모임은 여러 날에 걸칠 수 있다(예: 금요일 저녁 ~ 토요일 낮). 시작 시각은 첫날, 종료 시각은
+// 마지막 날의 것이라 '종료가 시작보다 늦어야 한다'는 검사를 하루짜리에만 적용한다.
+describe('ScheduleFormModal 여러 날 모임', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.currentUser = {
+      uid: 'test-uid', email: 'test@test.com', role: 'seventy', name: '테스트',
+      regionIds: ['seoul'], createdAt: '2026-01-01',
+    }
+    mocks.users = [mocks.currentUser]
+    vi.mocked(useLeadersModule.useLeaders).mockReturnValue({
+      leaders: [],
+      loading: false,
+      getLeaderByUnitName: vi.fn(),
+    })
+  })
+
+  function openOtherMeeting() {
+    render(<ScheduleFormModal fixedType="meeting" onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('schedule.targetKindLabel'), { target: { value: 'other' } })
+    fireEvent.change(screen.getByLabelText('schedule.targetFreeTextLabel'), { target: { value: '지역 수련회' } })
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel'), { target: { value: '2026-09-04' } })
+  }
+
+  it('종료일을 고르면 시작 18:00 – 종료 12:00도 저장되고 payload에 endDate가 실린다', async () => {
+    openOtherMeeting()
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel-end'), { target: { value: '2026-09-05' } })
+    fireEvent.change(screen.getByLabelText('schedule.startTimeFirstDay'), { target: { value: '18:00' } })
+    fireEvent.change(screen.getByLabelText('schedule.endTimeLastDay'), { target: { value: '12:00' } })
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({
+      date: '2026-09-04', endDate: '2026-09-05', startTime: '18:00', endTime: '12:00',
+    }))
+  })
+
+  it('하루짜리 모임은 endDate를 보내지 않고, 뒤집힌 시간은 여전히 막는다', async () => {
+    openOtherMeeting()
+    fireEvent.change(screen.getByLabelText('common.startTime'), { target: { value: '18:00' } })
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '12:00' } })
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+    expect(await screen.findByText('admin.scheduleTimeError')).toBeInTheDocument()
+    expect(createSpy).not.toHaveBeenCalled()
+
+    fireEvent.change(screen.getByLabelText('common.endTime'), { target: { value: '19:00' } })
+    fireEvent.click(screen.getByText('schedule.saveBtn'))
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty('endDate')
+  })
+})
+

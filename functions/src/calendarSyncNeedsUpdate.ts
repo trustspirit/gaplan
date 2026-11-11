@@ -6,6 +6,7 @@
  */
 export interface CalendarSyncComparable {
   date?: unknown
+  endDate?: string | null
   startTime?: unknown
   endTime?: unknown
   zoomLink?: string | null
@@ -23,6 +24,7 @@ export function calendarSyncNeedsUpdate(
 ): boolean {
   return (
     before?.date !== after.date ||
+    (before?.endDate ?? null) !== (after.endDate ?? null) ||
     before?.startTime !== after.startTime ||
     before?.endTime !== after.endTime ||
     (before?.zoomLink ?? null) !== (after.zoomLink ?? null) ||

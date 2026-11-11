@@ -83,3 +83,30 @@ describe('splitNextUp', () => {
     expect(splitNextUp(list, '2026-07-02T09:00').next?.id).toBe('first')
   })
 })
+
+// 모임은 여러 날에 걸칠 수 있다(endDate) — 마지막 날까지는 다가오는 일정이고 진행 중이다.
+describe('여러 날 모임', () => {
+  const meeting: Schedule = {
+    ...s('m', '2026-07-01'), type: 'meeting', endDate: '2026-07-03', startTime: '18:00', endTime: '12:00',
+  }
+
+  it('어제 시작했어도 마지막 날이 오늘 이후면 다가오는 일정에 남는다', () => {
+    expect(selectGlanceSchedules([meeting], today).map((x) => x.id)).toEqual(['m'])
+  })
+
+  it('마지막 날이 지나면 빠진다', () => {
+    expect(selectGlanceSchedules([meeting], '2026-07-04')).toEqual([])
+  })
+
+  it('가운데 날에는 진행 중인 일정으로 「다음 일정」에 올린다', () => {
+    const later = s('later', '2026-07-02')
+    const { next } = splitNextUp([meeting, later], '2026-07-02T09:00')
+    expect(next?.id).toBe('m')
+  })
+
+  it('마지막 날 종료 시각이 지나면 진행 중이 아니다', () => {
+    const later = s('later', '2026-07-04')
+    const { next } = splitNextUp([meeting, later], '2026-07-03T13:00')
+    expect(next?.id).toBe('later')
+  })
+})

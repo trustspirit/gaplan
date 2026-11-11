@@ -27,6 +27,7 @@ import { WhenSection } from '../scheduleForm/WhenSection'
 import { DetailSection } from '../scheduleForm/DetailSection'
 import styles from './ScheduleFormModal.module.scss'
 import { canBeSeventyOnly } from '@/utils/seventyOnly'
+import { isMultiDaySchedule } from '@/utils/scheduleDates'
 
 const adminCreateScheduleFn = httpsCallable(functions, 'adminCreateSchedule')
 
@@ -214,7 +215,8 @@ export function ScheduleFormModal({
       setError(t('schedule.errorDateTimeRequired'))
       return
     }
-    if (startTime >= endTime) {
+    // 여러 날 모임은 시작 시각이 첫날, 종료 시각이 마지막 날이라 서로 비교하지 않는다.
+    if (!isMultiDaySchedule({ date, endDate: state.endDate }) && startTime >= endTime) {
       setError(t('admin.scheduleTimeError'))
       return
     }
@@ -289,6 +291,9 @@ export function ScheduleFormModal({
           ? { relatedVisitId }
           : {}),
         date,
+        ...(type === 'meeting' && isMultiDaySchedule({ date, endDate: state.endDate })
+          ? { endDate: state.endDate }
+          : {}),
         startTime,
         endTime,
         ...(finalNotes.trim() ? { notes: finalNotes.trim() } : {}),

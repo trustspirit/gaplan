@@ -273,3 +273,32 @@ describe('toScheduleRow', () => {
     expect(future.highlighted).toBeUndefined()
   })
 })
+
+// 모임은 여러 날에 걸칠 수 있다(endDate). 줄에는 시작일을 앞에 두고, 종료 시각 앞에 마지막 날을
+// 붙여 언제 끝나는지 보여준다. 지난 일정 판정은 마지막 날 기준이다.
+describe('toScheduleRow — 여러 날 모임', () => {
+  const meeting = schedule({
+    type: 'meeting', date: '2026-03-09', endDate: '2026-03-11', startTime: '18:00', endTime: '12:00',
+  })
+
+  it('종료 시각 앞에 마지막 날을 붙인다', () => {
+    const row = toScheduleRow({ schedule: meeting, unitName: '서울 스테이크', today: TODAY, t })
+    expect(row.lead?.primary).toBe('3.9')
+    expect(row.meta).toBe('18:00 – 3.11 12:00')
+  })
+
+  it('시작일이 지났어도 마지막 날이 오늘 이후면 흐리게 하지 않는다', () => {
+    const row = toScheduleRow({ schedule: meeting, unitName: '서울 스테이크', today: TODAY, t })
+    expect(row.dimmed).toBe(false)
+  })
+
+  it('마지막 날까지 지나면 흐리게 한다', () => {
+    const row = toScheduleRow({ schedule: meeting, unitName: '서울 스테이크', today: '2026-03-12', t })
+    expect(row.dimmed).toBe(true)
+  })
+
+  it('하루짜리는 예전처럼 시간만 보여준다', () => {
+    const row = toScheduleRow({ schedule: schedule(), unitName: '서울 스테이크', today: TODAY, t })
+    expect(row.meta).toBe('10:00 – 11:00')
+  })
+})

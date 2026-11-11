@@ -1,6 +1,8 @@
 import type { AppUser, GeneralSchedule, Schedule, ScheduleType } from '@/types'
+import { isMultiDayEvent } from '@/types'
 import type { DateRange } from '@/hooks/useScheduleDateRange'
 import { getScheduleRegionId } from '@/constants/regions'
+import { scheduleLastDate } from '@/utils/scheduleDates'
 
 /** 일정 화면의 종류 필터. 옛 `/schedules/:tab` 세 탭이 여기로 내려왔다. */
 export type ScheduleKind = 'visit' | 'interview' | 'event'
@@ -43,6 +45,8 @@ export interface BoardItem {
   /** React key이자 테스트 좌표. `s-<id>` 또는 `e-<id>`. */
   key: string
   date: string
+  /** 여러 날 항목(모임·행사)의 마지막 날. 하루짜리면 없다. */
+  endDate?: string
   /** 정렬용. 시각 없는 행사는 '00:00'이라 그 날의 맨 앞에 온다. */
   time: string
   kind: ScheduleKind
@@ -79,10 +83,13 @@ export function buildBoardItems({
     if (hiddenIds?.has(schedule.id)) continue
     const kind = kindOfScheduleType(schedule.type)
     if (!kind || !selected.has(kind)) continue
-    if (!inRange(schedule.date, range)) continue
+    // 여러 날 모임은 기간과 하루라도 겹치면 보여준다.
+    const lastDate = scheduleLastDate(schedule)
+    if (lastDate < range.start || schedule.date > range.end) continue
     items.push({
       key: `s-${schedule.id}`,
       date: schedule.date,
+      ...(lastDate !== schedule.date ? { endDate: lastDate } : {}),
       time: schedule.startTime,
       kind,
       entry: { source: 'schedule', schedule },
@@ -96,6 +103,7 @@ export function buildBoardItems({
       items.push({
         key: `e-${event.id}`,
         date: event.date,
+        ...(isMultiDayEvent(event) ? { endDate: event.endDate } : {}),
         time: event.startTime ?? '00:00',
         kind: 'event',
         entry: { source: 'event', event },
@@ -114,8 +122,9 @@ export function filterByStatus(
 ): BoardItem[] {
   if (status === 'all') return items
   // 오늘은 아직 안 지났다 — 예정 쪽이다.
-  if (status === 'upcoming') return items.filter((i) => i.date >= today)
-  return items.filter((i) => i.date < today)
+  // 여러 날 항목은 마지막 날이 지나야 지난 것이다 — 진행 중인 모임·행사는 예정 쪽에 남는다.
+  if (status === 'upcoming') return items.filter((i) => (i.endDate ?? i.date) >= today)
+  return items.filter((i) => (i.endDate ?? i.date) < today)
 }
 
 /**

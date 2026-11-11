@@ -5,6 +5,7 @@ import { validateRelatedVisit } from './relatedVisit'
 import { buildCcCouncilTitle, isKnownRegionId } from './ccCouncil'
 import { resolveScheduleLocation } from './adminScheduleFields'
 import { canBeSeventyOnly } from './seventyOnly'
+import { isMultiDaySchedule } from './scheduleDates'
 
 interface AdminCreateScheduleRequest {
   type: 'ward_visit' | 'interview' | 'meeting'
@@ -14,6 +15,7 @@ interface AdminCreateScheduleRequest {
   wardName?: string
   presidentUid?: string
   date: string
+  endDate?: string   // 여러 날 모임의 마지막 날 (meeting only). scheduleDates.ts 참고
   startTime: string
   endTime: string
   notes?: string
@@ -35,7 +37,7 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const { type, seventyUid, unitId, regionId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, location, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId, seventyOnly } = data
+    const { type, seventyUid, unitId, regionId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, location, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId, seventyOnly, endDate } = data
 
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
@@ -46,7 +48,22 @@ export const adminCreateSchedule = functions
     if (!TIME_RE.test(startTime) || !TIME_RE.test(endTime)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid time format (HH:mm)')
     }
-    if (startTime >= endTime) {
+    // 여러 날은 모임만 된다. 접견·방문은 하루 안에 끝나는 일정이다.
+    if (endDate !== undefined) {
+      if (type !== 'meeting') {
+        throw new functions.https.HttpsError('invalid-argument', 'endDate is only for meeting')
+      }
+      if (typeof endDate !== 'string' || !DATE_RE.test(endDate)) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid endDate format (YYYY-MM-DD)')
+      }
+      if (endDate < date) {
+        throw new functions.https.HttpsError('invalid-argument', 'endDate must not be before date')
+      }
+    }
+    const multiDay = isMultiDaySchedule({ date, endDate })
+    // 여러 날 모임은 startTime이 첫날, endTime이 마지막 날의 시각이라 서로 비교할 수 없다
+    // (금요일 18:00 시작 – 토요일 12:00 종료).
+    if (!multiDay && startTime >= endTime) {
       throw new functions.https.HttpsError('invalid-argument', 'endTime must be after startTime')
     }
     if (type === 'ward_visit') {
@@ -213,6 +230,7 @@ export const adminCreateSchedule = functions
       wardName: wardName ? wardName.trim() : null,
       presidentUid: presidentUid ?? null,
       date,
+      endDate: multiDay ? endDate : null,
       startTime,
       endTime,
       notes: notes ?? null,

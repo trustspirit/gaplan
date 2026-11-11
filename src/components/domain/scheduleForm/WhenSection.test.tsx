@@ -40,6 +40,7 @@ function Harness(props: {
     notes: '',
     projectId: '',
     seventyOnly: false,
+    endDate: '',
   }))
 
   const handleChange = (partial: Partial<ScheduleFormState>) => {
@@ -80,3 +81,28 @@ describe('WhenSection', () => {
     expect(screen.getByText(/generalSchedule.conflictWarning/)).toBeInTheDocument()
   })
 })
+
+// 모임은 여러 날에 걸칠 수 있어 달력(DateRangePicker)으로 날짜를 고른다. 접견·방문은 하루
+// 안에 끝나는 일정이라 날짜 한 칸 그대로다.
+describe('WhenSection — 모임의 날짜 범위', () => {
+  it('모임에는 달력이 나온다', () => {
+    renderWhen({ type: 'meeting' })
+    expect(screen.getByRole('group', { name: 'schedule.dateLabel' })).toBeInTheDocument()
+  })
+
+  it.each(['interview', 'ward_visit'] as const)('%s에는 날짜 입력칸 하나가 그대로 나온다', (type) => {
+    renderWhen({ type })
+    expect(screen.queryByRole('group', { name: 'schedule.dateLabel' })).toBeNull()
+    expect(screen.getByLabelText('schedule.dateLabel')).toHaveAttribute('type', 'date')
+  })
+
+  it('달력에서 날짜를 누르면 date와 endDate를 함께 넘긴다', async () => {
+    const onChange = vi.fn()
+    renderWhen({ type: 'meeting', onChange })
+    // 달력은 선택이 없으면 이번 달을 보여준다 — 15일은 어느 달에나 있다.
+    const cells = screen.getAllByRole('button').filter((b) => /-15$/.test(b.getAttribute('aria-label') ?? ''))
+    await userEvent.click(cells[0])
+    expect(onChange).toHaveBeenCalledWith({ date: cells[0].getAttribute('aria-label'), endDate: '' })
+  })
+})
+

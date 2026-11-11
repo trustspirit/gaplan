@@ -7,6 +7,8 @@ export interface ScheduleFormState {
   type: ScheduleType
   target: TargetSelection
   date: string
+  // 여러 날 모임의 마지막 날. '' = 하루짜리. 모임(meeting)에서만 쓴다.
+  endDate: string
   startTime: string
   endTime: string
   isSabbath: boolean
@@ -35,6 +37,7 @@ function defaultState(): ScheduleFormState {
     type: 'ward_visit',
     target: { ...EMPTY_TARGET },
     date: '',
+    endDate: '',
     startTime: '',
     endTime: '',
     isSabbath: false,
@@ -77,6 +80,8 @@ export function useScheduleForm(initial?: Partial<ScheduleFormState>): {
     setState((prev) => ({
       ...prev,
       type,
+      // 여러 날은 모임만 된다 — 유형을 바꾸면 종료일을 버린다.
+      endDate: type === 'meeting' ? prev.endDate : '',
       target: resetForKind(prev.target, ''),
       purpose: 'general',
     }))

@@ -317,3 +317,35 @@ describe('scheduleQueryFor', () => {
     expect(scheduleQueryFor({ ...base, role: 'admin' })).toEqual({})
   })
 })
+
+// 모임은 여러 날에 걸칠 수 있다. 기간과 하루라도 겹치면 목록에 나오고, 마지막 날이 지나기
+// 전에는 '예정' 쪽에 남는다 — 시작일만 보면 진행 중인 모임이 '지난 일정'으로 넘어간다.
+describe('여러 날 모임', () => {
+  const meeting = schedule({ id: 'm1', type: 'meeting', date: '2026-03-09', endDate: '2026-03-11' })
+
+  it('기간이 모임 도중에 시작해도 겹치면 포함하고 마지막 날을 함께 싣는다', () => {
+    const items = build({ schedules: [meeting], range: { start: '2026-03-10', end: '2026-03-31' } })
+    expect(items).toHaveLength(1)
+    expect(items[0]).toMatchObject({ date: '2026-03-09', endDate: '2026-03-11' })
+  })
+
+  it('기간이 모임이 끝난 뒤에 시작하면 뺀다', () => {
+    expect(build({ schedules: [meeting], range: { start: '2026-03-12', end: '2026-03-31' } })).toEqual([])
+  })
+
+  it('하루짜리 일정에는 endDate를 싣지 않는다', () => {
+    expect(build({ schedules: [schedule()] })[0]).not.toHaveProperty('endDate')
+  })
+
+  it('진행 중인 모임은 예정이고, 마지막 날이 지나야 지난 일정이다', () => {
+    const items = build({ schedules: [meeting] })
+    expect(filterByStatus(items, 'upcoming', '2026-03-11')).toHaveLength(1)
+    expect(filterByStatus(items, 'completed', '2026-03-11')).toHaveLength(0)
+    expect(filterByStatus(items, 'completed', '2026-03-12')).toHaveLength(1)
+  })
+
+  it('진행 중인 여러 날 행사도 예정 쪽에 남는다', () => {
+    const items = build({ generalSchedules: [event({ date: '2026-03-09', endDate: '2026-03-11' })] })
+    expect(filterByStatus(items, 'upcoming', '2026-03-10')).toHaveLength(1)
+  })
+})

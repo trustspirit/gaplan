@@ -67,6 +67,7 @@ function Harness(props: {
     notes: '',
     projectId: '',
     seventyOnly: false,
+    endDate: '',
   }))
 
   const handleChange = (partial: Partial<ScheduleFormState>) => {

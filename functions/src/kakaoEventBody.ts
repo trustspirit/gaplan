@@ -1,4 +1,5 @@
 import { buildScheduleTitle, type ScheduleTitleInput } from './scheduleTitle'
+import { scheduleLastDate } from './scheduleDates'
 
 const KAKAO_TITLE_MAX = 50
 
@@ -16,6 +17,7 @@ export interface KakaoEventBody {
 
 export interface KakaoScheduleInput extends ScheduleTitleInput {
   date: string
+  endDate?: string | null   // 여러 날 모임의 마지막 날
   startTime: string
   endTime: string
   location?: string | null
@@ -74,7 +76,7 @@ export function buildKakaoEventBody(p: {
     title: truncateTitle(buildScheduleTitle(schedule)),
     time: {
       start_at: toKakaoTime(schedule.date, schedule.startTime),
-      end_at: toKakaoTime(schedule.date, schedule.endTime),
+      end_at: toKakaoTime(scheduleLastDate(schedule), schedule.endTime),
       time_zone: 'Asia/Seoul',
     },
     ...(description ? { description } : {}),
@@ -85,6 +87,7 @@ export function buildKakaoEventBody(p: {
 // 본문을 만드므로 갱신 조건도 같아야 한다.
 const SYNCED_FIELDS = [
   'date',
+  'endDate',
   'startTime',
   'endTime',
   'zoomLink',
@@ -100,6 +103,7 @@ const SYNCED_FIELDS = [
 // 맞추지 않으면 두 동기화가 같은 변경을 서로 다르게 판단할 수 있다.
 const FIELD_DEFAULT: Record<(typeof SYNCED_FIELDS)[number], unknown> = {
   date: null,
+  endDate: null,
   startTime: null,
   endTime: null,
   zoomLink: null,

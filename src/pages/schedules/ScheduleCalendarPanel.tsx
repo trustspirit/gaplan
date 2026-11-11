@@ -8,6 +8,7 @@ import type { GeneralSchedule, Schedule } from '@/types'
 import { eventCoversDate } from '@/types'
 import type { BoardItem } from './scheduleFilters'
 import styles from './ScheduleCalendarPanel.module.scss'
+import { scheduleCoversDate } from '@/utils/scheduleDates'
 
 interface ScheduleCalendarPanelProps {
   view: ViewMode
@@ -55,12 +56,12 @@ export function ScheduleCalendarPanel({
   // 찾으면 격자엔 보이는데 목록은 비는 모순이 생긴다.
   // 행사(source: 'event')는 item.date가 시작일뿐이라 exact-match로는 1박 2일 등 여러
   // 날에 걸친 행사가 그 마지막 날 선택 시 목록에서 빠진다 — eventCoversDate로 범위
-  // 전체를 판정한다. 일반 일정(source: 'schedule')은 여전히 하루짜리라 그대로 둔다.
+  // 전체를 판정한다. 일반 일정(source: 'schedule')도 모임은 여러 날일 수 있어 같은 방식으로 본다.
   const listed = selectedDate
     ? allItems.filter((item) =>
         item.entry.source === 'event'
           ? eventCoversDate(item.entry.event, selectedDate)
-          : item.date === selectedDate,
+          : scheduleCoversDate(item.entry.schedule, selectedDate),
       )
     : items
 

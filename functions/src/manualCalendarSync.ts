@@ -12,6 +12,7 @@ import { resolveScheduleRegionId } from './scheduleRegion'
 import { buildScheduleTitle, type ScheduleTitleInput } from './scheduleTitle'
 import { buildCalendarEventFields } from './calendarEventBody'
 import { isSeventyOnly } from './seventyOnly'
+import { scheduleLastDate } from './scheduleDates'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -83,7 +84,7 @@ export const manualCalendarSync = functions
       const title = buildScheduleTitle(s as ScheduleTitleInput)
 
       const startDateTime = `${s.date}T${s.startTime}:00+09:00`
-      const endDateTime = `${s.date}T${s.endTime}:00+09:00`
+      const endDateTime = `${scheduleLastDate({ date: s.date, endDate: s.endDate })}T${s.endTime}:00+09:00`
       const fields = buildCalendarEventFields({
         location: s.location,
         zoomLink: s.zoomLink,

@@ -12,6 +12,7 @@ import { isBookkeepingOnlyWrite } from './bookkeepingWrite'
 import { buildCalendarEventFields } from './calendarEventBody'
 import { calendarSyncNeedsUpdate } from './calendarSyncNeedsUpdate'
 import { isSeventyOnly } from './seventyOnly'
+import { scheduleLastDate } from './scheduleDates'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -90,7 +91,8 @@ export const calendarSync = functions
     if (after.googleCalendarEventId && !needsUpdate) return
 
     const startDateTime = `${after.date}T${after.startTime}:00+09:00`
-    const endDateTime = `${after.date}T${after.endTime}:00+09:00`
+    // 여러 날 모임은 마지막 날의 endTime에 끝난다(scheduleDates.ts).
+    const endDateTime = `${scheduleLastDate({ date: after.date, endDate: after.endDate })}T${after.endTime}:00+09:00`
     const title = buildScheduleTitle(after)
 
     const calendar = getCalendarClient()

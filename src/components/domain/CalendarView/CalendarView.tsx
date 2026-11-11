@@ -10,6 +10,7 @@ import { layoutDayBlocks } from './layoutDayBlocks'
 import { Button } from '@/components/ui'
 import { swipeDirection, tracksPointer, type SwipePoint } from '@/utils/swipeGesture'
 import styles from './CalendarView.module.scss'
+import { isMultiDaySchedule, scheduleCoversDate, scheduleTimesOnDate } from '@/utils/scheduleDates'
 
 // Day-of-week abbreviations derived from dayjs locale (auto-updates with language switch)
 const getDOW = () => Array.from({ length: 7 }, (_, i) => dayjs().day(i).format('ddd')) as string[]
@@ -92,7 +93,8 @@ export function CalendarView({
   const DOW = getDOW()
 
   const getSchedulesForDate = (date: string) =>
-    schedules.filter((s) => s.date === date && s.status === 'confirmed')
+    // 여러 날 모임은 걸쳐 있는 모든 날에 보인다 — s.date === date로 비교하면 첫날에만 나온다.
+    schedules.filter((s) => scheduleCoversDate(s, date) && s.status === 'confirmed')
 
   // eventCoversDate가 아니라 gs.date === date로 비교하면 1박 2일 같은 여러 날
   // 행사가 시작일에만 보이고 나머지 날에는 사라진다.
@@ -319,9 +321,22 @@ export function CalendarView({
                     ))}
 
                     {/* Schedule blocks — overlapping ones split into sub-columns */}
-                    {layoutDayBlocks(daySchedules).map(({ s, col, cols }) => {
-                      const top = timeToOffset(s.startTime)
-                      const height = Math.max(timeToDuration(s.startTime, s.endTime), 20)
+                    {layoutDayBlocks(
+                      // 여러 날 모임은 이 날에 차지하는 구간만큼만 그린다(첫날: 시작~자정,
+                      // 가운데: 종일, 마지막 날: 자정~종료). 겹침 배치도 그 구간으로 계산한다.
+                      daySchedules.map((s) => ({ ...s, ...scheduleTimesOnDate(s, dateStr) })),
+                    ).map(({ s: segment, col, cols }) => {
+                      // 블록에 적는 시간은 잘린 구간이 아니라 원래 일정의 시간이다.
+                      const s = daySchedules.find((orig) => orig.id === segment.id) ?? segment
+                      const multiDay = isMultiDaySchedule(s)
+                      // 여러 날 구간은 격자(8시~22시) 밖으로 나가지 않게 자른다. 하루짜리는 예전 그대로.
+                      const gridHeight = HOURS.length * HOUR_HEIGHT
+                      const top = multiDay
+                        ? Math.max(timeToOffset(segment.startTime), 0)
+                        : timeToOffset(s.startTime)
+                      const height = multiDay
+                        ? Math.max(Math.min(timeToOffset(segment.endTime), gridHeight) - top, 20)
+                        : Math.max(timeToDuration(s.startTime, s.endTime), 20)
                       const color = scheduleTypeColor(s.type)
                       return (
                         <div

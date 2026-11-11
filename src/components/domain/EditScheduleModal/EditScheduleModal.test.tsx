@@ -40,6 +40,11 @@ vi.mock('@/components/domain/scheduleForm/ZoomLinkPicker', () => ({
 vi.mock('react-dom', () => ({
   createPortal: (node: React.ReactNode) => node,
 }))
+// 모임의 날짜는 달력(DateRangePicker)으로 고른다. 달력 칸을 누르는 일은 그 컴포넌트의 테스트가
+// 고정하므로 여기서는 날짜 입력칸 대역으로 값을 직접 넣는다(종료일 칸은 '<label>-end').
+vi.mock('@/components/domain/DateRangePicker/DateRangePicker', async () => ({
+  DateRangePicker: (await import('@/components/domain/DateRangePicker/testing')).DateRangePickerStub,
+}))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 import { toast } from 'sonner'
@@ -495,6 +500,7 @@ describe('EditScheduleModal payload 고정(pin-down) — Task 7', () => {
       scheduleId: 'sched-cc-1',
       updates: {
         date: '2026-08-07',
+        endDate: null,
         startTime: '13:00',
         endTime: '15:00',
         notes: 'CC 모임',
@@ -530,6 +536,7 @@ describe('EditScheduleModal payload 고정(pin-down) — Task 7', () => {
       scheduleId: 'sched-loc-1',
       updates: {
         date: '2026-08-01',
+        endDate: null,
         startTime: '10:00',
         endTime: '11:00',
         notes: null,
@@ -665,5 +672,47 @@ describe('EditScheduleModal 스테이크/지방부 비우기', () => {
     await waitFor(() => expect(editSpy).toHaveBeenCalled())
     const sent = editSpy.mock.calls[0][0] as { updates: Record<string, unknown> }
     expect(sent.updates.unitId).toBeUndefined()
+  })
+})
+
+// 모임은 여러 날에 걸칠 수 있다. 수정 요청은 종료일을 항상 실어 보낸다 — 여러 날이면 그 날짜,
+// 하루짜리면 null(지웠다는 뜻). 접견·방문은 하루짜리라 종료일을 아예 보내지 않는다.
+describe('EditScheduleModal 여러 날 모임', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('여러 날 모임을 열면 종료일이 채워져 있고, 그대로 저장하면 종료일을 보낸다', async () => {
+    render(
+      <EditScheduleModal
+        schedule={{ ...MEETING_SCHEDULE, endDate: '2026-08-06', startTime: '18:00', endTime: '12:00' }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+    expect(screen.getByLabelText('schedule.dateLabel-end')).toHaveValue('2026-08-06')
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(editSpy).toHaveBeenCalledWith(expect.objectContaining({
+      updates: expect.objectContaining({ date: MEETING_SCHEDULE.date, endDate: '2026-08-06' }),
+    }))
+  })
+
+  it('종료일을 지우고 저장하면 null을 보내 하루짜리로 되돌린다', async () => {
+    render(
+      <EditScheduleModal
+        schedule={{ ...MEETING_SCHEDULE, endDate: '2026-08-06' }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+    fireEvent.change(screen.getByLabelText('schedule.dateLabel-end'), { target: { value: '' } })
+    fireEvent.click(screen.getByText('common.save'))
+
+    await waitFor(() => expect(editSpy).toHaveBeenCalled())
+    expect(editSpy).toHaveBeenCalledWith(expect.objectContaining({
+      updates: expect.objectContaining({ endDate: null }),
+    }))
   })
 })

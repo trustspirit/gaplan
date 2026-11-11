@@ -24,6 +24,7 @@ import { ScheduleActionMenu } from './ScheduleActionMenu'
 import { useSwipeOpenRow } from './swipeOpenRowContext'
 import { buildScheduleTitle } from '../../../../functions/src/scheduleRules'
 import styles from './ScheduleItem.module.scss'
+import { scheduleLastDate } from '@/utils/scheduleDates'
 
 // Fix 2 (controller ruling): this used to build its own, fifth title format
 // (`와드 방문 - X` / `접견 - X` / `모임 - X`) — the same shared rule the row,
@@ -39,7 +40,7 @@ function buildGCalUrl(schedule: Schedule, unitName: string, wardLabel?: string):
     customTitle: schedule.customTitle ?? null,
   })
   const start = `${schedule.date.replace(/-/g, '')}T${schedule.startTime.replace(':', '')}00`
-  const end = `${schedule.date.replace(/-/g, '')}T${schedule.endTime.replace(':', '')}00`
+  const end = `${scheduleLastDate(schedule).replace(/-/g, '')}T${schedule.endTime.replace(':', '')}00`
   const params = new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${start}/${end}` })
   // Use the schedule's own location when it has one; never invent one for
   // this URL (no derivation via buildScheduleLocation).
@@ -169,8 +170,7 @@ export function ScheduleItem({
   const isVisit = schedule.type === 'ward_visit'
   const isMeeting = schedule.type === 'meeting'
   const isAttendance = schedule.type === 'general_attendance'
-  const date = dayjs(schedule.date)
-  const isPast = past ?? date.isBefore(dayjs(), 'day')
+  const isPast = past ?? dayjs(scheduleLastDate(schedule)).isBefore(dayjs(), 'day')
   const hasNotes = !!schedule.notes?.trim()
   const deleteDescription = schedule.customTitle ?? unitName
   const wardLabel = schedule.wardName ? getWardName(schedule.wardName) : undefined

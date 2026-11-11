@@ -35,7 +35,8 @@ export function groupByWhen(
 
   const buckets = new Map<WhenGroupKey, Schedule[]>()
   for (const schedule of schedules) {
-    const key = bucketOf(schedule.date)
+    // 어제 시작해 아직 진행 중인 여러 날 모임은 「오늘」에 둔다 — 시작일로 묶으면 이번 주로 밀린다.
+    const key = bucketOf(schedule.date < today ? today : schedule.date)
     const group = buckets.get(key)
     if (group) group.push(schedule)
     else buckets.set(key, [schedule])
