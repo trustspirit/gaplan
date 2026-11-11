@@ -26,6 +26,7 @@ import { TargetSection } from '../scheduleForm/TargetSection'
 import { WhenSection } from '../scheduleForm/WhenSection'
 import { DetailSection } from '../scheduleForm/DetailSection'
 import styles from './ScheduleFormModal.module.scss'
+import { canBeSeventyOnly } from '@/utils/seventyOnly'
 
 const adminCreateScheduleFn = httpsCallable(functions, 'adminCreateSchedule')
 
@@ -296,6 +297,10 @@ export function ScheduleFormModal({
         ...(location.trim() ? { location: location.trim() } : {}),
         ...(projectId ? { projectId } : {}),
         ...(type === 'ward_visit' ? { presidentAccompanied: state.presidentAccompanied } : {}),
+        // 체크한 뒤 대상 유형을 바꿨을 수 있다 — 지금 대상이 '기타'일 때만 싣는다(서버도 같은 규칙으로 거부한다).
+        ...(state.seventyOnly && canBeSeventyOnly({ type, targetKind: targetPayload.targetKind })
+          ? { seventyOnly: true }
+          : {}),
       })
       // 폼 모달이 자기 성공 토스트를 소유한다 — 호출부(AddScheduleFlow의 onSaved)는
       // 더 이상 이 토스트를 띄우지 않는다(event-toast-and-multiday brief §1).

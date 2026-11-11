@@ -14,6 +14,10 @@ export interface GeneralSchedule {
   createdBy: string      // uid
   createdAt: string
   isPublic: boolean
+  // 칠십인 전용: 칠십인 전용 공개 페이지(전체 공유 링크)에만 실리고, 로그인한 회장에게도 안 보인다.
+  // 켜져 있으면 isPublic은 항상 false다 — 이 필드를 모르는 경로가 비공개로 취급하게 하려는 것이다.
+  // 옛 문서에는 필드가 없을 수 있다(없음 = false).
+  seventyOnly?: boolean
   targetRegionIds?: string[]   // empty = org-wide
   targetUnitIds?: string[]     // empty = no unit restriction
 }
@@ -57,4 +61,22 @@ export function isGeneralScheduleRelevant(gs: GeneralSchedule, user: AppUser): b
   const regionMatch = !!gs.targetRegionIds?.some(r => userRegions.includes(r))
   const unitMatch = !!gs.targetUnitIds?.includes(user.unitId ?? '')
   return regionMatch || unitMatch
+}
+
+// 행사의 공개 범위. 저장은 두 필드(isPublic, seventyOnly)로 하지만 화면은 이 셋 중 하나로 다룬다.
+//   public  — CC·스테이크 공개 페이지, CC 구글 캘린더, 칠십인 전용 페이지 모두
+//   seventy — 칠십인 전용 공개 페이지에만. 로그인한 회장에게도 안 보인다
+//   private — 공개 페이지 어디에도 없음. 로그인 사용자에게는 보인다
+export type EventVisibility = 'public' | 'seventy' | 'private'
+
+// seventyOnly를 먼저 본다 — 두 값이 어긋난 문서(둘 다 true)는 더 좁은 쪽으로 읽는다.
+export function eventVisibilityOf(gs: Pick<GeneralSchedule, 'isPublic' | 'seventyOnly'>): EventVisibility {
+  if (gs.seventyOnly === true) return 'seventy'
+  return gs.isPublic ? 'public' : 'private'
+}
+
+export function eventVisibilityFields(
+  visibility: EventVisibility,
+): Pick<GeneralSchedule, 'isPublic'> & { seventyOnly: boolean } {
+  return { isPublic: visibility === 'public', seventyOnly: visibility === 'seventy' }
 }

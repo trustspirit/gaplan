@@ -134,4 +134,19 @@ describe('generalScheduleInScope', () => {
       ).toBe(false)
     })
   })
+
+  // 칠십인 전용 행사: 전체 공개(칠십인 전용 페이지)에만 실린다
+  it('칠십인 전용 행사는 전체 공개에서는 true', () => {
+    expect(generalScheduleInScope({ seventyOnly: true }, null, null)).toBe(true)
+  })
+
+  it('칠십인 전용 행사는 대상이 없어도(조직 전체) CC 스코프에서는 false', () => {
+    expect(generalScheduleInScope({ seventyOnly: true }, 'seoul', ['seoul-stake'])).toBe(false)
+  })
+
+  it('칠십인 전용 행사는 대상 지역이 이 CC와 일치해도 false', () => {
+    expect(
+      generalScheduleInScope({ seventyOnly: true, targetRegionIds: ['seoul'] }, 'seoul', ['seoul-stake']),
+    ).toBe(false)
+  })
 })

@@ -18,6 +18,8 @@ export interface ScheduleFormState {
   zoomLink: string
   notes: string
   projectId: string
+  // 칠십인 전용. 대상이 '기타'인 접견/모임에서만 의미가 있다 — 저장할 때 canBeSeventyOnly로 거른다.
+  seventyOnly: boolean
 }
 
 const EMPTY_TARGET: TargetSelection = {
@@ -44,6 +46,7 @@ function defaultState(): ScheduleFormState {
     zoomLink: '',
     notes: '',
     projectId: '',
+    seventyOnly: false,
   }
 }
 

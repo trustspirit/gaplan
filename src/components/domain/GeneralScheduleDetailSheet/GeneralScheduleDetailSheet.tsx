@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Building2, MoonStar, CalendarDays, Clock, Globe, GlobeLock, Pencil, Trash2 } from 'lucide-react'
+import { Building2, MoonStar, CalendarDays, Clock, Globe, GlobeLock, Lock, Pencil, Trash2 } from 'lucide-react'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
@@ -8,7 +8,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet/BottomSheet'
 import { Modal } from '@/components/ui/Modal/Modal'
 import { DeleteConfirmSheet } from '@/components/ui'
 import type { GeneralSchedule, Schedule } from '@/types'
-import { formatEventDateRange } from '@/types'
+import { eventVisibilityOf, formatEventDateRange } from '@/types'
 import styles from './GeneralScheduleDetailSheet.module.scss'
 
 const CATEGORY_ICONS = {
@@ -44,6 +44,7 @@ export function GeneralScheduleDetailSheet({
 
   const canManage = currentRole === 'admin' || event.createdBy === currentUid
   const Icon = CATEGORY_ICONS[event.category]
+  const visibility = eventVisibilityOf(event)
   // 여러 날 행사는 날짜를 범위로 보여준다(예: "9.3(수) – 9.4(목)") — GeneralEventItem과
   // 같은 범위 조립 규칙(formatEventDateRange)을 공유한다. 하루짜리는 지금 그대로.
   const dateLabel = formatEventDateRange(event, (d) => dayjs(d).format(t('generalSchedule.dateFormat')))
@@ -71,10 +72,15 @@ export function GeneralScheduleDetailSheet({
         <span className={clsx(styles.categoryBadge, styles[event.category])}>
           {t(`generalSchedule.category.${event.category}`)}
         </span>
-        {event.isPublic
-          ? <span className={styles.publicBadge}><Globe size={11} /> {t('generalSchedule.public')}</span>
-          : <span className={styles.privateBadge}><GlobeLock size={11} /> {t('generalSchedule.private')}</span>
-        }
+        {visibility === 'public' && (
+          <span className={styles.publicBadge}><Globe size={11} /> {t('generalSchedule.public')}</span>
+        )}
+        {visibility === 'seventy' && (
+          <span className={styles.seventyOnlyBadge}><Lock size={11} /> {t('generalSchedule.seventyOnly')}</span>
+        )}
+        {visibility === 'private' && (
+          <span className={styles.privateBadge}><GlobeLock size={11} /> {t('generalSchedule.private')}</span>
+        )}
       </div>
 
       <div className={styles.infoRow}>

@@ -1,0 +1,144 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.summary {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.summaryEmpty {
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: $space-3;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.navBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  border-radius: $border-radius-md;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  &:hover { background: $color-bg; color: $color-text; }
+
+  @media (pointer: coarse) {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.period {
+  flex: 1;
+  text-align: center;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+// 범위 띠가 칸 사이에서 끊기지 않도록 가로 간격을 두지 않는다(MultiDatePicker는 2px).
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 2px;
+}
+
+.dowLabel {
+  text-align: center;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+  padding: $space-1 0;
+}
+
+.blank,
+.cell {
+  height: 36px;
+
+  @media (pointer: coarse) {
+    height: 44px;
+  }
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  border-radius: $border-radius-md;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  &:hover { background: $color-bg; }
+}
+
+.today {
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+// 범위 안쪽은 옅은 띠, 양 끝은 진한 칸. 띠가 이어져 보이도록 안쪽 칸은 모서리를 세우고
+// 양 끝만 바깥쪽 모서리를 둥글린다.
+.inRange {
+  background: color-mix(in srgb, $color-primary 14%, white);
+  border-radius: 0;
+  color: $color-text;
+  &:hover { background: color-mix(in srgb, $color-primary 22%, white); }
+}
+
+.rangeStart,
+.rangeEnd {
+  background: $color-primary;
+  color: #fff;
+  font-weight: $font-weight-bold;
+  &:hover { background: $color-primary-hover; }
+}
+
+.rangeStart {
+  border-top-left-radius: $border-radius-md;
+  border-bottom-left-radius: $border-radius-md;
+}
+
+.rangeEnd {
+  border-top-right-radius: $border-radius-md;
+  border-bottom-right-radius: $border-radius-md;
+}
+
+.hint {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}

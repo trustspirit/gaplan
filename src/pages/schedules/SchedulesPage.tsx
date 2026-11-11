@@ -145,7 +145,13 @@ export function SchedulesPage() {
 
   const handleToggleVisibility = async (event: GeneralSchedule) => {
     try {
-      await updateGeneralSchedule(event.id, { isPublic: !event.isPublic })
+      // 눈 버튼은 "공개 페이지에 표시"를 켜고 끄는 스위치다. 칠십인 전용 행사에서 누르면 공개로
+      // 올린다 — isPublic만 켜고 seventyOnly를 남기면 두 값이 어긋난다. 칠십인 전용으로 되돌리는
+      // 것은 편집 화면의 공개 범위에서 한다.
+      await updateGeneralSchedule(
+        event.id,
+        event.isPublic ? { isPublic: false } : { isPublic: true, seventyOnly: false },
+      )
     } catch {
       toast.error(t('generalSchedule.visibilityFailed'))
     }

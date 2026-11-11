@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import type { GeneralSchedule } from './generalSchedule'
-import { eventCoversDate, formatEventDateRange } from './generalSchedule'
+import {
+  eventCoversDate, eventVisibilityFields, eventVisibilityOf, formatEventDateRange,
+} from './generalSchedule'
 
 function gs(partial: Partial<GeneralSchedule> = {}): GeneralSchedule {
   return {
@@ -71,5 +73,28 @@ describe('formatEventDateRange', () => {
     expect(formatEventDateRange(broken, (d) => d)).toBe('2026-09-03')
     const same = gs({ date: '2026-09-03', endDate: '2026-09-03' })
     expect(formatEventDateRange(same, (d) => d)).toBe('2026-09-03')
+  })
+})
+
+// 공개 범위는 화면에서는 셋 중 하나, 저장은 두 필드다. 칠십인 전용은 isPublic을 끈 채
+// seventyOnly만 켠다 — seventyOnly를 모르는 경로가 비공개로 취급하게 하려는 것이다.
+describe('eventVisibilityOf / eventVisibilityFields', () => {
+  it('세 범위가 두 필드와 서로 오간다', () => {
+    for (const visibility of ['public', 'seventy', 'private'] as const) {
+      expect(eventVisibilityOf(eventVisibilityFields(visibility))).toBe(visibility)
+    }
+  })
+
+  it('칠십인 전용은 isPublic이 false다', () => {
+    expect(eventVisibilityFields('seventy')).toEqual({ isPublic: false, seventyOnly: true })
+  })
+
+  it('seventyOnly 필드가 없는 옛 문서는 isPublic만으로 읽는다', () => {
+    expect(eventVisibilityOf(gs({ isPublic: true }))).toBe('public')
+    expect(eventVisibilityOf(gs({ isPublic: false }))).toBe('private')
+  })
+
+  it('두 값이 어긋난 문서(둘 다 true)는 더 좁은 칠십인 전용으로 읽는다', () => {
+    expect(eventVisibilityOf(gs({ isPublic: true, seventyOnly: true }))).toBe('seventy')
   })
 })

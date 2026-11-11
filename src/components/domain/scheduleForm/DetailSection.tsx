@@ -4,6 +4,7 @@ import { Input, Textarea } from '@/components/ui'
 import { ProjectPicker } from '@/components/domain/ProjectPicker/ProjectPicker'
 import { ZoomLinkPicker } from './ZoomLinkPicker'
 import type { ScheduleFormState } from './useScheduleForm'
+import { canBeSeventyOnly } from '@/utils/seventyOnly'
 import styles from './DetailSection.module.scss'
 // .fieldGroup/.textarea/.hint are the exact classes ScheduleFormModal's notes Textarea and
 // related-visit hint used — shared from there (the same pattern WhenSection.tsx uses) rather
@@ -41,7 +42,7 @@ export function DetailSection({
   canPickProject,
 }: DetailSectionProps) {
   const { t } = useTranslation()
-  const { location, customTitle, zoomLink, notes, projectId } = state
+  const { location, customTitle, zoomLink, notes, projectId, seventyOnly } = state
 
   return (
     <div className={styles.fields}>
@@ -90,6 +91,24 @@ export function DetailSection({
         placeholder={t('schedule.notesLabelOptional')}
         rows={3}
       />
+
+      {/* 대상이 '기타'인 접견/모임에만 나온다. 협의 평의회·스테이크 회장·와드 감독처럼 대상이
+          정해진 일정은 공개 범위도 그 대상으로 정해져 있어 고를 것이 없다. */}
+      {canBeSeventyOnly({ type, targetKind: state.target.kind }) && (
+        <div className={sharedStyles.fieldGroup}>
+          <label className={sharedStyles.checkRow}>
+            <input
+              type="checkbox"
+              checked={seventyOnly}
+              onChange={(e) => onChange({ seventyOnly: e.target.checked })}
+              className={sharedStyles.checkbox}
+              style={{ accentColor: 'var(--color-primary, #177C9C)' }}
+            />
+            <span className={sharedStyles.checkLabel}>{t('schedule.seventyOnlyLabel')}</span>
+          </label>
+          <p className={sharedStyles.hint}>{t('schedule.seventyOnlyHint')}</p>
+        </div>
+      )}
 
       {canPickProject && (
         <ProjectPicker value={projectId} onChange={(next) => onChange({ projectId: next })} />

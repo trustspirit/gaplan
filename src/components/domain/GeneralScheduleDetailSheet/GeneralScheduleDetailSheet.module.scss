@@ -66,7 +66,7 @@
   &.other      { background: #f3f4f6; color: #374151; }
 }
 
-.publicBadge, .privateBadge {
+.publicBadge, .privateBadge, .seventyOnlyBadge {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -77,6 +77,7 @@
 
 .publicBadge  { background: $color-highlight-success; color: $color-success; }
 .privateBadge { background: $color-bg; color: $color-text-muted; }
+.seventyOnlyBadge { background: $color-bg; color: $color-primary; }
 
 .infoRow {
   display: flex;

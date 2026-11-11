@@ -9,13 +9,20 @@ import { db } from '@/firebase'
 import type { GeneralSchedule } from '@/types'
 import { mapDocs, snapshotErrHandler, stripUndefined } from './_utils'
 
+/**
+ * @param options.includeSeventyOnly 칠십인 전용 행사까지 읽는가. 관리자·칠십인·집행서기만 true로
+ *   넘긴다(canSeeSeventyOnlyEvents). 그 밖의 사용자는 false여야 한다 — 보안 규칙이 칠십인 전용
+ *   행사를 막고 있어서, seventyOnly == false 조건 없이 조회하면 조회 전체가 거부된다.
+ */
 export function subscribeToGeneralSchedules(
   callback: (schedules: GeneralSchedule[]) => void,
-  onError?: (error: Error) => void,
+  onError: ((error: Error) => void) | undefined,
+  options: { includeSeventyOnly: boolean },
 ): Unsubscribe {
   const sixMonthsAgo = dayjs().subtract(12, 'month').format('YYYY-MM-DD')
   const q = query(
     collection(db, 'generalSchedules'),
+    ...(options.includeSeventyOnly ? [] : [where('seventyOnly', '==', false)]),
     where('date', '>=', sixMonthsAgo),
     orderBy('date', 'asc'),
   )
@@ -31,6 +38,9 @@ type CreateInput = Omit<GeneralSchedule, 'id' | 'createdAt'>
 export async function createGeneralSchedule(data: CreateInput): Promise<string> {
   const ref = await addDoc(collection(db, 'generalSchedules'), {
     ...stripUndefined(data),
+    // 항상 boolean으로 쓴다 — 회장 계정은 seventyOnly == false로 조회하므로, 필드가 빠진
+    // 행사는 회장에게 보이지 않는다.
+    seventyOnly: data.seventyOnly === true,
     createdAt: serverTimestamp(),
   })
   return ref.id

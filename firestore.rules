@@ -107,8 +107,18 @@ service cloud.firestore {
     }
 
     match /generalSchedules/{scheduleId} {
-      // Authenticated users read all (calendar/list). Public page reads isPublic==true only.
-      allow read: if isAuth() || resource.data.isPublic == true;
+      // 칠십인 전용 행사(seventyOnly)는 관리자·칠십인·집행서기만 읽는다. 그 밖의 로그인 사용자
+      // (회장 등)는 seventyOnly가 false인 행사만 읽는다 — 그래서 회장 계정의 목록 조회는
+      // where('seventyOnly', '==', false)를 달아야 통과한다(generalScheduleService.ts).
+      // 칠십인 전용 행사는 isPublic이 false로 저장되므로 로그인 없는 읽기에도 걸리지 않는다.
+      // resource.data.get('seventyOnly', false)로 쓰지 마라 — 기본값이 있으면 조건 없는 목록 조회가
+      // 통과해 칠십인 전용 행사가 회장에게 그대로 내려간다(rules-tests가 이 경우를 잡는다).
+      // 필드가 없는 옛 문서는 backfill-seventy-only.ts와 generalScheduleCalendarSync가 채운다.
+      allow read: if (isAuth() && (
+          isAdmin() || isSeventy() || isExecSecretary()
+          || resource.data.seventyOnly == false
+        ))
+        || resource.data.isPublic == true;
       // Admin, seventy, and exec_secretary create org-wide events. 수정·삭제는 관리자와
       // 만든 사람만 — 화면(GeneralScheduleDetailSheet의 canManage)과 같은 기준이다.
       allow create: if (isAdmin() || isSeventy() || isExecSecretary())

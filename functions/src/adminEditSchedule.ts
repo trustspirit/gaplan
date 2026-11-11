@@ -4,6 +4,7 @@ import { DATE_RE, TIME_RE, isValidUrl } from './validators'
 import { validateRelatedVisit } from './relatedVisit'
 import { CC_COUNCIL_TARGET_KIND } from './ccCouncil'
 import { resolveScheduleLocationForEdit } from './adminScheduleFields'
+import { canBeSeventyOnly } from './seventyOnly'
 
 interface AdminEditScheduleRequest {
   scheduleId: string
@@ -23,6 +24,7 @@ interface AdminEditScheduleRequest {
     targetKind?: 'stake_president' | 'ward_bishop' | 'other' | 'cc_council' | null
     wardId?: string | null
     relatedVisitId?: string | null
+    seventyOnly?: boolean
   }
 }
 
@@ -155,6 +157,13 @@ export const adminEditSchedule = functions
         : null
     }
 
+    if (updates.seventyOnly !== undefined) {
+      if (typeof updates.seventyOnly !== 'boolean') {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid seventyOnly')
+      }
+      allowed.seventyOnly = updates.seventyOnly
+    }
+
     if (Object.keys(allowed).length === 0) {
       throw new functions.https.HttpsError('invalid-argument', 'No valid updates provided')
     }
@@ -183,6 +192,25 @@ export const adminEditSchedule = functions
     // 통째로 사라진다. 생성 CF가 ward_visit에 unitId를 요구하는 것과 같은 규칙.
     if (snap.data()?.type === 'ward_visit' && allowed.unitId === '') {
       throw new functions.https.HttpsError('invalid-argument', 'unitId required for ward_visit')
+    }
+
+    // 칠십인 전용은 대상이 '기타'인 접견/모임에만 둘 수 있다 — 생성 CF와 같은 규칙.
+    // 수정으로 대상 유형이 '기타'에서 벗어나면 켜져 있던 표시도 함께 끈다. 남겨 두면 화면에는
+    // 선택지가 없는데 일정만 계속 CC 캘린더에서 빠져 있게 된다.
+    {
+      const current = snap.data()!
+      const effective = {
+        type: current.type as string | undefined,
+        targetKind: allowed.targetKind !== undefined
+          ? (allowed.targetKind as string | null)
+          : (current.targetKind as string | null | undefined),
+      }
+      if (!canBeSeventyOnly(effective)) {
+        if (allowed.seventyOnly === true) {
+          throw new functions.https.HttpsError('invalid-argument', "seventyOnly is only for interview/meeting with targetKind 'other'")
+        }
+        if (current.seventyOnly === true) allowed.seventyOnly = false
+      }
     }
 
     // 협의 평의회는 'unitId는 비고 regionId가 채워져 있다'가 전제다. 수정으로 스테이크가

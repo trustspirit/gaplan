@@ -115,7 +115,8 @@ describe('GeneralScheduleFormModal 뒤로 가기', () => {
 })
 
 // event-toast-and-multiday brief §2-4: 행사는 1박 2일 등 여러 날에 걸칠 수 있다 —
-// 종료일(선택) 입력을 추가하고, dirty 판정·검증·저장 payload에 반영한다.
+// dirty 판정·검증·저장 payload에 종료일을 반영한다. 날짜 두 칸은 달력 하나(DateRangePicker)로
+// 합쳐졌다: 시작일을 누르고 종료일을 누른다. 달력 칸의 이름은 YYYY-MM-DD다.
 describe('GeneralScheduleFormModal 여러 날 행사(종료일)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -129,29 +130,26 @@ describe('GeneralScheduleFormModal 여러 날 행사(종료일)', () => {
     }
   })
 
-  it('종료일(선택) 입력칸이 있다', () => {
-    render(<GeneralScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    expect(screen.getByLabelText('generalSchedule.endDateLabel')).toBeInTheDocument()
+  it('날짜 두 칸 대신 달력 하나로 고른다', () => {
+    render(<GeneralScheduleFormModal initialDate="2026-09-03" onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.getByRole('group', { name: 'generalSchedule.dateRangeLabel' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '2026-09-03' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByLabelText('generalSchedule.endDateLabel')).toBeNull()
   })
 
-  it('종료일을 채우고 저장하면 payload에 endDate가 실린다', async () => {
+  it('시작일 다음에 종료일을 누르고 저장하면 payload에 endDate가 실린다', async () => {
     const { createGeneralSchedule } = await import('@/services/generalScheduleService')
-    render(<GeneralScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<GeneralScheduleFormModal initialDate="2026-09-03" onClose={vi.fn()} onSaved={vi.fn()} />)
 
     fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), {
       target: { value: '수련회' },
     })
-    fireEvent.change(screen.getByLabelText('generalSchedule.dateLabel'), {
-      target: { value: '2026-09-03' },
-    })
-    fireEvent.change(screen.getByLabelText('generalSchedule.endDateLabel'), {
-      target: { value: '2026-09-04' },
-    })
+    fireEvent.click(screen.getByRole('button', { name: '2026-09-04' }))
     fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
 
     await waitFor(() =>
       expect(createGeneralSchedule).toHaveBeenCalledWith(
-        expect.objectContaining({ endDate: '2026-09-04' }),
+        expect.objectContaining({ date: '2026-09-03', endDate: '2026-09-04' }),
       ),
     )
   })
@@ -161,13 +159,10 @@ describe('GeneralScheduleFormModal 여러 날 행사(종료일)', () => {
   // 확인한다(startTime/endTime/description과 같은 기존 관례).
   it('종료일을 비워 두면 payload의 endDate가 undefined다(빈 문자열이 아니다)', async () => {
     const { createGeneralSchedule } = await import('@/services/generalScheduleService')
-    render(<GeneralScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
+    render(<GeneralScheduleFormModal initialDate="2026-09-06" onClose={vi.fn()} onSaved={vi.fn()} />)
 
     fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), {
       target: { value: '금식 주일' },
-    })
-    fireEvent.change(screen.getByLabelText('generalSchedule.dateLabel'), {
-      target: { value: '2026-09-06' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
 
@@ -175,23 +170,30 @@ describe('GeneralScheduleFormModal 여러 날 행사(종료일)', () => {
     expect(vi.mocked(createGeneralSchedule).mock.calls[0][0].endDate).toBeUndefined()
   })
 
-  it('종료일이 시작일보다 빠르면 저장을 막고 오류를 보여준다', async () => {
-    const { createGeneralSchedule } = await import('@/services/generalScheduleService')
-    render(<GeneralScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-
-    fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), {
-      target: { value: '수련회' },
-    })
-    fireEvent.change(screen.getByLabelText('generalSchedule.dateLabel'), {
-      target: { value: '2026-09-03' },
-    })
-    fireEvent.change(screen.getByLabelText('generalSchedule.endDateLabel'), {
-      target: { value: '2026-09-01' },
-    })
+  // 달력으로는 거꾸로 된 범위를 만들 수 없지만, 이미 저장된 깨진 데이터(종료일이 시작일보다
+  // 빠름)를 그대로 다시 저장하게 두지는 않는다.
+  it('종료일이 시작일보다 빠른 옛 데이터는 저장을 막고 오류를 보여준다', async () => {
+    const { updateGeneralSchedule } = await import('@/services/generalScheduleService')
+    render(
+      <GeneralScheduleFormModal
+        initialData={{
+          id: 'g1',
+          title: '수련회',
+          date: '2026-09-03',
+          endDate: '2026-09-01',
+          category: 'conference',
+          createdBy: 'test-uid',
+          createdAt: '2026-08-01',
+          isPublic: false,
+        }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
     fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
 
     expect(await screen.findByText('generalSchedule.errorEndDateBeforeStart')).toBeInTheDocument()
-    expect(createGeneralSchedule).not.toHaveBeenCalled()
+    expect(updateGeneralSchedule).not.toHaveBeenCalled()
   })
 
   // 관리자가 seventy의 행사를 고치면 작성자가 관리자로 바뀌어, 원래 작성자가 수정·삭제
@@ -219,7 +221,7 @@ describe('GeneralScheduleFormModal 여러 날 행사(종료일)', () => {
     expect(vi.mocked(updateGeneralSchedule).mock.calls[0][1]).not.toHaveProperty('createdBy')
   })
 
-  it('종료일만 고치고 닫으려 하면 dirty 확인을 묻는다', () => {
+  it('달력에서 날짜만 고치고 닫으려 하면 dirty 확인을 묻는다', () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const onClose = vi.fn()
     render(
@@ -237,9 +239,7 @@ describe('GeneralScheduleFormModal 여러 날 행사(종료일)', () => {
         onSaved={vi.fn()}
       />,
     )
-    fireEvent.change(screen.getByLabelText('generalSchedule.endDateLabel'), {
-      target: { value: '2026-09-04' },
-    })
+    fireEvent.click(screen.getByRole('button', { name: '2026-09-04' }))
     fireEvent.click(screen.getByLabelText('common.close'))
     expect(confirmSpy).toHaveBeenCalledWith('common.discardChanges')
     expect(onClose).toHaveBeenCalled()
@@ -254,36 +254,105 @@ describe('GeneralScheduleFormModal 공개설정 권한', () => {
     vi.clearAllMocks()
   })
 
-  it('집행서기는 공개 체크박스와 지역 타겟을 볼 수 있다', () => {
+  it('집행서기는 공개 범위 선택과 지역 타겟을 볼 수 있다', () => {
     mocks.currentUser = {
       uid: 'exec-uid', email: 'exec@test.com', role: 'exec_secretary',
       name: '집행서기', createdAt: '2026-01-01',
     }
     render(<GeneralScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    expect(screen.getByLabelText('generalSchedule.isPublicLabel')).toBeInTheDocument()
+    expect(screen.getByLabelText('generalSchedule.visibilityLabel')).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: '서울 CC' })).toBeInTheDocument()
   })
 
-  it('칠십인은 공개 체크박스와 지역 타겟을 볼 수 없고, 저장 payload도 강제로 비공개다', async () => {
+  it('칠십인은 공개 범위 선택과 지역 타겟을 볼 수 없고, 저장 payload도 강제로 비공개다', async () => {
     mocks.currentUser = {
       uid: 'seventy-uid', email: 'seventy@test.com', role: 'seventy',
       name: '칠십인', regionId: 'seoul', createdAt: '2026-01-01',
     }
     const { createGeneralSchedule } = await import('@/services/generalScheduleService')
-    render(<GeneralScheduleFormModal onClose={vi.fn()} onSaved={vi.fn()} />)
-    expect(screen.queryByLabelText('generalSchedule.isPublicLabel')).toBeNull()
+    render(<GeneralScheduleFormModal initialDate="2026-09-01" onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.queryByLabelText('generalSchedule.visibilityLabel')).toBeNull()
     expect(screen.queryByRole('checkbox', { name: '서울 CC' })).toBeNull()
 
     fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), {
       target: { value: '지역 모임' },
     })
-    fireEvent.change(screen.getByLabelText('generalSchedule.dateLabel'), {
-      target: { value: '2026-09-01' },
-    })
     fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
 
     expect(createGeneralSchedule).toHaveBeenCalledWith(
-      expect.objectContaining({ isPublic: false, targetRegionIds: [] }),
+      expect.objectContaining({ isPublic: false, seventyOnly: false, targetRegionIds: [] }),
     )
+  })
+
+  // 공개 범위는 셋 중 하나다. 칠십인 전용은 isPublic을 끄고 seventyOnly를 켠 채로 저장한다 —
+  // seventyOnly를 모르는 경로가 이 행사를 비공개로 취급하게 하려는 것이다.
+  it.each([
+    ['public', { isPublic: true, seventyOnly: false }],
+    ['seventy', { isPublic: false, seventyOnly: true }],
+    ['private', { isPublic: false, seventyOnly: false }],
+  ] as const)('집행서기가 공개 범위를 %s로 고르면 그에 맞는 두 필드로 저장한다', async (choice, fields) => {
+    mocks.currentUser = {
+      uid: 'exec-uid', email: 'exec@test.com', role: 'exec_secretary',
+      name: '집행서기', createdAt: '2026-01-01',
+    }
+    const { createGeneralSchedule } = await import('@/services/generalScheduleService')
+    render(<GeneralScheduleFormModal initialDate="2026-09-01" onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('generalSchedule.titleLabel'), {
+      target: { value: '지역 모임' },
+    })
+    fireEvent.change(screen.getByLabelText('generalSchedule.visibilityLabel'), {
+      target: { value: choice },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
+
+    await waitFor(() =>
+      expect(createGeneralSchedule).toHaveBeenCalledWith(expect.objectContaining(fields)),
+    )
+  })
+
+  it('칠십인 전용 행사를 열면 공개 범위가 칠십인 전용으로 잡혀 있다', () => {
+    mocks.currentUser = {
+      uid: 'exec-uid', email: 'exec@test.com', role: 'exec_secretary',
+      name: '집행서기', createdAt: '2026-01-01',
+    }
+    render(
+      <GeneralScheduleFormModal
+        initialData={{
+          id: 'g1', title: '전용', date: '2026-09-03', category: 'other',
+          createdBy: 'exec-uid', createdAt: '2026-08-01', isPublic: false, seventyOnly: true,
+        }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+    expect(screen.getByLabelText('generalSchedule.visibilityLabel')).toHaveValue('seventy')
+  })
+
+  // 칠십인은 공개 범위를 못 바꾼다. 관리자가 칠십인 전용으로 해 둔 자기 행사를 칠십인이 고쳐
+  // 저장할 때 그 표시가 꺼지면, 그 행사가 로그인한 회장에게 보이게 된다.
+  it('칠십인이 칠십인 전용인 자기 행사를 고쳐 저장해도 칠십인 전용이 유지된다', async () => {
+    mocks.currentUser = {
+      uid: 'seventy-uid', email: 'seventy@test.com', role: 'seventy',
+      name: '칠십인', regionId: 'seoul', createdAt: '2026-01-01',
+    }
+    const { updateGeneralSchedule } = await import('@/services/generalScheduleService')
+    render(
+      <GeneralScheduleFormModal
+        initialData={{
+          id: 'g1', title: '전용', date: '2026-09-03', category: 'other',
+          createdBy: 'seventy-uid', createdAt: '2026-08-01', isPublic: false, seventyOnly: true,
+        }}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'generalSchedule.saveBtn' }))
+
+    await waitFor(() => expect(updateGeneralSchedule).toHaveBeenCalled())
+    expect(vi.mocked(updateGeneralSchedule).mock.calls[0][1]).toMatchObject({
+      isPublic: false,
+      seventyOnly: true,
+    })
   })
 })

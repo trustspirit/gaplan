@@ -1,6 +1,7 @@
 import { getScopeUnitIds, getScopeDisplayName, getScopeRegionId } from './regions'
 import { CC_COUNCIL_TARGET_KIND, isCcCouncilForScope } from './ccCouncil'
 import { generalScheduleInScope } from './generalScheduleScope'
+import { dedupeById, isSeventyOnly } from './seventyOnly'
 
 /**
  * "이 토큰이 무엇을 볼 수 있는가"의 유일한 판정.
@@ -161,7 +162,27 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
           .get()
       : null
 
-  const [snap, generalSnap, ccSnap] = await Promise.all([
+  // 칠십인 전용 행사는 isPublic이 false라 아래 isPublic 쿼리에 걸리지 않는다. 전체 공유
+  // (칠십인 전용 페이지)에서만 한 번 더 조회해 합친다 — CC·유닛 링크는 아예 읽지 않는다.
+  const today = todayInSeoul()
+  const seventyOnlyQuery =
+    unitIds === null
+      ? db
+          .collection('generalSchedules')
+          .where('seventyOnly', '==', true)
+          .where('date', '>=', today)
+          .orderBy('date', 'asc')
+          .get()
+          // 이 조회는 (seventyOnly, date) 복합 색인이 있어야 한다. 색인이 아직 만들어지는 중이면
+          // (배포 직후 몇 분) 실패하는데, 그렇다고 일정표 전체를 못 열게 두지는 않는다 —
+          // 칠십인 전용 행사만 잠시 빠진다.
+          .catch((err: unknown) => {
+            console.error('[publicSchedulePayload] seventy-only events query failed', err)
+            return null
+          })
+      : null
+
+  const [snap, generalSnap, ccSnap, seventyOnlySnap] = await Promise.all([
     query
       .where('status', '==', 'confirmed')
       .where('date', '>=', cutoffStr)
@@ -170,25 +191,27 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
     db
       .collection('generalSchedules')
       .where('isPublic', '==', true)
-      .where('date', '>=', todayInSeoul())
+      .where('date', '>=', today)
       .orderBy('date', 'asc')
       .get(),
     ccQuery,
+    seventyOnlyQuery,
   ])
 
   const unitSet = unitIds !== null ? new Set(unitIds) : null
 
   // 두 쿼리는 서로 겹치지 않지만(협의 평의회는 unitId가 빈 값), 방어적으로 id 기준 중복을 제거한다.
-  const seen = new Set<string>()
-  const docs = [...snap.docs, ...(ccSnap?.docs ?? [])].filter((d) => {
-    if (seen.has(d.id)) return false
-    seen.add(d.id)
-    return true
-  })
+  const docs = dedupeById([...snap.docs, ...(ccSnap?.docs ?? [])])
 
   const schedules: PublicSchedule[] = docs
     // 지역 공유는 와드 방문만 노출하되, 그 CC의 협의 평의회는 함께 내보낸다.
-    .filter((d) => unitSet === null || d.data().type === 'ward_visit' || isCcCouncilForScope(d.data(), scopeValue))
+    // 칠십인 전용으로 표시한 일정(주로 협의 평의회)은 지역 공유에서 뺀다.
+    .filter(
+      (d) =>
+        unitSet === null ||
+        (!isSeventyOnly(d.data()) &&
+          (d.data().type === 'ward_visit' || isCcCouncilForScope(d.data(), scopeValue))),
+    )
     .sort((a, b) => (a.data().date as string).localeCompare(b.data().date as string))
     .map((d) => {
       const sd = d.data()
@@ -211,7 +234,11 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
       }
     })
 
-  const generalSchedules: PublicGeneralSchedule[] = generalSnap.docs
+  const generalDocs = dedupeById([...generalSnap.docs, ...(seventyOnlySnap?.docs ?? [])]).sort((a, b) =>
+    (a.data().date as string).localeCompare(b.data().date as string),
+  )
+
+  const generalSchedules: PublicGeneralSchedule[] = generalDocs
     // 로그인 사용자용 관련성 판단은 isGeneralScheduleRelevant(src/types/generalSchedule.ts)를 쓴다 —
     // 이건 공개 스코프(전체 공유 vs 특정 CC 링크)에 실려야 하는지를 판단하는 별개의 규칙이다.
     .filter((d) => generalScheduleInScope(d.data(), scopeRegionId, unitIds))

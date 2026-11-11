@@ -7,10 +7,20 @@ function snap(data: unknown, exists = true) {
 
 /** where/orderBy를 몇 번 체이닝하든 같은 객체를 돌려주고, get()이 docs를 낸다. */
 function query(docs: Array<{ id: string; data: () => unknown }>) {
+  // '==' 조건만 실제로 걸러낸다 — isPublic/seventyOnly처럼 "어느 쿼리가 무엇을 읽는가"가
+  // 판정의 일부인 경우를 검사하려면 필요하다. in·>= 조건은 예전처럼 통과시킨다.
+  const filters: Array<[string, unknown]> = []
   const q: Record<string, unknown> = {}
-  q.where = () => q
+  q.where = (field: string, op: string, value: unknown) => {
+    if (op === '==') filters.push([field, value])
+    return q
+  }
   q.orderBy = () => q
-  q.get = async () => ({ docs })
+  q.get = async () => ({
+    docs: docs.filter((d) =>
+      filters.every(([field, value]) => (d.data() as Record<string, unknown>)[field] === value),
+    ),
+  })
   return q
 }
 
@@ -104,5 +114,33 @@ describe('buildPublicSchedulePayload', () => {
     expect(payload.scopeDisplayName).toBeNull()
     expect(payload.schedules).toHaveLength(1)
     expect(payload.schedules[0]).toMatchObject({ id: 's1', wardName: '교문 와드' })
+  })
+
+  describe('칠십인 전용', () => {
+    const general = (id: string, extra: Record<string, unknown>) => ({
+      id,
+      data: () => ({ title: id, date: '2999-01-0' + id.slice(-1), category: 'other', ...extra }),
+    })
+    const generals = [
+      general('g1', { isPublic: true, seventyOnly: false }),
+      general('g2', { isPublic: false, seventyOnly: true }),
+      general('g3', { isPublic: false, seventyOnly: false }),
+    ]
+
+    it('전체 공유 토큰은 공개 행사와 칠십인 전용 행사를 함께 내보낸다', async () => {
+      const db = setupFirestore({ tokens: { tok: '__all__' }, generals })
+      const payload = await buildPublicSchedulePayload(db, 'tok')
+      expect(payload.generalSchedules.map((g) => g.id)).toEqual(['g1', 'g2'])
+    })
+
+    it('유닛 링크는 칠십인 전용 행사를 내보내지 않는다', async () => {
+      const db = setupFirestore({
+        tokens: { tok: 'seoul-east-stake' },
+        units: { 'seoul-east-stake': { enabled: true } },
+        generals,
+      })
+      const payload = await buildPublicSchedulePayload(db, 'tok')
+      expect(payload.generalSchedules.map((g) => g.id)).toEqual(['g1'])
+    })
   })
 })

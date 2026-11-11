@@ -371,7 +371,9 @@
     "groupToday": "Today",
     "groupTomorrow": "Tomorrow",
     "groupThisWeek": "This week",
-    "groupLater": "Later"
+    "groupLater": "Later",
+    "seventyOnlyLabel": "Seventy only",
+    "seventyOnlyHint": "Shown only on the Seventy-only public page; not added to the CC Google calendar."
   },
   "ward": {
     "assignTitle": "Assign Ward/Branch Visit Dates",
@@ -642,7 +644,19 @@
     "public": "Public",
     "private": "Private",
     "dateFormat": "MMM D, YYYY (ddd)",
-    "visibilityFailed": "Failed to change visibility."
+    "visibilityFailed": "Failed to change visibility.",
+    "visibilityLabel": "Visibility",
+    "visibility": {
+      "public": "Public — CC/stake public pages and calendars",
+      "seventy": "Seventy only — the Seventy-only public page",
+      "private": "Private — not shown on public pages"
+    },
+    "seventyOnly": "Seventy only",
+    "dateRangeLabel": "Date",
+    "dateRangeHint": "Tap the start date, then the end date. For a one-day event, tap once.",
+    "dateRangeEmpty": "Select a date",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month"
   },
   "kakao": {
     "title": "KakaoTalk Calendar",

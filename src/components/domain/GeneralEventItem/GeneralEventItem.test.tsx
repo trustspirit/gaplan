@@ -77,6 +77,16 @@ describe('GeneralEventItem', () => {
     expect(screen.getByLabelText('generalSchedule.showToPublic')).toBeInTheDocument()
   })
 
+  it('marks a seventy-only event with a badge and leaves other events unmarked', () => {
+    const { rerender } = render(<GeneralEventItem event={event({ isPublic: false })} onClick={noop} />)
+    expect(screen.queryByText('generalSchedule.seventyOnly')).not.toBeInTheDocument()
+
+    rerender(
+      <GeneralEventItem event={event({ isPublic: false, seventyOnly: true })} onClick={noop} />,
+    )
+    expect(screen.getByText('generalSchedule.seventyOnly')).toBeInTheDocument()
+  })
+
   it('shows the time range only when both start and end time are set', () => {
     const { rerender } = render(<GeneralEventItem event={event()} onClick={noop} />)
     expect(screen.queryByText(/–/)).not.toBeInTheDocument()

@@ -14,6 +14,7 @@ import { isBookkeepingOnlyWrite } from './bookkeepingWrite'
 import { targetCalendarIdsFor, GENERAL_SCHEDULE_SHARED_CALENDAR_KEY } from './generalScheduleCalendarTargets'
 import { generalScheduleEventBody, type GeneralScheduleForCalendar } from './generalScheduleEventBody'
 import { planGeneralScheduleCalendarSync } from './generalScheduleCalendarPlan'
+import { isSeventyOnly } from './seventyOnly'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -34,7 +35,19 @@ export const generalScheduleCalendarSync = functions
     const existingEventIds: Record<string, string> =
       (before?.googleCalendarEventIds as Record<string, string> | undefined) ?? {}
 
-    const isPublicAfter = !!after && after.isPublic === true
+    // 새 클라이언트는 seventyOnly를 항상 boolean으로 쓴다. 필드가 없는 문서는 배포 전에 열려
+    // 있던 옛 탭이 만든 것이다 — 그대로 두면 회장 계정의 조회(seventyOnly == false)에 걸리지
+    // 않아 그 행사가 회장에게만 조용히 안 보인다. 여기서 채우고 끝낸다: 이 write가 트리거를
+    // 다시 깨우고, 캘린더 동기화는 그 두 번째 호출이 한다(한 호출에서 둘 다 하면 장부 필드
+    // 되쓰기와 경합해 이벤트가 중복 생성될 수 있다).
+    if (after && typeof after.seventyOnly !== 'boolean') {
+      await change.after.ref.update({ seventyOnly: false })
+      return
+    }
+
+    // 칠십인 전용 행사는 isPublic이 false로 저장되지만, 두 값이 어긋난 문서가 있어도
+    // CC 캘린더로 나가지 않게 여기서 한 번 더 막는다.
+    const isPublicAfter = !!after && after.isPublic === true && !isSeventyOnly(after)
 
     const db = admin.firestore()
     const settingsSnap = await db.collection('settings').doc('calendar').get()

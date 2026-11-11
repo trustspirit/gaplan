@@ -11,6 +11,8 @@
 export interface GeneralScheduleTargets {
   targetRegionIds?: string[]
   targetUnitIds?: string[]
+  // 칠십인 전용 행사 — 전체 공개(칠십인 전용 페이지)에만 실린다. seventyOnly.ts 참고.
+  seventyOnly?: boolean
 }
 
 /**
@@ -33,6 +35,9 @@ export function generalScheduleInScope(
 ): boolean {
   // 1. 전체 공개(지역 칠십인 스케줄)는 공개 행사를 전부 본다.
   if (scopeRegionId === null) return true
+
+  // 1-1. 칠십인 전용 행사는 CC·유닛 링크 어디에도 실리지 않는다. 대상 지역이 맞아도 마찬가지다.
+  if (gs.seventyOnly === true) return false
 
   const regionTargets = gs.targetRegionIds ?? []
   const unitTargets = gs.targetUnitIds ?? []

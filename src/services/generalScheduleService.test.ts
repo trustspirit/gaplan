@@ -8,13 +8,19 @@ const firestoreMocks = vi.hoisted(() => ({
   updateDoc: vi.fn().mockResolvedValue(undefined),
   serverTimestamp: vi.fn(() => 'server-timestamp'),
   deleteField: vi.fn(() => 'delete-field'),
+  query: vi.fn((...args: unknown[]) => ({ kind: 'query', args })),
+  where: vi.fn((...args: unknown[]) => ({ kind: 'where', args })),
+  orderBy: vi.fn((...args: unknown[]) => ({ kind: 'orderBy', args })),
+  onSnapshot: vi.fn(() => () => {}),
 }))
 
 vi.mock('firebase/firestore', () => firestoreMocks)
 vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn() }))
 vi.mock('@/firebase', () => ({ db: 'db', functions: 'functions' }))
 
-import { createGeneralSchedule, updateGeneralSchedule } from './generalScheduleService'
+import {
+  createGeneralSchedule, subscribeToGeneralSchedules, updateGeneralSchedule,
+} from './generalScheduleService'
 
 describe('createGeneralSchedule', () => {
   beforeEach(() => {
@@ -39,6 +45,49 @@ describe('createGeneralSchedule', () => {
     const payload = firestoreMocks.addDoc.mock.calls[0][1] as Record<string, unknown>
     const undefinedKeys = Object.keys(payload).filter(k => payload[k] === undefined)
     expect(undefinedKeys).toEqual([])
+  })
+})
+
+// 회장 계정은 seventyOnly == false로 행사를 조회한다. 필드가 빠진 행사는 그 조회에 걸리지
+// 않아 회장에게만 조용히 안 보이므로, 만들 때 항상 boolean으로 쓴다.
+describe('createGeneralSchedule — seventyOnly', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const base = {
+    title: '전체 야유회', date: '2026-09-01', category: 'other' as const, createdBy: 'uid-1', isPublic: false,
+  }
+
+  it('seventyOnly를 넘기지 않아도 false로 쓴다', async () => {
+    await createGeneralSchedule(base)
+    expect(firestoreMocks.addDoc.mock.calls[0][1]).toMatchObject({ seventyOnly: false })
+  })
+
+  it('칠십인 전용 행사는 true로 쓴다', async () => {
+    await createGeneralSchedule({ ...base, seventyOnly: true })
+    expect(firestoreMocks.addDoc.mock.calls[0][1]).toMatchObject({ seventyOnly: true })
+  })
+})
+
+// 보안 규칙이 칠십인 전용 행사를 회장에게서 막는다. 규칙은 필터가 아니라서, 회장 계정의
+// 조회가 seventyOnly == false 조건을 달지 않으면 조회 전체가 거부된다.
+describe('subscribeToGeneralSchedules', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const seventyOnlyFilter = () =>
+    firestoreMocks.where.mock.calls.find((args) => args[0] === 'seventyOnly')
+
+  it('칠십인 전용을 볼 수 없는 사용자는 seventyOnly == false 조건으로 조회한다', () => {
+    subscribeToGeneralSchedules(vi.fn(), undefined, { includeSeventyOnly: false })
+    expect(seventyOnlyFilter()).toEqual(['seventyOnly', '==', false])
+  })
+
+  it('칠십인 전용을 볼 수 있는 사용자는 그 조건 없이 전부 조회한다', () => {
+    subscribeToGeneralSchedules(vi.fn(), undefined, { includeSeventyOnly: true })
+    expect(seventyOnlyFilter()).toBeUndefined()
   })
 })
 

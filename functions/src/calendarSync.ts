@@ -11,6 +11,7 @@ import { buildScheduleTitle } from './scheduleTitle'
 import { isBookkeepingOnlyWrite } from './bookkeepingWrite'
 import { buildCalendarEventFields } from './calendarEventBody'
 import { calendarSyncNeedsUpdate } from './calendarSyncNeedsUpdate'
+import { isSeventyOnly } from './seventyOnly'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -67,6 +68,22 @@ export const calendarSync = functions
     }
 
     if (!after || after.status !== 'confirmed') return
+
+    // 칠십인 전용 일정은 CC 구글 캘린더에 두지 않는다 — 칠십인 전용 공개 페이지에만 실린다.
+    // 이미 올라가 있던 이벤트는 지우고 장부도 비운다. 장부를 남겨 두면 나중에 칠십인 전용을
+    // 껐을 때 "이미 이벤트가 있다"고 보고 다시 만들지 않는다(아래 needsUpdate 가드).
+    if (isSeventyOnly(after)) {
+      const staleEventId: string | undefined = after.googleCalendarEventId
+      if (!staleEventId) return
+      try {
+        const calendar = getCalendarClient()
+        await calendar.events.delete({ calendarId: sharedCalendarId, eventId: staleEventId })
+        await change.after.ref.update({ googleCalendarEventId: admin.firestore.FieldValue.delete() })
+      } catch (err) {
+        functions.logger.error('Google Calendar delete failed (seventyOnly)', err)
+      }
+      return
+    }
 
     // Re-sync whenever any field that affects the GCal event changes
     const needsUpdate = calendarSyncNeedsUpdate(before, after)

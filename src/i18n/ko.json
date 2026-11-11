@@ -371,7 +371,9 @@
     "groupToday": "오늘",
     "groupTomorrow": "내일",
     "groupThisWeek": "이번 주",
-    "groupLater": "이후"
+    "groupLater": "이후",
+    "seventyOnlyLabel": "칠십인 전용",
+    "seventyOnlyHint": "칠십인 전용 공개 페이지에만 표시하고 CC 구글 캘린더에는 올리지 않습니다."
   },
   "ward": {
     "assignTitle": "와드/지부 방문 날짜 배정",
@@ -642,7 +644,19 @@
     "public": "공개",
     "private": "비공개",
     "dateFormat": "YYYY년 M월 D일 (ddd)",
-    "visibilityFailed": "공개 설정 변경에 실패했습니다."
+    "visibilityFailed": "공개 설정 변경에 실패했습니다.",
+    "visibilityLabel": "공개 범위",
+    "visibility": {
+      "public": "공개 — CC·스테이크 공개 페이지와 캘린더",
+      "seventy": "칠십인 전용 — 칠십인 전용 공개 페이지에만",
+      "private": "비공개 — 공개 페이지에 표시 안 함"
+    },
+    "seventyOnly": "칠십인 전용",
+    "dateRangeLabel": "날짜",
+    "dateRangeHint": "시작일을 누른 뒤 종료일을 누르세요. 하루짜리는 한 번만 누르면 됩니다.",
+    "dateRangeEmpty": "날짜를 선택하세요",
+    "prevMonth": "이전 달",
+    "nextMonth": "다음 달"
   },
   "kakao": {
     "title": "카카오톡 캘린더",

@@ -9,6 +9,14 @@
   color: $color-text-muted;
 }
 
+.seventyOnlyBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: $font-size-xs;
+  color: $color-primary;
+}
+
 .visibilityBtn {
   display: flex;
   align-items: center;

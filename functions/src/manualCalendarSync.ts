@@ -11,6 +11,7 @@ import { google } from 'googleapis'
 import { resolveScheduleRegionId } from './scheduleRegion'
 import { buildScheduleTitle, type ScheduleTitleInput } from './scheduleTitle'
 import { buildCalendarEventFields } from './calendarEventBody'
+import { isSeventyOnly } from './seventyOnly'
 
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -40,7 +41,8 @@ export const manualCalendarSync = functions
       .where('status', '==', 'confirmed')
       .get()
 
-    const pending = snap.docs.filter(d => !d.data().googleCalendarEventId)
+    // 칠십인 전용 일정은 일부러 캘린더에 올리지 않은 것이다 — "아직 안 올라간 일정"으로 세지 않는다.
+    const pending = snap.docs.filter(d => !d.data().googleCalendarEventId && !isSeventyOnly(d.data()))
     if (pending.length === 0) {
       return { success: true, synced: 0, message: '모든 일정이 이미 캘린더에 등록되어 있습니다.' }
     }

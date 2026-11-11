@@ -43,11 +43,12 @@ function Harness(props: {
   initialZoomLink?: string
   initialNotes?: string
   initialProjectId?: string
+  initialKind?: ScheduleFormState['target']['kind']
   onChange?: (partial: Partial<ScheduleFormState>) => void
 }) {
   const [state, setState] = useState<ScheduleFormState>(() => ({
     type: props.type ?? 'interview',
-    target: { kind: '', unitId: '', wardName: '', ccRegionId: '', freeText: '' },
+    target: { kind: props.initialKind ?? '', unitId: '', wardName: '', ccRegionId: '', freeText: '' },
     date: '',
     startTime: '',
     endTime: '',
@@ -60,6 +61,7 @@ function Harness(props: {
     zoomLink: props.initialZoomLink ?? '',
     notes: props.initialNotes ?? '',
     projectId: props.initialProjectId ?? '',
+    seventyOnly: false,
   }))
 
   const handleChange = (partial: Partial<ScheduleFormState>) => {
@@ -147,5 +149,27 @@ describe('DetailSection', () => {
     renderDetail({ type: 'meeting', onChange })
     await userEvent.type(screen.getByLabelText('schedule.zoomLinkOptional'), 'x')
     expect(onChange).toHaveBeenCalledWith({ zoomLink: 'x' })
+  })
+
+  // 칠십인 전용은 대상이 '기타'인 접견/모임에서만 고른다. 협의 평의회처럼 대상이 정해진
+  // 일정은 지금처럼 동작해야 하므로 선택지 자체를 보여주지 않는다.
+  it("대상이 '기타'인 모임에는 칠십인 전용 체크가 나오고, 누르면 seventyOnly가 켜진다", async () => {
+    const onChange = vi.fn()
+    renderDetail({ type: 'meeting', initialKind: 'other', onChange })
+    await userEvent.click(screen.getByLabelText('schedule.seventyOnlyLabel'))
+    expect(onChange).toHaveBeenCalledWith({ seventyOnly: true })
+  })
+
+  it.each(['cc_council', 'stake_president', 'ward_bishop'] as const)(
+    '대상이 %s인 모임에는 칠십인 전용 체크가 없다',
+    (kind) => {
+      renderDetail({ type: 'meeting', initialKind: kind })
+      expect(screen.queryByLabelText('schedule.seventyOnlyLabel')).toBeNull()
+    },
+  )
+
+  it('방문에는 칠십인 전용 체크가 없다', () => {
+    renderDetail({ type: 'ward_visit', initialKind: 'other' })
+    expect(screen.queryByLabelText('schedule.seventyOnlyLabel')).toBeNull()
   })
 })

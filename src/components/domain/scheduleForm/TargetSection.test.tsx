@@ -66,6 +66,7 @@ function Harness(props: {
     zoomLink: '',
     notes: '',
     projectId: '',
+    seventyOnly: false,
   }))
 
   const handleChange = (partial: Partial<ScheduleFormState>) => {

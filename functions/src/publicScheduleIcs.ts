@@ -5,6 +5,7 @@ import { isCcCouncilForScope } from './ccCouncil'
 import { buildScheduleTitle } from './scheduleTitle'
 import { generalScheduleInScope } from './generalScheduleScope'
 import { buildGeneralScheduleVEvent } from './generalScheduleIcsEvent'
+import { dedupeById, isSeventyOnly } from './seventyOnly'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -117,7 +118,25 @@ export const publicScheduleIcs = functions
               .get()
           : null
 
-      const [schedulesSnap, ccSnap, generalSnap] = await Promise.all([
+      // 칠십인 전용 행사는 isPublic이 false라 아래 isPublic 쿼리에 걸리지 않는다. 전체 공유
+      // (칠십인 전용 페이지)의 구독에서만 한 번 더 조회해 합친다 — publicSchedulePayload와 같은 규칙.
+      const seventyOnlyQuery =
+        unitIds === null
+          ? admin.firestore()
+              .collection('generalSchedules')
+              .where('seventyOnly', '==', true)
+              .where('date', '>=', cutoffStr)
+              .orderBy('date', 'asc')
+              .get()
+              // 색인이 만들어지는 중이면 실패한다 — 구독 전체를 깨뜨리지 않고 칠십인 전용 행사만 뺀다
+              // (publicSchedulePayload와 같은 처리).
+              .catch((err: unknown) => {
+                console.error('publicScheduleIcs: seventy-only events query failed', err)
+                return null
+              })
+          : null
+
+      const [schedulesSnap, ccSnap, generalSnap, seventyOnlySnap] = await Promise.all([
         schedulesQuery
           .where('status', '==', 'confirmed')
           .where('date', '>=', cutoffStr)
@@ -130,6 +149,7 @@ export const publicScheduleIcs = functions
           .where('date', '>=', cutoffStr)
           .orderBy('date', 'asc')
           .get(),
+        seventyOnlyQuery,
       ])
 
       const unitSet = unitIds !== null ? new Set(unitIds) : null
@@ -148,7 +168,10 @@ export const publicScheduleIcs = functions
 
       scheduleDocs.filter(d => {
         // Regional shares expose ward visits only — 단, 그 CC의 협의 평의회는 함께 노출한다
-        return unitSet === null || d.data().type === 'ward_visit' || isCcCouncilForScope(d.data(), scopeValue)
+        // 칠십인 전용으로 표시한 일정은 지역 공유 구독에서 뺀다.
+        return unitSet === null ||
+          (!isSeventyOnly(d.data()) &&
+            (d.data().type === 'ward_visit' || isCcCouncilForScope(d.data(), scopeValue)))
       }).forEach((d) => {
         const data = d.data()
         const summary = buildScheduleTitle({
@@ -185,7 +208,8 @@ export const publicScheduleIcs = functions
 
       // 행사(generalSchedules)도 같은 스코프 규칙(generalScheduleInScope)으로 걸러 VEVENT로 싣는다.
       // getPublicSchedules.ts의 웹 뷰와 이 ICS 피드가 서로 다른 행사 목록을 보여주면 안 된다.
-      generalSnap.docs
+      dedupeById([...generalSnap.docs, ...(seventyOnlySnap?.docs ?? [])])
+        .sort((a, b) => (a.data().date as string).localeCompare(b.data().date as string))
         .filter((d) => generalScheduleInScope(d.data(), scopeRegionId, unitIds))
         .forEach((d) => {
           const data = d.data()

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronLeft, X } from 'lucide-react'
 import { toast } from 'sonner'
+import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
 import { useAtomValue } from 'jotai'
 import { authUserAtom } from '@/store/authAtom'
@@ -10,11 +11,13 @@ import {
   updateGeneralSchedule,
 } from '@/services/generalScheduleService'
 import { Button, Input, Select, Textarea } from '@/components/ui'
-import type { GeneralSchedule, GeneralScheduleCategory } from '@/types'
+import type { EventVisibility, GeneralSchedule, GeneralScheduleCategory } from '@/types'
+import { eventVisibilityFields, eventVisibilityOf } from '@/types'
 import { ALL_UNITS, REGIONS } from '@/constants/regions'
 import { canUseAdminTools } from '@/utils/permissions'
 import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { DateRangePicker } from '@/components/domain/DateRangePicker/DateRangePicker'
 import { nextEndTime, DEFAULT_DURATION_MINUTES } from '@/components/domain/scheduleForm/scheduleTimeRules'
 import styles from './GeneralScheduleFormModal.module.scss'
 
@@ -43,7 +46,8 @@ export function GeneralScheduleFormModal({
   const [startTime, setStartTime]     = useState(initialData?.startTime ?? '')
   const [endTime, setEndTime]         = useState(initialData?.endTime ?? '')
   const [description, setDescription] = useState(initialData?.description ?? '')
-  const [isPublic, setIsPublic]       = useState(initialData?.isPublic ?? false)
+  const initialVisibility: EventVisibility = initialData ? eventVisibilityOf(initialData) : 'private'
+  const [visibility, setVisibility]   = useState<EventVisibility>(initialVisibility)
   const [saving, setSaving]           = useState(false)
   const [error, setError]             = useState<string | null>(null)
   const [targetRegionIds, setTargetRegionIds] = useState<string[]>(
@@ -59,6 +63,12 @@ export function GeneralScheduleFormModal({
     { value: 'other',      label: t('generalSchedule.category.other') },
   ]
 
+  const VISIBILITY_OPTIONS = [
+    { value: 'public',  label: t('generalSchedule.visibility.public') },
+    { value: 'seventy', label: t('generalSchedule.visibility.seventy') },
+    { value: 'private', label: t('generalSchedule.visibility.private') },
+  ]
+
   // Guard against losing a filled form to a stray backdrop tap / Escape
   const isDirty =
     title !== (initialData?.title ?? '') ||
@@ -68,7 +78,7 @@ export function GeneralScheduleFormModal({
     startTime !== (initialData?.startTime ?? '') ||
     endTime !== (initialData?.endTime ?? '') ||
     description !== (initialData?.description ?? '') ||
-    isPublic !== (initialData?.isPublic ?? false) ||
+    visibility !== initialVisibility ||
     JSON.stringify(targetRegionIds) !== JSON.stringify(initialData?.targetRegionIds ?? []) ||
     JSON.stringify(targetUnitIds) !== JSON.stringify(initialData?.targetUnitIds ?? [])
   const requestClose = () => {
@@ -112,7 +122,11 @@ export function GeneralScheduleFormModal({
         startTime:   startTime || undefined,
         endTime:     endTime || undefined,
         description: description.trim() || undefined,
-        isPublic:    canUseAdminTools(user) ? isPublic : false,
+        // 공개 범위는 관리자·집행서기만 정한다. 그 밖의 작성자(칠십인)는 공개로 올릴 수 없고,
+        // 관리자가 칠십인 전용으로 해 둔 표시는 그대로 지킨다 — 끄면 회장에게 보이게 된다.
+        ...(canUseAdminTools(user)
+          ? eventVisibilityFields(visibility)
+          : { isPublic: false, seventyOnly: initialData?.seventyOnly === true }),
         targetRegionIds: canUseAdminTools(user) ? targetRegionIds : [],
         targetUnitIds,
       }
@@ -168,18 +182,14 @@ export function GeneralScheduleFormModal({
             required
             maxLength={100}
           />
-          <Input
-            label={t('generalSchedule.dateLabel')}
-            type="date"
-            value={date}
-            onChange={e => setDate(e.target.value)}
-            required
-          />
-          <Input
-            label={t('generalSchedule.endDateLabel')}
-            type="date"
-            value={endDate}
-            onChange={e => setEndDate(e.target.value)}
+          <DateRangePicker
+            label={t('generalSchedule.dateRangeLabel')}
+            value={{ start: date, end: endDate }}
+            onChange={({ start, end }) => {
+              setDate(start)
+              setEndDate(end)
+            }}
+            formatDay={d => dayjs(d).format(t('generalSchedule.dateFormat'))}
           />
           <Select
             label={t('generalSchedule.categoryLabel')}
@@ -218,14 +228,12 @@ export function GeneralScheduleFormModal({
             maxLength={500}
           />
           {canUseAdminTools(user) && (
-            <label className={styles.checkboxRow}>
-              <input
-                type="checkbox"
-                checked={isPublic}
-                onChange={e => setIsPublic(e.target.checked)}
-              />
-              <span>{t('generalSchedule.isPublicLabel')}</span>
-            </label>
+            <Select
+              label={t('generalSchedule.visibilityLabel')}
+              value={visibility}
+              onChange={e => setVisibility(e.target.value as EventVisibility)}
+              options={VISIBILITY_OPTIONS}
+            />
           )}
           {/* 지역 타겟 (공개설정 권한자만: admin + exec_secretary) */}
           {canUseAdminTools(user) && (

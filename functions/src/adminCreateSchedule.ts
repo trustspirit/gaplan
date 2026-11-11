@@ -4,6 +4,7 @@ import { DATE_RE, TIME_RE, isValidUrl } from './validators'
 import { validateRelatedVisit } from './relatedVisit'
 import { buildCcCouncilTitle, isKnownRegionId } from './ccCouncil'
 import { resolveScheduleLocation } from './adminScheduleFields'
+import { canBeSeventyOnly } from './seventyOnly'
 
 interface AdminCreateScheduleRequest {
   type: 'ward_visit' | 'interview' | 'meeting'
@@ -24,6 +25,7 @@ interface AdminCreateScheduleRequest {
   targetKind?: 'stake_president' | 'ward_bishop' | 'other' | 'cc_council'
   wardId?: string
   relatedVisitId?: string
+  seventyOnly?: boolean
 }
 
 export const adminCreateSchedule = functions
@@ -33,7 +35,7 @@ export const adminCreateSchedule = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const { type, seventyUid, unitId, regionId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, location, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId } = data
+    const { type, seventyUid, unitId, regionId, wardName, presidentUid, date, startTime, endTime, notes, zoomLink, location, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId, seventyOnly } = data
 
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
       throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
@@ -92,6 +94,14 @@ export const adminCreateSchedule = functions
     }
     if (presidentAccompanied !== undefined && typeof presidentAccompanied !== 'boolean') {
       throw new functions.https.HttpsError('invalid-argument', 'presidentAccompanied must be a boolean')
+    }
+    if (seventyOnly !== undefined && typeof seventyOnly !== 'boolean') {
+      throw new functions.https.HttpsError('invalid-argument', 'seventyOnly must be a boolean')
+    }
+    // 칠십인 전용은 대상이 '기타'인 접견/모임에만 둘 수 있다. 방문·협의 평의회·스테이크 회장·
+    // 와드 감독처럼 대상이 정해진 일정은 공개 범위도 그 대상으로 정해져 있다.
+    if (seventyOnly === true && !canBeSeventyOnly({ type, targetKind })) {
+      throw new functions.https.HttpsError('invalid-argument', "seventyOnly is only for interview/meeting with targetKind 'other'")
     }
     if (targetKind !== undefined) {
       if (type === 'ward_visit') {
@@ -214,6 +224,7 @@ export const adminCreateSchedule = functions
       targetKind: (type !== 'ward_visit' && targetKind) ? targetKind : null,
       wardId: wardId ?? null,
       relatedVisitId: (relatedVisitId && relatedVisitId.trim()) ? relatedVisitId.trim() : null,
+      seventyOnly: seventyOnly === true,
       status: 'confirmed',
       createdBy: context.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),

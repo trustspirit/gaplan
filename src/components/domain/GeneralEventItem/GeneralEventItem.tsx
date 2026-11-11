@@ -1,4 +1,4 @@
-import { Building2, MoonStar, CalendarDays, Eye, EyeOff } from 'lucide-react'
+import { Building2, MoonStar, CalendarDays, Eye, EyeOff, Lock } from 'lucide-react'
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { useTranslation } from 'react-i18next'
@@ -29,11 +29,21 @@ export function GeneralEventItem({
   const { t } = useTranslation()
   const Icon = CATEGORY_ICONS[event.category]
 
+  const seventyOnly = event.seventyOnly === true
+
   const badges = (
-    <span className={styles.typeBadge}>
-      <Icon size={11} />
-      <span>{t(`generalSchedule.category.${event.category}`)}</span>
-    </span>
+    <>
+      <span className={styles.typeBadge}>
+        <Icon size={11} />
+        <span>{t(`generalSchedule.category.${event.category}`)}</span>
+      </span>
+      {seventyOnly && (
+        <span className={styles.seventyOnlyBadge}>
+          <Lock size={11} />
+          <span>{t('generalSchedule.seventyOnly')}</span>
+        </span>
+      )}
+    </>
   )
 
   const actions = (

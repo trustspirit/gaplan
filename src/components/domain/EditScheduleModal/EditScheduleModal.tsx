@@ -21,6 +21,7 @@ import { unitIsOptionalFor } from '../scheduleForm/scheduleTargetRules'
 import { WhenSection } from '../scheduleForm/WhenSection'
 import { DetailSection } from '../scheduleForm/DetailSection'
 import styles from './EditScheduleModal.module.scss'
+import { canBeSeventyOnly } from '@/utils/seventyOnly'
 
 const adminEditScheduleFn = httpsCallable(functions, 'adminEditSchedule')
 
@@ -64,6 +65,7 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
     projectId: schedule.projectId ?? '',
     presidentAccompanied: schedule.presidentAccompanied ?? false,
     relatedVisitId: schedule.relatedVisitId ?? '',
+    seventyOnly: schedule.seventyOnly === true,
   })
   const { target, date, startTime, endTime, notes, zoomLink, customTitle, location, projectId, presidentAccompanied, relatedVisitId } = state
 
@@ -204,6 +206,11 @@ export function EditScheduleModal({ schedule, onClose, onSaved, onDelete }: Prop
           projectId: projectId || null,
           ...(isVisit ? { presidentAccompanied: presidentAccompanied || null } : {}),
           ...(isContact ? { relatedVisitId: relatedVisitId || null } : {}),
+          // 대상이 '기타'인 접견/모임에서만 보낸다. 그 밖의 일정은 선택지 자체가 없고, 대상 유형이
+          // '기타'에서 벗어나는 수정은 서버가 표시를 함께 끈다.
+          ...(canBeSeventyOnly({ type: schedule.type, targetKind: target.kind })
+            ? { seventyOnly: state.seventyOnly }
+            : {}),
         },
       })
       // 폼 모달이 자기 성공 토스트를 소유한다 — 생성이든 편집이든 같은 규칙

@@ -30,6 +30,7 @@ export interface Schedule {
   projectId?: string          // 연계 프로젝트
   presidentAccompanied?: boolean  // 스테이크 회장 동행 여부 (ward_visit only)
   relatedVisitId?: string | null  // interview/meeting: 이 일정이 사전 모임인 대상 ward_visit 문서 id
+  seventyOnly?: boolean       // 칠십인 전용: CC 구글 캘린더에 올리지 않는다. 대상이 '기타'인 접견/모임만 (utils/seventyOnly.ts)
 }
 
 export interface TimeSlot {

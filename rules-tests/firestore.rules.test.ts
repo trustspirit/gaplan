@@ -6,7 +6,9 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
-import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore'
+import {
+  collection, doc, getDoc, getDocs, query, setDoc, updateDoc, deleteDoc, where,
+} from 'firebase/firestore'
 
 // `npm run test:rules`로 돈다 — Firestore 에뮬레이터가 있어야 해서 기본 `npm test`에는 없다.
 
@@ -210,5 +212,48 @@ describe('generalSchedules write', () => {
 
   it("lets an admin edit anyone's event", async () => {
     await assertSucceeds(updateDoc(doc(as('a1'), 'generalSchedules/g1'), { title: '수정' }))
+  })
+})
+
+describe('generalSchedules read — 칠십인 전용', () => {
+  beforeEach(async () => {
+    await seed('users/s1', { role: 'seventy' })
+    await seed('users/e1', { role: 'exec_secretary' })
+    await seed('users/a1', { role: 'admin' })
+    await seed('users/p1', { role: 'president' })
+    await seed('generalSchedules/open', { title: '행사', createdBy: 'a1', isPublic: false, seventyOnly: false, date: '2026-12-01' })
+    await seed('generalSchedules/secret', { title: '전용', createdBy: 'a1', isPublic: false, seventyOnly: true, date: '2026-12-02' })
+  })
+
+  it('hides a seventy-only event from a president', async () => {
+    await assertFails(getDoc(doc(as('p1'), 'generalSchedules/secret')))
+    await assertSucceeds(getDoc(doc(as('p1'), 'generalSchedules/open')))
+  })
+
+  it('shows a seventy-only event to the seventy, the exec secretary and the admin', async () => {
+    await assertSucceeds(getDoc(doc(as('s1'), 'generalSchedules/secret')))
+    await assertSucceeds(getDoc(doc(as('e1'), 'generalSchedules/secret')))
+    await assertSucceeds(getDoc(doc(as('a1'), 'generalSchedules/secret')))
+  })
+
+  it('refuses a president who lists events without excluding seventy-only ones', async () => {
+    await assertFails(getDocs(collection(as('p1'), 'generalSchedules')))
+  })
+
+  it('lets a president list the events that are not seventy-only', async () => {
+    const snap = await assertSucceeds(
+      getDocs(query(collection(as('p1'), 'generalSchedules'), where('seventyOnly', '==', false))),
+    )
+    expect(snap.docs.map((d) => d.id)).toEqual(['open'])
+  })
+
+  it('lets a seventy list every event', async () => {
+    const snap = await assertSucceeds(getDocs(collection(as('s1'), 'generalSchedules')))
+    expect(snap.size).toBe(2)
+  })
+
+  it('keeps a seventy-only event from visitors who are not signed in', async () => {
+    const anon = env.unauthenticatedContext().firestore()
+    await assertFails(getDoc(doc(anon, 'generalSchedules/secret')))
   })
 })
