@@ -2,7 +2,7 @@ import type { UserRole } from '@/types'
 import { ROLE } from '@/constants/roles'
 import { ROUTES } from '@/router/routes'
 
-export type PlanTabId = 'visitPlans' | 'tasks' | 'projects'
+export type PlanTabId = 'visitPlans' | 'visitRequests' | 'tasks' | 'projects'
 
 export interface PlanTabDef {
   id: PlanTabId
@@ -19,7 +19,7 @@ interface Entry extends PlanTabDef {
 const ADMIN_EXEC: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY]
 const ADMIN_EXEC_SEVENTY: UserRole[] = [ROLE.ADMIN, ROLE.EXEC_SECRETARY, ROLE.SEVENTY]
 
-// 배열 순서가 곧 탭 순서다. 스펙 §4.2: 방문 계획 · Task · 프로젝트.
+// 배열 순서가 곧 탭 순서다. 스펙 §4.2: 방문 계획 · (방문 추천) · Task · 프로젝트.
 const ENTRIES: Entry[] = [
   {
     id: 'visitPlans',
@@ -27,6 +27,14 @@ const ENTRIES: Entry[] = [
     path: ROUTES.planVisits,
     labelKey: 'plans.tab.visitPlans',
     roles: ADMIN_EXEC,
+  },
+  {
+    // 회장들에게 공개 링크로 와드 추천을 받고 칠십인·집행서기가 확정한다 — 칠십인도 직접 쓴다.
+    id: 'visitRequests',
+    slug: 'recommendations',
+    path: ROUTES.planVisitRequests,
+    labelKey: 'plans.tab.visitRequests',
+    roles: ADMIN_EXEC_SEVENTY,
   },
   {
     id: 'tasks',

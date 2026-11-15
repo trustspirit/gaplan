@@ -31,6 +31,7 @@ export interface Schedule {
   generalScheduleId?: string   // general_attendance일 때만 사용
   visitPlanId?: string        // 방문 계획에서 발행된 경우
   visitPlanItemId?: string    // 해당 계획 항목 id
+  visitRequestId?: string     // 방문 추천 요청에서 확정된 경우 (types/visitRequest.ts)
   projectId?: string          // 연계 프로젝트
   presidentAccompanied?: boolean  // 스테이크 회장 동행 여부 (ward_visit only)
   relatedVisitId?: string | null  // interview/meeting: 이 일정이 사전 모임인 대상 ward_visit 문서 id

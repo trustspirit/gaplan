@@ -1,0 +1,511 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+// 카카오톡에서 열리는 바깥 화면. 응답 페이지(RespondPage)와 같은 남색 머리와 옅은 바탕을 쓴다.
+$page-bg: $neutral-50;
+
+.page {
+  min-height: 100dvh;
+  background: $page-bg;
+  color: $color-text;
+}
+
+.header {
+  position: relative;
+  background: $color-sidebar;
+  color: $color-surface;
+  padding: $space-6 $space-4 $space-5;
+}
+
+.langToggle {
+  position: absolute;
+  top: $space-3;
+  right: $space-3;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: $border-radius-md;
+  background: none;
+  color: $color-surface;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+}
+
+.kicker {
+  max-width: 640px;
+  margin: 0 auto;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $color-sidebar-text;
+}
+
+.title {
+  max-width: 640px;
+  margin: $space-1 auto 0;
+  padding-right: 52px;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+}
+
+.meta {
+  max-width: 640px;
+  margin: $space-2 auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1 $space-3;
+  font-size: $font-size-sm;
+  color: $color-sidebar-text;
+}
+
+.due {
+  color: $color-surface;
+  font-weight: $font-weight-semibold;
+}
+
+.content {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: $space-5 $space-4 $space-8;
+}
+
+.loading {
+  padding: $space-12 $space-4;
+  text-align: center;
+  color: $neutral-500;
+  font-size: $font-size-sm;
+}
+
+.note {
+  margin: 0 0 $space-5;
+  padding: $space-4;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  font-size: 0.9375rem;
+  line-height: $line-height-loose;
+  white-space: pre-wrap;
+}
+
+.closedBanner {
+  margin-bottom: $space-5;
+  padding: $space-3 $space-4;
+  background: $color-warning-weak;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  font-size: $font-size-sm;
+  color: $neutral-800;
+}
+
+.section {
+  margin-bottom: $space-8;
+}
+
+.stepTitle {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin: 0;
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  color: $color-sidebar;
+}
+
+.stepNo {
+  @include flex-center;
+  width: 24px;
+  height: 24px;
+  border-radius: $border-radius-full;
+  background: $color-sidebar;
+  color: $color-surface;
+  font-size: $font-size-xs;
+  font-variant-numeric: tabular-nums;
+}
+
+.stepHint {
+  margin: $space-1 0 $space-3;
+  font-size: $font-size-sm;
+  color: $neutral-600;
+  line-height: $line-height-normal;
+}
+
+// ── 단위 고르기 ──
+.unitGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: $space-2;
+}
+
+.unitBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 60px;
+  padding: $space-3;
+  background: $color-surface;
+  border: 1px solid $color-border-strong;
+  border-radius: $border-radius-lg;
+  text-align: left;
+  cursor: pointer;
+  color: $color-text;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.unitBtnActive {
+  background: $color-sidebar;
+  border-color: $color-sidebar;
+  color: $color-surface;
+
+  .unitStatus {
+    color: $color-sidebar-text;
+  }
+}
+
+.unitName {
+  font-size: 0.9375rem;
+  font-weight: $font-weight-semibold;
+}
+
+.unitStatus {
+  font-size: $font-size-xs;
+  color: $neutral-500;
+}
+
+.unitStatusDone {
+  color: $color-success;
+}
+
+// ── 와드 방문 기록 ──
+.statsTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+  font-size: $font-size-sm;
+
+  th,
+  td {
+    padding: $space-2 $space-3;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid $color-border;
+  }
+
+  thead th {
+    background: $color-surface-sunken;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $neutral-600;
+  }
+
+  tbody tr:last-child th,
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.statsWard {
+  font-weight: $font-weight-medium;
+}
+
+.num {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tone {
+  display: inline-block;
+  padding: 1px $space-2;
+  border-radius: $border-radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+.toneFresh {
+  background: $color-success-weak;
+  color: #16704f;
+}
+
+.toneAging {
+  background: $color-warning-weak;
+  color: #8a4b0f;
+}
+
+.toneStale,
+.toneNever {
+  background: $color-danger-weak;
+  color: $color-danger;
+}
+
+.statsDate,
+.statsNext {
+  display: block;
+  margin-top: 2px;
+  font-size: $font-size-xs;
+  color: $neutral-500;
+  font-variant-numeric: tabular-nums;
+}
+
+.statsNext {
+  color: $color-primary;
+}
+
+// ── 일요일별 추천 ──
+.sundayList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.sunday {
+  display: flex;
+  gap: $space-3;
+  padding: $space-3;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+}
+
+.sundayPicked {
+  border-color: $color-primary;
+  background: $color-primary-weak;
+}
+
+.sundayDecided {
+  background: $color-surface-sunken;
+}
+
+.dateBlock {
+  flex: none;
+  width: 76px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.dateMain {
+  font-size: $font-size-base;
+  white-space: nowrap;
+  font-weight: $font-weight-bold;
+  color: $color-sidebar;
+  font-variant-numeric: tabular-nums;
+  line-height: $line-height-tight;
+}
+
+.dateSub {
+  font-size: $font-size-xs;
+  color: $neutral-500;
+}
+
+.sundayBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  justify-content: center;
+}
+
+.wardSelect {
+  width: 100%;
+  min-height: 44px;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border-strong;
+  border-radius: $border-radius-md;
+  background: $color-surface;
+  // 16px 아래면 iOS Safari가 포커스할 때 화면을 확대한다.
+  font-size: $font-size-base;
+  color: $color-text;
+
+  &:disabled {
+    background: $color-surface-sunken;
+    color: $neutral-500;
+  }
+}
+
+.decision {
+  font-size: 0.9375rem;
+  font-weight: $font-weight-semibold;
+  color: $schedule-ward-visit-text;
+}
+
+.others {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: $space-1 $space-2;
+  font-size: $font-size-xs;
+}
+
+.othersCount {
+  padding: 1px $space-2;
+  border-radius: $border-radius-full;
+  background: $neutral-100;
+  color: $neutral-700;
+  font-weight: $font-weight-semibold;
+}
+
+.othersNames {
+  color: $neutral-600;
+}
+
+.othersHint {
+  margin: 0;
+  font-size: $font-size-xs;
+  color: #8a4b0f;
+  line-height: $line-height-normal;
+}
+
+// ── 보내는 분 ──
+.fieldLabel {
+  display: block;
+  margin: $space-3 0 $space-1;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border-strong;
+  border-radius: $border-radius-md;
+  background: $color-surface;
+  font-size: $font-size-base;
+  font-family: inherit;
+  color: $color-text;
+}
+
+.input {
+  min-height: 44px;
+}
+
+.textarea {
+  resize: vertical;
+  line-height: $line-height-normal;
+}
+
+.submitBar {
+  position: sticky;
+  bottom: 0;
+  margin: 0 (-$space-4);
+  padding: $space-3 $space-4 max(env(safe-area-inset-bottom, 0px), $space-3);
+  background: $page-bg;
+  border-top: 1px solid $color-border;
+}
+
+.submitRow {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.pickedCount {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $neutral-700;
+  font-weight: $font-weight-medium;
+}
+
+.submitBtn {
+  flex: none;
+  min-height: 48px;
+  padding: 0 $space-5;
+  border: none;
+  border-radius: $border-radius-lg;
+  background: $color-primary;
+  color: $color-surface;
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  cursor: pointer;
+
+  &:disabled {
+    background: $neutral-500;
+    cursor: not-allowed;
+  }
+}
+
+.secondaryBtn {
+  display: block;
+  min-height: 44px;
+  margin: $space-4 auto 0;
+  padding: 0 $space-6;
+  border: 1px solid $color-border-strong;
+  border-radius: $border-radius-lg;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+}
+
+.errorBanner {
+  margin-bottom: $space-3;
+  padding: $space-3 $space-4;
+  background: $color-danger-weak;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  color: $color-danger;
+  font-size: $font-size-sm;
+}
+
+// ── 보낸 뒤 ──
+.doneCard {
+  padding: $space-6 $space-5;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-xl;
+  text-align: center;
+}
+
+.doneTitle {
+  margin: 0;
+  font-size: $font-size-lg;
+  color: $color-sidebar;
+}
+
+.doneSub {
+  margin: $space-2 0 0;
+  font-size: $font-size-sm;
+  color: $neutral-600;
+  line-height: $line-height-normal;
+}
+
+.doneList {
+  list-style: none;
+  margin: $space-4 0 0;
+  padding: 0;
+  text-align: left;
+
+  li {
+    display: flex;
+    gap: $space-3;
+    padding: $space-2 0;
+    border-bottom: 1px solid $color-border;
+    font-size: 0.9375rem;
+  }
+}
+
+.doneDate {
+  width: 68px;
+  font-weight: $font-weight-semibold;
+  color: $color-sidebar;
+  font-variant-numeric: tabular-nums;
+}
+
+.visuallyHidden {
+  @include visually-hidden;
+}

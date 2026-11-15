@@ -25,6 +25,9 @@ vi.mock('./VisitPlanPanel', () => ({
 }))
 vi.mock('./ProjectPanel', () => ({ ProjectPanel: () => <div data-testid="panel-projects" /> }))
 vi.mock('./tasks/TaskPanel', () => ({ TaskPanel: () => <div data-testid="panel-tasks" /> }))
+vi.mock('./visitRequests/VisitRequestPanel', () => ({
+  VisitRequestPanel: () => <div data-testid="panel-visit-requests" />,
+}))
 
 function renderAt(url: string) {
   return render(
@@ -66,24 +69,33 @@ describe('PlansPage', () => {
   it('sends a seventy back to their own tab instead of a tab they cannot see', () => {
     currentUser = { uid: 'sv1', role: ROLE.SEVENTY, name: '칠십인' } as AppUser
     renderAt('/plans/projects')
-    expect(screen.getByTestId('panel-tasks')).toBeInTheDocument()
+    expect(screen.getByTestId('panel-visit-requests')).toBeInTheDocument()
     expect(screen.queryByTestId('panel-projects')).not.toBeInTheDocument()
   })
 
-  // 판정 R34 — 항목이 하나인 탭리스트는 소음이다.
-  it('draws no tablist for a role with a single tab', () => {
+  // 칠십인은 방문 추천을 직접 확정하므로 탭이 둘이다 — 둘이면 탭리스트를 그린다(판정 R34는 하나일 때만).
+  it('gives the seventy the recommendation and task tabs', () => {
     currentUser = { uid: 'sv1', role: ROLE.SEVENTY, name: '칠십인' } as AppUser
     renderAt('/plans/tasks')
-    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('tab').map((x) => x.getAttribute('href'))).toEqual([
+      '/plans/recommendations',
+      '/plans/tasks',
+    ])
     expect(screen.getByTestId('panel-tasks')).toBeInTheDocument()
   })
 
-  it('gives the admin all three tabs as links', () => {
+  it('gives the admin all four tabs as links', () => {
     renderAt('/plans/tasks')
     expect(screen.getAllByRole('tab').map((x) => x.getAttribute('href'))).toEqual([
       '/plans/visit-plans',
+      '/plans/recommendations',
       '/plans/tasks',
       '/plans/projects',
     ])
+  })
+
+  it('renders the recommendation panel', () => {
+    renderAt('/plans/recommendations')
+    expect(screen.getByTestId('panel-visit-requests')).toBeInTheDocument()
   })
 })

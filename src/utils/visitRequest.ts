@@ -1,0 +1,129 @@
+import dayjs from 'dayjs'
+import { getUnitsByRegion, getWardsByUnit } from '@/constants/regions'
+import type {
+  VisitRecommendation,
+  VisitRequestDecision,
+  VisitRequestUnit,
+} from '@/types'
+
+/** 공개 추천 링크의 경로. 라우터와 공유 버튼이 같은 문자열을 쓴다. */
+export const RECOMMEND_PATH_PREFIX = '/recommend/'
+
+export function recommendUrl(token: string, origin: string = window.location.origin): string {
+  return `${origin}${RECOMMEND_PATH_PREFIX}${token}`
+}
+
+/**
+ * 오늘 다음부터 count개의 일요일(YYYY-MM-DD). 오늘이 일요일이면 오늘은 뺀다 —
+ * 당일 방문을 추천받을 수는 없다.
+ */
+export function upcomingSundays(count: number, today: dayjs.Dayjs = dayjs()): string[] {
+  const daysToSunday = (7 - today.day()) % 7 || 7
+  const first = today.startOf('day').add(daysToSunday, 'day')
+  return Array.from({ length: count }, (_, i) => first.add(i * 7, 'day').format('YYYY-MM-DD'))
+}
+
+/**
+ * 칠십인 담당 CC들의 스테이크/지방부와 와드를 요청 문서에 찍어 둘 형태로 만든다.
+ * 와드가 없는 단위는 추천할 거리가 없으니 뺀다.
+ */
+export function unitsSnapshotForRegions(regionIds: string[]): VisitRequestUnit[] {
+  return regionIds.flatMap((regionId) =>
+    getUnitsByRegion(regionId)
+      .map((unit) => ({
+        id: unit.id,
+        ko: unit.name.ko,
+        en: unit.name.en,
+        wards: getWardsByUnit(unit.id).map((w) => ({ id: w.id, ko: w.name.ko, en: w.name.en })),
+      }))
+      .filter((unit) => unit.wards.length > 0),
+  )
+}
+
+export interface SundayCandidate {
+  unitId: string
+  wardId: string
+  wardName: string
+  submitterName: string
+  note: string
+  submittedAt: string
+}
+
+/** 한 일요일에 들어온 추천들. 스테이크마다 일요일 하나에 와드 하나뿐이라 겹치지 않는다. */
+export function candidatesForSunday(
+  recommendations: VisitRecommendation[],
+  date: string,
+): SundayCandidate[] {
+  return recommendations.flatMap((rec) =>
+    rec.picks
+      .filter((p) => p.date === date)
+      .map((p) => ({
+        unitId: rec.unitId,
+        wardId: p.wardId,
+        wardName: p.wardName,
+        submitterName: rec.submitterName,
+        note: rec.note ?? '',
+        submittedAt: rec.submittedAt,
+      })),
+  )
+}
+
+/**
+ * 칠십인 확정 화면에서 한 일요일의 후보를 어떤 순서로 보여 줄지.
+ *
+ * 기본 규칙: 이 요청에서 이미 확정된 방문이 적은 스테이크를 위로(한 스테이크에 방문이
+ * 몰리지 않게), 같으면 먼저 낸 추천을 위로. 정렬은 제안일 뿐 — 칠십인은 어느 후보든 고를 수 있다.
+ */
+export function rankCandidates(
+  candidates: SundayCandidate[],
+  decisions: Record<string, VisitRequestDecision>,
+): SundayCandidate[] {
+  const decidedPerUnit = new Map<string, number>()
+  for (const d of Object.values(decisions)) {
+    decidedPerUnit.set(d.unitId, (decidedPerUnit.get(d.unitId) ?? 0) + 1)
+  }
+  return [...candidates].sort(
+    (a, b) =>
+      (decidedPerUnit.get(a.unitId) ?? 0) - (decidedPerUnit.get(b.unitId) ?? 0) ||
+      a.submittedAt.localeCompare(b.submittedAt),
+  )
+}
+
+export interface RequestProgress {
+  respondedUnits: number
+  totalUnits: number
+  decidedSundays: number
+  totalSundays: number
+}
+
+export function requestProgress(
+  request: { units: { id: string }[]; sundays: string[]; decisions?: Record<string, unknown> },
+  recommendations: { unitId: string }[],
+): RequestProgress {
+  const unitIds = new Set(request.units.map((u) => u.id))
+  const responded = new Set(recommendations.map((r) => r.unitId).filter((id) => unitIds.has(id)))
+  const decided = request.sundays.filter((d) => request.decisions?.[d]).length
+  return {
+    respondedUnits: responded.size,
+    totalUnits: unitIds.size,
+    decidedSundays: decided,
+    totalSundays: request.sundays.length,
+  }
+}
+
+export type RecencyTone = 'fresh' | 'aging' | 'stale' | 'never'
+
+/**
+ * 와드 방문 기록을 회장이 읽을 말로 줄인다. 구간은 통계 화면의 severityOf와 같다
+ * (60일 이내 · 120일 이내 · 그 이상) — 두 화면이 같은 와드를 다른 색으로 그리면 안 된다.
+ */
+export function wardRecency(
+  stat: { lastVisit: string | null } | undefined,
+  today: string,
+): { tone: RecencyTone; daysSince: number | null; monthsSince: number | null } {
+  if (!stat?.lastVisit) return { tone: 'never', daysSince: null, monthsSince: null }
+  const daysSince = dayjs(today).diff(dayjs(stat.lastVisit), 'day')
+  const monthsSince = dayjs(today).diff(dayjs(stat.lastVisit), 'month')
+  const tone: RecencyTone = daysSince <= 60 ? 'fresh' : daysSince <= 120 ? 'aging' : 'stale'
+  return { tone, daysSince, monthsSince }
+}

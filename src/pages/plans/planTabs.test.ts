@@ -3,21 +3,27 @@ import { ROUTES } from '@/router/routes'
 import { planTabsFor, planTabBySlug } from './planTabs'
 
 describe('planTabsFor', () => {
-  it('gives admin all three tabs in spec order', () => {
-    expect(planTabsFor(ROLE.ADMIN).map((x) => x.id)).toEqual(['visitPlans', 'tasks', 'projects'])
-  })
-
-  it('gives the exec secretary the same three', () => {
-    expect(planTabsFor(ROLE.EXEC_SECRETARY).map((x) => x.id)).toEqual([
+  it('gives admin all four tabs in spec order', () => {
+    expect(planTabsFor(ROLE.ADMIN).map((x) => x.id)).toEqual([
       'visitPlans',
+      'visitRequests',
       'tasks',
       'projects',
     ])
   })
 
-  // 스펙 §4.2 "칠십인은 Task 탭만 보인다(현재 권한과 동일)".
-  it('gives the seventy only the task tab', () => {
-    expect(planTabsFor(ROLE.SEVENTY).map((x) => x.id)).toEqual(['tasks'])
+  it('gives the exec secretary the same four', () => {
+    expect(planTabsFor(ROLE.EXEC_SECRETARY).map((x) => x.id)).toEqual([
+      'visitPlans',
+      'visitRequests',
+      'tasks',
+      'projects',
+    ])
+  })
+
+  // 스펙 §4.2 "칠십인은 Task 탭만 보인다" — 방문 추천은 칠십인이 직접 확정하는 화면이라 함께 연다.
+  it('gives the seventy the recommendation and task tabs', () => {
+    expect(planTabsFor(ROLE.SEVENTY).map((x) => x.id)).toEqual(['visitRequests', 'tasks'])
   })
 
   // 회장은 라우트 단계(RoleRoute)에서 이미 막히지만, 표가 회장에게 무언가를

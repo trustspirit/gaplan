@@ -14,6 +14,7 @@ import {
   LEGACY_PARAM_REDIRECTS,
   PLAN_VISIT_DETAIL,
   PLAN_PROJECT_DETAIL,
+  PLAN_VISIT_REQUEST_DETAIL,
 } from './routes'
 import { LegacyParamRedirect } from './LegacyParamRedirect'
 import styles from './Router.module.scss'
@@ -102,6 +103,18 @@ const ProjectDetailPage = lazyRetry(() =>
 const LeadersPage = lazyRetry(() =>
   import('@/pages/admin/LeadersPage').then((m) => ({ default: m.LeadersPage })),
 )
+const VisitRequestDetailPage = lazyRetry(() =>
+  import('@/pages/plans/visitRequests/VisitRequestDetailPage').then((m) => ({
+    default: m.VisitRequestDetailPage,
+  })),
+)
+// 회장들이 카카오톡에서 여는 공개 추천 화면. 로그인 사용자는 볼 일이 없어 따로 받는다.
+const RecommendPage = lazy(() => import('@/pages/recommend/RecommendPage'))
+function RecommendRoute() {
+  const { token } = useParams<{ token: string }>()
+  return <RecommendPage token={token} />
+}
+
 const KakaoCallback = lazyRetry(() =>
   import('@/pages/auth/KakaoCallback').then((m) => ({ default: m.KakaoCallback })),
 )
@@ -133,6 +146,7 @@ export function AppRouter() {
               <Route element={<RoleRoute allow={['admin', 'exec_secretary', 'seventy']} />}>
                 <Route path={ROUTES.plans} element={<PlansPage />} />
                 <Route path={`${ROUTES.plans}/:tab`} element={<PlansPage />} />
+                <Route path={PLAN_VISIT_REQUEST_DETAIL} element={<VisitRequestDetailPage />} />
               </Route>
 
               <Route element={<RoleRoute allow={['admin', 'exec_secretary']} />}>
@@ -157,6 +171,7 @@ export function AppRouter() {
           </Route>
 
           <Route path="/respond/:taskId" element={<RespondPage />} />
+          <Route path="/recommend/:token" element={<RecommendRoute />} />
           <Route path="/public/schedule/:token" element={<PublicScheduleRoute />} />
           <Route path="/public/schedule" element={<Navigate to={ROUTES.home} replace />} />
 

@@ -1,0 +1,317 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  padding: $space-6;
+  max-width: 880px;
+  margin: 0 auto;
+  width: 100%;
+  @media (max-width: 768px) {
+    padding: $space-3;
+    padding-bottom: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px) + #{$space-3});
+  }
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  min-height: 44px;
+  align-self: flex-start;
+  font-size: $font-size-sm;
+  color: $neutral-600;
+  text-decoration: none;
+
+  &:hover {
+    color: $color-text;
+  }
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-3;
+}
+
+.headText {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+  line-height: $line-height-tight;
+}
+
+.headMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2 $space-3;
+  margin-top: $space-2;
+  font-size: $font-size-sm;
+  color: $neutral-600;
+}
+
+.headActions {
+  display: flex;
+  gap: $space-2;
+}
+
+.hint {
+  margin: 0 0 $space-3;
+  font-size: $font-size-sm;
+  color: $neutral-600;
+  line-height: $line-height-normal;
+}
+
+.urlBox {
+  padding: $space-3;
+  background: $color-surface-sunken;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  overflow-x: auto;
+}
+
+.url {
+  font-size: $font-size-sm;
+  word-break: break-all;
+  color: $color-sidebar;
+}
+
+.shareActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2;
+  margin-top: $space-3;
+}
+
+.openLink {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  min-height: 44px;
+  padding: 0 $space-2;
+  font-size: $font-size-sm;
+  color: $color-primary;
+  text-decoration: none;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $space-3;
+}
+
+// ── 일요일별 결정 ──
+.board {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.sunday {
+  padding: $space-3;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  background: $color-surface;
+}
+
+.sundayDecided {
+  background: $schedule-ward-visit-bg;
+  border-color: $schedule-ward-visit-border;
+}
+
+.sundayHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2;
+}
+
+.sundayDate {
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  color: $color-sidebar;
+  font-variant-numeric: tabular-nums;
+}
+
+.fast {
+  padding: 1px $space-2;
+  border-radius: $border-radius-full;
+  background: $neutral-100;
+  font-size: $font-size-xs;
+  color: $neutral-700;
+}
+
+.decidedText {
+  flex: 1;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $schedule-ward-visit-text;
+}
+
+.noCandidates {
+  margin: $space-2 0 0;
+  font-size: $font-size-sm;
+  color: $neutral-500;
+}
+
+.candidates {
+  list-style: none;
+  margin: $space-2 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.candidate {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  background: $color-surface;
+}
+
+.candidateChosen {
+  border-color: $schedule-ward-visit-text;
+}
+
+.candText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.candWard {
+  font-size: $font-size-sm;
+  color: $neutral-700;
+
+  strong {
+    color: $color-text;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.candMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-size-xs;
+  color: $neutral-500;
+}
+
+.tone {
+  padding: 1px $space-2;
+  border-radius: $border-radius-full;
+  font-weight: $font-weight-semibold;
+}
+
+.toneFresh {
+  background: $color-success-weak;
+  color: #16704f;
+}
+
+.toneAging {
+  background: $color-warning-weak;
+  color: #8a4b0f;
+}
+
+.toneStale {
+  background: $color-danger-weak;
+  color: $color-danger;
+}
+
+.chosenMark {
+  flex: none;
+  color: $schedule-ward-visit-text;
+}
+
+.otherToggle {
+  margin-top: $space-2;
+  min-height: 36px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: $font-size-xs;
+  color: $color-primary;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.otherForm {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+  gap: $space-2;
+  margin-top: $space-2;
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ── 단위별 응답 ──
+.unitList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.unitRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1 $space-3;
+  padding: $space-2 0;
+  border-bottom: 1px solid $color-border;
+  font-size: $font-size-sm;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.unitName {
+  min-width: 8em;
+  font-weight: $font-weight-semibold;
+}
+
+.unitMeta {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-1;
+  color: $neutral-600;
+}
+
+.unitCheck {
+  color: $color-success;
+}
+
+.unitNote {
+  flex-basis: 100%;
+  white-space: pre-wrap;
+  color: $neutral-700;
+}
+
+.unitPending {
+  color: $neutral-500;
+}

@@ -7,6 +7,7 @@ import { useTopBar } from '@/hooks/useTopBar'
 import { ForbiddenState, PageHeader, Tabs } from '@/components/ui'
 import { VisitPlanPanel } from './VisitPlanPanel'
 import { ProjectPanel } from './ProjectPanel'
+import { VisitRequestPanel } from './visitRequests/VisitRequestPanel'
 import { TaskPanel } from './tasks/TaskPanel'
 import { planTabBySlug, planTabsFor, type PlanTabId } from './planTabs'
 import styles from './PlansPage.module.scss'
@@ -15,6 +16,7 @@ import styles from './PlansPage.module.scss'
 // 화면이 합쳐졌다고 도움말 내용까지 뭉뚱그릴 이유는 없다.
 const HELP_KEY: Record<PlanTabId, string> = {
   visitPlans: 'pageHelp.visitPlans',
+  visitRequests: 'pageHelp.visitRequests',
   tasks: 'pageHelp.taskProgress',
   projects: 'pageHelp.projects',
 }
@@ -59,6 +61,7 @@ export function PlansPage() {
       )}
 
       {active.id === 'visitPlans' && <VisitPlanPanel />}
+      {active.id === 'visitRequests' && <VisitRequestPanel />}
       {active.id === 'tasks' && <TaskPanel />}
       {active.id === 'projects' && <ProjectPanel />}
     </div>

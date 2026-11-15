@@ -10,6 +10,7 @@ export const ROUTES = {
   schedules: '/schedules',
   plans: '/plans',
   planVisits: '/plans/visit-plans',
+  planVisitRequests: '/plans/recommendations',
   planTasks: '/plans/tasks',
   planProjects: '/plans/projects',
   stats: '/stats',
@@ -65,9 +66,12 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
  */
 export const PLAN_VISIT_DETAIL = `${ROUTES.planVisits}/:planId`
 export const PLAN_PROJECT_DETAIL = `${ROUTES.planProjects}/:projectId`
+export const PLAN_VISIT_REQUEST_DETAIL = `${ROUTES.planVisitRequests}/:requestId`
 
 export const planVisitDetailPath = (planId: string) => `${ROUTES.planVisits}/${planId}`
 export const planProjectDetailPath = (projectId: string) => `${ROUTES.planProjects}/${projectId}`
+export const planVisitRequestDetailPath = (requestId: string) =>
+  `${ROUTES.planVisitRequests}/${requestId}`
 
 /**
  * 파라미터가 있는 옛 경로 → 새 경로. `LEGACY_REDIRECTS`와 섞지 않는 이유는
