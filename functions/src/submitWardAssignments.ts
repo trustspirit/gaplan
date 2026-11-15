@@ -1,4 +1,6 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import * as logger from 'firebase-functions/logger'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 
 interface WardAssignment {
@@ -11,24 +13,25 @@ interface SubmitWardAssignmentsParams {
   wardAssignments: WardAssignment[]
 }
 
-export const submitWardAssignments = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: SubmitWardAssignmentsParams, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Login required')
+export const submitWardAssignments = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<SubmitWardAssignmentsParams>) => {
+    const data = request.data
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Login required')
     }
     if (!data || !data.taskId || !/^[\w-]+$/.test(data.taskId)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid taskId')
+      throw new HttpsError('invalid-argument', 'Invalid taskId')
     }
     if (!Array.isArray(data.wardAssignments) || data.wardAssignments.length === 0) {
-      throw new functions.https.HttpsError('invalid-argument', 'At least one ward assignment required')
+      throw new HttpsError('invalid-argument', 'At least one ward assignment required')
     }
     for (const a of data.wardAssignments) {
       if (!a.wardName?.trim() || a.wardName.trim().length > 100) {
-        throw new functions.https.HttpsError('invalid-argument', 'Ward name is required and must be ≤100 chars')
+        throw new HttpsError('invalid-argument', 'Ward name is required and must be ≤100 chars')
       }
       if (!/^\d{4}-\d{2}-\d{2}$/.test(a.date ?? '')) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid date format')
+        throw new HttpsError('invalid-argument', 'Invalid date format')
       }
     }
 
@@ -39,14 +42,14 @@ export const submitWardAssignments = functions
       return await db.runTransaction(async tx => {
         const taskSnap = await tx.get(taskRef)
         if (!taskSnap.exists) {
-          throw new functions.https.HttpsError('not-found', 'Task not found')
+          throw new HttpsError('not-found', 'Task not found')
         }
         const taskData = taskSnap.data()!
-        if (taskData.assignedTo !== context.auth!.uid) {
-          throw new functions.https.HttpsError('permission-denied', 'Not your task')
+        if (taskData.assignedTo !== request.auth!.uid) {
+          throw new HttpsError('permission-denied', 'Not your task')
         }
         if (taskData.type !== 'select_visit') {
-          throw new functions.https.HttpsError('invalid-argument', 'Only ward visit tasks support ward assignments')
+          throw new HttpsError('invalid-argument', 'Only ward visit tasks support ward assignments')
         }
         if (taskData.status === 'completed' || taskData.status === 'expired') {
           return { success: false, error: '이미 처리된 Task입니다.' }
@@ -69,8 +72,9 @@ export const submitWardAssignments = functions
       })
     } catch (err: unknown) {
       // Re-throw HttpsErrors as-is; wrap other errors to avoid CORS masking
-      if (err instanceof functions.https.HttpsError) throw err
-      functions.logger.error('submitWardAssignments internal error', err)
-      throw new functions.https.HttpsError('internal', 'Internal server error')
+      if (err instanceof HttpsError) throw err
+      logger.error('submitWardAssignments internal error', err)
+      throw new HttpsError('internal', 'Internal server error')
     }
-  })
+  },
+)

@@ -1,4 +1,5 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { resolveScheduleLocation } from './adminScheduleFields'
 import { wardIdFor } from './wardUnitMap'
@@ -60,27 +61,28 @@ export function buildVisitPlanSchedulePayload(
   }
 }
 
-export const publishVisitPlan = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: PublishRequest, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
+export const publishVisitPlan = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<PublishRequest>) => {
+    const data = request.data
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Authentication required')
     }
     const db = admin.firestore()
-    const callerSnap = await db.collection('users').doc(context.auth.uid).get()
+    const callerSnap = await db.collection('users').doc(request.auth.uid).get()
     if (callerSnap.data()?.role !== 'admin') {
-      throw new functions.https.HttpsError('permission-denied', 'Admin only')
+      throw new HttpsError('permission-denied', 'Admin only')
     }
 
     const { planId } = data
     if (!planId || typeof planId !== 'string') {
-      throw new functions.https.HttpsError('invalid-argument', 'planId required')
+      throw new HttpsError('invalid-argument', 'planId required')
     }
 
     const planRef = db.collection('visitPlans').doc(planId)
     const planSnap = await planRef.get()
     if (!planSnap.exists) {
-      throw new functions.https.HttpsError('not-found', 'Plan not found')
+      throw new HttpsError('not-found', 'Plan not found')
     }
     const plan = planSnap.data()!
     const seventyUid: string = plan.seventyUid
@@ -109,7 +111,7 @@ export const publishVisitPlan = functions
         planId,
         itemId: item.itemId,
         projectId: plan.projectId ?? null,
-        createdBy: context.auth.uid,
+        createdBy: request.auth.uid,
       })
 
       if (item.scheduleId) {
@@ -149,4 +151,5 @@ export const publishVisitPlan = functions
     })
 
     return { success: true }
-  })
+  },
+)

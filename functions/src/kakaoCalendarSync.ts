@@ -1,4 +1,6 @@
-import * as functions from 'firebase-functions/v1'
+import { onDocumentWritten } from 'firebase-functions/v2/firestore'
+import * as logger from 'firebase-functions/logger'
+import { BACKGROUND_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { buildKakaoEventBody, type KakaoScheduleInput } from './kakaoEventBody'
 import {
@@ -23,10 +25,11 @@ async function deleteAll(eventIds: Record<string, string>, scheduleId: string): 
   }
 }
 
-export const kakaoCalendarSync = functions
-  .region('asia-northeast3')
-  .firestore.document('schedules/{scheduleId}')
-  .onWrite(async (change) => {
+export const kakaoCalendarSync = onDocumentWritten(
+  { ...BACKGROUND_OPTS, document: 'schedules/{scheduleId}' },
+  async (event) => {
+    if (!event.data) return
+    const change = event.data
     const after = change.after.data()
     const before = change.before.data()
     const scheduleId = change.after.id
@@ -136,7 +139,8 @@ export const kakaoCalendarSync = functions
         }
       } catch (err) {
         // 카카오 실패가 일정 저장을 되돌리면 안 된다. 로그만 남긴다.
-        functions.logger.error(`[kakao] sync failed uid=${uid} schedule=${scheduleId}`, err)
+        logger.error(`[kakao] sync failed uid=${uid} schedule=${scheduleId}`, err)
       }
     }
-  })
+  },
+)

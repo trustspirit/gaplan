@@ -1,13 +1,12 @@
-import * as functions from 'firebase-functions/v1'
+import { onSchedule } from 'firebase-functions/v2/scheduler'
+import { BACKGROUND_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { firstSundayOfNextMonthKst } from './fastSundayDate'
 
 // Run at 1am KST on 1st of each month
-export const fastSundayBlock = functions
-  .region('asia-northeast3')
-  .pubsub.schedule('0 1 1 * *')
-  .timeZone('Asia/Seoul')
-  .onRun(async () => {
+export const fastSundayBlock = onSchedule(
+  { ...BACKGROUND_OPTS, schedule: '0 1 1 * *', timeZone: 'Asia/Seoul' },
+  async () => {
     const db = admin.firestore()
 
     const firstSunday = firstSundayOfNextMonthKst()
@@ -28,4 +27,5 @@ export const fastSundayBlock = functions
         isBlocked: true,
       })
     }
-  })
+  },
+)

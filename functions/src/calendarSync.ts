@@ -3,7 +3,9 @@
 // "Make changes to events" (Editor) access on the shared calendar.
 // Service account email: <project-id>@appspot.gserviceaccount.com
 // Guide: https://cloud.google.com/iam/docs/service-accounts#service_account_permissions
-import * as functions from 'firebase-functions/v1'
+import { onDocumentWritten } from 'firebase-functions/v2/firestore'
+import * as logger from 'firebase-functions/logger'
+import { BACKGROUND_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
 import { resolveScheduleRegionId } from './scheduleRegion'
@@ -20,10 +22,11 @@ function getCalendarClient() {
   return google.calendar({ version: 'v3', auth })
 }
 
-export const calendarSync = functions
-  .region('asia-northeast3')
-  .firestore.document('schedules/{scheduleId}')
-  .onWrite(async (change) => {
+export const calendarSync = onDocumentWritten(
+  { ...BACKGROUND_OPTS, document: 'schedules/{scheduleId}' },
+  async (event) => {
+    if (!event.data) return
+    const change = event.data
     const db = admin.firestore()
 
     const after = change.after.data()
@@ -62,7 +65,7 @@ export const calendarSync = functions
         const calendar = getCalendarClient()
         await calendar.events.delete({ calendarId: sharedCalendarId, eventId: eventIdToDelete })
       } catch (err) {
-        functions.logger.error('Google Calendar delete failed', err)
+        logger.error('Google Calendar delete failed', err)
       }
       return
     }
@@ -80,7 +83,7 @@ export const calendarSync = functions
         await calendar.events.delete({ calendarId: sharedCalendarId, eventId: staleEventId })
         await change.after.ref.update({ googleCalendarEventId: admin.firestore.FieldValue.delete() })
       } catch (err) {
-        functions.logger.error('Google Calendar delete failed (seventyOnly)', err)
+        logger.error('Google Calendar delete failed (seventyOnly)', err)
       }
       return
     }
@@ -133,6 +136,7 @@ export const calendarSync = functions
         await change.after.ref.update({ googleCalendarEventId: event.data.id })
       }
     } catch (err) {
-      functions.logger.error('Google Calendar sync failed', err)
+      logger.error('Google Calendar sync failed', err)
     }
-  })
+  },
+)

@@ -1,4 +1,6 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { onDocumentWritten } from 'firebase-functions/v2/firestore'
+import { BACKGROUND_OPTS, PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { confirmDeniedReason } from './confirmGuards'
 import { resolveScheduleLocation } from './adminScheduleFields'
@@ -23,7 +25,6 @@ import {
 } from './visitRequestLogic'
 import { PUBLIC_MAX_INSTANCES } from './publicLimits'
 
-const REGION = 'asia-northeast3'
 const ID_RE = /^[\w-]+$/
 const DEFAULT_START = '10:00'
 const DEFAULT_END = '13:00'
@@ -149,22 +150,22 @@ function publicSundayStatus(status: Record<string, SundayStatus>) {
  */
 async function openRequest(requestId: unknown, token: unknown) {
   if (typeof requestId !== 'string' || !ID_RE.test(requestId)) {
-    throw new functions.https.HttpsError('permission-denied', 'Invalid link')
+    throw new HttpsError('permission-denied', 'Invalid link')
   }
   const ref = admin.firestore().collection('visitRequests').doc(requestId)
   const snap = await ref.get()
   // 없는 문서와 틀린 토큰을 같은 오류로 — 문서 존재 여부를 흘리지 않는다.
   if (!snap.exists || !tokenMatches(snap.data()!.token, token)) {
-    throw new functions.https.HttpsError('permission-denied', 'Invalid link')
+    throw new HttpsError('permission-denied', 'Invalid link')
   }
   return { ref, request: await withTrustedUnits(snap.data() as VisitRequestDoc) }
 }
 
 /** 공개 링크: 요청 정보와 지금까지 들어온 추천(모든 스테이크)을 돌려준다. */
-export const getVisitRequestPublic = functions
-  .region(REGION)
-  .runWith({ maxInstances: PUBLIC_MAX_INSTANCES })
-  .https.onCall(async (data: { requestId?: unknown; token?: unknown }) => {
+export const getVisitRequestPublic = onCall(
+  { ...PUBLIC_HTTP_OPTS, maxInstances: PUBLIC_MAX_INSTANCES },
+  async (req: CallableRequest<{ requestId?: unknown; token?: unknown }>) => {
+    const data = req.data
     const { ref, request } = await openRequest(data?.requestId, data?.token)
     const recSnap = await ref.collection('recommendations').get()
     const recs = recSnap.docs.map((d) => d.data() as RecommendationDoc)
@@ -181,7 +182,8 @@ export const getVisitRequestPublic = functions
       sundayStatus: publicSundayStatus(sundayStatus),
       calendarEvents,
     }
-  })
+  },
+)
 
 /** 와드 방문 기록 집계용. `in`은 30개까지라 나눠 묻는다 — CC 하나에 스테이크는 그보다 훨씬 적다. */
 async function schedulesForUnits(unitIds: string[]) {
@@ -206,17 +208,17 @@ function todayInSeoul(): string {
  * 공개 링크: 스테이크 하나의 추천을 저장한다. 스테이크당 문서 하나라 다시 내면 덮어쓴다 —
  * 회장이 마음을 바꾸거나 다른 회장 추천을 보고 날짜를 옮길 수 있어야 한다.
  */
-export const submitVisitRecommendation = functions
-  .region(REGION)
-  .runWith({ maxInstances: PUBLIC_MAX_INSTANCES })
-  .https.onCall(async (data: {
+export const submitVisitRecommendation = onCall(
+  { ...PUBLIC_HTTP_OPTS, maxInstances: PUBLIC_MAX_INSTANCES },
+  async (req: CallableRequest<{
     requestId?: unknown
     token?: unknown
     unitId?: unknown
     submitterName?: unknown
     note?: unknown
     picks?: unknown
-  }) => {
+  }>) => {
+    const data = req.data
     const { ref, request } = await openRequest(data?.requestId, data?.token)
     const db = admin.firestore()
     // 칠십인 일정·대회로 막힌 일요일. 읽기가 여러 컬렉션이라 트랜잭션 밖에서 한 번 본다.
@@ -234,7 +236,7 @@ export const submitVisitRecommendation = functions
       const fresh = await tx.get(ref)
       const current = { ...(fresh.data() as VisitRequestDoc), units: request.units }
       const result = validateRecommendation(current, data ?? {}, unavailable)
-      if (!result.ok) throw new functions.https.HttpsError(result.code, result.message)
+      if (!result.ok) throw new HttpsError(result.code, result.message)
 
       const unitId = data.unitId as string
       const recRef = ref.collection('recommendations').doc(unitId)
@@ -253,50 +255,52 @@ export const submitVisitRecommendation = functions
     })
 
     return { success: true }
-  })
+  },
+)
 
 /**
  * 로그인: 일요일 하나를 확정하거나(unitId·wardId), 확정을 거둔다(clear: true).
  * 확정하면 ward_visit 일정이 결정적 id로 만들어지고 — 같은 날을 다른 와드로 다시 확정하면
  * 같은 문서를 덮어쓴다 — 거두면 그 일정을 지운다. calendarSync 트리거가 캘린더를 따라간다.
  */
-export const decideVisitRequestDate = functions
-  .region(REGION)
-  .https.onCall(async (data: {
+export const decideVisitRequestDate = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (req: CallableRequest<{
     requestId?: unknown
     date?: unknown
     unitId?: unknown
     wardId?: unknown
     clear?: unknown
-  }, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Login required')
+  }>) => {
+    const data = req.data
+    if (!req.auth) throw new HttpsError('unauthenticated', 'Login required')
     const requestId = data?.requestId
     if (typeof requestId !== 'string' || !ID_RE.test(requestId)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid requestId')
+      throw new HttpsError('invalid-argument', 'Invalid requestId')
     }
 
     const db = admin.firestore()
-    const callerUid = context.auth.uid
+    const callerUid = req.auth.uid
     const callerSnap = await db.collection('users').doc(callerUid).get()
     const caller = callerSnap.data() ?? {}
 
     const reqRef = db.collection('visitRequests').doc(requestId)
     const reqSnap = await reqRef.get()
-    if (!reqSnap.exists) throw new functions.https.HttpsError('not-found', 'Request not found')
+    if (!reqSnap.exists) throw new HttpsError('not-found', 'Request not found')
     const request = reqSnap.data() as VisitRequestDoc
 
     const denied = confirmDeniedReason(
       { role: caller.role, uid: callerUid, assignedSeventyUid: caller.assignedSeventyUid },
       request.seventyUid,
     )
-    if (denied) throw new functions.https.HttpsError('permission-denied', denied)
+    if (denied) throw new HttpsError('permission-denied', denied)
 
     const date = typeof data.date === 'string' ? data.date : ''
     const decided = request.decisions?.[date]
 
     if (data.clear === true) {
       if (!(request.sundays ?? []).includes(date)) {
-        throw new functions.https.HttpsError('invalid-argument', 'Date is not part of this request')
+        throw new HttpsError('invalid-argument', 'Date is not part of this request')
       }
       const batch = db.batch()
       // 확정이 가리키는 일정을 지운다. 그 일정이 이미 다른 날로 옮겨졌으면 건드리지 않는다 —
@@ -312,7 +316,7 @@ export const decideVisitRequestDate = functions
     }
 
     const check = checkDecision(await withTrustedUnits(request), data)
-    if (!check.ok) throw new functions.https.HttpsError(check.code, check.message)
+    if (!check.ok) throw new HttpsError(check.code, check.message)
 
     // 이 일요일의 일정 자리는 결정적 id다. 다만 그 자리의 일정이 일정 화면에서 다른 날로 옮겨져
     // 있으면 덮어쓰지 않고 새 문서를 쓴다 — 덮어쓰면 옮겨 둔 방문이 이 날로 끌려온다.
@@ -339,7 +343,7 @@ export const decideVisitRequestDate = functions
     )
     if (conflict) {
       const c = sameDay.docs.find((d) => d.id === conflict)!.data()
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'failed-precondition',
         `already-visiting:${c.wardName ?? ''}`,
       )
@@ -397,24 +401,26 @@ export const decideVisitRequestDate = functions
     await batch.commit()
 
     return { success: true, scheduleId }
-  })
+  },
+)
 
 /**
  * 추천 요청이 만든 방문 일정을 일정 화면에서 지우거나(cancelled) 날짜를 옮기면 요청의 확정을
  * 거둔다. 그러지 않으면 요청에는 「확정」이 남아 회장들이 그 일요일을 추천할 수 없다.
  * 이 트리거는 visitRequests만 쓰므로 schedules 트리거들(calendarSync 등)을 다시 깨우지 않는다.
  */
-export const visitRequestScheduleSync = functions
-  .region(REGION)
-  .firestore.document('schedules/{scheduleId}')
-  .onWrite(async (change, context) => {
+export const visitRequestScheduleSync = onDocumentWritten(
+  { ...BACKGROUND_OPTS, document: 'schedules/{scheduleId}' },
+  async (event) => {
+    if (!event.data) return
+    const change = event.data
     const before = change.before.exists ? change.before.data() : undefined
     const after = change.after.exists ? change.after.data() : undefined
     const date = staleDecisionDate(before, after)
     if (!date || typeof before?.visitRequestId !== 'string' || !ID_RE.test(before.visitRequestId)) return
 
     const db = admin.firestore()
-    const scheduleId = context.params.scheduleId as string
+    const scheduleId = event.params.scheduleId as string
     const reqRef = db.collection('visitRequests').doc(before.visitRequestId)
     await db.runTransaction(async (tx) => {
       const [reqSnap, schedSnap] = await Promise.all([
@@ -429,31 +435,33 @@ export const visitRequestScheduleSync = functions
       if (now && now.status !== 'cancelled' && now.date === date) return
       tx.update(reqRef, { [`decisions.${date}`]: admin.firestore.FieldValue.delete() })
     })
-  })
+  },
+)
 
 /**
  * 로그인: 칠십인의 일요일별 일정 상황(요청 만들기·확정 화면용). 공개 링크와 달리 일정 제목까지 준다.
  * 집행서기는 규칙상 칠십인의 가용 시간 설정을 읽을 수 없어 서버가 대신 읽는다.
  */
-export const getVisitSundayStatus = functions
-  .region(REGION)
-  .https.onCall(async (data: { seventyUid?: unknown; sundays?: unknown; requestId?: unknown }, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Login required')
+export const getVisitSundayStatus = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (req: CallableRequest<{ seventyUid?: unknown; sundays?: unknown; requestId?: unknown }>) => {
+    const data = req.data
+    if (!req.auth) throw new HttpsError('unauthenticated', 'Login required')
     const seventyUid = typeof data?.seventyUid === 'string' ? data.seventyUid : ''
     const sundays = Array.isArray(data?.sundays)
       ? data.sundays.filter((d): d is string => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d))
       : []
     if (!seventyUid || !ID_RE.test(seventyUid) || sundays.length === 0 || sundays.length > 60) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid request')
+      throw new HttpsError('invalid-argument', 'Invalid request')
     }
 
     const db = admin.firestore()
-    const caller = (await db.collection('users').doc(context.auth.uid).get()).data() ?? {}
+    const caller = (await db.collection('users').doc(req.auth.uid).get()).data() ?? {}
     const denied = confirmDeniedReason(
-      { role: caller.role, uid: context.auth.uid, assignedSeventyUid: caller.assignedSeventyUid },
+      { role: caller.role, uid: req.auth.uid, assignedSeventyUid: caller.assignedSeventyUid },
       seventyUid,
     )
-    if (denied) throw new functions.https.HttpsError('permission-denied', denied)
+    if (denied) throw new HttpsError('permission-denied', denied)
 
     let ignore = new Set<string>()
     if (typeof data.requestId === 'string' && ID_RE.test(data.requestId)) {
@@ -476,4 +484,5 @@ export const getVisitSundayStatus = functions
       status,
       lastVisitRegion: lastVisitRegion(before.docs.map((d) => d.data()), first, UNIT_REGIONS),
     }
-  })
+  },
+)

@@ -1,14 +1,15 @@
-import * as functions from 'firebase-functions/v1'
+import { HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { getAccessToken, unlinkKakao } from './kakaoClient'
 
-export const kakaoDisconnect = functions
-  .region('asia-northeast3')
-  .https.onCall(async (_data, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
+export const kakaoDisconnect = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Authentication required')
     }
-    const uid = context.auth.uid
+    const uid = request.auth.uid
     const db = admin.firestore()
 
     // 카카오 쪽 연결을 먼저 끊는다. 토큰만 지우면 사용자가 카카오 설정에서
@@ -26,4 +27,5 @@ export const kakaoDisconnect = functions
     await batch.commit()
 
     return { connected: false }
-  })
+  },
+)

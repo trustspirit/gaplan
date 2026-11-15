@@ -1,4 +1,6 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import * as logger from 'firebase-functions/logger'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { exchangeCodeForTokens, hasTalkCalendarScope } from './kakaoClient'
 
@@ -7,25 +9,26 @@ interface KakaoConnectRequest {
   redirectUri: string
 }
 
-export const kakaoConnect = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: KakaoConnectRequest, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
+export const kakaoConnect = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<KakaoConnectRequest>) => {
+    const data = request.data
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Authentication required')
     }
     if (!data?.code || !data?.redirectUri) {
-      throw new functions.https.HttpsError('invalid-argument', 'code and redirectUri are required')
+      throw new HttpsError('invalid-argument', 'code and redirectUri are required')
     }
 
-    const uid = context.auth.uid
+    const uid = request.auth.uid
     const now = Date.now()
 
     let tokens
     try {
       tokens = await exchangeCodeForTokens(data.code, data.redirectUri)
     } catch (err) {
-      functions.logger.error(`[kakao] connect failed uid=${uid}`, err)
-      throw new functions.https.HttpsError('internal', '카카오 연동에 실패했습니다.')
+      logger.error(`[kakao] connect failed uid=${uid}`, err)
+      throw new HttpsError('internal', '카카오 연동에 실패했습니다.')
     }
 
     // talk_calendar는 선택 동의라 거부해도 토큰은 발급된다. 그대로 저장하면
@@ -33,8 +36,8 @@ export const kakaoConnect = functions
     // 로그에만 남는다. 저장 전에 막고 사용자에게 이유를 알린다.
     // (카카오 콘솔에 앱 팀원으로 등록되지 않은 계정도 같은 증상을 낸다.)
     if (!hasTalkCalendarScope(tokens.scope)) {
-      functions.logger.warn(`[kakao] connect denied uid=${uid}: scope="${tokens.scope ?? ''}"`)
-      throw new functions.https.HttpsError(
+      logger.warn(`[kakao] connect denied uid=${uid}: scope="${tokens.scope ?? ''}"`)
+      throw new HttpsError(
         'failed-precondition',
         '톡캘린더 권한에 동의해야 연동할 수 있습니다. 다시 시도한 뒤 캘린더 권한을 허용해 주세요.',
       )
@@ -57,4 +60,5 @@ export const kakaoConnect = functions
     await batch.commit()
 
     return { connected: true }
-  })
+  },
+)

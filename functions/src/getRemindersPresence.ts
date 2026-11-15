@@ -1,23 +1,25 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { getScopeUnitIds } from './regions'
 import { hasPendingReminders, currentQuarter, type PresenceSchedule } from './remindersPresence'
 
 interface Req { viewSeventyUid?: string }
 
-export const getRemindersPresence = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: Req, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
+export const getRemindersPresence = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<Req>) => {
+    const data = request.data
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Authentication required')
     }
 
     const db = admin.firestore()
-    const callerSnap = await db.collection('users').doc(context.auth.uid).get()
+    const callerSnap = await db.collection('users').doc(request.auth.uid).get()
     const caller = callerSnap.data()
     const role = caller?.role
     if (role !== 'admin' && role !== 'seventy' && role !== 'exec_secretary') {
-      throw new functions.https.HttpsError('permission-denied', 'Admin, seventy, or exec_secretary only')
+      throw new HttpsError('permission-denied', 'Admin, seventy, or exec_secretary only')
     }
 
     // Mirror src/hooks/useReminders.ts, which computes dates via dayjs() in local (Asia/Seoul,
@@ -44,7 +46,7 @@ export const getRemindersPresence = functions
     //  - admin: viewSeventyUid if provided, else no filter (all schedules)
     let scopeSeventyUid: string | null = null
     if (role === 'seventy') {
-      scopeSeventyUid = context.auth.uid
+      scopeSeventyUid = request.auth.uid
     } else if (role === 'exec_secretary') {
       scopeSeventyUid = (caller?.assignedSeventyUid as string | undefined) ?? null
       if (!scopeSeventyUid) return { hasPending: false }
@@ -70,7 +72,7 @@ export const getRemindersPresence = functions
 
     // Dismissed reminders live in userSettings/{uid} (see src/services/userSettingsService.ts),
     // NOT on the users/{uid} doc.
-    const settingsSnap = await db.collection('userSettings').doc(context.auth.uid).get()
+    const settingsSnap = await db.collection('userSettings').doc(request.auth.uid).get()
     const dismissed = new Set<string>(
       (settingsSnap.data()?.dismissedReminders as string[] | undefined) ?? [],
     )
@@ -85,4 +87,5 @@ export const getRemindersPresence = functions
     )
 
     return { hasPending }
-  })
+  },
+)

@@ -7,7 +7,9 @@
 // 행사는 여러 CC 캘린더에 동시에 들어갈 수 있어(schedules는 캘린더 하나뿐) 이벤트 id를 문자열
 // 하나가 아니라 지역별 맵으로 들고 있다 — kakaoCalendarSync.ts가 kakaoEventIds를
 // Record<uid, eventId>로 담는 것과 같은 이유, 같은 모양이다.
-import * as functions from 'firebase-functions/v1'
+import { onDocumentWritten } from 'firebase-functions/v2/firestore'
+import * as logger from 'firebase-functions/logger'
+import { BACKGROUND_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { google, calendar_v3 } from 'googleapis'
 import { isBookkeepingOnlyWrite } from './bookkeepingWrite'
@@ -23,10 +25,11 @@ function getCalendarClient() {
   return google.calendar({ version: 'v3', auth })
 }
 
-export const generalScheduleCalendarSync = functions
-  .region('asia-northeast3')
-  .firestore.document('generalSchedules/{id}')
-  .onWrite(async (change) => {
+export const generalScheduleCalendarSync = onDocumentWritten(
+  { ...BACKGROUND_OPTS, document: 'generalSchedules/{id}' },
+  async (event) => {
+    if (!event.data) return
+    const change = event.data
     const after = change.after.data()
     const before = change.before.data()
 
@@ -77,7 +80,7 @@ export const generalScheduleCalendarSync = functions
         if (!calendarId) {
           // 설정에서 이 지역의 캘린더가 아예 사라진 경우 — 지울 대상을 찾을 수 없다.
           // 장부만 남겨 두고(무한 재시도하지 않도록 건드리지 않는다) 다음에 사람이 손볼 수 있게 로그만 남긴다.
-          functions.logger.error(
+          logger.error(
             `[generalScheduleCalendarSync] no calendarId configured for '${key}', cannot delete event ${eventId}`,
           )
           continue
@@ -86,7 +89,7 @@ export const generalScheduleCalendarSync = functions
           await calendar.events.delete({ calendarId, eventId })
           idUpdates[`googleCalendarEventIds.${key}`] = admin.firestore.FieldValue.delete()
         } catch (err) {
-          functions.logger.error(`[generalScheduleCalendarSync] delete failed key=${key}`, err)
+          logger.error(`[generalScheduleCalendarSync] delete failed key=${key}`, err)
         }
       }
     }
@@ -115,7 +118,7 @@ export const generalScheduleCalendarSync = functions
           const event = await calendar.events.insert({ calendarId, requestBody })
           if (event.data.id) idUpdates[`googleCalendarEventIds.${key}`] = event.data.id
         } catch (err) {
-          functions.logger.error(`[generalScheduleCalendarSync] insert failed key=${key}`, err)
+          logger.error(`[generalScheduleCalendarSync] insert failed key=${key}`, err)
         }
       }
 
@@ -125,7 +128,7 @@ export const generalScheduleCalendarSync = functions
         try {
           await calendar.events.update({ calendarId, eventId, requestBody })
         } catch (err) {
-          functions.logger.error(`[generalScheduleCalendarSync] update failed key=${key}`, err)
+          logger.error(`[generalScheduleCalendarSync] update failed key=${key}`, err)
         }
       }
     }
@@ -133,4 +136,5 @@ export const generalScheduleCalendarSync = functions
     if (after && Object.keys(idUpdates).length) {
       await change.after.ref.update(idUpdates)
     }
-  })
+  },
+)

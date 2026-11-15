@@ -1,26 +1,28 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { getScopeUnitIds } from './regions'
 
 interface Req { startDate: string; endDate: string; viewSeventyUid?: string }
 
-export const getSchedulesInRange = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: Req, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
+export const getSchedulesInRange = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<Req>) => {
+    const data = request.data
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Authentication required')
     }
     const { startDate, endDate, viewSeventyUid } = data
     if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
-      throw new functions.https.HttpsError('invalid-argument', 'startDate and endDate required')
+      throw new HttpsError('invalid-argument', 'startDate and endDate required')
     }
 
     const db = admin.firestore()
-    const callerSnap = await db.collection('users').doc(context.auth.uid).get()
+    const callerSnap = await db.collection('users').doc(request.auth.uid).get()
     const caller = callerSnap.data()
     const role = caller?.role
     if (role !== 'admin' && role !== 'seventy' && role !== 'exec_secretary') {
-      throw new functions.https.HttpsError('permission-denied', 'Admin, seventy, or exec_secretary only')
+      throw new HttpsError('permission-denied', 'Admin, seventy, or exec_secretary only')
     }
 
     const snap = await db.collection('schedules')
@@ -35,7 +37,7 @@ export const getSchedulesInRange = functions
     //  - admin: viewSeventyUid if provided, else no filter (all schedules)
     let scopeSeventyUid: string | null = null
     if (role === 'seventy') {
-      scopeSeventyUid = context.auth.uid
+      scopeSeventyUid = request.auth.uid
     } else if (role === 'exec_secretary') {
       scopeSeventyUid = (caller?.assignedSeventyUid as string | undefined) ?? null
       if (!scopeSeventyUid) return { schedules: [] }
@@ -55,4 +57,5 @@ export const getSchedulesInRange = functions
     }
 
     return { schedules: docs }
-  })
+  },
+)

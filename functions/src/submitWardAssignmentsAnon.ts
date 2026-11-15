@@ -1,4 +1,5 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { PUBLIC_MAX_INSTANCES } from './publicLimits'
 
@@ -16,28 +17,28 @@ interface SubmitWardAssignmentsAnonRequest {
 const TASK_ID_RE = /^[\w-]+$/
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
-export const submitWardAssignmentsAnon = functions
-  .region('asia-northeast3')
-  .runWith({ maxInstances: PUBLIC_MAX_INSTANCES })
-  .https.onCall(async (data: SubmitWardAssignmentsAnonRequest) => {
+export const submitWardAssignmentsAnon = onCall(
+  { ...PUBLIC_HTTP_OPTS, maxInstances: PUBLIC_MAX_INSTANCES },
+  async (request: CallableRequest<SubmitWardAssignmentsAnonRequest>) => {
+    const data = request.data
     const { taskId, token, wardAssignments } = data
 
     // Validate taskId format before using as Firestore path
     if (!taskId || !TASK_ID_RE.test(taskId) || !token) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid request')
+      throw new HttpsError('invalid-argument', 'Invalid request')
     }
 
     if (!Array.isArray(wardAssignments) || wardAssignments.length === 0) {
-      throw new functions.https.HttpsError('invalid-argument', 'wardAssignments must be a non-empty array')
+      throw new HttpsError('invalid-argument', 'wardAssignments must be a non-empty array')
     }
 
     // Validate each ward assignment
     for (const wa of wardAssignments) {
       if (typeof wa.wardName !== 'string' || wa.wardName.trim().length === 0 || wa.wardName.length > 100) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid wardName')
+        throw new HttpsError('invalid-argument', 'Invalid wardName')
       }
       if (typeof wa.date !== 'string' || !DATE_RE.test(wa.date)) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid date format in wardAssignment')
+        throw new HttpsError('invalid-argument', 'Invalid date format in wardAssignment')
       }
     }
 
@@ -49,17 +50,17 @@ export const submitWardAssignmentsAnon = functions
 
       // Collapse not-found and invalid-token into one error to avoid leaking document existence
       if (!taskSnap.exists || taskSnap.data()!.respondToken !== token) {
-        throw new functions.https.HttpsError('permission-denied', 'Invalid link')
+        throw new HttpsError('permission-denied', 'Invalid link')
       }
 
       const task = taskSnap.data()!
 
       if (task.status === 'completed' || task.status === 'expired') {
-        throw new functions.https.HttpsError('failed-precondition', 'Task is no longer accepting responses')
+        throw new HttpsError('failed-precondition', 'Task is no longer accepting responses')
       }
 
       if (task.type !== 'select_visit') {
-        throw new functions.https.HttpsError('invalid-argument', 'This task type does not accept ward assignments')
+        throw new HttpsError('invalid-argument', 'This task type does not accept ward assignments')
       }
 
       // Validate dates are within availableDates when provided
@@ -67,7 +68,7 @@ export const submitWardAssignmentsAnon = functions
         const validDates = new Set<string>(task.availableDates)
         for (const wa of wardAssignments) {
           if (!validDates.has(wa.date)) {
-            throw new functions.https.HttpsError('invalid-argument', `Date ${wa.date} is not available`)
+            throw new HttpsError('invalid-argument', `Date ${wa.date} is not available`)
           }
         }
       }
@@ -80,4 +81,5 @@ export const submitWardAssignmentsAnon = functions
     })
 
     return { success: true }
-  })
+  },
+)

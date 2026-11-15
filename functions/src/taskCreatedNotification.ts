@@ -4,15 +4,18 @@
  * Sends an immediate email to the assigned president when a new task is created.
  * Also sends reminders 7 days and 3 days before the due date (escalating urgency).
  */
-import * as functions from 'firebase-functions/v1'
+import { onDocumentCreated } from 'firebase-functions/v2/firestore'
+import * as logger from 'firebase-functions/logger'
+import { BACKGROUND_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { getTransport, getSenderEmail } from './emailTransport'
 import { APP_URL, resolveTaskTypeLabel } from './emailHelpers'
 
-export const taskCreatedNotification = functions
-  .region('asia-northeast3')
-  .firestore.document('tasks/{taskId}')
-  .onCreate(async (snap) => {
+export const taskCreatedNotification = onDocumentCreated(
+  { ...BACKGROUND_OPTS, document: 'tasks/{taskId}' },
+  async (event) => {
+    if (!event.data) return
+    const snap = event.data
     const task = snap.data()
     if (!task) return
 
@@ -62,9 +65,10 @@ export const taskCreatedNotification = functions
         notifiedAt: admin.firestore.FieldValue.arrayUnion(admin.firestore.Timestamp.now()),
       })
     } catch (err) {
-      functions.logger.error('taskCreatedNotification: email failed', err)
+      logger.error('taskCreatedNotification: email failed', err)
     }
-  })
+  },
+)
 
 function escapeHtml(s: string): string {
   return String(s)

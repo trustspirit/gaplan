@@ -1,4 +1,5 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { isSlotTaken, wardVisitConfirmError } from './confirmGuards'
 
@@ -10,31 +11,32 @@ interface ConfirmParams {
   type: 'ward_visit' | 'interview'
 }
 
-export const confirmSchedule = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: ConfirmParams, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Login required')
+export const confirmSchedule = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<ConfirmParams>) => {
+    const data = request.data
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Login required')
     }
 
     // Validate all inputs before building Firestore document IDs
     if (!data.taskId || !/^[\w-]+$/.test(data.taskId)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid taskId')
+      throw new HttpsError('invalid-argument', 'Invalid taskId')
     }
     if (!data.unitId || !/^[\w-]+$/.test(data.unitId)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid unitId')
+      throw new HttpsError('invalid-argument', 'Invalid unitId')
     }
     if (!/^[\w-]+$/.test(data.seventyUid ?? '')) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid seventyUid')
+      throw new HttpsError('invalid-argument', 'Invalid seventyUid')
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data.slot?.date ?? '')) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid date format')
+      throw new HttpsError('invalid-argument', 'Invalid date format')
     }
     if (!/^\d{2}:\d{2}$/.test(data.slot?.startTime ?? '') || !/^\d{2}:\d{2}$/.test(data.slot?.endTime ?? '')) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid time format')
+      throw new HttpsError('invalid-argument', 'Invalid time format')
     }
     if (!['ward_visit', 'interview'].includes(data.type)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid type for task confirmation flow')
+      throw new HttpsError('invalid-argument', 'Invalid type for task confirmation flow')
     }
 
     const db = admin.firestore()
@@ -44,7 +46,7 @@ export const confirmSchedule = functions
     const scheduleId = `${data.seventyUid}_${data.slot.date}`
     const scheduleRef = db.collection('schedules').doc(scheduleId)
     const taskRef = db.collection('tasks').doc(data.taskId)
-    const callerRef = db.collection('users').doc(context.auth.uid)
+    const callerRef = db.collection('users').doc(request.auth.uid)
 
     return db.runTransaction(async tx => {
       // Validate task ownership and data integrity before writing
@@ -55,14 +57,14 @@ export const confirmSchedule = functions
       ])
 
       if (!taskSnap.exists) {
-        throw new functions.https.HttpsError('not-found', 'Task not found')
+        throw new HttpsError('not-found', 'Task not found')
       }
       const taskData = taskSnap.data()!
-      if (taskData.assignedTo !== context.auth!.uid) {
-        throw new functions.https.HttpsError('permission-denied', 'Not your task')
+      if (taskData.assignedTo !== request.auth!.uid) {
+        throw new HttpsError('permission-denied', 'Not your task')
       }
       if (taskData.seventyUid !== data.seventyUid) {
-        throw new functions.https.HttpsError('invalid-argument', 'seventyUid mismatch')
+        throw new HttpsError('invalid-argument', 'seventyUid mismatch')
       }
       if (taskData.status === 'completed') {
         return { success: false, error: '이미 처리된 Task입니다.' }
@@ -74,7 +76,7 @@ export const confirmSchedule = functions
         callerSnap.data()?.unitId,
       )
       if (mismatch) {
-        throw new functions.https.HttpsError('invalid-argument', mismatch)
+        throw new HttpsError('invalid-argument', mismatch)
       }
 
       if (isSlotTaken(existingSchedule.data())) {
@@ -88,7 +90,7 @@ export const confirmSchedule = functions
         type: 'ward_visit',
         seventyUid: data.seventyUid,
         unitId: data.unitId,
-        presidentUid: context.auth!.uid,
+        presidentUid: request.auth!.uid,
         date: data.slot.date,
         startTime: data.slot.startTime,
         endTime: data.slot.endTime,
@@ -97,7 +99,7 @@ export const confirmSchedule = functions
         customTitle: null,
         status: 'confirmed',
         projectId: taskData.projectId ?? null,
-        createdBy: context.auth!.uid,
+        createdBy: request.auth!.uid,
         confirmedAt: admin.firestore.FieldValue.serverTimestamp(),
       })
 
@@ -105,4 +107,5 @@ export const confirmSchedule = functions
 
       return { success: true, scheduleId }
     })
-  })
+  },
+)

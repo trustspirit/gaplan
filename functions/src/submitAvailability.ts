@@ -1,4 +1,5 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 
 interface SubmitAvailabilityParams {
@@ -6,25 +7,26 @@ interface SubmitAvailabilityParams {
   slots: { date: string; startTime: string; endTime: string }[]
 }
 
-export const submitAvailability = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: SubmitAvailabilityParams, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Login required')
+export const submitAvailability = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<SubmitAvailabilityParams>) => {
+    const data = request.data
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Login required')
     }
 
     if (!data.taskId || !/^[\w-]+$/.test(data.taskId)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid taskId')
+      throw new HttpsError('invalid-argument', 'Invalid taskId')
     }
     if (!Array.isArray(data.slots) || data.slots.length === 0) {
-      throw new functions.https.HttpsError('invalid-argument', 'At least one slot required')
+      throw new HttpsError('invalid-argument', 'At least one slot required')
     }
     for (const slot of data.slots) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(slot.date ?? '')) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid slot date')
+        throw new HttpsError('invalid-argument', 'Invalid slot date')
       }
       if (!/^\d{2}:\d{2}$/.test(slot.startTime ?? '') || !/^\d{2}:\d{2}$/.test(slot.endTime ?? '')) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid slot time')
+        throw new HttpsError('invalid-argument', 'Invalid slot time')
       }
     }
 
@@ -34,14 +36,14 @@ export const submitAvailability = functions
     return db.runTransaction(async tx => {
       const taskSnap = await tx.get(taskRef)
       if (!taskSnap.exists) {
-        throw new functions.https.HttpsError('not-found', 'Task not found')
+        throw new HttpsError('not-found', 'Task not found')
       }
       const taskData = taskSnap.data()!
-      if (taskData.assignedTo !== context.auth!.uid) {
-        throw new functions.https.HttpsError('permission-denied', 'Not your task')
+      if (taskData.assignedTo !== request.auth!.uid) {
+        throw new HttpsError('permission-denied', 'Not your task')
       }
       if (taskData.type !== 'select_interview') {
-        throw new functions.https.HttpsError('invalid-argument', 'Only interview tasks support availability submission')
+        throw new HttpsError('invalid-argument', 'Only interview tasks support availability submission')
       }
       if (taskData.status === 'completed') {
         return { success: false, error: '이미 완료된 Task입니다.' }
@@ -55,4 +57,5 @@ export const submitAvailability = functions
 
       return { success: true }
     })
-  })
+  },
+)

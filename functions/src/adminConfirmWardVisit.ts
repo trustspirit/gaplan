@@ -1,4 +1,5 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { confirmDeniedReason } from './confirmGuards'
 import { wardIdFor } from './wardUnitMap'
@@ -7,29 +8,30 @@ interface AdminConfirmWardVisitParams {
   taskId: string
 }
 
-export const adminConfirmWardVisit = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: AdminConfirmWardVisitParams, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Login required')
+export const adminConfirmWardVisit = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<AdminConfirmWardVisitParams>) => {
+    const data = request.data
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Login required')
     }
     if (!data.taskId || !/^[\w-]+$/.test(data.taskId)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid taskId')
+      throw new HttpsError('invalid-argument', 'Invalid taskId')
     }
 
     const db = admin.firestore()
-    const callerUid = context.auth.uid
+    const callerUid = request.auth.uid
 
     const callerSnap = await db.collection('users').doc(callerUid).get()
     const callerRole = callerSnap.data()?.role
     if (!['admin', 'seventy', 'exec_secretary'].includes(callerRole)) {
-      throw new functions.https.HttpsError('permission-denied', 'Only admin, seventy, or exec_secretary can confirm')
+      throw new HttpsError('permission-denied', 'Only admin, seventy, or exec_secretary can confirm')
     }
 
     const taskRef = db.collection('tasks').doc(data.taskId)
     const taskSnap = await taskRef.get()
     if (!taskSnap.exists) {
-      throw new functions.https.HttpsError('not-found', 'Task not found')
+      throw new HttpsError('not-found', 'Task not found')
     }
 
     const taskData = taskSnap.data()!
@@ -38,10 +40,10 @@ export const adminConfirmWardVisit = functions
       { role: callerRole, uid: callerUid, assignedSeventyUid: callerSnap.data()?.assignedSeventyUid },
       taskData.seventyUid,
     )
-    if (denied) throw new functions.https.HttpsError('permission-denied', denied)
+    if (denied) throw new HttpsError('permission-denied', denied)
 
     if (taskData.type !== 'select_visit') {
-      throw new functions.https.HttpsError('invalid-argument', 'Only ward visit tasks can be confirmed this way')
+      throw new HttpsError('invalid-argument', 'Only ward visit tasks can be confirmed this way')
     }
     if (taskData.status !== 'responded') {
       return { success: false, error: '아직 회장이 와드 배정을 제출하지 않았습니다.' }
@@ -92,4 +94,5 @@ export const adminConfirmWardVisit = functions
     await batch.commit()
 
     return { success: true, scheduleCount: wardAssignments.length }
-  })
+  },
+)

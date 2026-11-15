@@ -1,4 +1,5 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { confirmDeniedReason, isSlotTaken } from './confirmGuards'
 
@@ -7,36 +8,37 @@ interface AdminConfirmParams {
   slot: { date: string; startTime: string; endTime: string }
 }
 
-export const adminConfirmSchedule = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: AdminConfirmParams, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Login required')
+export const adminConfirmSchedule = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<AdminConfirmParams>) => {
+    const data = request.data
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Login required')
     }
 
     if (!data.taskId || !/^[\w-]+$/.test(data.taskId)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid taskId')
+      throw new HttpsError('invalid-argument', 'Invalid taskId')
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data.slot?.date ?? '')) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid date format')
+      throw new HttpsError('invalid-argument', 'Invalid date format')
     }
     if (!/^\d{2}:\d{2}$/.test(data.slot?.startTime ?? '') || !/^\d{2}:\d{2}$/.test(data.slot?.endTime ?? '')) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid time format')
+      throw new HttpsError('invalid-argument', 'Invalid time format')
     }
 
     const db = admin.firestore()
-    const callerUid = context.auth.uid
+    const callerUid = request.auth.uid
     const callerSnap = await db.collection('users').doc(callerUid).get()
     const callerRole = callerSnap.data()?.role
 
     if (!['admin', 'seventy', 'exec_secretary'].includes(callerRole)) {
-      throw new functions.https.HttpsError('permission-denied', 'Only admin, seventy, or exec_secretary can confirm')
+      throw new HttpsError('permission-denied', 'Only admin, seventy, or exec_secretary can confirm')
     }
 
     const taskRef = db.collection('tasks').doc(data.taskId)
     const taskSnap = await taskRef.get()
     if (!taskSnap.exists) {
-      throw new functions.https.HttpsError('not-found', 'Task not found')
+      throw new HttpsError('not-found', 'Task not found')
     }
     const taskData = taskSnap.data()!
 
@@ -44,13 +46,13 @@ export const adminConfirmSchedule = functions
       { role: callerRole, uid: callerUid, assignedSeventyUid: callerSnap.data()?.assignedSeventyUid },
       taskData.seventyUid,
     )
-    if (denied) throw new functions.https.HttpsError('permission-denied', denied)
+    if (denied) throw new HttpsError('permission-denied', denied)
 
     if (taskData.status !== 'responded') {
       return { success: false, error: '아직 회장이 가능 시간을 제출하지 않았습니다.' }
     }
     if (taskData.type !== 'select_interview') {
-      throw new functions.https.HttpsError('invalid-argument', 'Only interview tasks can be confirmed this way')
+      throw new HttpsError('invalid-argument', 'Only interview tasks can be confirmed this way')
     }
 
     // Verify the selected slot is one the president submitted
@@ -59,7 +61,7 @@ export const adminConfirmSchedule = functions
       s => s.date === data.slot.date && s.startTime === data.slot.startTime,
     )
     if (!slotValid) {
-      throw new functions.https.HttpsError('invalid-argument', '제출된 가능 시간 중에 없는 슬롯입니다.')
+      throw new HttpsError('invalid-argument', '제출된 가능 시간 중에 없는 슬롯입니다.')
     }
 
     const scheduleType = 'interview'
@@ -94,4 +96,5 @@ export const adminConfirmSchedule = functions
 
       return { success: true, scheduleId }
     })
-  })
+  },
+)

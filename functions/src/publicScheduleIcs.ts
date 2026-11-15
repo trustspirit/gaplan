@@ -1,4 +1,5 @@
-import * as functions from 'firebase-functions/v1'
+import { type Request, onRequest } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { getScopeUnitIds, getScopeDisplayName, getScopeRegionId } from './regions'
 import { isCcCouncilForScope } from './ccCouncil'
@@ -41,11 +42,10 @@ function safeUrl(url: unknown): string | null {
   return /^https?:\/\//i.test(stripped) ? stripped : null
 }
 
-export const publicScheduleIcs = functions
-  .region('asia-northeast3')
-  .runWith({ maxInstances: PUBLIC_MAX_INSTANCES })
+export const publicScheduleIcs = onRequest(
+  { ...PUBLIC_HTTP_OPTS, maxInstances: PUBLIC_MAX_INSTANCES },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  .https.onRequest(async (req: functions.https.Request, res: any) => {
+  async (req: Request, res: any) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
 
     try {
@@ -313,4 +313,5 @@ export const publicScheduleIcs = functions
       console.error('publicScheduleIcs error:', err)
       res.status(500).send('Internal error')
     }
-  })
+  },
+)

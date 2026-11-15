@@ -1,21 +1,22 @@
-import * as functions from 'firebase-functions/v1'
+import { HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 
-export const mergePreRegisteredUser = functions
-  .region('asia-northeast3')
-  .https.onCall(async (_data, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
+export const mergePreRegisteredUser = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const callerEmail = (context.auth.token.email ?? '').trim().toLowerCase()
-    const callerEmailVerified = context.auth.token.email_verified === true
+    const callerEmail = (request.auth.token.email ?? '').trim().toLowerCase()
+    const callerEmailVerified = request.auth.token.email_verified === true
     if (!callerEmail || !callerEmailVerified) {
       return null // No verified email → no pre-registration possible
     }
 
     const db = admin.firestore()
-    const realUid = context.auth.uid
+    const realUid = request.auth.uid
 
     // Idempotency: if real user doc already exists, return it
     const realUserSnap = await db.collection('users').doc(realUid).get()
@@ -34,7 +35,7 @@ export const mergePreRegisteredUser = functions
     if (preUserData.createdBy) {
       const createdBySnap = await db.collection('users').doc(preUserData.createdBy).get()
       if (!createdBySnap.exists || createdBySnap.data()?.role !== 'admin') {
-        throw new functions.https.HttpsError('permission-denied', 'Pre-registered user was not created by an admin')
+        throw new HttpsError('permission-denied', 'Pre-registered user was not created by an admin')
       }
     }
 
@@ -47,7 +48,7 @@ export const mergePreRegisteredUser = functions
 
     const totalOps = 2 + seventySchedules.size + presidentSchedules.size
     if (totalOps > 498) {
-      throw new functions.https.HttpsError('resource-exhausted', 'Too many schedule references to merge in one batch')
+      throw new HttpsError('resource-exhausted', 'Too many schedule references to merge in one batch')
     }
 
     const batch = db.batch()
@@ -66,4 +67,5 @@ export const mergePreRegisteredUser = functions
     await batch.commit()
 
     return userData // Return without serverTimestamp fields (not serializable)
-  })
+  },
+)

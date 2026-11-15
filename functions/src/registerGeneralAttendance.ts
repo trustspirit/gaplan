@@ -1,55 +1,57 @@
 // 이제 UI에서 호출되지 않는다 — 기존 데이터 때문에 남겨 둔다.
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 
 interface RegisterAttendanceRequest {
   generalScheduleId: string
 }
 
-export const registerGeneralAttendance = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: RegisterAttendanceRequest, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
+export const registerGeneralAttendance = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<RegisterAttendanceRequest>) => {
+    const data = request.data
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Authentication required')
     }
 
     const { generalScheduleId } = data
     if (!generalScheduleId || typeof generalScheduleId !== 'string') {
-      throw new functions.https.HttpsError('invalid-argument', 'generalScheduleId required')
+      throw new HttpsError('invalid-argument', 'generalScheduleId required')
     }
 
     const db = admin.firestore()
-    const callerSnap = await db.collection('users').doc(context.auth.uid).get()
+    const callerSnap = await db.collection('users').doc(request.auth.uid).get()
     const callerData = callerSnap.data()
     const callerRole = callerData?.role
-    const callerName: string = callerData?.name ?? context.auth.uid
+    const callerName: string = callerData?.name ?? request.auth.uid
 
     if (!['admin', 'seventy'].includes(callerRole)) {
-      throw new functions.https.HttpsError('permission-denied', 'Admin or seventy only')
+      throw new HttpsError('permission-denied', 'Admin or seventy only')
     }
 
     const gsSnap = await db.collection('generalSchedules').doc(generalScheduleId).get()
     if (!gsSnap.exists) {
-      throw new functions.https.HttpsError('not-found', 'General schedule not found')
+      throw new HttpsError('not-found', 'General schedule not found')
     }
 
     const gs = gsSnap.data()!
 
     const existing = await db
       .collection('schedules')
-      .where('seventyUid', '==', context.auth.uid)
+      .where('seventyUid', '==', request.auth.uid)
       .where('generalScheduleId', '==', generalScheduleId)
       .where('type', '==', 'general_attendance')
       .limit(1)
       .get()
 
     if (!existing.empty) {
-      throw new functions.https.HttpsError('already-exists', '이미 참석 등록되었습니다.')
+      throw new HttpsError('already-exists', '이미 참석 등록되었습니다.')
     }
 
     await db.collection('schedules').add({
       type: 'general_attendance',
-      seventyUid: context.auth.uid,
+      seventyUid: request.auth.uid,
       unitId: '',
       presidentUid: null,
       date: gs.date,
@@ -62,9 +64,10 @@ export const registerGeneralAttendance = functions
       notes: null,
       zoomLink: null,
       customTitle: callerName,
-      createdBy: context.auth.uid,
+      createdBy: request.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     })
 
     return { success: true }
-  })
+  },
+)

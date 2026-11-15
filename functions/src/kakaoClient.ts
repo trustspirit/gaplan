@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions/v1'
+import * as logger from 'firebase-functions/logger'
 import * as admin from 'firebase-admin'
 import type { KakaoEventBody } from './kakaoEventBody'
 
@@ -114,7 +114,7 @@ async function markDisconnected(uid: string): Promise<void> {
   // 이 함수는 getAccessToken의 catch 안에서 호출되므로 여기서 던지면
   // "throw하지 않는다"는 getAccessToken의 계약이 깨진다.
   await db.collection('users').doc(uid).set({ kakaoConnected: false }, { merge: true })
-  functions.logger.warn(`[kakao] disconnected uid=${uid}`)
+  logger.warn(`[kakao] disconnected uid=${uid}`)
 }
 
 /**
@@ -137,7 +137,7 @@ export async function getAccessToken(uid: string): Promise<string | null> {
     await ref.set(next, { merge: true })
     return next.accessToken
   } catch (err) {
-    functions.logger.error(`[kakao] token refresh failed uid=${uid}`, err)
+    logger.error(`[kakao] token refresh failed uid=${uid}`, err)
     await markDisconnected(uid)
     return null
   }
@@ -156,7 +156,7 @@ export async function createKakaoEvent(
     accessToken,
   )
   if (!res.ok) {
-    functions.logger.error(
+    logger.error(
       `[kakao] create event failed schedule=${scheduleId ?? '-'}: ${res.status} ${await res.text()}`,
     )
     return null
@@ -179,7 +179,7 @@ export async function updateKakaoEvent(
   form.delete('calendar_id')
   const res = await postForm(`${KAPI_BASE}/v2/api/calendar/update/event/host`, form, accessToken)
   if (!res.ok) {
-    functions.logger.error(
+    logger.error(
       `[kakao] update event failed schedule=${scheduleId ?? '-'} event=${eventId}: ` +
         `${res.status} ${await res.text()}`,
     )
@@ -196,7 +196,7 @@ export async function deleteKakaoEvent(
     { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } },
   )
   if (!res.ok) {
-    functions.logger.error(
+    logger.error(
       `[kakao] delete event failed schedule=${scheduleId ?? '-'} event=${eventId}: ` +
         `${res.status} ${await res.text()}`,
     )
@@ -209,6 +209,6 @@ export async function unlinkKakao(accessToken: string): Promise<void> {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
   if (!res.ok) {
-    functions.logger.error(`[kakao] unlink failed: ${res.status} ${await res.text()}`)
+    logger.error(`[kakao] unlink failed: ${res.status} ${await res.text()}`)
   }
 }

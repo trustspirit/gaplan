@@ -1,4 +1,5 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { wardIdFor } from './wardUnitMap'
 import { DATE_RE, TIME_RE, isValidUrl } from './validators'
@@ -37,23 +38,24 @@ interface AdminCreateScheduleRequest {
   seventyNotes?: string   // 칠십인 전용 메모 — 일정 문서가 아니라 별도 컬렉션에 저장한다(seventyNotes.ts)
 }
 
-export const adminCreateSchedule = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: AdminCreateScheduleRequest, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
+export const adminCreateSchedule = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<AdminCreateScheduleRequest>) => {
+    const data = request.data
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Authentication required')
     }
 
     const { type, seventyUid, unitId, regionId, wardName, presidentUid, date, notes, zoomLink, location, customTitle, projectId, presidentAccompanied, targetKind, wardId, relatedVisitId, seventyOnly, endDate, seventyNotes } = data
 
     if (!['ward_visit', 'interview', 'meeting'].includes(type)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid type')
+      throw new HttpsError('invalid-argument', 'Invalid type')
     }
     if (!DATE_RE.test(date)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid date format (YYYY-MM-DD)')
+      throw new HttpsError('invalid-argument', 'Invalid date format (YYYY-MM-DD)')
     }
     if (data.allDay !== undefined && typeof data.allDay !== 'boolean') {
-      throw new functions.https.HttpsError('invalid-argument', 'allDay must be a boolean')
+      throw new HttpsError('invalid-argument', 'allDay must be a boolean')
     }
     // 종일 일정은 시간을 받지 않고 하루의 처음과 끝으로 채운다.
     const allDay = data.allDay === true
@@ -61,30 +63,30 @@ export const adminCreateSchedule = functions
     const endTime = allDay ? ALL_DAY_END_TIME : data.endTime
     if (typeof startTime !== 'string' || typeof endTime !== 'string' ||
       !TIME_RE.test(startTime) || !TIME_RE.test(endTime)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid time format (HH:mm)')
+      throw new HttpsError('invalid-argument', 'Invalid time format (HH:mm)')
     }
     // 여러 날은 모임만 된다. 접견·방문은 하루 안에 끝나는 일정이다.
     if (endDate !== undefined) {
       if (type !== 'meeting') {
-        throw new functions.https.HttpsError('invalid-argument', 'endDate is only for meeting')
+        throw new HttpsError('invalid-argument', 'endDate is only for meeting')
       }
       if (typeof endDate !== 'string' || !DATE_RE.test(endDate)) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid endDate format (YYYY-MM-DD)')
+        throw new HttpsError('invalid-argument', 'Invalid endDate format (YYYY-MM-DD)')
       }
       if (endDate < date) {
-        throw new functions.https.HttpsError('invalid-argument', 'endDate must not be before date')
+        throw new HttpsError('invalid-argument', 'endDate must not be before date')
       }
     }
     const multiDay = isMultiDaySchedule({ date, endDate })
     // 여러 날 모임은 startTime이 첫날, endTime이 마지막 날의 시각이라 서로 비교할 수 없다
     // (금요일 18:00 시작 – 토요일 12:00 종료).
     if (!multiDay && startTime >= endTime) {
-      throw new functions.https.HttpsError('invalid-argument', 'endTime must be after startTime')
+      throw new HttpsError('invalid-argument', 'endTime must be after startTime')
     }
     if (type === 'ward_visit') {
-      if (!unitId) throw new functions.https.HttpsError('invalid-argument', 'unitId required for ward_visit')
+      if (!unitId) throw new HttpsError('invalid-argument', 'unitId required for ward_visit')
       if (!wardName || wardName.trim().length < 1 || wardName.trim().length > 100) {
-        throw new functions.https.HttpsError('invalid-argument', 'wardName required (1-100 chars) for ward_visit')
+        throw new HttpsError('invalid-argument', 'wardName required (1-100 chars) for ward_visit')
       }
     }
     // ward_visit이 아니어도 와드 대상 접견/모임(targetKind='ward_bishop')은 그 와드 이름을
@@ -92,116 +94,116 @@ export const adminCreateSchedule = functions
     // (Controller ruling, Fix 1). 그래도 형식은 지켜야 하니 길이는 계속 검사한다.
     if (type !== 'ward_visit' && wardName !== undefined &&
       (typeof wardName !== 'string' || wardName.trim().length > 100)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid wardName')
+      throw new HttpsError('invalid-argument', 'Invalid wardName')
     }
     if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {
-      throw new functions.https.HttpsError('invalid-argument', 'notes max 500 chars')
+      throw new HttpsError('invalid-argument', 'notes max 500 chars')
     }
     if (zoomLink !== undefined) {
       // Check type restriction first for clearer error message
       if (type === 'ward_visit') {
-        throw new functions.https.HttpsError('invalid-argument', 'zoomLink is not applicable to ward_visit')
+        throw new HttpsError('invalid-argument', 'zoomLink is not applicable to ward_visit')
       }
       const trimmed = typeof zoomLink === 'string' ? zoomLink.trim() : ''
       if (!trimmed || trimmed.length > 500 || !isValidUrl(trimmed)) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid zoomLink URL')
+        throw new HttpsError('invalid-argument', 'Invalid zoomLink URL')
       }
     }
     if (customTitle !== undefined) {
       if (type === 'ward_visit') {
-        throw new functions.https.HttpsError('invalid-argument', 'customTitle is not applicable to ward_visit')
+        throw new HttpsError('invalid-argument', 'customTitle is not applicable to ward_visit')
       }
       if (typeof customTitle !== 'string' || customTitle.trim().length === 0 || customTitle.length > 200) {
-        throw new functions.https.HttpsError('invalid-argument', 'customTitle must be 1-200 chars')
+        throw new HttpsError('invalid-argument', 'customTitle must be 1-200 chars')
       }
     }
     if (location !== undefined && location !== null) {
       const trimmed = typeof location === 'string' ? location.trim() : ''
       if (trimmed.length > 100) {
-        throw new functions.https.HttpsError('invalid-argument', 'location max 100 chars')
+        throw new HttpsError('invalid-argument', 'location max 100 chars')
       }
     }
     if (projectId !== undefined && typeof projectId !== 'string') {
-      throw new functions.https.HttpsError('invalid-argument', 'projectId must be a string')
+      throw new HttpsError('invalid-argument', 'projectId must be a string')
     }
     if (presidentAccompanied !== undefined && typeof presidentAccompanied !== 'boolean') {
-      throw new functions.https.HttpsError('invalid-argument', 'presidentAccompanied must be a boolean')
+      throw new HttpsError('invalid-argument', 'presidentAccompanied must be a boolean')
     }
     if (seventyNotes !== undefined && !isValidSeventyNotesInput(seventyNotes)) {
-      throw new functions.https.HttpsError('invalid-argument', `seventyNotes max ${SEVENTY_NOTES_MAX_LENGTH} chars`)
+      throw new HttpsError('invalid-argument', `seventyNotes max ${SEVENTY_NOTES_MAX_LENGTH} chars`)
     }
     if (seventyOnly !== undefined && typeof seventyOnly !== 'boolean') {
-      throw new functions.https.HttpsError('invalid-argument', 'seventyOnly must be a boolean')
+      throw new HttpsError('invalid-argument', 'seventyOnly must be a boolean')
     }
     // 칠십인 전용은 대상이 '기타'인 접견/모임과 대상이 없는 모임에만 둘 수 있다. 방문·협의 평의회·스테이크 회장·
     // 와드 감독처럼 대상이 정해진 일정은 공개 범위도 그 대상으로 정해져 있다.
     if (seventyOnly === true && !canBeSeventyOnly({ type, targetKind })) {
-      throw new functions.https.HttpsError('invalid-argument', "seventyOnly is only for schedules without a defined target (targetKind 'other', or a meeting with none)")
+      throw new HttpsError('invalid-argument', "seventyOnly is only for schedules without a defined target (targetKind 'other', or a meeting with none)")
     }
     if (targetKind !== undefined) {
       if (type === 'ward_visit') {
-        throw new functions.https.HttpsError('invalid-argument', 'targetKind is only for interview/meeting')
+        throw new HttpsError('invalid-argument', 'targetKind is only for interview/meeting')
       }
       if (!['stake_president', 'ward_bishop', 'other', 'cc_council'].includes(targetKind)) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid targetKind')
+        throw new HttpsError('invalid-argument', 'Invalid targetKind')
       }
     }
     // CC 협의 평의회: 특정 스테이크가 아니라 CC 전체가 대상이므로 unitId 대신 regionId로 범위를 잡는다.
     if (targetKind === 'cc_council') {
       if (type !== 'meeting') {
-        throw new functions.https.HttpsError('invalid-argument', 'cc_council is only valid for meeting type')
+        throw new HttpsError('invalid-argument', 'cc_council is only valid for meeting type')
       }
       if (!regionId || !isKnownRegionId(regionId)) {
-        throw new functions.https.HttpsError('invalid-argument', 'Valid regionId required when targetKind is cc_council')
+        throw new HttpsError('invalid-argument', 'Valid regionId required when targetKind is cc_council')
       }
       if (unitId) {
-        throw new functions.https.HttpsError('invalid-argument', 'unitId must be empty for cc_council')
+        throw new HttpsError('invalid-argument', 'unitId must be empty for cc_council')
       }
     } else if (regionId !== undefined) {
-      throw new functions.https.HttpsError('invalid-argument', 'regionId is only for cc_council meetings')
+      throw new HttpsError('invalid-argument', 'regionId is only for cc_council meetings')
     }
     if (wardId !== undefined && (typeof wardId !== 'string' || wardId.length > 100)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid wardId')
+      throw new HttpsError('invalid-argument', 'Invalid wardId')
     }
     if (targetKind === 'ward_bishop' && !wardId) {
-      throw new functions.https.HttpsError('invalid-argument', 'wardId required when targetKind is ward_bishop')
+      throw new HttpsError('invalid-argument', 'wardId required when targetKind is ward_bishop')
     }
     if (relatedVisitId !== undefined && (typeof relatedVisitId !== 'string' || relatedVisitId.length > 200)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid relatedVisitId')
+      throw new HttpsError('invalid-argument', 'Invalid relatedVisitId')
     }
 
     const db = admin.firestore()
     const [callerSnap, seventySnap] = await Promise.all([
-      db.collection('users').doc(context.auth.uid).get(),
+      db.collection('users').doc(request.auth.uid).get(),
       db.collection('users').doc(seventyUid).get(),
     ])
 
     const callerData = callerSnap.data()
     const callerRole = callerData?.role
     if (!['admin', 'seventy', 'exec_secretary'].includes(callerRole)) {
-      throw new functions.https.HttpsError('permission-denied', 'Admin, seventy, or exec_secretary only')
+      throw new HttpsError('permission-denied', 'Admin, seventy, or exec_secretary only')
     }
-    if (callerRole === 'seventy' && context.auth.uid !== seventyUid) {
-      throw new functions.https.HttpsError('permission-denied', 'Seventy can only create schedules for themselves')
+    if (callerRole === 'seventy' && request.auth.uid !== seventyUid) {
+      throw new HttpsError('permission-denied', 'Seventy can only create schedules for themselves')
     }
     if (callerRole === 'exec_secretary') {
       const assignedUid = callerData?.assignedSeventyUid as string | undefined
       if (!assignedUid) {
-        throw new functions.https.HttpsError('permission-denied', 'exec_secretary has no assigned seventy')
+        throw new HttpsError('permission-denied', 'exec_secretary has no assigned seventy')
       }
       if (seventyUid !== assignedUid) {
-        throw new functions.https.HttpsError('permission-denied', 'exec_secretary can only create schedules for their assigned seventy')
+        throw new HttpsError('permission-denied', 'exec_secretary can only create schedules for their assigned seventy')
       }
     }
 
     if (!seventySnap.exists || seventySnap.data()?.role !== 'seventy') {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid seventyUid: user not found or not a seventy')
+      throw new HttpsError('invalid-argument', 'Invalid seventyUid: user not found or not a seventy')
     }
 
     if (presidentUid) {
       const presidentSnap = await db.collection('users').doc(presidentUid).get()
       if (!presidentSnap.exists || presidentSnap.data()?.role !== 'president') {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid presidentUid: user not found or not a president')
+        throw new HttpsError('invalid-argument', 'Invalid presidentUid: user not found or not a president')
       }
     }
 
@@ -217,7 +219,7 @@ export const adminCreateSchedule = functions
         visit: visitData,
       })
       if (problem) {
-        throw new functions.https.HttpsError('invalid-argument', problem)
+        throw new HttpsError('invalid-argument', problem)
       }
       relatedVisitWardName = visitData?.wardName
     }
@@ -232,7 +234,7 @@ export const adminCreateSchedule = functions
       .limit(1)
       .get()
     if (existing && !existing.empty) {
-      throw new functions.https.HttpsError('already-exists', '해당 시간에 이미 확정된 일정이 있습니다.')
+      throw new HttpsError('already-exists', '해당 시간에 이미 확정된 일정이 있습니다.')
     }
 
     // CC 협의 평의회는 unitId가 없어 화면들이 이름을 못 붙인다. 앱/공개페이지/ICS/캘린더가
@@ -269,7 +271,7 @@ export const adminCreateSchedule = functions
       relatedVisitId: (relatedVisitId && relatedVisitId.trim()) ? relatedVisitId.trim() : null,
       seventyOnly: seventyOnly === true,
       status: 'confirmed',
-      createdBy: context.auth.uid,
+      createdBy: request.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     })
     const normalizedSeventyNotes = normalizeSeventyNotes(seventyNotes)
@@ -284,4 +286,5 @@ export const adminCreateSchedule = functions
     await batch.commit()
 
     return { success: true }
-  })
+  },
+)

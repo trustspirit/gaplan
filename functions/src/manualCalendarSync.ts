@@ -5,7 +5,9 @@
  * This handles the case where the calendarSync Firestore trigger failed
  * (e.g. due to missing regionId on the seventy user).
  */
-import * as functions from 'firebase-functions/v1'
+import { HttpsError, onCall } from 'firebase-functions/v2/https'
+import * as logger from 'firebase-functions/logger'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { google } from 'googleapis'
 import { resolveScheduleRegionId } from './scheduleRegion'
@@ -20,17 +22,17 @@ function getCalendarClient() {
   return google.calendar({ version: 'v3', auth })
 }
 
-export const manualCalendarSync = functions
-  .region('asia-northeast3')
-  .https.onCall(async (_data, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Login required')
+export const manualCalendarSync = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Login required')
     }
 
     const db = admin.firestore()
-    const callerSnap = await db.collection('users').doc(context.auth.uid).get()
+    const callerSnap = await db.collection('users').doc(request.auth.uid).get()
     if (callerSnap.data()?.role !== 'admin') {
-      throw new functions.https.HttpsError('permission-denied', 'Admin only')
+      throw new HttpsError('permission-denied', 'Admin only')
     }
 
     const settingsSnap = await db.collection('settings').doc('calendar').get()
@@ -71,7 +73,7 @@ export const manualCalendarSync = functions
       // 두 경로가 같은 일정을 다른 캘린더로 보내면 어느 쪽이 맞는지 알 수 없다.
       const calendarId = calendars[regionId] ?? settingsSnap.data()?.sharedCalendarId
       if (!calendarId) {
-        functions.logger.warn(
+        logger.warn(
           `manualCalendarSync: no calendar for regionId="${regionId}" (unitId=${s.unitId}, scheduleRegionId=${s.regionId})`,
         )
         failed++
@@ -103,7 +105,7 @@ export const manualCalendarSync = functions
         await docSnap.ref.update({ googleCalendarEventId: event.data.id })
         synced++
       } catch (err) {
-        functions.logger.error(`manualCalendarSync: failed for ${docSnap.id}`, err)
+        logger.error(`manualCalendarSync: failed for ${docSnap.id}`, err)
         failed++
       }
     }
@@ -114,4 +116,5 @@ export const manualCalendarSync = functions
       failed,
       message: `${synced}개 일정을 캘린더에 등록했습니다.${failed > 0 ? ` (${failed}개 실패)` : ''}`,
     }
-  })
+  },
+)

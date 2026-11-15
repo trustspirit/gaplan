@@ -1,4 +1,5 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 
 interface AddPreRegRequest {
@@ -14,21 +15,22 @@ interface AddPreRegRequest {
 async function assertAdmin(uid: string): Promise<void> {
   const snap = await admin.firestore().collection('users').doc(uid).get()
   if (!snap.exists || snap.data()?.role !== 'admin') {
-    throw new functions.https.HttpsError('permission-denied', 'Admin only')
+    throw new HttpsError('permission-denied', 'Admin only')
   }
 }
 
-export const adminAddPreRegisteredUser = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: AddPreRegRequest, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Login required')
-    await assertAdmin(context.auth.uid)
+export const adminAddPreRegisteredUser = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<AddPreRegRequest>) => {
+    const data = request.data
+    if (!request.auth) throw new HttpsError('unauthenticated', 'Login required')
+    await assertAdmin(request.auth.uid)
 
     if (!data.name?.trim()) {
-      throw new functions.https.HttpsError('invalid-argument', 'name required')
+      throw new HttpsError('invalid-argument', 'name required')
     }
     if (!['president', 'seventy', 'exec_secretary'].includes(data.role)) {
-      throw new functions.https.HttpsError('invalid-argument', 'role must be president, seventy, or exec_secretary')
+      throw new HttpsError('invalid-argument', 'role must be president, seventy, or exec_secretary')
     }
 
     const db = admin.firestore()
@@ -42,12 +44,13 @@ export const adminAddPreRegisteredUser = functions
       ...(data.regionIds ? { regionIds: data.regionIds } : {}),
       ...(data.assignedSeventyUid ? { assignedSeventyUid: data.assignedSeventyUid } : {}),
       preRegistered: true,
-      createdBy: context.auth.uid,
+      createdBy: request.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     })
 
     return { uid: ref.id }
-  })
+  },
+)
 
 interface UpdatePreRegRequest {
   uid: string
@@ -60,24 +63,25 @@ interface UpdatePreRegRequest {
   assignedSeventyUid?: string | null
 }
 
-export const adminUpdatePreRegisteredUser = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: UpdatePreRegRequest, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Login required')
-    await assertAdmin(context.auth.uid)
+export const adminUpdatePreRegisteredUser = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<UpdatePreRegRequest>) => {
+    const data = request.data
+    if (!request.auth) throw new HttpsError('unauthenticated', 'Login required')
+    await assertAdmin(request.auth.uid)
 
-    if (!data.uid) throw new functions.https.HttpsError('invalid-argument', 'uid required')
+    if (!data.uid) throw new HttpsError('invalid-argument', 'uid required')
 
     const db = admin.firestore()
     const snap = await db.collection('users').doc(data.uid).get()
     if (!snap.exists || !snap.data()?.preRegistered) {
-      throw new functions.https.HttpsError('not-found', 'Pre-registered user not found')
+      throw new HttpsError('not-found', 'Pre-registered user not found')
     }
 
     const updates: Record<string, unknown> = {}
 
     if (data.name !== undefined) {
-      if (!data.name.trim()) throw new functions.https.HttpsError('invalid-argument', 'name cannot be empty')
+      if (!data.name.trim()) throw new HttpsError('invalid-argument', 'name cannot be empty')
       updates.name = data.name.trim()
     }
     if (data.email !== undefined) {
@@ -90,14 +94,14 @@ export const adminUpdatePreRegisteredUser = functions
           .get()
         const conflict = existing.docs.find(d => d.id !== data.uid)
         if (conflict) {
-          throw new functions.https.HttpsError('already-exists', '이미 등록된 이메일입니다.')
+          throw new HttpsError('already-exists', '이미 등록된 이메일입니다.')
         }
       }
       updates.email = normalized
     }
     if (data.role !== undefined) {
       if (!['president', 'seventy', 'exec_secretary'].includes(data.role)) {
-        throw new functions.https.HttpsError('invalid-argument', 'role must be president, seventy, or exec_secretary')
+        throw new HttpsError('invalid-argument', 'role must be president, seventy, or exec_secretary')
       }
       updates.role = data.role
       // Clear unitId when switching away from president
@@ -114,27 +118,30 @@ export const adminUpdatePreRegisteredUser = functions
     if (data.assignedSeventyUid !== undefined) updates.assignedSeventyUid = data.assignedSeventyUid ?? null
 
     if (Object.keys(updates).length === 0) {
-      throw new functions.https.HttpsError('invalid-argument', 'No fields to update')
+      throw new HttpsError('invalid-argument', 'No fields to update')
     }
 
     await db.collection('users').doc(data.uid).update(updates)
     return { success: true }
-  })
+  },
+)
 
-export const adminDeletePreRegisteredUser = functions
-  .region('asia-northeast3')
-  .https.onCall(async (data: { uid: string }, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Login required')
-    await assertAdmin(context.auth.uid)
+export const adminDeletePreRegisteredUser = onCall(
+  PUBLIC_HTTP_OPTS,
+  async (request: CallableRequest<{ uid: string }>) => {
+    const data = request.data
+    if (!request.auth) throw new HttpsError('unauthenticated', 'Login required')
+    await assertAdmin(request.auth.uid)
 
-    if (!data.uid) throw new functions.https.HttpsError('invalid-argument', 'uid required')
+    if (!data.uid) throw new HttpsError('invalid-argument', 'uid required')
 
     const db = admin.firestore()
     const snap = await db.collection('users').doc(data.uid).get()
     if (!snap.exists || !snap.data()?.preRegistered) {
-      throw new functions.https.HttpsError('not-found', 'Pre-registered user not found')
+      throw new HttpsError('not-found', 'Pre-registered user not found')
     }
 
     await db.collection('users').doc(data.uid).delete()
     return { success: true }
-  })
+  },
+)

@@ -1,4 +1,5 @@
-import * as functions from 'firebase-functions/v1'
+import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
+import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { PUBLIC_MAX_INSTANCES } from './publicLimits'
 
@@ -7,27 +8,27 @@ interface GetPublicTaskInfoRequest {
   token: string
 }
 
-export const getPublicTaskInfo = functions
-  .region('asia-northeast3')
-  .runWith({ maxInstances: PUBLIC_MAX_INSTANCES })
-  .https.onCall(async (data: GetPublicTaskInfoRequest) => {
+export const getPublicTaskInfo = onCall(
+  { ...PUBLIC_HTTP_OPTS, maxInstances: PUBLIC_MAX_INSTANCES },
+  async (request: CallableRequest<GetPublicTaskInfoRequest>) => {
+    const data = request.data
     const { taskId, token } = data
 
     if (!taskId || !token) {
-      throw new functions.https.HttpsError('invalid-argument', 'taskId and token required')
+      throw new HttpsError('invalid-argument', 'taskId and token required')
     }
 
     const taskRef = admin.firestore().collection('tasks').doc(taskId)
     const taskSnap = await taskRef.get()
 
     if (!taskSnap.exists) {
-      throw new functions.https.HttpsError('not-found', 'Task not found')
+      throw new HttpsError('not-found', 'Task not found')
     }
 
     const task = taskSnap.data()!
 
     if (task.respondToken !== token) {
-      throw new functions.https.HttpsError('permission-denied', 'Invalid token')
+      throw new HttpsError('permission-denied', 'Invalid token')
     }
 
     return {
@@ -45,4 +46,5 @@ export const getPublicTaskInfo = functions
       respondedSlots: task.respondedSlots ?? [],
       wardAssignments: task.wardAssignments ?? [],
     }
-  })
+  },
+)
