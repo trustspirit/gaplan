@@ -71,7 +71,8 @@ export interface PublicVisitRequest {
   sundays: string[]
   units: VisitRequestUnit[]
   decisions: Record<string, VisitRequestDecision>
-  recommendations: VisitRecommendation[]
+  /** 메모는 오지 않는다 — 다른 회장에게 보일 글이 아니라서 있는지만 온다 */
+  recommendations: (Omit<VisitRecommendation, 'note'> & { hasNote: boolean })[]
   /** wardId -> 방문 기록. 회장이 오래 방문받지 못한 와드를 보고 추천하도록 */
   wardStats: Record<string, WardVisitStat>
 }

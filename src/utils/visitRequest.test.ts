@@ -89,7 +89,7 @@ describe('requestProgress', () => {
 
 describe('recommendUrl', () => {
   it('공개 추천 경로를 만든다', () => {
-    expect(recommendUrl('abcd', 'https://x.app')).toBe('https://x.app/recommend/abcd')
+    expect(recommendUrl('r1', 'abcd', 'https://x.app')).toBe('https://x.app/recommend/r1/abcd')
   })
 })
 

@@ -73,7 +73,7 @@ function renderPage() {
 describe('VisitRequestDetailPage', () => {
   it('shows the public link to share', () => {
     renderPage()
-    expect(screen.getByText(/\/recommend\/0123456789abcdef$/)).toBeInTheDocument()
+    expect(screen.getByText(/\/recommend\/r1\/0123456789abcdef$/)).toBeInTheDocument()
   })
 
   it('confirms a candidate only after the confirm sheet', async () => {

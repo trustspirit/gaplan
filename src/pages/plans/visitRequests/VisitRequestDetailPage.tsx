@@ -75,19 +75,20 @@ export function VisitRequestDetailPage() {
   const [deleting, setDeleting] = useState(false)
 
   const token = request?.token
+  const reqId = request?.id
   const decisionKey = request ? Object.keys(request.decisions ?? {}).sort().join(',') : ''
   useEffect(() => {
-    if (!token) return
+    if (!token || !reqId) return
     let cancelled = false
     // 통계는 참고용이라 실패해도 화면은 그대로 쓴다.
-    fetchWardStats(token)
+    fetchWardStats(reqId, token)
       .then((s) => !cancelled && setWardStats(s))
       .catch(() => {})
     return () => {
       cancelled = true
     }
     // 확정이 바뀌면 "다음 방문"이 달라지므로 다시 받는다.
-  }, [token, decisionKey])
+  }, [reqId, token, decisionKey])
 
   if (loading) {
     return (
@@ -104,7 +105,7 @@ export function VisitRequestDetailPage() {
     )
   }
 
-  const url = recommendUrl(request.token)
+  const url = recommendUrl(request.id, request.token)
   const unitById = new Map(request.units.map((u) => [u.id, u]))
   const progress = requestProgress(request, recommendations)
   const dateLabel = (date: string) => dayjs(date).format(`${t('recommend.dateFormat')} (ddd)`)

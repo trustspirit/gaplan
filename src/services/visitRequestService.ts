@@ -132,9 +132,15 @@ export async function decideVisitRequestDate(
  * 회장들이 보는 것과 같은 와드 방문 기록. 로그인한 칠십인도 같은 함수를 쓴다 —
  * 확정 화면과 추천 화면이 같은 와드를 서로 다른 숫자로 보여 주면 안 된다.
  */
-export async function fetchWardStats(token: string): Promise<PublicVisitRequest['wardStats']> {
-  const fn = httpsCallable<{ token: string }, PublicVisitRequest>(functions, 'getVisitRequestPublic')
-  const res = await fn({ token })
+export async function fetchWardStats(
+  requestId: string,
+  token: string,
+): Promise<PublicVisitRequest['wardStats']> {
+  const fn = httpsCallable<{ requestId: string; token: string }, PublicVisitRequest>(
+    functions,
+    'getVisitRequestPublic',
+  )
+  const res = await fn({ requestId, token })
   return res.data.wardStats ?? {}
 }
 

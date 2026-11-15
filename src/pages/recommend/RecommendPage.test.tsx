@@ -42,7 +42,7 @@ function data(over: Partial<PublicVisitRequest> = {}): PublicVisitRequest {
     },
     recommendations: [
       {
-        unitId: 'seoul-east-stake', submitterName: '이회장', submittedAt: '2026-11-01T00:00:00Z',
+        unitId: 'seoul-east-stake', submitterName: '이회장', submittedAt: '2026-11-01T00:00:00Z', hasNote: true,
         picks: [{ date: '2027-01-10', wardId: 'seoul-east-gyomun', wardName: '교문 와드' }],
       },
     ],
@@ -64,7 +64,7 @@ beforeEach(() => {
 async function openAsSeoul() {
   getMock.mockResolvedValue({ data: data() })
   const user = userEvent.setup()
-  render(<RecommendPage token="0123456789abcdef" />)
+  render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
   await user.click(await screen.findByRole('radio', { name: /서울 스테이크/ }))
   return user
 }
@@ -72,14 +72,14 @@ async function openAsSeoul() {
 describe('RecommendPage', () => {
   it('tells an invalid link apart from a load failure', async () => {
     getMock.mockRejectedValue({ code: 'functions/permission-denied' })
-    render(<RecommendPage token="0123456789abcdef" />)
+    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
     expect(await screen.findByRole('alert')).toHaveTextContent('recommend.invalidLink')
     expect(screen.queryByText('common.retry')).not.toBeInTheDocument()
   })
 
   it('shows which units already submitted before one is chosen', async () => {
     getMock.mockResolvedValue({ data: data() })
-    render(<RecommendPage token="0123456789abcdef" />)
+    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
     const east = await screen.findByRole('radio', { name: /서울동 스테이크/ })
     expect(east).toHaveTextContent('이회장')
     // 단위를 고르기 전에는 일요일 목록을 보여 주지 않는다
@@ -120,10 +120,10 @@ describe('RecommendPage', () => {
 
     await waitFor(() => expect(submitMock).toHaveBeenCalled())
     expect(submitMock.mock.calls[0][0]).toEqual({
+      requestId: 'r1',
       token: '0123456789abcdef',
       unitId: 'seoul-stake',
       submitterName: '홍길동 회장',
-      note: '',
       picks: [
         { date: '2027-01-10', wardId: 'seoul-nokbeon' },
         { date: '2027-01-17', wardId: 'seoul-sinchon' },
@@ -135,7 +135,7 @@ describe('RecommendPage', () => {
   it("prefills a unit's earlier recommendation so a president only changes what changed", async () => {
     getMock.mockResolvedValue({ data: data() })
     const user = userEvent.setup()
-    render(<RecommendPage token="0123456789abcdef" />)
+    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
     await user.click(await screen.findByRole('radio', { name: /서울동 스테이크/ }))
     expect(screen.getByLabelText('recommend.nameLabel')).toHaveValue('이회장')
     expect(screen.getAllByRole('combobox')[0]).toHaveValue('seoul-east-gyomun')
@@ -145,10 +145,53 @@ describe('RecommendPage', () => {
   it('shows a closed request read-only', async () => {
     getMock.mockResolvedValue({ data: data({ status: 'closed' }) })
     const user = userEvent.setup()
-    render(<RecommendPage token="0123456789abcdef" />)
+    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
     await user.click(await screen.findByRole('radio', { name: /서울 스테이크/ }))
     expect(screen.getByText('recommend.closedBanner')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'recommend.submit' })).not.toBeInTheDocument()
     screen.getAllByRole('combobox').forEach((c) => expect(c).toBeDisabled())
+  })
+
+  it('keeps an earlier note unless the president writes a new one', async () => {
+    getMock.mockResolvedValue({ data: data() })
+    const user = userEvent.setup()
+    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
+    await user.click(await screen.findByRole('radio', { name: /서울동 스테이크/ }))
+    expect(screen.getByText('recommend.noteKept')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'recommend.resubmit' }))
+    await waitFor(() => expect(submitMock).toHaveBeenCalled())
+    expect(submitMock.mock.calls[0][0]).not.toHaveProperty('note')
+  })
+
+  it('keeps unsaved picks when a failed submit reloads the request', async () => {
+    const user = await openAsSeoul()
+    submitMock.mockRejectedValueOnce(new Error('closed'))
+    await user.selectOptions(screen.getAllByRole('combobox')[1], 'seoul-sinchon')
+    await user.type(screen.getByLabelText('recommend.nameLabel'), '홍길동 회장')
+    await user.click(screen.getByRole('button', { name: 'recommend.submit' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('recommend.submitFailed')
+    await waitFor(() => expect(getMock).toHaveBeenCalledTimes(2))
+    expect(screen.getAllByRole('combobox')[1]).toHaveValue('seoul-sinchon')
+  })
+
+  it('does not count or send a Sunday that was decided for another unit', async () => {
+    getMock.mockResolvedValueOnce({ data: data({ decisions: {} }) })
+    const user = userEvent.setup()
+    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
+    await user.click(await screen.findByRole('radio', { name: /^서울 스테이크/ }))
+    await user.selectOptions(screen.getAllByRole('combobox')[2], 'seoul-sinchon') // 1월 24일
+    await user.selectOptions(screen.getAllByRole('combobox')[0], 'seoul-nokbeon')
+    expect(screen.getByText(/recommend.pickedCount/)).toHaveTextContent('"count":2')
+
+    // 그사이 1월 24일이 다른 단위로 확정됐다 — 제출이 실패하고 새 상태를 받는다
+    submitMock.mockRejectedValueOnce(new Error('decided'))
+    getMock.mockResolvedValue({ data: data() })
+    await user.type(screen.getByLabelText('recommend.nameLabel'), '홍')
+    await user.click(screen.getByRole('button', { name: 'recommend.submit' }))
+    await waitFor(() => expect(screen.getByText(/recommend.pickedCount/)).toHaveTextContent('"count":1'))
+
+    await user.click(screen.getByRole('button', { name: 'recommend.submit' }))
+    await waitFor(() => expect(submitMock).toHaveBeenCalledTimes(2))
+    expect(submitMock.mock.calls[1][0].picks).toEqual([{ date: '2027-01-10', wardId: 'seoul-nokbeon' }])
   })
 })

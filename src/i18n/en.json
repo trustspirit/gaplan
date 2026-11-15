@@ -978,7 +978,8 @@
     "doneTitle": "Recommendations sent",
     "doneSub": "The Area Seventy will review and confirm. Open this link again any time to make changes.",
     "doneEmpty": "You let us know you have no recommendation this time.",
-    "edit": "Edit"
+    "edit": "Edit",
+    "noteKept": "Your earlier note is kept. Type a new one to replace it."
   },
   "visitRequest": {
     "tab": "Recommendations",
@@ -1043,6 +1044,7 @@
     "back": "Recommendation requests",
     "lastVisit": "Last visit {{recency}}",
     "monthFormat": "MMM",
-    "fastShort": "Fast"
+    "fastShort": "Fast",
+    "noSeventy": "No Seventy is assigned to you. Ask an admin to set one in Settings › System."
   }
 }

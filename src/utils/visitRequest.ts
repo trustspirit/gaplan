@@ -9,8 +9,16 @@ import type {
 /** 공개 추천 링크의 경로. 라우터와 공유 버튼이 같은 문자열을 쓴다. */
 export const RECOMMEND_PATH_PREFIX = '/recommend/'
 
-export function recommendUrl(token: string, origin: string = window.location.origin): string {
-  return `${origin}${RECOMMEND_PATH_PREFIX}${token}`
+/**
+ * 요청 id와 토큰을 둘 다 싣는다. CF는 id로 문서를 집고 토큰을 비교한다 — 토큰만으로 찾으면
+ * 같은 토큰의 요청을 하나 더 만들어 링크를 가로챌 수 있다.
+ */
+export function recommendUrl(
+  requestId: string,
+  token: string,
+  origin: string = window.location.origin,
+): string {
+  return `${origin}${RECOMMEND_PATH_PREFIX}${requestId}/${token}`
 }
 
 /**

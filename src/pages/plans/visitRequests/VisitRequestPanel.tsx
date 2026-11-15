@@ -118,6 +118,11 @@ export function VisitRequestPanel() {
                 options={seventies.map((s) => ({ value: s.uid, label: s.name }))}
               />
             )}
+            {fixedSeventyUid === '' && (
+              <p className={styles.warn} role="alert">
+                {t('visitRequest.noSeventy')}
+              </p>
+            )}
             {seventy && regionIds.length === 0 && (
               <p className={styles.warn} role="alert">
                 {t('visitRequest.noRegion')}

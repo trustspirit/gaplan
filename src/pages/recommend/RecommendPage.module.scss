@@ -393,6 +393,12 @@ $page-bg: $neutral-50;
   min-height: 44px;
 }
 
+.fieldHint {
+  margin: $space-1 0 0;
+  font-size: $font-size-xs;
+  color: $neutral-600;
+}
+
 .textarea {
   resize: vertical;
   line-height: $line-height-normal;

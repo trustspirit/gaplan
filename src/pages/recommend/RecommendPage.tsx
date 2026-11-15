@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
@@ -10,17 +10,19 @@ import type { PublicVisitRequest, VisitRequestUnit, WardVisitStat } from '@/type
 import styles from './RecommendPage.module.scss'
 
 interface SubmitRequest {
+  requestId: string
   token: string
   unitId: string
   submitterName: string
-  note: string
+  note?: string   // 안 보내면 서버가 예전 메모를 그대로 둔다
   picks: { date: string; wardId: string }[]
 }
 
-let getFn: HttpsCallable<{ token: string }, PublicVisitRequest> | null = null
+type GetRequest = { requestId: string; token: string }
+let getFn: HttpsCallable<GetRequest, PublicVisitRequest> | null = null
 let submitFn: HttpsCallable<SubmitRequest, { success: boolean }> | null = null
 const getRequest = () =>
-  (getFn ??= publicCallable<{ token: string }, PublicVisitRequest>('getVisitRequestPublic'))
+  (getFn ??= publicCallable<GetRequest, PublicVisitRequest>('getVisitRequestPublic'))
 const submitRecommendation = () =>
   (submitFn ??= publicCallable<SubmitRequest, { success: boolean }>('submitVisitRecommendation'))
 
@@ -45,17 +47,29 @@ type LoadState =
   | { kind: 'error'; invalid: boolean }
   | { kind: 'ready'; data: PublicVisitRequest }
 
-export default function RecommendPage({ token }: { token: string | undefined }) {
+export default function RecommendPage({
+  requestId,
+  token,
+}: {
+  requestId: string | undefined
+  token: string | undefined
+}) {
   const { t, i18n } = useTranslation()
   const lang = i18n.language === 'en' ? 'en' : 'ko'
   const today = dayjs().format('YYYY-MM-DD')
 
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [reloadKey, setReloadKey] = useState(0)
-  const [unitId, setUnitId] = useState(() => (token ? readStored(`recommendUnit:${token}`) : ''))
+  const [unitId, setUnitId] = useState(() =>
+    requestId ? readStored(`recommendUnit:${requestId}`) : '',
+  )
   const [picks, setPicks] = useState<Record<string, string>>({}) // date -> wardId
   const [name, setName] = useState(() => readStored('recommendName'))
   const [note, setNote] = useState('')
+  // 메모는 공개 응답에 오지 않는다. 손대지 않았으면 보내지 않아 예전 메모를 지키고, 적었으면 바꾼다.
+  const [noteTouched, setNoteTouched] = useState(false)
+  // 이 단위의 저장된 추천으로 칸을 채웠는가. 다시 받아 올 때마다 채우면 고치던 선택이 날아간다.
+  const prefilledFor = useRef<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
@@ -67,14 +81,14 @@ export default function RecommendPage({ token }: { token: string | undefined }) 
   }, [i18n])
 
   useEffect(() => {
-    if (!token) {
+    if (!token || !requestId) {
       setState({ kind: 'error', invalid: true })
       return
     }
     let cancelled = false
     // 다시 받을 때(제출 뒤 새로고침)는 화면을 비우지 않는다.
     setState((prev) => (prev.kind === 'ready' ? prev : { kind: 'loading' }))
-    getRequest()({ token })
+    getRequest()({ requestId, token })
       .then((res) => !cancelled && setState({ kind: 'ready', data: res.data }))
       .catch((err: { code?: string }) => {
         if (cancelled) return
@@ -83,7 +97,7 @@ export default function RecommendPage({ token }: { token: string | undefined }) 
     return () => {
       cancelled = true
     }
-  }, [token, reloadKey])
+  }, [requestId, token, reloadKey])
 
   const data = state.kind === 'ready' ? state.data : null
   const unit = data?.units.find((u) => u.id === unitId) ?? null
@@ -94,22 +108,25 @@ export default function RecommendPage({ token }: { token: string | undefined }) 
     (id: string, source: PublicVisitRequest) => {
       const rec = source.recommendations.find((r) => r.unitId === id)
       setPicks(Object.fromEntries((rec?.picks ?? []).map((p) => [p.date, p.wardId])))
-      setNote(rec?.note ?? '')
+      setNote('')
+      setNoteTouched(false)
       if (rec?.submitterName) setName(rec.submitterName)
+      prefilledFor.current = id
     },
     [],
   )
 
+  // 저장해 둔 단위로 다시 연 경우, 처음 받은 데이터로 한 번만 채운다.
   useEffect(() => {
-    if (data && unitId && data.units.some((u) => u.id === unitId)) loadUnit(unitId, data)
-    // data가 새로 올 때만 — 입력 중에 덮어쓰지 않는다
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data])
+    if (data && unitId && prefilledFor.current !== unitId && data.units.some((u) => u.id === unitId)) {
+      loadUnit(unitId, data)
+    }
+  }, [data, unitId, loadUnit])
 
   const chooseUnit = (id: string) => {
     if (!data || id === unitId) return
     setUnitId(id)
-    if (token) writeStored(`recommendUnit:${token}`, id)
+    if (requestId) writeStored(`recommendUnit:${requestId}`, id)
     loadUnit(id, data)
     setSubmitError(null)
   }
@@ -133,13 +150,18 @@ export default function RecommendPage({ token }: { token: string | undefined }) 
     })
   }
 
+  // 다른 단위로 확정된 일요일은 보낼 수 없으니 세지도 않는다.
   const pickedDates = useMemo(
-    () => Object.entries(picks).filter(([, w]) => w).map(([d]) => d),
-    [picks],
+    () =>
+      Object.entries(picks)
+        .filter(([d, w]) => w && (!data?.decisions[d] || data.decisions[d].unitId === unitId))
+        .map(([d]) => d)
+        .sort(),
+    [picks, data, unitId],
   )
 
   const handleSubmit = async () => {
-    if (!token || !unit || !data) return
+    if (!token || !requestId || !unit || !data) return
     if (!name.trim()) {
       setSubmitError(t('recommend.nameRequired'))
       return
@@ -147,15 +169,13 @@ export default function RecommendPage({ token }: { token: string | undefined }) 
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const payload = pickedDates
-        .filter((d) => !data.decisions[d] || data.decisions[d].unitId === unit.id)
-        .sort()
-        .map((date) => ({ date, wardId: picks[date] }))
+      const payload = pickedDates.map((date) => ({ date, wardId: picks[date] }))
       await submitRecommendation()({
+        requestId,
         token,
         unitId: unit.id,
         submitterName: name.trim(),
-        note: note.trim(),
+        ...(noteTouched ? { note: note.trim() } : {}),
         picks: payload,
       })
       setSent(payload)
@@ -424,8 +444,14 @@ export default function RecommendPage({ token }: { token: string | undefined }) 
                     maxLength={500}
                     rows={3}
                     placeholder={t('recommend.notePlaceholder')}
-                    onChange={(e) => setNote(e.target.value)}
+                    onChange={(e) => {
+                      setNote(e.target.value)
+                      setNoteTouched(true)
+                    }}
                   />
+                  {myRec?.hasNote && !noteTouched && (
+                    <p className={styles.fieldHint}>{t('recommend.noteKept')}</p>
+                  )}
                 </section>
 
                 <div className={styles.submitBar}>

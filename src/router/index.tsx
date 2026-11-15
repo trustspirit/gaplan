@@ -111,8 +111,8 @@ const VisitRequestDetailPage = lazyRetry(() =>
 // 회장들이 카카오톡에서 여는 공개 추천 화면. 로그인 사용자는 볼 일이 없어 따로 받는다.
 const RecommendPage = lazy(() => import('@/pages/recommend/RecommendPage'))
 function RecommendRoute() {
-  const { token } = useParams<{ token: string }>()
-  return <RecommendPage token={token} />
+  const { requestId, token } = useParams<{ requestId: string; token: string }>()
+  return <RecommendPage requestId={requestId} token={token} />
 }
 
 const KakaoCallback = lazyRetry(() =>
@@ -171,7 +171,7 @@ export function AppRouter() {
           </Route>
 
           <Route path="/respond/:taskId" element={<RespondPage />} />
-          <Route path="/recommend/:token" element={<RecommendRoute />} />
+          <Route path="/recommend/:requestId/:token" element={<RecommendRoute />} />
           <Route path="/public/schedule/:token" element={<PublicScheduleRoute />} />
           <Route path="/public/schedule" element={<Navigate to={ROUTES.home} replace />} />
 
