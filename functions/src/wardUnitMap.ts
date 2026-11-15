@@ -104,3 +104,18 @@ export const WARD_UNITS: Record<string, { unitId: string; ko: string }> = {
   'military-osan': { unitId: 'military-district', ko: '오산 군인 지부' },
   'military-humphreys': { unitId: 'military-district', ko: '험프리 군인 지부' },
 }
+
+/**
+ * 와드 방문 일정의 와드 id. 방문 일정은 이름(wardName)으로 저장돼 왔는데, 이름만으로는 이름이
+ * 바뀌면 지난 방문 기록과의 연결이 끊긴다 — 쓰는 쪽(CF)이 이 함수로 wardId를 함께 남긴다.
+ * 지부 이름은 스테이크마다 겹칠 수 있어 스테이크와 이름을 같이 본다. 모르면 null.
+ */
+export function wardIdFor(unitId: unknown, wardName: unknown): string | null {
+  if (typeof unitId !== 'string' || typeof wardName !== 'string') return null
+  const name = wardName.trim()
+  if (!unitId || !name) return null
+  for (const [id, w] of Object.entries(WARD_UNITS)) {
+    if (w.unitId === unitId && w.ko === name) return id
+  }
+  return null
+}

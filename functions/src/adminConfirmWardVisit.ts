@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { confirmDeniedReason } from './confirmGuards'
+import { wardIdFor } from './wardUnitMap'
 
 interface AdminConfirmWardVisitParams {
   taskId: string
@@ -74,6 +75,7 @@ export const adminConfirmWardVisit = functions
         taskId: data.taskId,       // for future re-confirmation cleanup
         projectId: taskData.projectId ?? null,
         wardName: assignment.wardName,
+        wardId: wardIdFor(unitId, assignment.wardName),
         unitId,
         presidentUid: taskData.assignedTo,
         seventyUid: taskData.seventyUid,

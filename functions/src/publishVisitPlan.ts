@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
 import { resolveScheduleLocation } from './adminScheduleFields'
+import { wardIdFor } from './wardUnitMap'
 
 interface PublishRequest { planId: string }
 
@@ -36,6 +37,7 @@ export function buildVisitPlanSchedulePayload(
     seventyUid: opts.seventyUid,
     unitId: item.unitId,
     wardName: item.wardName,
+    wardId: wardIdFor(item.unitId, item.wardName),
     presidentUid: opts.presidentUid,
     date: item.date,
     startTime: item.startTime,

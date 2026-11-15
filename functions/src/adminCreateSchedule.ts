@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
+import { wardIdFor } from './wardUnitMap'
 import { DATE_RE, TIME_RE, isValidUrl } from './validators'
 import { validateRelatedVisit } from './relatedVisit'
 import { buildCcCouncilTitle, isKnownRegionId } from './ccCouncil'
@@ -263,7 +264,8 @@ export const adminCreateSchedule = functions
       projectId: (projectId && projectId.trim()) ? projectId.trim() : null,
       presidentAccompanied: (type === 'ward_visit' && presidentAccompanied === true) ? true : null,
       targetKind: (type !== 'ward_visit' && targetKind) ? targetKind : null,
-      wardId: wardId ?? null,
+      // 와드 방문은 클라이언트가 보낸 값 대신 스테이크·이름에서 서버가 정한다(wardUnitMap.wardIdFor).
+      wardId: type === 'ward_visit' ? wardIdFor(unitId, wardName) : (wardId ?? null),
       relatedVisitId: (relatedVisitId && relatedVisitId.trim()) ? relatedVisitId.trim() : null,
       seventyOnly: seventyOnly === true,
       status: 'confirmed',

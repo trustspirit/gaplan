@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
+import { wardIdFor } from './wardUnitMap'
 import { DATE_RE, TIME_RE, isValidUrl } from './validators'
 import { validateRelatedVisit } from './relatedVisit'
 import { CC_COUNCIL_TARGET_KIND } from './ccCouncil'
@@ -226,6 +227,14 @@ export const adminEditSchedule = functions
     // 통째로 사라진다. 생성 CF가 ward_visit에 unitId를 요구하는 것과 같은 규칙.
     if (snap.data()?.type === 'ward_visit' && allowed.unitId === '') {
       throw new functions.https.HttpsError('invalid-argument', 'unitId required for ward_visit')
+    }
+    // 방문의 와드가 바뀌면 wardId도 따라간다 — 생성 CF와 같이 스테이크·이름에서 서버가 정한다.
+    if (snap.data()?.type === 'ward_visit' && (allowed.unitId !== undefined || allowed.wardName !== undefined || allowed.wardId !== undefined)) {
+      const current = snap.data()!
+      allowed.wardId = wardIdFor(
+        allowed.unitId !== undefined ? allowed.unitId : current.unitId,
+        allowed.wardName !== undefined ? allowed.wardName : current.wardName,
+      )
     }
 
     // 칠십인 전용은 대상이 '기타'인 접견/모임과 대상이 없는 모임에만 둘 수 있다 — 생성 CF와 같은 규칙.

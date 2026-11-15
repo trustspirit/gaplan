@@ -12,7 +12,11 @@
 // 그 트리거가 googleCalendarEventIds(복수형)를 되쓰면 스스로를 재호출한다.
 // schedules 컬렉션 문서에는 이 필드가 존재하지 않으므로 목록에 같이 둬도
 // 기존 두 트리거의 판단에는 영향이 없다.
-const BOOKKEEPING_FIELDS = ['googleCalendarEventId', 'kakaoEventIds', 'googleCalendarEventIds']
+//
+// wardId도 같이 둔다. 동기화 결과는 아니지만 캘린더 이벤트 내용(제목·장소)은 wardName에서
+// 나오고 wardId는 어디에도 실리지 않는다 — wardId만 채우는 write(이력 보정 등)가 캘린더에
+// 이벤트를 새로 만들거나 고치게 할 이유가 없다.
+const BOOKKEEPING_FIELDS = ['googleCalendarEventId', 'kakaoEventIds', 'googleCalendarEventIds', 'wardId']
 
 export function isBookkeepingOnlyWrite(
   before: Record<string, unknown> | undefined,

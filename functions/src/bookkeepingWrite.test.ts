@@ -32,6 +32,16 @@ describe('isBookkeepingOnlyWrite', () => {
     ).toBe(true)
   })
 
+  // 지난 방문에 wardId를 채우는 보정이 캘린더에 이벤트를 새로 만들지 않아야 한다.
+  it('와드 id만 채워져도 true — 캘린더 내용에 실리지 않는 필드다', () => {
+    expect(
+      isBookkeepingOnlyWrite(
+        { ...SCHEDULE, wardName: '상당 와드' },
+        { ...SCHEDULE, wardName: '상당 와드', wardId: 'cheongju-sangdang' },
+      ),
+    ).toBe(true)
+  })
+
   it('동기화 대상 필드가 함께 바뀌면 false', () => {
     expect(
       isBookkeepingOnlyWrite(SCHEDULE, {

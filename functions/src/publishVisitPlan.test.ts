@@ -17,6 +17,7 @@ describe('buildVisitPlanSchedulePayload', () => {
       baseOpts,
     )
     expect(payload.location).toBe('교문 와드')
+    expect(payload.wardId).toBe('seoul-east-gyomun')
   })
 
   // Regression: publishVisitPlan used to build a payload with no `location` key at
