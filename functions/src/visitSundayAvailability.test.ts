@@ -95,6 +95,22 @@ describe('sundayAvailability', () => {
   })
 })
 
+describe('협의 평의회', () => {
+  it('오후 협의 평의회만 있는 일요일은 막지 않고 그 CC를 알려 준다', () => {
+    const r = sundayAvailability({
+      ...base,
+      schedules: [
+        { id: 'cc', type: 'meeting', status: 'confirmed', date: '2027-01-10', targetKind: 'cc_council', regionId: 'seoul-south' },
+        { id: 'm', type: 'meeting', status: 'confirmed', date: '2027-01-17', customTitle: '모임' },
+      ],
+    })
+    expect(isSundayBusy(r['2027-01-10'])).toBe(false)
+    expect(r['2027-01-10'].councilRegionId).toBe('seoul-south')
+    expect(isSundayBusy(r['2027-01-17'])).toBe(true)
+    expect(r['2027-01-17'].councilRegionId).toBeNull()
+  })
+})
+
 describe('isFirstSunday', () => {
   it('그 달의 1~7일 일요일이 첫 일요일이다', () => {
     expect(isFirstSunday('2027-02-07')).toBe(true)

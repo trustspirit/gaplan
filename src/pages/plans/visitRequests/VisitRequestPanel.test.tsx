@@ -63,6 +63,23 @@ describe('VisitRequestPanel', () => {
     expect(screen.getByText(/visitRequest.regionLast/)).toBeInTheDocument()
   })
 
+  it('keeps an afternoon coordinating council Sunday open and fixed to that CC', async () => {
+    vi.mocked(fetchSundayStatus).mockResolvedValueOnce({
+      status: {
+        '2027-01-17': { busy: [], notes: [], unitBlocks: {}, councilRegionId: 'seoul' },
+      },
+      lastVisitRegion: null,
+    })
+    renderPanel()
+    // 1/10 서울남, 1/17 서울(고정), 1/24 서울남 — 고정된 날 앞뒤로 번갈아 간다
+    await waitFor(() => expect(screen.getByText('visitRequest.councilShort')).toBeInTheDocument())
+    const fixed = screen.getByTitle(/visitRequest.councilPinned/)
+    expect(fixed).toHaveTextContent('서울')
+    expect(regionTags()).toHaveLength(9) // 고정된 날은 바꾸는 단추가 아니다
+    expect(regionTags().slice(0, 2).map((b) => b.textContent)).toEqual(['서울남', '서울남'])
+    expect(screen.queryByText(/visitRequest.regionRepeat/)).not.toBeInTheDocument()
+  })
+
   it('warns when two Sundays in a row get the same CC, and can re-alternate', async () => {
     const user = userEvent.setup()
     renderPanel()

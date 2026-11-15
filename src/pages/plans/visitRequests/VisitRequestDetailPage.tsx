@@ -47,7 +47,7 @@ import {
   isGeneralConferenceSunday,
   type SundayStatus,
 } from '../../../../functions/src/visitSundayAvailability'
-import { getRegionColor } from '@/constants/regions'
+import { REGIONS, getRegionColor } from '@/constants/regions'
 import styles from './VisitRequestDetailPage.module.scss'
 
 interface PendingDecision {
@@ -492,6 +492,13 @@ function SundayRow({
         )}
       </div>
 
+      {status?.councilRegionId && (
+        <p className={styles.unitBlockLine}>
+          {t('visitRequest.boardCouncil', {
+            region: REGIONS.find((r) => r.id === status.councilRegionId)?.name ?? status.councilRegionId,
+          })}
+        </p>
+      )}
       {status && status.busy.length > 0 && (
         <p className={styles.busyLine}>
           {t('visitRequest.boardBusy', {

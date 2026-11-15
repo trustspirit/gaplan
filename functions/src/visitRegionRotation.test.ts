@@ -10,6 +10,18 @@ describe('rotateRegions', () => {
     expect(rotateRegions(sundays, ['seoul', 'seoul-south'], 'seoul')['2027-01-10']).toBe('seoul-south')
   })
 
+  it('협의 평의회 날은 그 CC로 고정하고, 그 앞뒤는 다른 CC로 맞춘다', () => {
+    const sundays = ['2027-01-10', '2027-01-17', '2027-01-24', '2027-01-31']
+    const r = rotateRegions(sundays, ['seoul', 'seoul-south'], null, { '2027-01-24': 'seoul' })
+    expect(r).toEqual({
+      '2027-01-10': 'seoul', '2027-01-17': 'seoul-south', '2027-01-24': 'seoul', '2027-01-31': 'seoul-south',
+    })
+    // 고정된 날이 둘째 자리여도 바로 앞에서 피해 간다
+    const r2 = rotateRegions(sundays, ['seoul', 'seoul-south'], null, { '2027-01-17': 'seoul' })
+    expect(r2['2027-01-10']).toBe('seoul-south')
+    expect(r2['2027-01-24']).toBe('seoul-south')
+  })
+
   it('CC가 셋이면 셋을 돈다', () => {
     const r = rotateRegions(['2027-01-10', '2027-01-17', '2027-01-24', '2027-01-31'], ['a', 'b', 'c'])
     expect(Object.values(r)).toEqual(['a', 'b', 'c', 'a'])

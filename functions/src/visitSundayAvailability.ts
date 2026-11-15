@@ -12,6 +12,9 @@
  *   - event:    위 칠십인 행사, 또는 담당 지역 전체·교회 전체 대상의 대회/행사·금식 행사
  *               (지역 대회 등) — 그날은 어느 단위도 와드 방문을 받지 않는다.
  *
+ * 협의 평의회(일정의 targetKind 'cc_council')는 오후 모임이라 오전 와드 방문을 막지 않는다. 대신 그날은
+ * 그 CC의 와드를 방문해야 이동이 쉬우므로 councilRegionId로 알려 CC 차례를 그 CC로 고정하게 한다.
+ *
  * 특정 스테이크/지방부만 대상인 대회/행사(스테이크 대회 등)는 칠십인을 막지 않고 그 단위만 막는다
  * (unitBlocks) — 그 단위 회장은 그날을 추천하지 않아도 되고, 다른 단위는 추천할 수 있다.
  * 그 밖의 공개 행사는 막지 않고 notes로 참고만 시킨다.
@@ -43,6 +46,8 @@ export interface SundayStatus {
   notes: SundayNote[]
   /** 그 단위만 막힌 날: unitId -> 행사 제목(비공개 행사면 '') */
   unitBlocks: Record<string, string>
+  /** 그날 오후 협의 평의회의 CC — 와드 방문도 그 CC에서 하도록. 없으면 null */
+  councilRegionId: string | null
 }
 
 export interface AvailabilitySchedule {
@@ -53,6 +58,8 @@ export interface AvailabilitySchedule {
   endDate?: unknown
   customTitle?: unknown
   wardName?: unknown
+  targetKind?: unknown
+  regionId?: unknown
 }
 
 export interface AvailabilityEvent {
@@ -116,6 +123,7 @@ export function sundayAvailability(input: {
     const busy: BusyReason[] = []
     const notes: SundayNote[] = []
     const unitBlocks: Record<string, string> = {}
+    let councilRegionId: string | null = null
 
     if (isGeneralConferenceSunday(day)) busy.push({ kind: 'generalConference', label: '', publicLabel: true })
     else if (isFirstSunday(day)) busy.push({ kind: 'fast', label: '', publicLabel: true })
@@ -124,6 +132,11 @@ export function sundayAvailability(input: {
     for (const s of input.schedules) {
       if (ignore.has(s.id) || s.status === 'cancelled') continue
       if (!covers(str(s.date), str(s.endDate), day)) continue
+      // 협의 평의회는 오후라 막지 않는다 — 그 CC로 가는 길에 그 CC 와드를 방문하면 된다.
+      if (s.targetKind === 'cc_council' && str(s.regionId)) {
+        councilRegionId = str(s.regionId)
+        continue
+      }
       busy.push({
         kind: 'schedule',
         scheduleType: str(s.type),
@@ -153,7 +166,7 @@ export function sundayAvailability(input: {
       }
     }
 
-    out[day] = { busy, notes, unitBlocks }
+    out[day] = { busy, notes, unitBlocks, councilRegionId }
   }
   return out
 }

@@ -60,6 +60,16 @@ function busyKindsOf(date: string, status: Record<string, SundayStatus>): BusyKi
   return []
 }
 
+/** 오후 협의 평의회가 있는 일요일 → 그 CC. 담당 CC가 아니면 고정하지 않는다. */
+function councilPinsOf(dates: string[], status: Record<string, SundayStatus>, regionIds: string[]) {
+  const out: Record<string, string> = {}
+  for (const d of dates) {
+    const r = status[d]?.councilRegionId
+    if (r && regionIds.includes(r)) out[d] = r
+  }
+  return out
+}
+
 function regionIdsOf(u: AppUser | undefined): string[] {
   if (!u) return []
   if (u.regionIds?.length) return u.regionIds
@@ -137,7 +147,11 @@ export function VisitRequestPanel() {
         const free = offered.filter((d) => busyKindsOf(d, st).length === 0)
         setSundays(free)
         // 바로 앞 방문의 CC로는 시작하지 않는다 — 분기 경계에서도 번갈아 가게.
-        setSundayRegions(rotation.length > 1 ? rotateRegions(free, rotation, lastVisitRegion) : {})
+        setSundayRegions(
+          rotation.length > 1
+            ? rotateRegions(free, rotation, lastVisitRegion, councilPinsOf(free, st, rotation))
+            : {},
+        )
       })
       .catch(() => !cancelled && setStatusState('error'))
     return () => {
@@ -149,6 +163,8 @@ export function VisitRequestPanel() {
   const snapshotUnits = useMemo(() => unitsSnapshotForRegions(regionIds), [regionIds])
 
   const multiRegion = regionIds.length > 1
+  // 협의 평의회 날은 그 CC로 고정 — 이동하기 쉽게 그 CC 와드를 방문한다.
+  const pins = councilPinsOf(offered, status, regionIds)
   const regionName = (id: string) => REGIONS.find((r) => r.id === id)?.name ?? id
   const regionShort = (id: string) => regionName(id).replace(/\s*CC$/, '')
 
@@ -162,7 +178,10 @@ export function VisitRequestPanel() {
     }
     setSundays([...sundays, date])
     if (multiRegion) {
-      setSundayRegions({ ...sundayRegions, [date]: regionForNewSunday(date, sundayRegions, regionIds) })
+      setSundayRegions({
+        ...sundayRegions,
+        [date]: pins[date] ?? regionForNewSunday(date, sundayRegions, regionIds),
+      })
     }
   }
   const cycleRegion = (date: string) => {
@@ -172,9 +191,9 @@ export function VisitRequestPanel() {
   const selectAllFree = () => {
     const free = offered.filter((d) => busyKinds(d).length === 0)
     setSundays(free)
-    setSundayRegions(multiRegion ? rotateRegions(free, regionIds, lastRegion) : {})
+    setSundayRegions(multiRegion ? rotateRegions(free, regionIds, lastRegion, pins) : {})
   }
-  const reRotate = () => setSundayRegions(rotateRegions(sundays, regionIds, lastRegion))
+  const reRotate = () => setSundayRegions(rotateRegions(sundays, regionIds, lastRegion, pins))
   const clearSundays = () => {
     setSundays([])
     setSundayRegions({})
@@ -320,8 +339,20 @@ export function VisitRequestPanel() {
                         {kinds.length > 0 && (
                           <span className={styles.chipFast}>{t(`visitRequest.busyKind.${kinds[0]}`)}</span>
                         )}
+                        {kinds.length === 0 && st?.councilRegionId && (
+                          <span className={styles.chipFast}>{t('visitRequest.councilShort')}</span>
+                        )}
                       </button>
-                      {region && regionColor && (
+                      {region && regionColor && pins[date] === region && (
+                        <span
+                          className={styles.regionTag}
+                          style={{ background: regionColor.bg, color: regionColor.text, borderColor: regionColor.border }}
+                          title={t('visitRequest.councilPinned', { region: regionName(region) })}
+                        >
+                          {regionShort(region)}
+                        </span>
+                      )}
+                      {region && regionColor && pins[date] !== region && (
                         <button
                           type="button"
                           className={clsx(styles.regionTag, repeated.has(date) && styles.regionTagRepeat)}
@@ -352,6 +383,7 @@ export function VisitRequestPanel() {
                   <p className={styles.sundayHint}>
                     {t('visitRequest.regionHint')}{' '}
                     {lastRegion && `${t('visitRequest.regionLast', { region: regionName(lastRegion) })} `}
+                    {Object.keys(pins).some((d) => sundays.includes(d)) && `${t('visitRequest.councilHint')} `}
                     {regionIds
                       .map((id) => `${regionShort(id)} ${sundays.filter((d) => sundayRegions[d] === id).length}`)
                       .join(' · ')}

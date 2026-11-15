@@ -6,17 +6,33 @@
 
 /**
  * 일요일들에 CC를 차례로 돌려 붙인다. lastRegion은 바로 앞 방문의 CC — 그 CC로는 시작하지 않는다.
+ * pinned는 CC가 정해진 날(오후 협의 평의회가 있는 일요일 → 그 CC). 나머지는 앞 일요일과도,
+ * 바로 다음의 고정된 일요일과도 다른 CC를 붙인다.
  */
 export function rotateRegions(
   sundays: string[],
   regionIds: string[],
   lastRegion?: string | null,
+  pinned: Record<string, string> = {},
 ): Record<string, string> {
   if (regionIds.length === 0) return {}
-  const start = Math.max(0, (regionIds.indexOf(lastRegion ?? '') + 1) % regionIds.length)
+  const sorted = [...sundays].sort()
   const out: Record<string, string> = {}
-  ;[...sundays].sort().forEach((d, i) => {
-    out[d] = regionIds[(start + i) % regionIds.length]
+  let prev = lastRegion ?? null
+  sorted.forEach((d, i) => {
+    let region = pinned[d]
+    if (!region) {
+      const next = sorted[i + 1]
+      const nextPinned = next ? pinned[next] : undefined
+      const from = (regionIds.indexOf(prev ?? '') + 1) % regionIds.length
+      const order = regionIds.map((_, k) => regionIds[(from + k) % regionIds.length])
+      region =
+        order.find((r) => r !== prev && r !== nextPinned) ??
+        order.find((r) => r !== prev) ??
+        order[0]
+    }
+    out[d] = region
+    prev = region
   })
   return out
 }

@@ -1110,6 +1110,10 @@
     "regionRepeat": "{{dates}}: same CC as the previous Sunday.",
     "regionRotate": "Reassign CCs in turn",
     "boardRegion": "{{region}} turn",
-    "regionLast": "Started with another CC because the last visit was to {{region}}."
+    "regionLast": "Started with another CC because the last visit was to {{region}}.",
+    "councilShort": "Council",
+    "councilPinned": "Afternoon coordinating council — fixed to {{region}}",
+    "councilHint": "Sundays with an afternoon coordinating council are fixed to that CC.",
+    "boardCouncil": "{{region}} coordinating council in the afternoon — visiting a ward in that CC keeps travel short."
   }
 }

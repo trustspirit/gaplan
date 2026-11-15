@@ -1110,6 +1110,10 @@
     "regionRepeat": "{{dates}}은(는) 바로 앞 일요일과 같은 CC입니다.",
     "regionRotate": "CC 번갈아 다시 배정",
     "boardRegion": "{{region}} 차례",
-    "regionLast": "지난 방문이 {{region}}여서 다른 CC부터 시작했습니다."
+    "regionLast": "지난 방문이 {{region}}여서 다른 CC부터 시작했습니다.",
+    "councilShort": "협의회",
+    "councilPinned": "오후 협의 평의회 — {{region}}로 고정",
+    "councilHint": "오후 협의 평의회가 있는 일요일은 그 CC로 고정했습니다.",
+    "boardCouncil": "오후 {{region}} 협의 평의회 — 그 CC의 와드를 방문하면 이동이 쉽습니다."
   }
 }
