@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Select } from '@/components/ui/Select/Select'
 import type { Region } from '@/types/region'
 import type { StatsFilters, StatsPeriod } from '@/utils/visitStats'
 import styles from './StatsFilterBar.module.scss'
@@ -22,29 +23,26 @@ export function StatsFilterBar({ filters, regions, showAllOption, onChange }: Pr
 
   return (
     <div className={styles.bar}>
-      <select
-        className={styles.select}
+      <Select
+        wrapperClassName={styles.field}
         value={filters.regionId}
         onChange={e => onChange({ ...filters, regionId: e.target.value })}
         aria-label={t('stats.regionFilter')}
-      >
-        {showAllOption && <option value="all">{t('stats.allRegions')}</option>}
-        {regions.map(r => (
-          <option key={r.id} value={r.id}>{r.name}</option>
-        ))}
-      </select>
+        placeholder={false}
+        options={[
+          ...(showAllOption ? [{ value: 'all', label: t('stats.allRegions') }] : []),
+          ...regions.map(r => ({ value: r.id, label: r.name })),
+        ]}
+      />
 
-      <select
-        className={styles.select}
+      <Select
+        wrapperClassName={styles.field}
         value={filters.period}
         onChange={e => onChange({ ...filters, period: e.target.value as StatsPeriod })}
         aria-label={t('stats.periodFilter')}
-      >
-        {PERIODS.map(p => (
-          <option key={p.value} value={p.value}>{t(p.key)}</option>
-        ))}
-      </select>
-
+        placeholder={false}
+        options={PERIODS.map(p => ({ value: p.value, label: t(p.key) }))}
+      />
     </div>
   )
 }

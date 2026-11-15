@@ -1,5 +1,4 @@
 @use '@/styles/variables' as *;
-@use '@/styles/mixins' as *;
 
 .bar {
   display: flex;
@@ -8,37 +7,7 @@
   align-items: center;
 }
 
-.select {
-  padding: $space-2 $space-3;
-  border: 1px solid $color-border;
-  border-radius: $border-radius-sm;
-  font-size: $font-size-sm;
-  background: $color-surface;
-  color: $color-text;
-
-  // 16px 아래면 iOS Safari가 포커스할 때 화면을 확대한다.
-  @include mobile {
-    font-size: $font-size-base;
-  }
-}
-
-.toggle {
-  display: inline-flex;
-  border: 1px solid $color-border;
-  border-radius: $border-radius-sm;
-  overflow: hidden;
-}
-
-.toggleBtn {
-  padding: $space-2 $space-3;
-  font-size: $font-size-sm;
-  background: $color-surface;
-  color: $color-text-muted;
-  border: none;
-  cursor: pointer;
-}
-
-.toggleActive {
-  background: $color-primary;
-  color: #fff;
+// 공용 Select는 width: 100%라, 래퍼를 내용 폭으로 고정해 필터가 줄 전체로 늘어나지 않게 한다.
+.field {
+  flex: 0 0 auto;
 }

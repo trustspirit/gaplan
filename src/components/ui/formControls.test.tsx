@@ -48,6 +48,15 @@ describe('form controls', () => {
     expect(screen.getByLabelText('종류')).toBeInstanceOf(HTMLSelectElement)
   })
 
+  it('Select는 placeholder={false}면 빈 값 옵션을 넣지 않는다', () => {
+    render(
+      <Select label="기간" placeholder={false} options={[{ value: '3m', label: '3개월' }]} />,
+    )
+
+    const options = screen.getByLabelText('기간').querySelectorAll('option')
+    expect([...options].map((o) => o.value)).toEqual(['3m'])
+  })
+
   // 세 컨트롤이 각자 높이·패딩을 적어 두면 모바일 조정을 세 번 해야 하고, 한 곳을
   // 빠뜨리면 같은 폼 안에서 컨트롤 높이가 어긋난다.
   it('Input·Select·Textarea가 공용 control-metrics 믹스인으로 높이·패딩을 받는다', () => {

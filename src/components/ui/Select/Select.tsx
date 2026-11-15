@@ -8,13 +8,14 @@ interface SelectOption {
   value: string
   label: string
 }
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'placeholder'> {
   label?: string
   error?: string
   hint?: string
   options: SelectOption[]
   wrapperClassName?: string
-  placeholder?: string
+  /** false면 빈 값 옵션을 넣지 않는다 (필터처럼 항상 값이 있는 경우) */
+  placeholder?: string | false
 }
 export function Select({
   label,
@@ -44,7 +45,9 @@ export function Select({
         className={clsx(styles.select, error && styles.error, className)}
         {...props}
       >
-        <option value="">{placeholder ?? t('common.selectPlaceholder')}</option>
+        {placeholder !== false && (
+          <option value="">{placeholder ?? t('common.selectPlaceholder')}</option>
+        )}
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
