@@ -396,3 +396,71 @@ describe('generalSchedules — 담당 지역 칠십인 참석', () => {
     await assertFails(updateDoc(doc(as('p1'), 'generalSchedules/g1'), { seventyAttends: true }))
   })
 })
+
+// 방문 추천 요청: 칠십인 본인·그 칠십인의 집행서기·관리자만. 확정(decisions)과 추천은 CF만 쓴다.
+describe('visitRequests', () => {
+  const request = {
+    title: '1월 방문', seventyUid: 's1', status: 'open', token: '0123456789abcdef',
+    sundays: ['2027-01-10'], units: [], decisions: {},
+  }
+
+  beforeEach(async () => {
+    await seed('users/s1', { role: 'seventy' })
+    await seed('users/s2', { role: 'seventy' })
+    await seed('users/e1', { role: 'exec_secretary', assignedSeventyUid: 's1' })
+    await seed('users/e2', { role: 'exec_secretary', assignedSeventyUid: 's2' })
+    await seed('users/a1', { role: 'admin' })
+    await seed('users/p1', { role: 'president' })
+    await seed('visitRequests/r1', { ...request, createdBy: 's1' })
+    await seed('visitRequests/r1/recommendations/seoul-stake', { unitId: 'seoul-stake', picks: [] })
+  })
+
+  it('lets the seventy, their exec secretary and an admin create one', async () => {
+    await assertSucceeds(setDoc(doc(as('s1'), 'visitRequests/n1'), { ...request, createdBy: 's1' }))
+    await assertSucceeds(setDoc(doc(as('e1'), 'visitRequests/n2'), { ...request, createdBy: 'e1' }))
+    await assertSucceeds(setDoc(doc(as('a1'), 'visitRequests/n3'), { ...request, createdBy: 'a1' }))
+  })
+
+  it("refuses creating one for someone else's seventy, or with decisions pre-filled", async () => {
+    await assertFails(setDoc(doc(as('s2'), 'visitRequests/n1'), { ...request, createdBy: 's2' }))
+    await assertFails(setDoc(doc(as('e2'), 'visitRequests/n1'), { ...request, createdBy: 'e2' }))
+    await assertFails(setDoc(doc(as('p1'), 'visitRequests/n1'), { ...request, createdBy: 'p1' }))
+    await assertFails(
+      setDoc(doc(as('s1'), 'visitRequests/n1'), {
+        ...request, createdBy: 's1', decisions: { '2027-01-10': { unitId: 'x' } },
+      }),
+    )
+  })
+
+  it('keeps the token-bearing document away from other seventies, other secretaries and presidents', async () => {
+    await assertSucceeds(getDoc(doc(as('s1'), 'visitRequests/r1')))
+    await assertSucceeds(getDoc(doc(as('e1'), 'visitRequests/r1')))
+    await assertSucceeds(getDoc(doc(as('a1'), 'visitRequests/r1')))
+    await assertFails(getDoc(doc(as('s2'), 'visitRequests/r1')))
+    await assertFails(getDoc(doc(as('e2'), 'visitRequests/r1')))
+    await assertFails(getDoc(doc(as('p1'), 'visitRequests/r1')))
+  })
+
+  it("lets a seventy list only their own requests (the list query filters by seventyUid)", async () => {
+    await assertSucceeds(getDocs(query(collection(as('s1'), 'visitRequests'), where('seventyUid', '==', 's1'))))
+    await assertFails(getDocs(collection(as('s1'), 'visitRequests')))
+  })
+
+  it('allows editing title, note, due date and status — but not decisions, token or sundays', async () => {
+    await assertSucceeds(updateDoc(doc(as('e1'), 'visitRequests/r1'), { title: '바꿈', status: 'closed' }))
+    await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { decisions: { x: 1 } }))
+    await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { token: 'ffffffffffffffff' }))
+    await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { sundays: [] }))
+    await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { status: 'done' }))
+    await assertFails(updateDoc(doc(as('s2'), 'visitRequests/r1'), { title: '남의 것' }))
+  })
+
+  it('lets managers read and delete recommendations but nobody write them', async () => {
+    await assertSucceeds(getDoc(doc(as('s1'), 'visitRequests/r1/recommendations/seoul-stake')))
+    await assertFails(getDoc(doc(as('s2'), 'visitRequests/r1/recommendations/seoul-stake')))
+    await assertFails(
+      setDoc(doc(as('s1'), 'visitRequests/r1/recommendations/busan-stake'), { unitId: 'busan-stake', picks: [] }),
+    )
+    await assertSucceeds(deleteDoc(doc(as('e1'), 'visitRequests/r1/recommendations/seoul-stake')))
+  })
+})

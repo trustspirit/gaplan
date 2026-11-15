@@ -164,6 +164,39 @@ service cloud.firestore {
       allow read, write: if isAdmin() || isExecSecretary();
     }
 
+    // 방문 추천 요청. 칠십인 본인·그 칠십인의 집행서기·관리자가 만들고 본다.
+    // 문서에는 공개 링크 토큰이 들어 있다 — 토큰이 있으면 로그인 없이 추천을 낼 수 있으니
+    // 읽기를 이 셋으로 묶는다. 회장은 로그인 없이 링크로만 쓴다(getVisitRequestPublic,
+    // submitVisitRecommendation). 확정(decisions)은 일정 문서를 만들고 지우므로
+    // decideVisitRequestDate만 쓴다 — 클라이언트 수정은 제목·메모·마감일·상태로 한정한다.
+    function canManageVisitRequest(seventyUid) {
+      return isAdmin()
+        || (isSeventy() && seventyUid == request.auth.uid)
+        || (isExecSecretary() && seventyUid == myAssignedSeventy());
+    }
+    match /visitRequests/{requestId} {
+      allow read, delete: if isAuth() && canManageVisitRequest(resource.data.seventyUid);
+      allow create: if isAuth()
+        && canManageVisitRequest(request.resource.data.seventyUid)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.token is string
+        && request.resource.data.token.size() >= 16
+        && request.resource.data.get('decisions', {}).size() == 0;
+      allow update: if isAuth()
+        && canManageVisitRequest(resource.data.seventyUid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['title', 'note', 'dueDate', 'status'])
+        && request.resource.data.status in ['open', 'closed'];
+
+      // 스테이크별 추천. 쓰기는 submitVisitRecommendation만 — 지우기는 요청을 지울 때 함께.
+      match /recommendations/{unitId} {
+        allow read, delete: if isAuth()
+          && canManageVisitRequest(get(/databases/$(database)/documents/visitRequests/$(requestId)).data.seventyUid);
+        allow create, update: if false;
+      }
+    }
+
     match /projects/{projectId} {
       // 프로젝트 메모는 admin 및 exec_secretary 전용
       allow read, write: if isAdmin() || isExecSecretary();
