@@ -1114,6 +1114,13 @@
     "councilShort": "협의회",
     "councilPinned": "오후 협의 평의회 — {{region}}로 고정",
     "councilHint": "오후 협의 평의회가 있는 일요일은 그 CC로 고정했습니다.",
-    "boardCouncil": "오후 {{region}} 협의 평의회 — 그 CC의 와드를 방문하면 이동이 쉽습니다."
+    "boardCouncil": "오후 {{region}} 협의 평의회 — 그 CC의 와드를 방문하면 이동이 쉽습니다.",
+    "reasonTitle": "빠지는 일요일",
+    "reasonDateFormat": "M월 D일",
+    "reason": {
+      "blocked": "가용 시간에서 막아 둔 날",
+      "fast": "금식 주일",
+      "generalConference": "연차 대회 시청 주일"
+    }
   }
 }

@@ -33,6 +33,7 @@ import {
   type Quarter,
 } from '@/utils/visitRequest'
 import { GuidanceField } from './GuidanceField'
+import { unavailableReasons, unitBlockText } from './sundayReasons'
 import {
   Card,
   CardHeader,
@@ -161,6 +162,16 @@ export function VisitRequestPanel() {
 
   const busyKinds = (date: string) => busyKindsOf(date, status)
   const snapshotUnits = useMemo(() => unitsSnapshotForRegions(regionIds), [regionIds])
+
+  const unitName = (id: string) => snapshotUnits.find((u) => u.id === id)?.ko ?? id
+  // 고를 수 없는 일요일과 일부 스테이크만 빠지는 일요일 — 칩 아래에 이유를 적어 둔다(툴팁은 모바일에서 안 보인다).
+  const skipped = offered.flatMap((date) => {
+    const st = status[date]
+    const reasons = unavailableReasons(date, st, t)
+    if (reasons.length > 0) return [{ date, text: reasons.join(' / '), partial: false }]
+    const partial = unitBlockText(st, unitName)
+    return partial ? [{ date, text: t('visitRequest.boardUnitBlocks', { units: partial }), partial: true }] : []
+  })
 
   const multiRegion = regionIds.length > 1
   // 협의 평의회 날은 그 CC로 고정 — 이동하기 쉽게 그 CC 와드를 방문한다.
@@ -304,19 +315,10 @@ export function VisitRequestPanel() {
                   const on = sundays.includes(date)
                   const kinds = busyKinds(date)
                   const st = status[date]
+                  const partial = unitBlockText(st, unitName)
                   const reasons = [
-                    ...(st?.busy ?? []).map((b) =>
-                      [t(`visitRequest.busyKind.${b.kind}`), b.label].filter(Boolean).join(' '),
-                    ),
-                    ...(st && Object.keys(st.unitBlocks).length > 0
-                      ? [
-                          t('visitRequest.boardUnitBlocks', {
-                            units: Object.keys(st.unitBlocks)
-                              .map((id) => snapshotUnits.find((u) => u.id === id)?.ko ?? id)
-                              .join(', '),
-                          }),
-                        ]
-                      : []),
+                    ...unavailableReasons(date, st, t),
+                    ...(partial ? [t('visitRequest.boardUnitBlocks', { units: partial })] : []),
                   ]
                   const region = on && multiRegion ? sundayRegions[date] : undefined
                   const regionColor = region ? getRegionColor(region) : null
@@ -371,6 +373,19 @@ export function VisitRequestPanel() {
                   </div>
                 ))}
               </div>
+              {skipped.length > 0 && (
+                <div className={styles.reasons}>
+                  <p className={styles.reasonsTitle}>{t('visitRequest.reasonTitle')}</p>
+                  <ul className={styles.reasonList}>
+                    {skipped.map((r) => (
+                      <li key={r.date} className={clsx(r.partial && styles.reasonPartial)}>
+                        <span className={styles.reasonDate}>{dayjs(r.date).format(t('visitRequest.reasonDateFormat'))}</span>
+                        <span>{r.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <p className={styles.sundayHint}>
                 {statusState === 'loading'
                   ? t('visitRequest.sundayLoading')

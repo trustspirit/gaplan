@@ -1114,6 +1114,13 @@
     "councilShort": "Council",
     "councilPinned": "Afternoon coordinating council — fixed to {{region}}",
     "councilHint": "Sundays with an afternoon coordinating council are fixed to that CC.",
-    "boardCouncil": "{{region}} coordinating council in the afternoon — visiting a ward in that CC keeps travel short."
+    "boardCouncil": "{{region}} coordinating council in the afternoon — visiting a ward in that CC keeps travel short.",
+    "reasonTitle": "Sundays left out",
+    "reasonDateFormat": "MMM D",
+    "reason": {
+      "blocked": "Blocked in availability",
+      "fast": "Fast Sunday",
+      "generalConference": "General Conference Sunday"
+    }
   }
 }

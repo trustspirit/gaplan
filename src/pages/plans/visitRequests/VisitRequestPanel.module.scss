@@ -172,6 +172,48 @@
   }
 }
 
+// 빠지는 일요일과 그 이유 — 칩의 짧은 표시("일정")만으로는 왜 빠졌는지 모른다.
+.reasons {
+  padding: $space-2 $space-3;
+  background: $color-surface-sunken;
+  border-radius: $border-radius-md;
+}
+
+.reasonsTitle {
+  margin: 0 0 $space-1;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $neutral-600;
+}
+
+.reasonList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: $font-size-xs;
+  color: $neutral-700;
+  line-height: $line-height-normal;
+
+  li {
+    display: grid;
+    grid-template-columns: 4.5em minmax(0, 1fr);
+    gap: $space-2;
+  }
+}
+
+.reasonDate {
+  color: $neutral-500;
+  font-variant-numeric: tabular-nums;
+}
+
+// 고를 수는 있는 날(일부 스테이크만 빠짐)
+.reasonPartial {
+  color: $neutral-500;
+}
+
 .sundayHint {
   margin: 0;
   font-size: $font-size-xs;

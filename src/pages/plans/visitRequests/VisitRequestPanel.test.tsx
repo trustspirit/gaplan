@@ -80,6 +80,25 @@ describe('VisitRequestPanel', () => {
     expect(screen.queryByText(/visitRequest.regionRepeat/)).not.toBeInTheDocument()
   })
 
+  it('lists why each left-out Sunday cannot be picked', async () => {
+    vi.mocked(fetchSundayStatus).mockResolvedValueOnce({
+      status: {
+        '2027-01-10': {
+          busy: [{ kind: 'schedule', scheduleType: 'ward_visit', label: '상당 와드', publicLabel: false }],
+          notes: [], unitBlocks: {}, councilRegionId: null,
+        },
+        '2027-02-14': { busy: [], notes: [], unitBlocks: { 'seoul-stake': '서울 스테이크 대회' }, councilRegionId: null },
+      },
+      lastVisitRegion: null,
+    })
+    renderPanel()
+    const items = () => [...screen.getByRole('list').querySelectorAll('li')].map((li) => li.textContent ?? '')
+    await waitFor(() => expect(items().some((x) => x.includes('상당 와드'))).toBe(true))
+    expect(items().some((x) => x.includes('schedule.type.ward_visit') && x.includes(' · 상당 와드'))).toBe(true)
+    expect(items().filter((x) => x.includes('visitRequest.reason.fast'))).toHaveLength(3)
+    expect(items().some((x) => x.includes('서울 스테이크(서울 스테이크 대회)'))).toBe(true)
+  })
+
   it('warns when two Sundays in a row get the same CC, and can re-alternate', async () => {
     const user = userEvent.setup()
     renderPanel()
