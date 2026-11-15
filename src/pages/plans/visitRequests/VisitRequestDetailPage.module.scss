@@ -162,6 +162,21 @@
   color: $schedule-ward-visit-text;
 }
 
+.busyLine,
+.unitBlockLine {
+  margin: $space-2 0 0;
+  font-size: $font-size-xs;
+  line-height: $line-height-normal;
+}
+
+.busyLine {
+  color: $color-danger;
+}
+
+.unitBlockLine {
+  color: #8a4b0f;
+}
+
 .noCandidates {
   margin: $space-2 0 0;
   font-size: $font-size-sm;
@@ -314,4 +329,17 @@
 
 .unitPending {
   color: $neutral-500;
+}
+
+.textForm {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.guidanceText {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: $font-weight-semibold;
+  white-space: pre-wrap;
 }

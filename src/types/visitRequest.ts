@@ -33,6 +33,8 @@ export interface VisitRequest {
   id: string
   title: string
   note?: string
+  /** 회장들에게 강조할 말(예: 오래 방문받지 못한 와드를 먼저). 공개 화면 위쪽에 보인다 */
+  guidance?: string
   seventyUid: string
   seventyName: string
   sundays: string[]          // YYYY-MM-DD, 오름차순
@@ -65,6 +67,7 @@ export interface VisitRecommendation {
 export interface PublicVisitRequest {
   title: string
   note: string
+  guidance: string
   seventyName: string
   dueDate: string | null
   status: VisitRequestStatus
@@ -75,6 +78,34 @@ export interface PublicVisitRequest {
   recommendations: (Omit<VisitRecommendation, 'note'> & { hasNote: boolean })[]
   /** wardId -> 방문 기록. 회장이 오래 방문받지 못한 와드를 보고 추천하도록 */
   wardStats: Record<string, WardVisitStat>
+  /** date -> 칠십인 일정·대회로 막혔는가 */
+  sundayStatus: Record<string, PublicSundayStatus>
+  /** 요청 기간의 공개 행사 — 달력에 깐다 */
+  calendarEvents?: PublicCalendarEvent[]
+}
+
+/** functions/src/visitSundayAvailability.ts의 CalendarEvent와 같은 모양 */
+export interface PublicCalendarEvent {
+  title: string
+  date: string
+  endDate: string | null
+  category: string
+  unitIds: string[] | null
+  blocking: boolean
+  seventyAttends: boolean
+}
+
+export type SundayBusyKind = 'schedule' | 'event' | 'blocked' | 'fast' | 'generalConference'
+
+/**
+ * 공개 링크가 받는 일요일 상황. 칠십인 일정의 내용은 오지 않고 막힌 이유의 종류와
+ * 공개 행사 제목만 온다. 로그인 화면은 functions/src/visitSundayAvailability.ts의
+ * SundayStatus(일정 제목 포함)를 그대로 받는다.
+ */
+export interface PublicSundayStatus {
+  busy: { kind: SundayBusyKind; label: string }[]
+  notes: { title: string; unitIds: string[] | null }[]
+  unitBlocks: Record<string, string>
 }
 
 /** functions/src/visitRequestLogic.ts의 wardVisitStats와 같은 모양 */

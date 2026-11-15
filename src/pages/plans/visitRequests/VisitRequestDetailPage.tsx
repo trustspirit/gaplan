@@ -11,13 +11,15 @@ import {
   alreadyVisitingWard,
   decideVisitRequestDate,
   deleteVisitRequest,
+  fetchSundayStatus,
   fetchWardStats,
   setVisitRequestStatus,
+  updateVisitRequestText,
 } from '@/services/visitRequestService'
 import { ROUTES } from '@/router/routes'
-import { isFastSunday } from '@/utils/fastSunday'
 import {
   candidatesForSunday,
+  GUIDANCE_MAX,
   rankCandidates,
   recommendUrl,
   requestProgress,
@@ -32,11 +34,19 @@ import {
   CardHeader,
   ConfirmSheet,
   ErrorState,
+  Input,
   LoadingState,
   Select,
   StatCard,
+  Textarea,
 } from '@/components/ui'
+import { GuidanceField } from './GuidanceField'
 import type { VisitRequest, WardVisitStat } from '@/types'
+import {
+  isFirstSunday,
+  isGeneralConferenceSunday,
+  type SundayStatus,
+} from '../../../../functions/src/visitSundayAvailability'
 import styles from './VisitRequestDetailPage.module.scss'
 
 interface PendingDecision {
@@ -68,14 +78,19 @@ export function VisitRequestDetailPage() {
   useTopBar({ subtext: request?.title })
 
   const [wardStats, setWardStats] = useState<Record<string, WardVisitStat>>({})
+  const [sundayStatus, setSundayStatus] = useState<Record<string, SundayStatus>>({})
   const [pending, setPending] = useState<PendingDecision | null>(null)
   const [deciding, setDeciding] = useState(false)
   const [statusSaving, setStatusSaving] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [textDraft, setTextDraft] = useState<{ title: string; note: string; guidance: string } | null>(null)
+  const [textSaving, setTextSaving] = useState(false)
 
   const token = request?.token
   const reqId = request?.id
+  const seventyUid = request?.seventyUid
+  const sundaysKey = request?.sundays.join(',') ?? ''
   const decisionKey = request ? Object.keys(request.decisions ?? {}).sort().join(',') : ''
   useEffect(() => {
     if (!token || !reqId) return
@@ -84,11 +99,16 @@ export function VisitRequestDetailPage() {
     fetchWardStats(reqId, token)
       .then((s) => !cancelled && setWardStats(s))
       .catch(() => {})
+    if (seventyUid && sundaysKey) {
+      fetchSundayStatus(seventyUid, sundaysKey.split(','), reqId)
+        .then((s) => !cancelled && setSundayStatus(s))
+        .catch(() => {})
+    }
     return () => {
       cancelled = true
     }
     // 확정이 바뀌면 "다음 방문"이 달라지므로 다시 받는다.
-  }, [reqId, token, decisionKey])
+  }, [reqId, token, decisionKey, seventyUid, sundaysKey])
 
   if (loading) {
     return (
@@ -116,8 +136,27 @@ export function VisitRequestDetailPage() {
     due: request.dueDate
       ? t('visitRequest.shareDue', { date: dayjs(request.dueDate).format(t('recommend.dateFormat')) })
       : '',
+    guidance: request.guidance ? t('visitRequest.shareGuidance', { text: request.guidance }) : '',
     url,
   })
+
+  const handleSaveText = async () => {
+    if (!textDraft || !textDraft.title.trim()) return
+    setTextSaving(true)
+    try {
+      await updateVisitRequestText(request.id, {
+        title: textDraft.title.trim(),
+        note: textDraft.note.trim(),
+        guidance: textDraft.guidance.trim().slice(0, GUIDANCE_MAX),
+      })
+      toast.success(t('visitRequest.textSaved'))
+      setTextDraft(null)
+    } catch {
+      toast.error(t('visitRequest.textSaveFailed'))
+    } finally {
+      setTextSaving(false)
+    }
+  }
 
   const handleCopy = async (text: string) => {
     if (await copyText(text)) toast.success(t('visitRequest.copied'))
@@ -227,6 +266,63 @@ export function VisitRequestDetailPage() {
         </CardBody>
       </Card>
 
+      {/* 회장들이 보는 문구 — 강조 사항은 요청 중에도 바꿀 수 있다 */}
+      <Card>
+        <CardHeader
+          title={t('visitRequest.textTitle')}
+          action={
+            !textDraft && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  setTextDraft({ title: request.title, note: request.note ?? '', guidance: request.guidance ?? '' })
+                }
+              >
+                {t('visitRequest.editText')}
+              </Button>
+            )
+          }
+        />
+        <CardBody>
+          {textDraft ? (
+            <div className={styles.textForm}>
+              <Input
+                label={t('visitRequest.title')}
+                value={textDraft.title}
+                maxLength={80}
+                onChange={(e) => setTextDraft({ ...textDraft, title: e.target.value })}
+              />
+              <GuidanceField
+                value={textDraft.guidance}
+                onChange={(guidance) => setTextDraft({ ...textDraft, guidance })}
+              />
+              <Textarea
+                label={t('visitRequest.note')}
+                value={textDraft.note}
+                rows={3}
+                onChange={(e) => setTextDraft({ ...textDraft, note: e.target.value })}
+              />
+              <div className={styles.shareActions}>
+                <Button size="sm" loading={textSaving} disabled={!textDraft.title.trim()} onClick={handleSaveText}>
+                  {t('visitRequest.saveText')}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setTextDraft(null)}>
+                  {t('common.cancel')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className={clsx(styles.guidanceText, !request.guidance && styles.hint)}>
+                {request.guidance || t('visitRequest.guidanceNone')}
+              </p>
+              {request.note && <p className={styles.hint}>{request.note}</p>}
+            </>
+          )}
+        </CardBody>
+      </Card>
+
       <div className={styles.stats}>
         <StatCard
           label={t('visitRequest.statResponded')}
@@ -251,7 +347,14 @@ export function VisitRequestDetailPage() {
                 request={request}
                 date={date}
                 label={dateLabel(date)}
-                fast={isFastSunday(dayjs(date))}
+                special={
+                  isGeneralConferenceSunday(date)
+                    ? t('recommend.generalConferenceSunday')
+                    : isFirstSunday(date)
+                      ? t('recommend.fastSunday')
+                      : null
+                }
+                status={sundayStatus[date]}
                 candidates={rankCandidates(candidatesForSunday(recommendations, date), request.decisions ?? {})}
                 unitName={(id) => unitById.get(id)?.ko ?? id}
                 wardStats={wardStats}
@@ -328,17 +431,19 @@ function SundayRow({
   request,
   date,
   label,
-  fast,
+  special,
   candidates,
   unitName,
   wardStats,
   recencyText,
   onDecide,
+  status,
 }: {
+  status: SundayStatus | undefined
   request: VisitRequest
   date: string
   label: string
-  fast: boolean
+  special: string | null
   candidates: ReturnType<typeof rankCandidates>
   unitName: (id: string) => string
   wardStats: Record<string, WardVisitStat>
@@ -360,7 +465,7 @@ function SundayRow({
     <li className={clsx(styles.sunday, decision && styles.sundayDecided)}>
       <div className={styles.sundayHead}>
         <span className={styles.sundayDate}>{label}</span>
-        {fast && <span className={styles.fast}>{t('recommend.fastSunday')}</span>}
+        {special && <span className={styles.fast}>{special}</span>}
         {decision && (
           <>
             <span className={styles.decidedText}>
@@ -372,6 +477,25 @@ function SundayRow({
           </>
         )}
       </div>
+
+      {status && status.busy.length > 0 && (
+        <p className={styles.busyLine}>
+          {t('visitRequest.boardBusy', {
+            reasons: status.busy
+              .map((b) => [t(`visitRequest.busyKind.${b.kind}`), b.label].filter(Boolean).join(' '))
+              .join(', '),
+          })}
+        </p>
+      )}
+      {status && Object.keys(status.unitBlocks).length > 0 && (
+        <p className={styles.unitBlockLine}>
+          {t('visitRequest.boardUnitBlocks', {
+            units: Object.entries(status.unitBlocks)
+              .map(([id, title]) => (title ? `${unitName(id)}(${title})` : unitName(id)))
+              .join(', '),
+          })}
+        </p>
+      )}
 
       {candidates.length === 0 && !decision && (
         <p className={styles.noCandidates}>{t('visitRequest.noCandidates')}</p>

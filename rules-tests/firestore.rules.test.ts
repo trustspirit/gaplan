@@ -433,6 +433,9 @@ describe('visitRequests', () => {
     await assertFails(
       setDoc(doc(as('s1'), 'visitRequests/n2'), { ...request, createdBy: 's1', respondedUnitIds: ['u1'] }),
     )
+    await assertFails(
+      setDoc(doc(as('s1'), 'visitRequests/n3'), { ...request, createdBy: 's1', guidance: 'x'.repeat(501) }),
+    )
   })
 
   it('keeps the token-bearing document away from other seventies, other secretaries and presidents', async () => {
@@ -449,8 +452,10 @@ describe('visitRequests', () => {
     await assertFails(getDocs(collection(as('s1'), 'visitRequests')))
   })
 
-  it('allows editing title, note, due date and status — but not decisions, token or sundays', async () => {
+  it('allows editing title, note, guidance, due date and status — but not decisions, token or sundays', async () => {
     await assertSucceeds(updateDoc(doc(as('e1'), 'visitRequests/r1'), { title: '바꿈', status: 'closed' }))
+    await assertSucceeds(updateDoc(doc(as('s1'), 'visitRequests/r1'), { guidance: '성역이 필요한 와드를 추천해 주세요.' }))
+    await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { guidance: 'x'.repeat(501) }))
     await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { decisions: { x: 1 } }))
     await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { token: 'ffffffffffffffff' }))
     await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { sundays: [] }))

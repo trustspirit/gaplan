@@ -1,0 +1,37 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.preset {
+  min-height: 36px;
+  padding: $space-1 $space-3;
+  border: 1px solid $color-border-strong;
+  border-radius: $border-radius-full;
+  background: $color-surface;
+  color: $neutral-700;
+  font-size: $font-size-xs;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.presetOn {
+  border-color: $color-primary;
+  background: $color-primary-weak;
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}

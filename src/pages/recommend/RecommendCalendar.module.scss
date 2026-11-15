@@ -1,0 +1,274 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.month {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  padding: $space-3;
+}
+
+.monthTitle {
+  margin: 0 0 $space-2;
+  font-size: 0.9375rem;
+  font-weight: $font-weight-bold;
+  color: $color-sidebar;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.dow {
+  padding: $space-1 0;
+  text-align: center;
+  font-size: $font-size-xs;
+  color: $neutral-500;
+}
+
+.dowSun {
+  color: $color-danger;
+}
+
+.blank {
+  min-height: 48px;
+}
+
+.day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 3px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: $border-radius-md;
+  text-align: left;
+  color: $color-text;
+  cursor: pointer;
+  font: inherit;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  @media (min-width: 960px) {
+    min-height: 72px;
+  }
+}
+
+.num {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
+}
+
+.sunday .num {
+  color: $color-danger;
+}
+
+.selected {
+  border-color: $color-sidebar;
+}
+
+.special {
+  font-size: 0.625rem;
+  color: $neutral-500;
+  line-height: 1.2;
+}
+
+.okMark {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  color: $color-primary;
+}
+
+.cellText {
+  font-size: 0.625rem;
+  font-weight: $font-weight-semibold;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 요청 일요일의 상태 — 범례의 견본도 같은 클래스를 쓴다.
+.cell_open {
+  background: $color-primary-weak;
+  border-color: $color-primary-border;
+}
+
+.cell_picked {
+  background: $color-primary;
+  border-color: $color-primary;
+  color: $color-surface;
+
+  .num,
+  .okMark {
+    color: $color-surface;
+  }
+}
+
+.cell_busy {
+  background: repeating-linear-gradient(135deg, $neutral-100 0 4px, $color-surface 4px 8px);
+  border-color: $color-border;
+  color: $neutral-500;
+}
+
+.cell_unitBlocked {
+  background: $color-warning-weak;
+  border-color: #f8c471;
+}
+
+.cell_decided {
+  background: $color-sidebar;
+  border-color: $color-sidebar;
+  color: $color-surface;
+
+  .num {
+    color: $color-surface;
+  }
+}
+
+// 행사: 데스크톱에서는 제목 줄, 좁은 화면에서는 점으로 줄인다.
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.event {
+  display: block;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: $schedule-general-attendance-bg;
+  color: $schedule-general-attendance-text;
+  font-size: 0.625rem;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @media (max-width: 959px) {
+    width: 6px;
+    height: 6px;
+    padding: 0;
+    border-radius: $border-radius-full;
+    background: $schedule-general-attendance-text;
+    font-size: 0;
+  }
+}
+
+.eventBlocking {
+  background: $color-highlight-danger;
+  color: $color-danger;
+
+  @media (max-width: 959px) {
+    background: $color-danger;
+  }
+}
+
+.more {
+  font-size: 0.625rem;
+  color: $neutral-500;
+}
+
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2 $space-3;
+  font-size: $font-size-xs;
+  color: $neutral-600;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
+  }
+}
+
+.swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+}
+
+.swatchEvent {
+  background: $schedule-general-attendance-bg;
+  border-color: $schedule-general-attendance-border;
+}
+
+.detail {
+  margin-top: $space-3;
+  padding-top: $space-3;
+  border-top: 1px solid $color-border;
+}
+
+.detailDate {
+  font-size: 0.9375rem;
+  font-weight: $font-weight-bold;
+  color: $color-sidebar;
+}
+
+.detailStatus {
+  margin: $space-1 0 0;
+  font-size: $font-size-sm;
+  color: $neutral-700;
+}
+
+.detailEvents {
+  list-style: none;
+  margin: $space-2 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  font-size: $font-size-sm;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+  }
+}
+
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: $border-radius-full;
+  background: $schedule-general-attendance-text;
+}
+
+.dotBlocking {
+  background: $color-danger;
+}
+
+.detailRange {
+  font-size: $font-size-xs;
+  color: $neutral-500;
+  font-variant-numeric: tabular-nums;
+}
+
+
+.pick {
+  margin-top: $space-3;
+}

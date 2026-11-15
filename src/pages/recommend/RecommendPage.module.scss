@@ -132,7 +132,112 @@ $page-bg: $neutral-50;
   line-height: $line-height-normal;
 }
 
-// ── 단위 고르기 ──
+// ── 들어오는 첫 화면: 단위 고르기 ──
+.gateTitle {
+  margin: 0;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-sidebar;
+  line-height: $line-height-tight;
+}
+
+.unitList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+
+  li + li {
+    border-top: 1px solid $color-border;
+  }
+}
+
+.unitRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: $space-3;
+  width: 100%;
+  min-height: 64px;
+  padding: $space-3 $space-4;
+  background: none;
+  border: none;
+  text-align: left;
+  color: $color-text;
+  cursor: pointer;
+
+  .unitName {
+    grid-column: 1;
+    font-size: $font-size-base;
+  }
+
+  .unitStatus {
+    grid-column: 1;
+  }
+
+  &:active {
+    background: $color-primary-weak;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.unitChevron {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: $neutral-400;
+}
+
+// ── 고른 뒤: 위에 붙는 단위 표시줄 ──
+.unitBar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: $color-surface;
+  border-bottom: 1px solid $color-border;
+}
+
+.unitBarInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: $space-1 $space-4;
+}
+
+.unitBarName {
+  font-size: 0.9375rem;
+  font-weight: $font-weight-bold;
+  color: $color-sidebar;
+}
+
+.unitBarChange,
+.linkBtn {
+  min-height: 44px;
+  padding: 0 $space-1;
+  background: none;
+  border: none;
+  font-size: $font-size-sm;
+  color: $color-primary;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.linkBtn {
+  display: block;
+  margin: $space-2 auto 0;
+}
+
+// ── (예전) 단위 고르기 ──
 .unitGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -319,27 +424,75 @@ $page-bg: $neutral-50;
   justify-content: center;
 }
 
-.wardSelect {
+.wardTrigger {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
   width: 100%;
-  min-height: 44px;
-  padding: $space-2 $space-3;
+  min-height: 40px;
+  padding: 0 $space-3;
   border: 1px solid $color-border-strong;
   border-radius: $border-radius-md;
   background: $color-surface;
-  // 16px 아래면 iOS Safari가 포커스할 때 화면을 확대한다.
-  font-size: $font-size-base;
-  color: $color-text;
+  color: $neutral-600;
+  font: inherit;
+  font-size: $font-size-sm;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &[aria-expanded='true'] {
+    border-color: $color-primary;
+  }
 
   &:disabled {
     background: $color-surface-sunken;
     color: $neutral-500;
+    cursor: default;
   }
+}
+
+.wardTriggerOn {
+  color: $color-text;
+  font-weight: $font-weight-semibold;
+}
+
+.wardTriggerText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wardTriggerIcon {
+  flex: none;
+  color: $neutral-500;
+}
+
+.wardPicker {
+  margin-top: $space-2;
 }
 
 .decision {
   font-size: 0.9375rem;
   font-weight: $font-weight-semibold;
   color: $schedule-ward-visit-text;
+}
+
+.unavailable {
+  font-size: $font-size-sm;
+  color: $neutral-600;
+  line-height: $line-height-normal;
+}
+
+.eventNote {
+  margin: 0;
+  font-size: $font-size-xs;
+  color: $neutral-600;
 }
 
 .others {
@@ -514,4 +667,156 @@ $page-bg: $neutral-50;
 
 .visuallyHidden {
   @include visually-hidden;
+}
+
+// ── 강조 사항 · 확인 안내 ──
+.guidance {
+  display: flex;
+  gap: $space-2;
+  margin: 0 0 $space-5;
+  padding: $space-3 $space-4;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+}
+
+.guidanceIcon {
+  flex: none;
+  margin-top: 2px;
+  color: $neutral-500;
+}
+
+.guidanceText {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: $line-height-normal;
+  white-space: pre-wrap;
+}
+
+.verified {
+  display: flex;
+  gap: $space-2;
+  margin-bottom: $space-3;
+  padding: $space-3;
+  background: $color-primary-weak;
+  border: 1px solid $color-primary-border;
+  border-radius: $border-radius-lg;
+}
+
+.verifiedIcon {
+  flex: none;
+  margin-top: 1px;
+  color: $color-primary;
+}
+
+.verifiedTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $neutral-800;
+}
+
+.verifiedBody {
+  margin: 2px 0 0;
+  font-size: $font-size-xs;
+  line-height: $line-height-normal;
+  color: $neutral-700;
+}
+
+// ── 보기 전환(좁은 화면) · 두 단 배치(넓은 화면) ──
+.viewTabs {
+  display: flex;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 $space-4;
+
+  @media (min-width: 960px) {
+    display: none;
+  }
+}
+
+.viewTab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-1;
+  min-height: 44px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: $neutral-600;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.viewTabOn {
+  border-bottom-color: $color-sidebar;
+  color: $color-sidebar;
+}
+
+.calendarCol .stepTitle {
+  margin-bottom: $space-3;
+}
+
+@media (max-width: 959px) {
+  .layout[data-view='list'] .calendarCol,
+  .layout[data-view='calendar'] .listCol {
+    display: none;
+  }
+
+  .calendarCol {
+    margin-bottom: $space-8;
+  }
+}
+
+@media (min-width: 960px) {
+  .contentWide {
+    max-width: 1160px;
+  }
+
+  .unitBarInner {
+    max-width: 1160px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 560px);
+    gap: $space-8;
+    align-items: start;
+  }
+
+  .calendarCol {
+    position: sticky;
+    top: 64px;
+    max-height: calc(100dvh - 80px);
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 960px) {
+  .headerWide {
+    .kicker,
+    .title,
+    .meta {
+      // 본문(.contentWide 1160px − 좌우 여백)과 왼쪽 끝을 맞춘다
+      max-width: calc(1160px - 2 * #{$space-4});
+    }
+  }
+}
+
+.monthHead {
+  margin: $space-3 0 0;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $color-sidebar;
+  list-style: none;
+
+  &:first-child {
+    margin-top: 0;
+  }
 }

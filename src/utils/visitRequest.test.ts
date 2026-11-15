@@ -2,6 +2,9 @@ import dayjs from 'dayjs'
 import { describe, it, expect } from 'vitest'
 import {
   upcomingSundays,
+  quarterSundays,
+  upcomingQuarters,
+  quarterKey,
   unitsSnapshotForRegions,
   candidatesForSunday,
   rankCandidates,
@@ -101,5 +104,20 @@ describe('wardRecency', () => {
     expect(wardRecency({ lastVisit: '2026-03-01' }, today)).toMatchObject({ tone: 'stale', monthsSince: 8 })
     expect(wardRecency({ lastVisit: null }, today).tone).toBe('never')
     expect(wardRecency(undefined, today).tone).toBe('never')
+  })
+})
+
+describe('quarters', () => {
+  it('lists the Sundays of a quarter after today', () => {
+    const all = quarterSundays({ year: 2027, q: 1 }, dayjs('2026-11-15'))
+    expect(all[0]).toBe('2027-01-03')
+    expect(all[all.length - 1]).toBe('2027-03-28')
+    expect(all).toHaveLength(13)
+    expect(quarterSundays({ year: 2026, q: 4 }, dayjs('2026-12-20'))).toEqual(['2026-12-27'])
+  })
+
+  it('starts from this quarter while it still has Sundays left', () => {
+    expect(upcomingQuarters(2, dayjs('2026-11-15')).map(quarterKey)).toEqual(['2026-Q4', '2027-Q1'])
+    expect(upcomingQuarters(1, dayjs('2026-12-27')).map(quarterKey)).toEqual(['2027-Q1'])
   })
 })

@@ -168,7 +168,7 @@ service cloud.firestore {
     // 문서에는 공개 링크 토큰이 들어 있다 — 토큰이 있으면 로그인 없이 추천을 낼 수 있으니
     // 읽기를 이 셋으로 묶는다. 회장은 로그인 없이 링크로만 쓴다(getVisitRequestPublic,
     // submitVisitRecommendation). 확정(decisions)은 일정 문서를 만들고 지우므로
-    // decideVisitRequestDate만 쓴다 — 클라이언트 수정은 제목·메모·마감일·상태로 한정한다.
+    // decideVisitRequestDate만 쓴다 — 클라이언트 수정은 제목·메모·강조 사항·마감일·상태로 한정한다.
     function canManageVisitRequest(seventyUid) {
       return isAdmin()
         || (isSeventy() && seventyUid == request.auth.uid)
@@ -183,12 +183,16 @@ service cloud.firestore {
         && request.resource.data.token is string
         && request.resource.data.token.size() >= 16
         && request.resource.data.get('decisions', {}).size() == 0
-        && !('respondedUnitIds' in request.resource.data);
+        && !('respondedUnitIds' in request.resource.data)
+        && request.resource.data.get('guidance', '') is string
+        && request.resource.data.get('guidance', '').size() <= 500;
       allow update: if isAuth()
         && canManageVisitRequest(resource.data.seventyUid)
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['title', 'note', 'dueDate', 'status'])
-        && request.resource.data.status in ['open', 'closed'];
+             .hasOnly(['title', 'note', 'guidance', 'dueDate', 'status'])
+        && request.resource.data.status in ['open', 'closed']
+        && request.resource.data.get('guidance', '') is string
+        && request.resource.data.get('guidance', '').size() <= 500;
 
       // 스테이크별 추천. 쓰기는 submitVisitRecommendation만 — 지우기는 요청을 지울 때 함께.
       match /recommendations/{unitId} {

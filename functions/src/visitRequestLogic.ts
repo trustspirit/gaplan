@@ -31,6 +31,7 @@ export interface RequestDecision {
 export interface VisitRequestDoc {
   title?: string
   note?: string
+  guidance?: string
   seventyUid?: string
   seventyName?: string
   sundays?: string[]
@@ -74,6 +75,8 @@ export type RecommendationResult =
 export function validateRecommendation(
   request: VisitRequestDoc,
   input: { unitId?: unknown; submitterName?: unknown; note?: unknown; picks?: unknown },
+  /** 칠십인 일정·대회 등으로 이 단위가 그날 추천할 수 없는가(visitSundayAvailability) */
+  unavailable: (date: string, unitId: string) => boolean = () => false,
 ): RecommendationResult {
   if (request.status !== 'open') {
     return { ok: false, code: 'failed-precondition', message: 'This request is closed' }
@@ -118,6 +121,10 @@ export function validateRecommendation(
     if (decided && decided.unitId !== unit.id) {
       return { ok: false, code: 'failed-precondition', message: `${date} is already decided` }
     }
+    // 이미 이 단위로 확정된 날은 그대로 둔다 — 확정 뒤 생긴 일정은 칠십인이 정리할 몫이다.
+    if (!decided && unavailable(date, unit.id)) {
+      return { ok: false, code: 'failed-precondition', message: `${date} is not available` }
+    }
     seen.add(date)
     picks.push({ date, wardId: ward.id, wardName: ward.ko })
   }
@@ -147,6 +154,7 @@ export function publicVisitRequestView(
   return {
     title: request.title ?? '',
     note: request.note ?? '',
+    guidance: request.guidance ?? '',
     seventyName: request.seventyName ?? '',
     dueDate: request.dueDate ?? null,
     status: request.status === 'open' ? 'open' : 'closed',

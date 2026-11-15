@@ -34,4 +34,5 @@ export { kakaoCalendarSync } from './kakaoCalendarSync'
 export { kakaoTokenRefresh } from './kakaoTokenRefresh'
 export {
   getVisitRequestPublic, submitVisitRecommendation, decideVisitRequestDate, visitRequestScheduleSync,
+  getVisitSundayStatus,
 } from './visitRequests'

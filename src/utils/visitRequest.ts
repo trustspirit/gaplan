@@ -135,3 +135,59 @@ export function wardRecency(
   const tone: RecencyTone = daysSince <= 60 ? 'fresh' : daysSince <= 120 ? 'aging' : 'stale'
   return { tone, daysSince, monthsSince }
 }
+
+/** 회장들에게 강조할 말의 길이 제한 — firestore.rules의 guidance 제한과 같다 */
+export const GUIDANCE_MAX = 500
+
+/** 강조 사항으로 자주 쓰는 문장(i18n 키). 첫 문장이 새 요청의 기본값이다. */
+export const GUIDANCE_PRESET_KEYS = [
+  'visitRequest.guidancePreset.longUnvisited',
+  'visitRequest.guidancePreset.ministry',
+  'visitRequest.guidancePreset.newBishop',
+] as const
+
+/** 방문 계획은 보통 분기 단위다. 분기는 1~4 */
+export interface Quarter {
+  year: number
+  q: number
+}
+
+export function quarterOf(day: dayjs.Dayjs): Quarter {
+  return { year: day.year(), q: Math.floor(day.month() / 3) + 1 }
+}
+
+export function quarterKey({ year, q }: Quarter): string {
+  return `${year}-Q${q}`
+}
+
+/**
+ * 고를 수 있는 분기들: 이번 분기부터 count개. 이번 분기에 남은 일요일이 없으면(마지막 주) 다음 분기부터.
+ */
+export function upcomingQuarters(count: number, today: dayjs.Dayjs = dayjs()): Quarter[] {
+  const out: Quarter[] = []
+  let { year, q } = quarterOf(today)
+  if (quarterSundays({ year, q }, today).length === 0) {
+    q += 1
+    if (q > 4) [year, q] = [year + 1, 1]
+  }
+  while (out.length < count) {
+    out.push({ year, q })
+    q += 1
+    if (q > 4) [year, q] = [year + 1, 1]
+  }
+  return out
+}
+
+/** 그 분기의 일요일 중 오늘 뒤의 것(YYYY-MM-DD, 오름차순) */
+export function quarterSundays({ year, q }: Quarter, today: dayjs.Dayjs = dayjs()): string[] {
+  const start = dayjs(new Date(year, (q - 1) * 3, 1))
+  const end = start.add(3, 'month')
+  let d = start.add((7 - start.day()) % 7, 'day')
+  const out: string[] = []
+  const todayKey = today.format('YYYY-MM-DD')
+  for (; d.isBefore(end); d = d.add(7, 'day')) {
+    const key = d.format('YYYY-MM-DD')
+    if (key > todayKey) out.push(key)
+  }
+  return out
+}

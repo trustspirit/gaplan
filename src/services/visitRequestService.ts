@@ -8,6 +8,7 @@ import { generatePublicToken } from '@/utils/publicToken'
 import type {
   AppUser, PublicVisitRequest, VisitRecommendation, VisitRequest, VisitRequestUnit,
 } from '@/types'
+import type { SundayStatus } from '../../functions/src/visitSundayAvailability'
 import { mapDocs, snapshotErrHandler } from './_utils'
 
 /**
@@ -73,6 +74,7 @@ export function subscribeToRecommendations(
 export interface CreateVisitRequestInput {
   title: string
   note: string
+  guidance: string
   seventyUid: string
   seventyName: string
   sundays: string[]
@@ -96,6 +98,14 @@ export async function createVisitRequest(
     createdBy,
   })
   return ref.id
+}
+
+/** 제목·메모·강조 사항 고치기. 일요일·단위는 이미 받은 추천과 엇갈리므로 바꾸지 않는다. */
+export async function updateVisitRequestText(
+  id: string,
+  fields: { title: string; note: string; guidance: string },
+): Promise<void> {
+  await updateDoc(doc(db, 'visitRequests', id), fields)
 }
 
 export async function setVisitRequestStatus(id: string, status: 'open' | 'closed'): Promise<void> {
@@ -149,4 +159,21 @@ export function alreadyVisitingWard(err: unknown): string | null {
   const msg = err instanceof Error ? err.message : ''
   const m = /^already-visiting:(.*)$/.exec(msg)
   return m ? m[1] : null
+}
+
+/**
+ * 칠십인의 일요일별 상황(일정·참석 행사·막은 날·금식/연차 대회 주일·단위 행사).
+ * 집행서기는 칠십인의 가용 시간 설정을 직접 읽을 수 없어 서버에서 함께 계산한다.
+ */
+export async function fetchSundayStatus(
+  seventyUid: string,
+  sundays: string[],
+  requestId?: string,
+): Promise<Record<string, SundayStatus>> {
+  const fn = httpsCallable<
+    { seventyUid: string; sundays: string[]; requestId?: string },
+    Record<string, SundayStatus>
+  >(functions, 'getVisitSundayStatus')
+  const res = await fn({ seventyUid, sundays, ...(requestId ? { requestId } : {}) })
+  return res.data
 }

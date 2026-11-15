@@ -287,3 +287,26 @@ describe('tokenMatches', () => {
     expect(tokenMatches('short', 'short')).toBe(false)
   })
 })
+
+describe('validateRecommendation — 막힌 일요일', () => {
+  it('칠십인 일정·단위 행사로 막힌 날은 받지 않는다', () => {
+    const r = validateRecommendation(
+      request(),
+      { ...base, picks: [{ date: '2027-01-10', wardId: 'seoul-nokbeon' }] },
+      (date, unitId) => date === '2027-01-10' && unitId === 'seoul-stake',
+    )
+    expect(r).toMatchObject({ ok: false, code: 'failed-precondition' })
+  })
+
+  it('이미 이 단위로 확정된 날은 막혀 있어도 다시 낼 수 있다', () => {
+    const decided = request({
+      decisions: { '2027-01-10': { unitId: 'seoul-stake', wardId: 'seoul-nokbeon', wardName: '녹번 와드', scheduleId: 'x' } },
+    })
+    const r = validateRecommendation(
+      decided,
+      { ...base, picks: [{ date: '2027-01-10', wardId: 'seoul-nokbeon' }] },
+      () => true,
+    )
+    expect(r.ok).toBe(true)
+  })
+})

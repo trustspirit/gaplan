@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAtomValue } from 'jotai'
 import { useTranslation } from 'react-i18next'
@@ -8,11 +8,25 @@ import clsx from 'clsx'
 import { authUserAtom } from '@/store/authAtom'
 import { useUsers } from '@/hooks/useUsers'
 import { useVisitRequests } from '@/hooks/useVisitRequests'
-import { createVisitRequest } from '@/services/visitRequestService'
+import { createVisitRequest, fetchSundayStatus } from '@/services/visitRequestService'
 import { ROLE } from '@/constants/roles'
 import { planVisitRequestDetailPath } from '@/router/routes'
-import { isFastSunday } from '@/utils/fastSunday'
-import { upcomingSundays, unitsSnapshotForRegions } from '@/utils/visitRequest'
+import {
+  isFirstSunday,
+  isGeneralConferenceSunday,
+  type BusyKind,
+  type SundayStatus,
+} from '../../../../functions/src/visitSundayAvailability'
+import {
+  GUIDANCE_PRESET_KEYS,
+  quarterKey,
+  quarterOf,
+  quarterSundays,
+  unitsSnapshotForRegions,
+  upcomingQuarters,
+  type Quarter,
+} from '@/utils/visitRequest'
+import { GuidanceField } from './GuidanceField'
 import {
   Card,
   CardHeader,
@@ -29,7 +43,7 @@ import {
 import type { AppUser } from '@/types'
 import styles from './VisitRequestPanel.module.scss'
 
-const SUNDAY_PAGE = 16
+const QUARTER_CHOICES = 4
 
 function regionIdsOf(u: AppUser | undefined): string[] {
   if (!u) return []
@@ -53,25 +67,74 @@ export function VisitRequestPanel() {
         ? (user.assignedSeventyUid ?? '')
         : null
 
+  // 방문 계획은 보통 분기 단위 — 분기를 고르면 그 분기의 일요일이 펼쳐진다.
+  // 이번 분기가 이미 진행 중이면 다음 분기를 먼저 고른다(보통 미리 계획한다).
+  const quarters = useMemo(() => upcomingQuarters(QUARTER_CHOICES), [])
+  const [quarter, setQuarter] = useState<Quarter>(() =>
+    quarterKey(quarters[0]) === quarterKey(quarterOf(dayjs())) && quarters[1] ? quarters[1] : quarters[0],
+  )
+  const quarterLabel = (qt: Quarter) => t('visitRequest.quarterLabel', { year: qt.year, q: qt.q })
   const [title, setTitle] = useState('')
+  // 제목을 손대지 않았으면 고른 분기로 채운다.
+  const [titleTouched, setTitleTouched] = useState(false)
   const [pickedSeventy, setPickedSeventy] = useState('')
-  const [sundayCount, setSundayCount] = useState(SUNDAY_PAGE)
   const [sundays, setSundays] = useState<string[]>([])
   const [dueDate, setDueDate] = useState('')
   const [note, setNote] = useState('')
+  // 기본으로 가장 흔한 강조(오래 방문받지 못한 와드)를 넣어 둔다 — 지우면 강조 없이 보낸다.
+  const [guidance, setGuidance] = useState(() => t(GUIDANCE_PRESET_KEYS[0]))
   const [creating, setCreating] = useState(false)
 
   const seventyUid = fixedSeventyUid ?? pickedSeventy
   const seventy =
     seventyUid === user.uid ? user : seventies.find((s) => s.uid === seventyUid)
   const regionIds = regionIdsOf(seventy)
-  const offered = useMemo(() => upcomingSundays(sundayCount), [sundayCount])
+  const offered = useMemo(() => quarterSundays(quarter), [quarter])
+  const titleValue = titleTouched ? title : t('visitRequest.quarterTitle', { year: quarter.year, q: quarter.q })
+
+  // 칠십인 기준으로 비어 있는 일요일만 고를 수 있게, 일요일마다 일정·참석 행사·막은 날을 받아 온다.
+  const [status, setStatus] = useState<Record<string, SundayStatus>>({})
+  const [statusState, setStatusState] = useState<'idle' | 'loading' | 'error'>('idle')
+  useEffect(() => {
+    if (!seventyUid) {
+      setStatus({})
+      setStatusState('idle')
+      return
+    }
+    let cancelled = false
+    setStatusState('loading')
+    setSundays([])
+    fetchSundayStatus(seventyUid, offered)
+      .then((st) => {
+        if (cancelled) return
+        setStatus(st)
+        setStatusState('idle')
+        // 분기의 빈 일요일을 모두 골라 둔다 — 보통은 그대로 두고 몇 개만 뺀다.
+        // 분기·칠십인을 바꾸면 그 기준으로 다시 고른다.
+        setSundays(offered.filter((d) => !st[d] || st[d].busy.length === 0))
+      })
+      .catch(() => !cancelled && setStatusState('error'))
+    return () => {
+      cancelled = true
+    }
+  }, [seventyUid, offered])
+
+  // 금식·연차 대회 주일은 일정을 받아 오기 전에도 안다.
+  const busyKinds = (date: string): BusyKind[] => {
+    const fromServer = status[date]?.busy.map((b) => b.kind)
+    if (fromServer) return fromServer
+    if (isGeneralConferenceSunday(date)) return ['generalConference']
+    if (isFirstSunday(date)) return ['fast']
+    return []
+  }
+  const snapshotUnits = useMemo(() => unitsSnapshotForRegions(regionIds), [regionIds])
 
   const toggleSunday = (date: string) =>
     setSundays((prev) => (prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]))
+  const selectAllFree = () => setSundays(offered.filter((d) => busyKinds(d).length === 0))
 
   const canCreate =
-    !!title.trim() && !!seventyUid && !!seventy && regionIds.length > 0 && sundays.length > 0
+    !!titleValue.trim() && !!seventyUid && !!seventy && regionIds.length > 0 && sundays.length > 0
 
   const handleCreate = async () => {
     if (!canCreate || !seventy) return
@@ -79,8 +142,9 @@ export function VisitRequestPanel() {
     try {
       const id = await createVisitRequest(
         {
-          title: title.trim(),
+          title: titleValue.trim(),
           note: note.trim(),
+          guidance: guidance.trim(),
           seventyUid,
           seventyName: seventy.name,
           sundays,
@@ -106,9 +170,12 @@ export function VisitRequestPanel() {
           <div className={styles.form}>
             <Input
               label={t('visitRequest.title')}
-              value={title}
+              value={titleValue}
               placeholder={t('visitRequest.titlePlaceholder')}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value)
+                setTitleTouched(true)
+              }}
             />
             {fixedSeventyUid === null && (
               <Select
@@ -136,35 +203,91 @@ export function VisitRequestPanel() {
                   {t('visitRequest.sundaysHint', { count: sundays.length })}
                 </span>
               </legend>
-              <div className={styles.sundayGrid}>
-                {offered.map((date, i) => {
+              <div className={styles.quarters} role="radiogroup" aria-label={t('visitRequest.quarter')}>
+                {quarters.map((qt) => {
+                  const on = quarterKey(qt) === quarterKey(quarter)
+                  return (
+                    <button
+                      key={quarterKey(qt)}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      className={clsx(styles.quarterBtn, on && styles.quarterBtnOn)}
+                      onClick={() => setQuarter(qt)}
+                    >
+                      {quarterLabel(qt)}
+                    </button>
+                  )
+                })}
+              </div>
+              <div className={styles.monthRows}>
+                {[...new Set(offered.map((d) => d.slice(0, 7)))].map((month) => (
+                  <div key={month} className={styles.monthRow}>
+                    <span className={styles.month}>{dayjs(`${month}-01`).format(t('visitRequest.monthFormat'))}</span>
+                    <div className={styles.sundayGrid}>
+                      {offered.filter((d) => d.startsWith(month)).map((date) => {
                   const d = dayjs(date)
-                  // 월이 바뀌는 자리에 월 이름을 끼워 넣어 칩 묶음을 읽기 쉽게 한다.
-                  const showMonth = i === 0 || offered[i - 1].slice(0, 7) !== date.slice(0, 7)
                   const on = sundays.includes(date)
+                  const kinds = busyKinds(date)
+                  const st = status[date]
+                  const reasons = [
+                    ...(st?.busy ?? []).map((b) =>
+                      [t(`visitRequest.busyKind.${b.kind}`), b.label].filter(Boolean).join(' '),
+                    ),
+                    ...(st && Object.keys(st.unitBlocks).length > 0
+                      ? [
+                          t('visitRequest.boardUnitBlocks', {
+                            units: Object.keys(st.unitBlocks)
+                              .map((id) => snapshotUnits.find((u) => u.id === id)?.ko ?? id)
+                              .join(', '),
+                          }),
+                        ]
+                      : []),
+                  ]
                   return (
                     <span key={date} className={styles.sundayCell}>
-                      {showMonth && <span className={styles.month}>{d.format(t('visitRequest.monthFormat'))}</span>}
                       <button
                         type="button"
                         aria-pressed={on}
-                        className={clsx(styles.sundayChip, on && styles.sundayChipOn)}
+                        disabled={kinds.length > 0}
+                        title={reasons.join(' / ') || undefined}
+                        className={clsx(
+                          styles.sundayChip,
+                          on && styles.sundayChipOn,
+                          kinds.length > 0 && styles.sundayChipBusy,
+                          st && Object.keys(st.unitBlocks).length > 0 && styles.sundayChipPartial,
+                        )}
                         onClick={() => toggleSunday(date)}
                       >
                         <span className={styles.chipDay}>{d.format('D')}</span>
-                        {isFastSunday(d) && <span className={styles.chipFast}>{t('visitRequest.fastShort')}</span>}
+                        {kinds.length > 0 && (
+                          <span className={styles.chipFast}>{t(`visitRequest.busyKind.${kinds[0]}`)}</span>
+                        )}
                       </button>
                     </span>
                   )
                 })}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSundayCount((c) => c + SUNDAY_PAGE)}
-              >
-                {t('visitRequest.moreSundays')}
-              </Button>
+              <p className={styles.sundayHint}>
+                {statusState === 'loading'
+                  ? t('visitRequest.sundayLoading')
+                  : statusState === 'error'
+                    ? t('visitRequest.sundayLoadFailed')
+                    : t('visitRequest.sundaysFreeHint')}
+              </p>
+              <div className={styles.sundayActions}>
+                <Button variant="secondary" size="sm" disabled={!seventyUid} onClick={selectAllFree}>
+                  {t('visitRequest.selectAllFree')}
+                </Button>
+                {sundays.length > 0 && (
+                  <Button variant="ghost" size="sm" onClick={() => setSundays([])}>
+                    {t('visitRequest.clearSundays')}
+                  </Button>
+                )}
+              </div>
             </fieldset>
 
             <Input
@@ -173,6 +296,7 @@ export function VisitRequestPanel() {
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
             />
+            <GuidanceField value={guidance} onChange={setGuidance} />
             <Textarea
               label={t('visitRequest.note')}
               value={note}

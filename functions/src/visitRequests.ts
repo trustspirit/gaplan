@@ -5,6 +5,9 @@ import { resolveScheduleLocation } from './adminScheduleFields'
 import { REGION_UNITS } from './regions'
 import { WARD_UNITS } from './wardUnitMap'
 import {
+  sundayAvailability, isSundayBusy, publicCalendarEvents, type SundayStatus,
+} from './visitSundayAvailability'
+import {
   validateRecommendation,
   publicVisitRequestView,
   checkDecision,
@@ -28,15 +31,107 @@ const DEFAULT_END = '13:00'
  * 목록은 클라이언트가 찍어 보낸 것이라 그대로 믿지 않는다(visitRequestLogic.trustedUnits).
  */
 async function withTrustedUnits(request: VisitRequestDoc): Promise<VisitRequestDoc> {
-  const seventySnap = request.seventyUid
-    ? await admin.firestore().collection('users').doc(request.seventyUid).get()
-    : null
-  const seventy = seventySnap?.data() ?? {}
+  const { unitIds } = await seventyScope(request.seventyUid)
+  return { ...request, units: trustedUnits(request.units, new Set(unitIds), WARD_UNITS) }
+}
+
+/** 칠십인의 담당 CC와 그 CC의 단위들. 사용자 문서를 서버에서 읽는다. */
+async function seventyScope(seventyUid: string | undefined) {
+  const snap = seventyUid ? await admin.firestore().collection('users').doc(seventyUid).get() : null
+  const seventy = snap?.data() ?? {}
   const regionIds: string[] = Array.isArray(seventy.regionIds) && seventy.regionIds.length
     ? seventy.regionIds
     : (typeof seventy.regionId === 'string' ? [seventy.regionId] : [])
-  const allowed = new Set(regionIds.flatMap((r) => REGION_UNITS[r] ?? []))
-  return { ...request, units: trustedUnits(request.units, allowed, WARD_UNITS) }
+  return { regionIds, unitIds: regionIds.flatMap((r) => REGION_UNITS[r] ?? []) }
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+function shiftDays(date: string, days: number): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + days * DAY_MS).toISOString().slice(0, 10)
+}
+
+/**
+ * 일요일마다 칠십인이 비어 있는지(visitSundayAvailability). 여러 날 일정·행사가 앞에서 걸쳐
+ * 들어올 수 있어 첫 일요일보다 넉넉히 앞부터 읽는다.
+ * ignoreScheduleIds: 이 요청이 확정해 만든 방문 — 그 날을 "일정 있음"으로 세지 않는다.
+ */
+async function loadSundayStatus(
+  seventyUid: string,
+  sundays: string[],
+  ignoreScheduleIds: ReadonlySet<string> = new Set(),
+): Promise<Record<string, SundayStatus>> {
+  if (sundays.length === 0) return {}
+  const db = admin.firestore()
+  const sorted = [...sundays].sort()
+  const from = shiftDays(sorted[0], -31)
+  const to = sorted[sorted.length - 1]
+  const [scope, schedSnap, eventSnap, slotSnap] = await Promise.all([
+    seventyScope(seventyUid),
+    db.collection('schedules')
+      .where('seventyUid', '==', seventyUid)
+      .where('date', '>=', from)
+      .where('date', '<=', to)
+      .get(),
+    db.collection('generalSchedules').where('date', '>=', from).where('date', '<=', to).get(),
+    db.collection('availability').doc(seventyUid).collection('slots')
+      .where('type', '==', 'override')
+      .get(),
+  ])
+  return sundayAvailability({
+    sundays: sorted,
+    regionIds: scope.regionIds,
+    regionUnitIds: scope.unitIds,
+    schedules: schedSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
+    events: eventSnap.docs.map((d) => d.data()),
+    blockedDates: slotSnap.docs
+      .map((d) => d.data())
+      .filter((x) => x.isBlocked === true && typeof x.date === 'string')
+      .map((x) => x.date as string),
+    ignoreScheduleIds,
+  })
+}
+
+/**
+ * 추천 화면 달력용 공개 행사 — 요청의 첫 일요일이 든 달 1일부터 마지막 일요일이 든 달 말일까지.
+ * 그 앞에서 시작해 걸쳐 들어오는 여러 날 행사를 위해 한 달 앞부터 읽는다.
+ */
+async function loadCalendarEvents(seventyUid: string, sundays: string[]) {
+  if (sundays.length === 0) return []
+  const sorted = [...sundays].sort()
+  const from = `${sorted[0].slice(0, 7)}-01`
+  const last = sorted[sorted.length - 1]
+  const [y, m] = last.split('-').map(Number)
+  const to = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10)
+  const [scope, snap] = await Promise.all([
+    seventyScope(seventyUid),
+    admin.firestore().collection('generalSchedules')
+      .where('date', '>=', shiftDays(from, -31))
+      .where('date', '<=', to)
+      .get(),
+  ])
+  return publicCalendarEvents(snap.docs.map((d) => d.data()), scope.regionIds, scope.unitIds, from, to)
+}
+
+function decidedScheduleIds(request: VisitRequestDoc): Set<string> {
+  return new Set(
+    Object.values(request.decisions ?? {})
+      .map((d) => d.scheduleId)
+      .filter((id): id is string => typeof id === 'string'),
+  )
+}
+
+/** 공개 링크용: 칠십인의 일정 내용은 빼고 막힌 이유의 종류와 공개 행사 제목만 남긴다. */
+function publicSundayStatus(status: Record<string, SundayStatus>) {
+  return Object.fromEntries(
+    Object.entries(status).map(([date, st]) => [
+      date,
+      {
+        busy: st.busy.map((b) => ({ kind: b.kind, label: b.publicLabel ? b.label : '' })),
+        notes: st.notes,
+        unitBlocks: st.unitBlocks,
+      },
+    ]),
+  )
 }
 
 /**
@@ -65,12 +160,18 @@ export const getVisitRequestPublic = functions
     const recSnap = await ref.collection('recommendations').get()
     const recs = recSnap.docs.map((d) => d.data() as RecommendationDoc)
     const units = request.units ?? []
-    const wardStats = wardVisitStats(
-      units,
-      await schedulesForUnits(units.map((u) => u.id)),
-      todayInSeoul(),
-    )
-    return { ...publicVisitRequestView(request, recs), wardStats }
+    const [unitSchedules, sundayStatus, calendarEvents] = await Promise.all([
+      schedulesForUnits(units.map((u) => u.id)),
+      loadSundayStatus(request.seventyUid ?? '', request.sundays ?? [], decidedScheduleIds(request)),
+      loadCalendarEvents(request.seventyUid ?? '', request.sundays ?? []),
+    ])
+    const wardStats = wardVisitStats(units, unitSchedules, todayInSeoul())
+    return {
+      ...publicVisitRequestView(request, recs),
+      wardStats,
+      sundayStatus: publicSundayStatus(sundayStatus),
+      calendarEvents,
+    }
   })
 
 /** 와드 방문 기록 집계용. `in`은 30개까지라 나눠 묻는다 — CC 하나에 스테이크는 그보다 훨씬 적다. */
@@ -108,13 +209,21 @@ export const submitVisitRecommendation = functions
   }) => {
     const { ref, request } = await openRequest(data?.requestId, data?.token)
     const db = admin.firestore()
+    // 칠십인 일정·대회로 막힌 일요일. 읽기가 여러 컬렉션이라 트랜잭션 밖에서 한 번 본다.
+    const status = await loadSundayStatus(
+      request.seventyUid ?? '',
+      request.sundays ?? [],
+      decidedScheduleIds(request),
+    )
+    const unavailable = (date: string, unitId: string) =>
+      isSundayBusy(status[date]) || unitId in (status[date]?.unitBlocks ?? {})
 
     await db.runTransaction(async (tx) => {
       // 확정·마감과 경합할 수 있어 트랜잭션 안에서 요청을 다시 읽고 판정한다.
       // 스테이크·와드 목록만은 위에서 걸러 둔 것을 쓴다 — 그 목록은 만든 뒤 바뀌지 않는다.
       const fresh = await tx.get(ref)
       const current = { ...(fresh.data() as VisitRequestDoc), units: request.units }
-      const result = validateRecommendation(current, data ?? {})
+      const result = validateRecommendation(current, data ?? {}, unavailable)
       if (!result.ok) throw new functions.https.HttpsError(result.code, result.message)
 
       const unitId = data.unitId as string
@@ -310,4 +419,37 @@ export const visitRequestScheduleSync = functions
       if (now && now.status !== 'cancelled' && now.date === date) return
       tx.update(reqRef, { [`decisions.${date}`]: admin.firestore.FieldValue.delete() })
     })
+  })
+
+/**
+ * 로그인: 칠십인의 일요일별 일정 상황(요청 만들기·확정 화면용). 공개 링크와 달리 일정 제목까지 준다.
+ * 집행서기는 규칙상 칠십인의 가용 시간 설정을 읽을 수 없어 서버가 대신 읽는다.
+ */
+export const getVisitSundayStatus = functions
+  .region(REGION)
+  .https.onCall(async (data: { seventyUid?: unknown; sundays?: unknown; requestId?: unknown }, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Login required')
+    const seventyUid = typeof data?.seventyUid === 'string' ? data.seventyUid : ''
+    const sundays = Array.isArray(data?.sundays)
+      ? data.sundays.filter((d): d is string => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d))
+      : []
+    if (!seventyUid || !ID_RE.test(seventyUid) || sundays.length === 0 || sundays.length > 60) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid request')
+    }
+
+    const db = admin.firestore()
+    const caller = (await db.collection('users').doc(context.auth.uid).get()).data() ?? {}
+    const denied = confirmDeniedReason(
+      { role: caller.role, uid: context.auth.uid, assignedSeventyUid: caller.assignedSeventyUid },
+      seventyUid,
+    )
+    if (denied) throw new functions.https.HttpsError('permission-denied', denied)
+
+    let ignore = new Set<string>()
+    if (typeof data.requestId === 'string' && ID_RE.test(data.requestId)) {
+      const reqSnap = await db.collection('visitRequests').doc(data.requestId).get()
+      const req = reqSnap.data() as VisitRequestDoc | undefined
+      if (req && req.seventyUid === seventyUid) ignore = decidedScheduleIds(req)
+    }
+    return loadSundayStatus(seventyUid, sundays, ignore)
   })

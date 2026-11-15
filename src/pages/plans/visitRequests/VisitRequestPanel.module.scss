@@ -61,6 +61,48 @@
   color: $color-primary;
 }
 
+.quarters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin-bottom: $space-3;
+}
+
+.quarterBtn {
+  min-height: 40px;
+  padding: 0 $space-3;
+  border: 1px solid $color-border-strong;
+  border-radius: $border-radius-lg;
+  background: $color-surface;
+  color: $neutral-700;
+  font-size: $font-size-sm;
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.quarterBtnOn {
+  border-color: $color-sidebar;
+  background: $color-sidebar;
+  color: $color-surface;
+  font-weight: $font-weight-semibold;
+}
+
+// 분기 = 세 달 — 달마다 한 줄
+.monthRows {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.monthRow {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
 .sundayGrid {
   display: flex;
   flex-wrap: wrap;
@@ -105,6 +147,42 @@
   background: $color-sidebar;
   border-color: $color-sidebar;
   color: $color-surface;
+}
+
+.sundayChipBusy {
+  background: $color-surface-sunken;
+  border-style: dashed;
+  color: $neutral-400;
+  cursor: not-allowed;
+}
+
+// 일부 단위만 행사로 빠지는 날 — 고를 수는 있다. 오른쪽 위 작은 점으로만 알린다.
+.sundayChipPartial {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: $border-radius-full;
+    background: $color-warning;
+  }
+}
+
+.sundayHint {
+  margin: 0;
+  font-size: $font-size-xs;
+  color: $neutral-600;
+  line-height: $line-height-normal;
+}
+
+.sundayActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
 }
 
 .chipDay {
