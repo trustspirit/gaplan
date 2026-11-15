@@ -101,12 +101,16 @@ describe('isFirstSunday', () => {
     expect(isFirstSunday('2027-02-14')).toBe(false)
   })
 
-  it('4월·10월 첫 일요일은 금식 주일이 아니라 연차 대회 주일이다', () => {
-    expect(isGeneralConferenceSunday('2027-04-04')).toBe(true)
-    expect(isGeneralConferenceSunday('2026-10-04')).toBe(true)
-    expect(isGeneralConferenceSunday('2027-04-11')).toBe(false)
-    const r = sundayAvailability({ ...base, sundays: ['2027-04-04'] })
-    expect(r['2027-04-04'].busy.map((b) => b.kind)).toEqual(['generalConference'])
+  it('4월·10월은 첫 일요일이 금식 주일, 둘째 일요일이 연차 대회 시청 주일이다', () => {
+    expect(isGeneralConferenceSunday('2027-04-04')).toBe(false)
+    expect(isGeneralConferenceSunday('2027-04-11')).toBe(true)
+    expect(isGeneralConferenceSunday('2026-10-11')).toBe(true)
+    expect(isGeneralConferenceSunday('2027-04-18')).toBe(false)
+    expect(isGeneralConferenceSunday('2027-05-09')).toBe(false)
+    const r = sundayAvailability({ ...base, sundays: ['2027-04-04', '2027-04-11', '2027-04-18'] })
+    expect(r['2027-04-04'].busy.map((b) => b.kind)).toEqual(['fast'])
+    expect(r['2027-04-11'].busy.map((b) => b.kind)).toEqual(['generalConference'])
+    expect(r['2027-04-18'].busy).toEqual([])
   })
 })
 

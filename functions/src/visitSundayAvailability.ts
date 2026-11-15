@@ -7,8 +7,8 @@
  *   - event:    칠십인이 참석하는 행사(seventyAttends) 또는 칠십인 전용 행사가 그날에 걸쳐 있고,
  *               칠십인 담당 지역과 관련 있다.
  *   - blocked:  칠십인이 가용 시간 설정에서 그날을 막아 두었다.
- *   - fast:     금식 주일(그 달 첫 일요일). 와드 방문을 하지 않는다.
- *   - generalConference: 연차 대회 주일(4월·10월 첫 일요일). 와드 방문을 하지 않는다.
+ *   - fast:     금식 주일(그 달 첫 일요일 — 4월·10월도 같다). 와드 방문을 하지 않는다.
+ *   - generalConference: 4월·10월 둘째 일요일 — 한국에서 연차 대회를 시청하는 날. 와드 방문을 하지 않는다.
  *   - event:    위 칠십인 행사, 또는 담당 지역 전체·교회 전체 대상의 대회/행사·금식 행사
  *               (지역 대회 등) — 그날은 어느 단위도 와드 방문을 받지 않는다.
  *
@@ -88,13 +88,13 @@ export function isFirstSunday(day: string): boolean {
 }
 
 /**
- * 연차 대회 주일 — 4월·10월 첫째 주말의 일요일. 첫째 주말은 그 달 첫 토요일과 다음 날이라,
- * 달이 일요일로 시작하면(전달 마지막 날이 토요일) 그 달 1일이 대회 주일이다 — 어느 경우든
- * 그 달 첫 일요일이다.
+ * 연차 대회 시청 주일 — 4월·10월 둘째 일요일. 대회는 미국 시간으로 첫째 주말에 열리고, 한국에서는
+ * 시차 때문에 그다음 일요일에 모여 시청한다. 그달 첫 일요일은 다른 달처럼 금식 주일이다.
  */
 export function isGeneralConferenceSunday(day: string): boolean {
   const month = day.slice(5, 7)
-  return (month === '04' || month === '10') && isFirstSunday(day)
+  const date = Number(day.slice(8, 10))
+  return (month === '04' || month === '10') && date >= 8 && date <= 14
 }
 
 export function sundayAvailability(input: {
