@@ -64,6 +64,19 @@ describe('sundayAvailability', () => {
     expect(r['2027-01-17'].unitBlocks).toEqual({ 'seoul-stake': '' })
   })
 
+  it('스테이크 대회에 그 스테이크의 CC가 함께 지정되어 있어도 칠십인이 참석하지 않으면 그 스테이크만 막는다', () => {
+    const r = sundayAvailability({
+      ...base,
+      events: [
+        { title: '서울동 스테이크 대회', category: 'conference', date: '2027-01-09', endDate: '2027-01-10', isPublic: true, targetRegionIds: ['seoul'], targetUnitIds: ['seoul-east-stake'] },
+        { title: '서울 스테이크 대회', category: 'conference', date: '2027-01-17', isPublic: true, seventyAttends: true, targetRegionIds: ['seoul'], targetUnitIds: ['seoul-stake'] },
+      ],
+    })
+    expect(isSundayBusy(r['2027-01-10'])).toBe(false)
+    expect(r['2027-01-10'].unitBlocks).toEqual({ 'seoul-east-stake': '서울동 스테이크 대회' })
+    expect(r['2027-01-17'].busy).toEqual([{ kind: 'event', label: '서울 스테이크 대회', publicLabel: true }])
+  })
+
   it('담당 지역 전체·교회 전체 대상의 대회/행사는 모두를 막는다', () => {
     const r = sundayAvailability({
       ...base,
@@ -140,6 +153,7 @@ describe('publicCalendarEvents', () => {
         { title: '비공개', category: 'other', date: '2027-01-12', isPublic: false },
         { title: '지난 행사', category: 'other', date: '2026-11-01', isPublic: true },
         { title: '지역 대회', category: 'conference', date: '2027-01-24', isPublic: true, targetRegionIds: ['seoul'], seventyAttends: true },
+        { title: '서울동 스테이크 대회', category: 'conference', date: '2027-01-17', isPublic: true, targetRegionIds: ['seoul'], targetUnitIds: ['seoul-east-stake'] },
       ],
       ['seoul'],
       ['seoul-stake', 'seoul-east-stake'],
@@ -148,6 +162,7 @@ describe('publicCalendarEvents', () => {
     )
     expect(out).toEqual([
       { title: '서울 스테이크 대회', date: '2027-01-09', endDate: '2027-01-10', category: 'conference', unitIds: ['seoul-stake'], blocking: true, seventyAttends: false },
+      { title: '서울동 스테이크 대회', date: '2027-01-17', endDate: null, category: 'conference', unitIds: ['seoul-east-stake'], blocking: true, seventyAttends: false },
       { title: '지역 대회', date: '2027-01-24', endDate: null, category: 'conference', unitIds: null, blocking: true, seventyAttends: true },
     ])
   })

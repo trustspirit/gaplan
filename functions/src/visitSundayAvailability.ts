@@ -15,8 +15,8 @@
  * 협의 평의회(일정의 targetKind 'cc_council')는 오후 모임이라 오전 와드 방문을 막지 않는다. 대신 그날은
  * 그 CC의 와드를 방문해야 이동이 쉬우므로 councilRegionId로 알려 CC 차례를 그 CC로 고정하게 한다.
  *
- * 특정 스테이크/지방부만 대상인 대회/행사(스테이크 대회 등)는 칠십인을 막지 않고 그 단위만 막는다
- * (unitBlocks) — 그 단위 회장은 그날을 추천하지 않아도 되고, 다른 단위는 추천할 수 있다.
+ * 특정 스테이크/지방부만 대상인 대회/행사(스테이크 대회 등)는 칠십인이 참석하지 않으면 칠십인을 막지
+ * 않고 그 단위만 막는다(unitBlocks; 그 단위의 CC가 함께 지정되어 있어도 마찬가지) — 그 단위 회장은 그날을 추천하지 않아도 되고, 다른 단위는 추천할 수 있다.
  * 그 밖의 공개 행사는 막지 않고 notes로 참고만 시킨다.
  */
 
@@ -104,6 +104,27 @@ export function isGeneralConferenceSunday(day: string): boolean {
   return (month === '04' || month === '10') && date >= 8 && date <= 14
 }
 
+/**
+ * 행사가 칠십인 담당 지역의 누구에게 해당하는가. null이면 무관하다.
+ *   - 대상 단위가 있으면 그 단위만(wide=false). 스테이크 대회는 대상 단위와 함께 그 스테이크의
+ *     CC도 targetRegionIds에 들어 있다(CC 캘린더에 싣기 위해) — 그 CC 전체 행사로 읽으면 안 된다.
+ *   - 대상 단위 없이 CC만 있으면 그 CC 전체, 아무 대상도 없으면 교회 전체(wide=true).
+ */
+function eventScope(
+  e: AvailabilityEvent,
+  regions: ReadonlySet<string>,
+  units: ReadonlySet<string>,
+): { wide: boolean; unitHits: string[] } | null {
+  const targetUnits = strList(e.targetUnitIds)
+  if (targetUnits.length > 0) {
+    const unitHits = targetUnits.filter((u) => units.has(u))
+    return unitHits.length > 0 ? { wide: false, unitHits } : null
+  }
+  const targetRegions = strList(e.targetRegionIds)
+  if (targetRegions.length === 0 || targetRegions.some((r) => regions.has(r))) return { wide: true, unitHits: [] }
+  return null
+}
+
 export function sundayAvailability(input: {
   sundays: string[]
   regionIds: string[]
@@ -147,22 +168,19 @@ export function sundayAvailability(input: {
 
     for (const e of input.events) {
       if (!covers(str(e.date), str(e.endDate), day)) continue
-      const targetRegions = strList(e.targetRegionIds)
-      const targetUnits = strList(e.targetUnitIds)
-      const orgWide = targetRegions.length === 0 && targetUnits.length === 0
-      const regionHit = targetRegions.some((r) => regions.has(r))
-      const unitHits = targetUnits.filter((u) => units.has(u))
-      if (!orgWide && !regionHit && unitHits.length === 0) continue
+      const scope = eventScope(e, regions, units)
+      if (!scope) continue
+      const { wide, unitHits } = scope
 
       const title = str(e.title)
       const isPublic = e.isPublic === true
       const blocking = BLOCKING_CATEGORIES.has(str(e.category))
-      if (e.seventyAttends === true || e.seventyOnly === true || (blocking && (orgWide || regionHit))) {
+      if (e.seventyAttends === true || e.seventyOnly === true || (blocking && wide)) {
         busy.push({ kind: 'event', label: title, publicLabel: isPublic })
       } else if (blocking) {
         for (const u of unitHits) unitBlocks[u] = isPublic ? title : ''
       } else if (isPublic) {
-        notes.push({ title, unitIds: orgWide || regionHit ? null : unitHits })
+        notes.push({ title, unitIds: wide ? null : unitHits })
       }
     }
 
@@ -208,18 +226,15 @@ export function publicCalendarEvents(
     const endRaw = str(e.endDate)
     const end = endRaw && endRaw >= date ? endRaw : date
     if (!date || end < from || date > to) continue
-    const targetRegions = strList(e.targetRegionIds)
-    const targetUnits = strList(e.targetUnitIds)
-    const orgWide = targetRegions.length === 0 && targetUnits.length === 0
-    const regionHit = targetRegions.some((r) => regions.has(r))
-    const unitHits = targetUnits.filter((u) => units.has(u))
-    if (!orgWide && !regionHit && unitHits.length === 0) continue
+    const scope = eventScope(e, regions, units)
+    if (!scope) continue
+    const { wide, unitHits } = scope
     out.push({
       title: str(e.title),
       date,
       endDate: end > date ? end : null,
       category: str(e.category),
-      unitIds: orgWide || regionHit ? null : unitHits,
+      unitIds: wide ? null : unitHits,
       blocking: BLOCKING_CATEGORIES.has(str(e.category)),
       seventyAttends: e.seventyAttends === true,
     })
