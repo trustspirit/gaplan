@@ -9,6 +9,7 @@ import { dedupeById, isSeventyOnly } from './seventyOnly'
 import { allDayExclusiveEndDate, isAllDaySchedule, scheduleLastDate } from './scheduleDates'
 import { GENERAL_SEVENTY_NOTES_COLLECTION, SEVENTY_NOTES_COLLECTION } from './seventyNotes'
 import { withSeventyAttendsLine } from './generalScheduleEventBody'
+import { PUBLIC_MAX_INSTANCES } from './publicLimits'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -42,6 +43,7 @@ function safeUrl(url: unknown): string | null {
 
 export const publicScheduleIcs = functions
   .region('asia-northeast3')
+  .runWith({ maxInstances: PUBLIC_MAX_INSTANCES })
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   .https.onRequest(async (req: functions.https.Request, res: any) => {
     res.setHeader('Access-Control-Allow-Origin', '*')

@@ -4,6 +4,7 @@ import { getScopeDisplayName } from './regions'
 import { createTtlCache } from './publicScheduleRendererCache'
 import { buildPublicSchedulePayload, PublicScopeError, type FirestoreLike } from './publicSchedulePayload'
 import { buildInlineDataScript } from './publicInlineScript'
+import { PUBLIC_MAX_INSTANCES } from './publicLimits'
 
 const HOSTING_URL = 'https://gaplan-fccfe.web.app'
 const HTML_CACHE_TTL_MS = 5 * 60 * 1000
@@ -105,7 +106,7 @@ async function getPageTitle(token: string): Promise<string> {
 }
 
 export const publicScheduleRenderer = onRequest(
-  { region: 'asia-northeast3' },
+  { region: 'asia-northeast3', maxInstances: PUBLIC_MAX_INSTANCES },
   async (req, res) => {
     const token = req.path.split('/').filter(Boolean).pop() ?? ''
 

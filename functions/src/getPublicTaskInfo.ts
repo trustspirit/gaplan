@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
+import { PUBLIC_MAX_INSTANCES } from './publicLimits'
 
 interface GetPublicTaskInfoRequest {
   taskId: string
@@ -8,6 +9,7 @@ interface GetPublicTaskInfoRequest {
 
 export const getPublicTaskInfo = functions
   .region('asia-northeast3')
+  .runWith({ maxInstances: PUBLIC_MAX_INSTANCES })
   .https.onCall(async (data: GetPublicTaskInfoRequest) => {
     const { taskId, token } = data
 

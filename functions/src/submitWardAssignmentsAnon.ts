@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
+import { PUBLIC_MAX_INSTANCES } from './publicLimits'
 
 interface WardAssignment {
   wardName: string
@@ -17,6 +18,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 export const submitWardAssignmentsAnon = functions
   .region('asia-northeast3')
+  .runWith({ maxInstances: PUBLIC_MAX_INSTANCES })
   .https.onCall(async (data: SubmitWardAssignmentsAnonRequest) => {
     const { taskId, token, wardAssignments } = data
 

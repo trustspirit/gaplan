@@ -21,6 +21,7 @@ import {
   type VisitRequestDoc,
   type RecommendationDoc,
 } from './visitRequestLogic'
+import { PUBLIC_MAX_INSTANCES } from './publicLimits'
 
 const REGION = 'asia-northeast3'
 const ID_RE = /^[\w-]+$/
@@ -162,6 +163,7 @@ async function openRequest(requestId: unknown, token: unknown) {
 /** 공개 링크: 요청 정보와 지금까지 들어온 추천(모든 스테이크)을 돌려준다. */
 export const getVisitRequestPublic = functions
   .region(REGION)
+  .runWith({ maxInstances: PUBLIC_MAX_INSTANCES })
   .https.onCall(async (data: { requestId?: unknown; token?: unknown }) => {
     const { ref, request } = await openRequest(data?.requestId, data?.token)
     const recSnap = await ref.collection('recommendations').get()
@@ -206,6 +208,7 @@ function todayInSeoul(): string {
  */
 export const submitVisitRecommendation = functions
   .region(REGION)
+  .runWith({ maxInstances: PUBLIC_MAX_INSTANCES })
   .https.onCall(async (data: {
     requestId?: unknown
     token?: unknown

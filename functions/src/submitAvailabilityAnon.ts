@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v1'
 import * as admin from 'firebase-admin'
+import { PUBLIC_MAX_INSTANCES } from './publicLimits'
 
 interface RespondedSlot {
   date: string
@@ -19,6 +20,7 @@ const TIME_RE = /^\d{2}:\d{2}$/
 
 export const submitAvailabilityAnon = functions
   .region('asia-northeast3')
+  .runWith({ maxInstances: PUBLIC_MAX_INSTANCES })
   .https.onCall(async (data: SubmitAvailabilityAnonRequest) => {
     const { taskId, token, respondedSlots } = data
 

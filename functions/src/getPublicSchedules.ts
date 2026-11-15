@@ -1,6 +1,7 @@
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
 import { buildPublicSchedulePayload, PublicScopeError, type FirestoreLike } from './publicSchedulePayload'
+import { PUBLIC_MAX_INSTANCES } from './publicLimits'
 
 /** PublicScopeError의 reason을 콜러블 계약이 쓰던 메시지 그대로 옮겨 담는다 —
  *  클라이언트가 permission-denied 문자열로 비공개를 판정하므로 바꾸면 안 된다
@@ -19,7 +20,7 @@ function toHttpsError(e: PublicScopeError): HttpsError {
 }
 
 export const getPublicSchedules = onCall(
-  { region: 'asia-northeast3' },
+  { region: 'asia-northeast3', maxInstances: PUBLIC_MAX_INSTANCES },
   async (request: CallableRequest<{ token?: string }>) => {
     const { token } = request.data ?? {}
 
