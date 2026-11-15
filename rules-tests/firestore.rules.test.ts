@@ -430,6 +430,9 @@ describe('visitRequests', () => {
         ...request, createdBy: 's1', decisions: { '2027-01-10': { unitId: 'x' } },
       }),
     )
+    await assertFails(
+      setDoc(doc(as('s1'), 'visitRequests/n2'), { ...request, createdBy: 's1', respondedUnitIds: ['u1'] }),
+    )
   })
 
   it('keeps the token-bearing document away from other seventies, other secretaries and presidents', async () => {

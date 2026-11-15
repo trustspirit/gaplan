@@ -6,6 +6,9 @@ import {
   conflictingVisitId,
   decisionScheduleId,
   wardVisitStats,
+  trustedUnits,
+  staleDecisionDate,
+  tokenMatches,
   type VisitRequestDoc,
 } from './visitRequestLogic'
 
@@ -48,7 +51,7 @@ describe('validateRecommendation', () => {
     expect(r).toEqual({
       ok: true,
       submitterName: '홍길동 회장',
-      note: '',
+      note: null,
       picks: [
         { date: '2027-01-10', wardId: 'seoul-nokbeon', wardName: '녹번 와드' },
         { date: '2027-01-17', wardId: 'seoul-sinchon', wardName: '신촌 와드' },
@@ -212,5 +215,75 @@ describe('wardVisitStats', () => {
       { type: 'interview', status: 'confirmed', unitId: 'seoul-stake', wardId: 'seoul-nokbeon', date: '2026-10-04' },
     ], today)
     expect(stats['seoul-nokbeon'].lastVisit).toBeNull()
+  })
+})
+
+describe('validateRecommendation — 메모', () => {
+  it('메모를 보내지 않으면 null(기존 메모 유지), 빈 문자열이면 지운다', () => {
+    const keep = validateRecommendation(request(), { ...base, picks: [] })
+    const clear = validateRecommendation(request(), { ...base, note: '  ', picks: [] })
+    expect(keep).toMatchObject({ ok: true, note: null })
+    expect(clear).toMatchObject({ ok: true, note: '' })
+  })
+})
+
+describe('publicVisitRequestView — 메모', () => {
+  it('다른 회장의 메모를 내보내지 않고 있는지만 알린다', () => {
+    const view = publicVisitRequestView(request(), [
+      { unitId: 'seoul-stake', submitterName: 'A', note: '감독 교체 예정', picks: [], submittedAt: 'x' },
+    ])
+    expect(JSON.stringify(view)).not.toContain('감독 교체 예정')
+    expect(view.recommendations[0].hasNote).toBe(true)
+  })
+})
+
+describe('trustedUnits', () => {
+  const wardUnits = {
+    'seoul-nokbeon': { unitId: 'seoul-stake', ko: '녹번 와드' },
+    'seoul-sinchon': { unitId: 'seoul-stake', ko: '신촌 와드' },
+    'seoul-east-gyomun': { unitId: 'seoul-east-stake', ko: '교문 와드' },
+  }
+
+  it('담당 밖 스테이크를 뺀다', () => {
+    const units = trustedUnits(request().units, new Set(['seoul-stake']), wardUnits)
+    expect(units.map((u) => u.id)).toEqual(['seoul-stake'])
+  })
+
+  it('다른 스테이크 소속이거나 모르는 와드를 빼고, 이름은 서버 표의 것으로 바꾼다', () => {
+    const forged = [{
+      id: 'seoul-stake', ko: '서울 스테이크', en: 'Seoul',
+      wards: [
+        { id: 'seoul-nokbeon', ko: '바꾼 이름', en: 'N' },
+        { id: 'seoul-east-gyomun', ko: '교문 와드', en: 'G' },
+        { id: 'made-up', ko: '가짜', en: 'F' },
+      ],
+    }]
+    const units = trustedUnits(forged, new Set(['seoul-stake']), wardUnits)
+    expect(units[0].wards).toEqual([{ id: 'seoul-nokbeon', ko: '녹번 와드', en: 'N' }])
+  })
+})
+
+describe('staleDecisionDate', () => {
+  const before = { visitRequestId: 'r1', date: '2027-01-10', status: 'confirmed' }
+
+  it('지워지거나 취소되거나 날짜가 옮겨지면 그 날짜의 확정을 거둔다', () => {
+    expect(staleDecisionDate(before, undefined)).toBe('2027-01-10')
+    expect(staleDecisionDate(before, { ...before, status: 'cancelled' })).toBe('2027-01-10')
+    expect(staleDecisionDate(before, { ...before, date: '2027-01-17' })).toBe('2027-01-10')
+  })
+
+  it('시각만 바뀌었거나, 추천 요청 일정이 아니거나, 새로 만든 일정이면 그대로 둔다', () => {
+    expect(staleDecisionDate(before, { ...before })).toBeNull()
+    expect(staleDecisionDate({ date: '2027-01-10', status: 'confirmed' }, undefined)).toBeNull()
+    expect(staleDecisionDate(undefined, before)).toBeNull()
+  })
+})
+
+describe('tokenMatches', () => {
+  it('형식이 맞고 같은 토큰만 통과한다', () => {
+    expect(tokenMatches('0123456789abcdef', '0123456789abcdef')).toBe(true)
+    expect(tokenMatches('0123456789abcdef', 'fedcba9876543210')).toBe(false)
+    expect(tokenMatches(undefined, undefined)).toBe(false)
+    expect(tokenMatches('short', 'short')).toBe(false)
   })
 })

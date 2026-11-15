@@ -32,4 +32,6 @@ export { kakaoConnect } from './kakaoConnect'
 export { kakaoDisconnect } from './kakaoDisconnect'
 export { kakaoCalendarSync } from './kakaoCalendarSync'
 export { kakaoTokenRefresh } from './kakaoTokenRefresh'
-export { getVisitRequestPublic, submitVisitRecommendation, decideVisitRequestDate } from './visitRequests'
+export {
+  getVisitRequestPublic, submitVisitRecommendation, decideVisitRequestDate, visitRequestScheduleSync,
+} from './visitRequests'

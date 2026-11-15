@@ -57,7 +57,9 @@ export const TOKEN_RE = /^[0-9a-f]{16,64}$/
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 export type RecommendationResult =
-  | { ok: true; picks: CleanPick[]; submitterName: string; note: string }
+  // note가 null이면 "메모는 건드리지 않음" — 공개 화면은 남의 메모를 받지 못하므로, 메모 칸을
+  // 비워 둔 채 다시 내도 예전 메모가 지워지지 않아야 한다.
+  | { ok: true; picks: CleanPick[]; submitterName: string; note: string | null }
   | { ok: false; code: 'failed-precondition' | 'invalid-argument'; message: string }
 
 /**
@@ -85,8 +87,8 @@ export function validateRecommendation(
     return { ok: false, code: 'invalid-argument', message: 'Submitter name is required' }
   }
 
-  const note = typeof input.note === 'string' ? input.note.trim() : ''
-  if (note.length > RECOMMENDATION_NOTE_MAX) {
+  const note = typeof input.note === 'string' ? input.note.trim() : null
+  if (note !== null && note.length > RECOMMENDATION_NOTE_MAX) {
     return { ok: false, code: 'invalid-argument', message: 'Note is too long' }
   }
 
@@ -156,10 +158,12 @@ export function publicVisitRequestView(
         { unitId: d.unitId, wardId: d.wardId, wardName: d.wardName },
       ]),
     ),
+    // 메모는 내보내지 않는다 — 「칠십인께 남길 말」이라 링크를 가진 다른 회장이 볼 글이 아니다.
+    // 있는지만 알려 줘서, 다시 연 회장이 "남긴 말이 있다"는 것만 안다.
     recommendations: recommendations.map((r) => ({
       unitId: r.unitId,
       submitterName: r.submitterName,
-      note: r.note ?? '',
+      hasNote: !!r.note,
       picks: r.picks,
       submittedAt: r.submittedAt,
     })),
@@ -273,4 +277,49 @@ function shiftMonths(date: string, months: number): string {
   const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate()
   target.setUTCDate(Math.min(d, lastDay))
   return target.toISOString().slice(0, 10)
+}
+
+/**
+ * 요청 문서의 스테이크·와드 목록 중 믿을 수 있는 것만 남긴다. 목록은 요청을 만든 클라이언트가
+ * 찍어 보낸 것이라, 그대로 믿으면 칠십인이 담당 밖 CC의 와드로 방문 일정을 만들거나 그 와드의
+ * 방문 기록을 공개 링크로 내보낼 수 있다.
+ * - 스테이크는 그 칠십인 담당 CC의 것이어야 한다(allowedUnitIds).
+ * - 와드는 서버 표(wardUnits)에서 그 스테이크 소속이어야 하고, 이름은 서버 표의 이름으로 바꾼다.
+ */
+export function trustedUnits(
+  units: RequestUnit[] | undefined,
+  allowedUnitIds: ReadonlySet<string>,
+  wardUnits: Record<string, { unitId: string; ko: string }>,
+): RequestUnit[] {
+  return (units ?? [])
+    .filter((u) => allowedUnitIds.has(u.id))
+    .map((u) => ({
+      ...u,
+      wards: u.wards
+        .filter((w) => wardUnits[w.id]?.unitId === u.id)
+        .map((w) => ({ ...w, ko: wardUnits[w.id].ko })),
+    }))
+    .filter((u) => u.wards.length > 0)
+}
+
+/**
+ * 추천 요청이 만든 방문 일정이 바뀐 뒤, 그 요청의 확정 중 거둬야 할 날짜.
+ * 일정 화면에서 방문을 지우면(status: cancelled) 또는 날짜를 옮기면 요청에는 「확정」이 남아
+ * 회장들이 그 일요일을 추천할 수 없게 된다. 거둘 게 없으면 null.
+ */
+export function staleDecisionDate(
+  before: { visitRequestId?: unknown; date?: unknown; status?: unknown } | undefined,
+  after: { date?: unknown; status?: unknown } | undefined,
+): string | null {
+  if (!before || typeof before.visitRequestId !== 'string' || typeof before.date !== 'string') {
+    return null
+  }
+  if (before.status === 'cancelled') return null
+  if (!after || after.status === 'cancelled' || after.date !== before.date) return before.date
+  return null
+}
+
+/** 공개 링크 경로의 요청 id·토큰이 이 문서와 맞는가. */
+export function tokenMatches(stored: unknown, given: unknown): boolean {
+  return typeof stored === 'string' && typeof given === 'string' && TOKEN_RE.test(given) && stored === given
 }

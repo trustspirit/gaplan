@@ -182,7 +182,8 @@ service cloud.firestore {
         && request.resource.data.status == 'open'
         && request.resource.data.token is string
         && request.resource.data.token.size() >= 16
-        && request.resource.data.get('decisions', {}).size() == 0;
+        && request.resource.data.get('decisions', {}).size() == 0
+        && !('respondedUnitIds' in request.resource.data);
       allow update: if isAuth()
         && canManageVisitRequest(resource.data.seventyUid)
         && request.resource.data.diff(resource.data).affectedKeys()
