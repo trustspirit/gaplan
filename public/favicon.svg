@@ -1,52 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- App icon background -->
-  <rect width="512" height="512" rx="112" fill="#1e3a5f"/>
-  <!-- Subtle gradient overlay -->
-  <rect width="512" height="512" rx="112" fill="url(#grad)" opacity="0.3"/>
-  <defs>
-    <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#3b6fd4"/>
-      <stop offset="100%" stop-color="#0f2040"/>
-    </linearGradient>
-  </defs>
-
-  <!-- Clipboard / planner board -->
-  <rect x="120" y="128" width="272" height="300" rx="18" fill="white" opacity="0.97"/>
-
-  <!-- Clipboard top clip -->
-  <rect x="196" y="108" width="120" height="48" rx="14" fill="#2563eb"/>
-  <rect x="232" y="104" width="48" height="24" rx="8" fill="#1d4ed8"/>
-
-  <!-- Schedule item rows with checkboxes -->
-  <!-- Row 1 - checked -->
-  <rect x="148" y="188" width="22" height="22" rx="5" fill="#2563eb"/>
-  <polyline points="153,199 159,205 170,193" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <rect x="184" y="191" width="120" height="9" rx="4.5" fill="#94a3b8"/>
-  <rect x="184" y="204" width="80" height="7" rx="3.5" fill="#cbd5e1"/>
-
-  <!-- Row 2 - checked -->
-  <rect x="148" y="232" width="22" height="22" rx="5" fill="#2563eb"/>
-  <polyline points="153,243 159,249 170,237" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <rect x="184" y="235" width="140" height="9" rx="4.5" fill="#94a3b8"/>
-  <rect x="184" y="248" width="90" height="7" rx="3.5" fill="#cbd5e1"/>
-
-  <!-- Row 3 - unchecked (upcoming) -->
-  <rect x="148" y="276" width="22" height="22" rx="5" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
-  <rect x="184" y="279" width="130" height="9" rx="4.5" fill="#94a3b8"/>
-  <rect x="184" y="292" width="100" height="7" rx="3.5" fill="#cbd5e1"/>
-
-  <!-- Row 4 - unchecked (upcoming) -->
-  <rect x="148" y="320" width="22" height="22" rx="5" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
-  <rect x="184" y="323" width="110" height="9" rx="4.5" fill="#94a3b8"/>
-  <rect x="184" y="336" width="75" height="7" rx="3.5" fill="#cbd5e1"/>
-
-  <!-- Divider line -->
-  <rect x="148" y="358" width="216" height="1.5" rx="1" fill="#e2e8f0"/>
-
-  <!-- Date badges -->
-  <rect x="148" y="368" width="50" height="22" rx="6" fill="#eff6ff"/>
-  <rect x="208" y="368" width="50" height="22" rx="6" fill="#eff6ff"/>
-  <rect x="268" y="368" width="50" height="22" rx="6" fill="#dbeafe"/>
-  <rect x="268" y="368" width="50" height="22" rx="6" fill="#2563eb" opacity="0.15"/>
-  <rect x="328" y="368" width="36" height="22" rx="6" fill="#eff6ff"/>
+  <rect width="512" height="512" rx="104" fill="#002744"/>
+  <g fill="#f4f7fa">
+    <path d="M112 146h158v184h-44V190h-114z"/>
+    <rect x="310" y="126" width="44" height="260"/>
+  </g>
+  <rect x="354" y="236" width="52" height="44" fill="#6bcbeb"/>
 </svg>
