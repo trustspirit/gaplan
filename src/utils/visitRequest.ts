@@ -42,6 +42,7 @@ export function unitsSnapshotForRegions(regionIds: string[]): VisitRequestUnit[]
         id: unit.id,
         ko: unit.name.ko,
         en: unit.name.en,
+        regionId,
         wards: getWardsByUnit(unit.id).map((w) => ({ id: w.id, ko: w.name.ko, en: w.name.en })),
       }))
       .filter((unit) => unit.wards.length > 0),

@@ -18,6 +18,12 @@ import {
   type SundayStatus,
 } from '../../../../functions/src/visitSundayAvailability'
 import {
+  consecutiveSameRegion,
+  regionForNewSunday,
+  rotateRegions,
+} from '../../../../functions/src/visitRegionRotation'
+import { REGIONS, getRegionColor } from '@/constants/regions'
+import {
   GUIDANCE_PRESET_KEYS,
   quarterKey,
   quarterOf,
@@ -44,6 +50,15 @@ import type { AppUser } from '@/types'
 import styles from './VisitRequestPanel.module.scss'
 
 const QUARTER_CHOICES = 4
+
+/** 일요일이 막힌 이유들. 금식·연차 대회 주일은 서버 응답이 없어도(받기 전·빠진 날) 안다. */
+function busyKindsOf(date: string, status: Record<string, SundayStatus>): BusyKind[] {
+  const fromServer = status[date]?.busy.map((b) => b.kind)
+  if (fromServer) return fromServer
+  if (isGeneralConferenceSunday(date)) return ['generalConference']
+  if (isFirstSunday(date)) return ['fast']
+  return []
+}
 
 function regionIdsOf(u: AppUser | undefined): string[] {
   if (!u) return []
@@ -79,6 +94,10 @@ export function VisitRequestPanel() {
   const [titleTouched, setTitleTouched] = useState(false)
   const [pickedSeventy, setPickedSeventy] = useState('')
   const [sundays, setSundays] = useState<string[]>([])
+  // CC를 둘 이상 맡았으면 일요일마다 차례인 CC — 한 CC를 연달아 방문하지 않도록.
+  const [sundayRegions, setSundayRegions] = useState<Record<string, string>>({})
+  // 첫 일요일 전 마지막 와드 방문의 CC
+  const [lastRegion, setLastRegion] = useState<string | null>(null)
   const [dueDate, setDueDate] = useState('')
   const [note, setNote] = useState('')
   // 기본으로 가장 흔한 강조(오래 방문받지 못한 와드)를 넣어 둔다 — 지우면 강조 없이 보낸다.
@@ -89,6 +108,7 @@ export function VisitRequestPanel() {
   const seventy =
     seventyUid === user.uid ? user : seventies.find((s) => s.uid === seventyUid)
   const regionIds = regionIdsOf(seventy)
+  const regionKey = regionIds.join(',')
   const offered = useMemo(() => quarterSundays(quarter), [quarter])
   const titleValue = titleTouched ? title : t('visitRequest.quarterTitle', { year: quarter.year, q: quarter.q })
 
@@ -104,34 +124,63 @@ export function VisitRequestPanel() {
     let cancelled = false
     setStatusState('loading')
     setSundays([])
+    setSundayRegions({})
+    const rotation = regionKey.split(',').filter(Boolean)
     fetchSundayStatus(seventyUid, offered)
-      .then((st) => {
+      .then(({ status: st, lastVisitRegion }) => {
         if (cancelled) return
         setStatus(st)
+        setLastRegion(lastVisitRegion)
         setStatusState('idle')
         // 분기의 빈 일요일을 모두 골라 둔다 — 보통은 그대로 두고 몇 개만 뺀다.
         // 분기·칠십인을 바꾸면 그 기준으로 다시 고른다.
-        setSundays(offered.filter((d) => !st[d] || st[d].busy.length === 0))
+        const free = offered.filter((d) => busyKindsOf(d, st).length === 0)
+        setSundays(free)
+        // 바로 앞 방문의 CC로는 시작하지 않는다 — 분기 경계에서도 번갈아 가게.
+        setSundayRegions(rotation.length > 1 ? rotateRegions(free, rotation, lastVisitRegion) : {})
       })
       .catch(() => !cancelled && setStatusState('error'))
     return () => {
       cancelled = true
     }
-  }, [seventyUid, offered])
+  }, [seventyUid, offered, regionKey])
 
-  // 금식·연차 대회 주일은 일정을 받아 오기 전에도 안다.
-  const busyKinds = (date: string): BusyKind[] => {
-    const fromServer = status[date]?.busy.map((b) => b.kind)
-    if (fromServer) return fromServer
-    if (isGeneralConferenceSunday(date)) return ['generalConference']
-    if (isFirstSunday(date)) return ['fast']
-    return []
-  }
+  const busyKinds = (date: string) => busyKindsOf(date, status)
   const snapshotUnits = useMemo(() => unitsSnapshotForRegions(regionIds), [regionIds])
 
-  const toggleSunday = (date: string) =>
-    setSundays((prev) => (prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]))
-  const selectAllFree = () => setSundays(offered.filter((d) => busyKinds(d).length === 0))
+  const multiRegion = regionIds.length > 1
+  const regionName = (id: string) => REGIONS.find((r) => r.id === id)?.name ?? id
+  const regionShort = (id: string) => regionName(id).replace(/\s*CC$/, '')
+
+  const toggleSunday = (date: string) => {
+    if (sundays.includes(date)) {
+      setSundays(sundays.filter((d) => d !== date))
+      const rest = { ...sundayRegions }
+      delete rest[date]
+      setSundayRegions(rest)
+      return
+    }
+    setSundays([...sundays, date])
+    if (multiRegion) {
+      setSundayRegions({ ...sundayRegions, [date]: regionForNewSunday(date, sundayRegions, regionIds) })
+    }
+  }
+  const cycleRegion = (date: string) => {
+    const i = regionIds.indexOf(sundayRegions[date])
+    setSundayRegions({ ...sundayRegions, [date]: regionIds[(i + 1) % regionIds.length] })
+  }
+  const selectAllFree = () => {
+    const free = offered.filter((d) => busyKinds(d).length === 0)
+    setSundays(free)
+    setSundayRegions(multiRegion ? rotateRegions(free, regionIds, lastRegion) : {})
+  }
+  const reRotate = () => setSundayRegions(rotateRegions(sundays, regionIds, lastRegion))
+  const clearSundays = () => {
+    setSundays([])
+    setSundayRegions({})
+  }
+  // 같은 CC가 연달아 붙은 일요일 — 칠십인이 CC를 바꾸다 생길 수 있다.
+  const repeated = new Set(multiRegion ? consecutiveSameRegion(sundayRegions) : [])
 
   const canCreate =
     !!titleValue.trim() && !!seventyUid && !!seventy && regionIds.length > 0 && sundays.length > 0
@@ -148,6 +197,12 @@ export function VisitRequestPanel() {
           seventyUid,
           seventyName: seventy.name,
           sundays,
+          ...(multiRegion
+            ? {
+                sundayRegions: Object.fromEntries(sundays.map((d) => [d, sundayRegions[d]])),
+                regions: regionIds.map((id) => ({ id, name: regionName(id) })),
+              }
+            : {}),
           dueDate: dueDate || null,
           units: unitsSnapshotForRegions(regionIds),
         },
@@ -244,8 +299,10 @@ export function VisitRequestPanel() {
                         ]
                       : []),
                   ]
+                  const region = on && multiRegion ? sundayRegions[date] : undefined
+                  const regionColor = region ? getRegionColor(region) : null
                   return (
-                    <span key={date} className={styles.sundayCell}>
+                    <span key={date} className={clsx(styles.sundayCell, multiRegion && styles.sundayCellStack)}>
                       <button
                         type="button"
                         aria-pressed={on}
@@ -264,6 +321,18 @@ export function VisitRequestPanel() {
                           <span className={styles.chipFast}>{t(`visitRequest.busyKind.${kinds[0]}`)}</span>
                         )}
                       </button>
+                      {region && regionColor && (
+                        <button
+                          type="button"
+                          className={clsx(styles.regionTag, repeated.has(date) && styles.regionTagRepeat)}
+                          style={{ background: regionColor.bg, color: regionColor.text, borderColor: regionColor.border }}
+                          aria-label={t('visitRequest.regionSwitch', { date: d.format('M/D'), region: regionName(region) })}
+                          onClick={() => cycleRegion(date)}
+                        >
+                          {regionShort(region)}
+                        </button>
+                      )}
+                      {multiRegion && !region && <span className={styles.regionTagSpace} aria-hidden />}
                     </span>
                   )
                 })}
@@ -278,12 +347,35 @@ export function VisitRequestPanel() {
                     ? t('visitRequest.sundayLoadFailed')
                     : t('visitRequest.sundaysFreeHint')}
               </p>
+              {multiRegion && sundays.length > 0 && (
+                <div className={styles.regionSummary}>
+                  <p className={styles.sundayHint}>
+                    {t('visitRequest.regionHint')}{' '}
+                    {lastRegion && `${t('visitRequest.regionLast', { region: regionName(lastRegion) })} `}
+                    {regionIds
+                      .map((id) => `${regionShort(id)} ${sundays.filter((d) => sundayRegions[d] === id).length}`)
+                      .join(' · ')}
+                  </p>
+                  {repeated.size > 0 && (
+                    <p className={styles.warn} role="alert">
+                      {t('visitRequest.regionRepeat', {
+                        dates: [...repeated].map((d) => dayjs(d).format('M/D')).join(', '),
+                      })}
+                    </p>
+                  )}
+                </div>
+              )}
               <div className={styles.sundayActions}>
                 <Button variant="secondary" size="sm" disabled={!seventyUid} onClick={selectAllFree}>
                   {t('visitRequest.selectAllFree')}
                 </Button>
+                {multiRegion && sundays.length > 1 && (
+                  <Button variant="ghost" size="sm" onClick={reRotate}>
+                    {t('visitRequest.regionRotate')}
+                  </Button>
+                )}
                 {sundays.length > 0 && (
-                  <Button variant="ghost" size="sm" onClick={() => setSundays([])}>
+                  <Button variant="ghost" size="sm" onClick={clearSundays}>
                     {t('visitRequest.clearSundays')}
                   </Button>
                 )}

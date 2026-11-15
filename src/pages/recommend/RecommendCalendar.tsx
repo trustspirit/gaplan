@@ -16,6 +16,7 @@ export type SundayCellState =
   | { kind: 'open'; pickedWard: string | null; others: number }
   | { kind: 'busy'; reason: string }
   | { kind: 'unitBlocked'; reason: string }
+  | { kind: 'otherRegion'; reason: string }
   | { kind: 'decided'; label: string; ours: boolean }
 
 interface Props {
@@ -75,6 +76,7 @@ export function RecommendCalendar({ sundays, cells, events, wards, recencyOf, pi
                   : t('recommend.detailOpen'))}
               {selectedCell.kind === 'busy' && selectedCell.reason}
               {selectedCell.kind === 'unitBlocked' && selectedCell.reason}
+              {selectedCell.kind === 'otherRegion' && selectedCell.reason}
               {selectedCell.kind === 'decided' && selectedCell.label}
               {selectedCell.kind === 'open' && selectedCell.others > 0 &&
                 ` · ${t('recommend.othersPicked', { count: selectedCell.others })}`}
@@ -120,6 +122,9 @@ export function RecommendCalendar({ sundays, cells, events, wards, recencyOf, pi
         <li><span className={clsx(styles.swatch, styles.cell_busy)} />{t('recommend.legendBusy')}</li>
         <li><span className={clsx(styles.swatch, styles.cell_unitBlocked)} />{t('recommend.legendUnitBlocked')}</li>
         <li><span className={clsx(styles.swatch, styles.cell_decided)} />{t('recommend.legendDecided')}</li>
+        {Object.values(cells).some((c) => c.kind === 'otherRegion') && (
+          <li><span className={clsx(styles.swatch, styles.cell_otherRegion)} />{t('recommend.legendOtherRegion')}</li>
+        )}
         <li><span className={clsx(styles.swatch, styles.swatchEvent)} />{t('recommend.legendEvent')}</li>
       </ul>
       {months.map((month) => {

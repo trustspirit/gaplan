@@ -40,6 +40,17 @@ function request(partial: Partial<VisitRequestDoc> = {}): VisitRequestDoc {
 const base = { unitId: 'seoul-stake', submitterName: '홍길동 회장' }
 
 describe('validateRecommendation', () => {
+  it('다른 CC 차례인 일요일은 받지 않는다', () => {
+    const req = request({
+      sundayRegions: { '2027-01-10': 'seoul', '2027-01-17': 'seoul-south' },
+      units: request().units!.map((u) => ({ ...u, regionId: 'seoul' })),
+    })
+    expect(validateRecommendation(req, { ...base, picks: [{ date: '2027-01-10', wardId: 'seoul-nokbeon' }] }).ok).toBe(true)
+    expect(validateRecommendation(req, { ...base, picks: [{ date: '2027-01-17', wardId: 'seoul-nokbeon' }] })).toEqual({
+      ok: false, code: 'failed-precondition', message: '2027-01-17 is for another CC',
+    })
+  })
+
   it('정리된 추천을 날짜순으로 돌려주고 와드 이름은 요청의 스냅샷에서 채운다', () => {
     const r = validateRecommendation(request(), {
       ...base,
@@ -260,6 +271,12 @@ describe('trustedUnits', () => {
     }]
     const units = trustedUnits(forged, new Set(['seoul-stake']), wardUnits)
     expect(units[0].wards).toEqual([{ id: 'seoul-nokbeon', ko: '녹번 와드', en: 'N' }])
+  })
+
+  it('소속 CC는 클라이언트 값이 아니라 서버 표로 채운다', () => {
+    const forged = request().units!.map((u) => ({ ...u, regionId: 'busan' }))
+    const units = trustedUnits(forged, new Set(['seoul-stake']), wardUnits, { 'seoul-stake': 'seoul' })
+    expect(units[0].regionId).toBe('seoul')
   })
 })
 

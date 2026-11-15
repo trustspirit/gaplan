@@ -1004,7 +1004,10 @@
     "detailPicked": "{{ward}}을(를) 추천했습니다.",
     "detailNone": "이날은 등록된 행사가 없습니다.",
     "pickHere": "이 일요일에 추천할 와드",
-    "clearPick": "추천 안 함"
+    "clearPick": "추천 안 함",
+    "otherRegion": "{{region}} 차례",
+    "otherRegionHint": "지역 칠십인이 담당 CC를 번갈아 방문하도록 일요일마다 CC를 정해 두었습니다. 우리 CC 차례인 일요일에만 추천할 수 있습니다.",
+    "legendOtherRegion": "다른 CC 차례"
   },
   "visitRequest": {
     "tab": "방문 추천",
@@ -1101,6 +1104,12 @@
     "textTitle": "요청 문구",
     "quarter": "분기",
     "quarterLabel": "{{year}}년 {{q}}분기",
-    "quarterTitle": "{{year}}년 {{q}}분기 와드 방문"
+    "quarterTitle": "{{year}}년 {{q}}분기 와드 방문",
+    "regionSwitch": "{{date}} 차례 CC: {{region}} (눌러서 바꾸기)",
+    "regionHint": "CC를 번갈아 배정했습니다. 일요일 아래 CC를 누르면 바뀝니다.",
+    "regionRepeat": "{{dates}}은(는) 바로 앞 일요일과 같은 CC입니다.",
+    "regionRotate": "CC 번갈아 다시 배정",
+    "boardRegion": "{{region}} 차례",
+    "regionLast": "지난 방문이 {{region}}여서 다른 CC부터 시작했습니다."
   }
 }

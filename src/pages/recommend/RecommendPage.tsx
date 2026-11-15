@@ -53,6 +53,13 @@ function removeStored(key: string) {
   }
 }
 
+/** 이 일요일이 다른 CC 차례인가 — 그러면 그 CC 이름, 아니면 null */
+function otherRegionTurn(data: PublicVisitRequest, unit: VisitRequestUnit, date: string): string | null {
+  const turn = data.sundayRegions?.[date]
+  if (!turn || unit.regionId === turn) return null
+  return data.regions?.find((r) => r.id === turn)?.name ?? turn
+}
+
 function unitFromUrl(): string {
   return new URLSearchParams(window.location.search).get('unit') ?? ''
 }
@@ -222,6 +229,7 @@ export default function RecommendPage({
           if (!w) return false
           const decision = data?.decisions[d]
           if (decision) return decision.unitId === unitId
+          if (data && unit && otherRegionTurn(data, unit, d) !== null) return false
           // 칠십인이 못 오는 날·우리 단위 행사가 있는 날은 보내지 않는다(서버도 거절한다).
           const st = data?.sundayStatus?.[d]
           return !st || (st.busy.length === 0 && !(unitId in st.unitBlocks))
@@ -481,6 +489,9 @@ export default function RecommendPage({
                 <div>
                   <div className={styles.verifiedTitle}>{t('recommend.verifiedTitle')}</div>
                   <p className={styles.verifiedBody}>{t('recommend.verifiedBody')}</p>
+                  {Object.keys(data.sundayRegions ?? {}).length > 0 && (
+                    <p className={styles.verifiedBody}>{t('recommend.otherRegionHint')}</p>
+                  )}
                 </div>
               </div>
               <ol className={styles.sundayList}>
@@ -499,7 +510,8 @@ export default function RecommendPage({
                   const busy = st?.busy ?? []
                   const kinds = new Set(busy.map((b) => b.kind))
                   const unitBlock = st && unit.id in st.unitBlocks ? st.unitBlocks[unit.id] : null
-                  const blocked = !decision && (busy.length > 0 || unitBlock !== null)
+                  const otherTurn = decision ? null : otherRegionTurn(data, unit, date)
+                  const blocked = !decision && (otherTurn !== null || busy.length > 0 || unitBlock !== null)
                   const notes = (st?.notes ?? []).filter((n) => !n.unitIds || n.unitIds.includes(unit.id))
                   const busyLabels = busy.map((b) => b.label).filter(Boolean)
                   return (
@@ -536,6 +548,8 @@ export default function RecommendPage({
                                   ward: decision.wardName,
                                 })}
                           </div>
+                        ) : otherTurn !== null ? (
+                          <div className={styles.unavailable}>{t('recommend.otherRegion', { region: otherTurn })}</div>
                         ) : busy.length > 0 ? (
                           // 칠십인이 못 오는 날 — 무슨 일정인지는 공개하지 않는다(공개 행사 제목만).
                           <div className={styles.unavailable}>
@@ -705,6 +719,11 @@ function sundayCells(
         label: ours
           ? wardLabel(decision.wardId) || decision.wardName
           : `${other ? other[lang] : ''} · ${decision.wardName}`,
+      }
+    } else if (otherRegionTurn(data, unit, date) !== null) {
+      out[date] = {
+        kind: 'otherRegion',
+        reason: t('recommend.otherRegion', { region: otherRegionTurn(data, unit, date) }),
       }
     } else if (st && st.busy.length > 0) {
       const labels = st.busy.map((b) => b.label).filter(Boolean)

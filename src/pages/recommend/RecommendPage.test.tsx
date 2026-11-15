@@ -274,4 +274,21 @@ describe('RecommendPage', () => {
     await user.click(screen.getByRole('tab', { name: /recommend.viewList/ }))
     expect(triggers()[1]).toHaveTextContent('신촌 와드')
   })
+
+  it("only offers Sundays that are this unit's CC turn", async () => {
+    const base = data()
+    getMock.mockResolvedValue({
+      data: data({
+        units: base.units.map((u) => ({ ...u, regionId: 'seoul' })),
+        sundayRegions: { '2027-01-10': 'seoul', '2027-01-17': 'seoul-south', '2027-01-24': 'seoul' },
+        regions: [{ id: 'seoul', name: '서울 CC' }, { id: 'seoul-south', name: '서울남 CC' }],
+      }),
+    })
+    const user = userEvent.setup()
+    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
+    await user.click(await screen.findByRole('button', { name: /^서울 스테이크/ }))
+    expect(triggers()).toHaveLength(1)
+    expect(screen.getAllByText(/recommend.otherRegion:/)[0]).toHaveTextContent('서울남 CC')
+    expect(screen.getByText('recommend.otherRegionHint')).toBeInTheDocument()
+  })
 })

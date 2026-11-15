@@ -18,6 +18,8 @@ export interface RequestUnit {
   id: string
   ko: string
   en: string
+  /** 소속 CC. 서버가 trustedUnits에서 자기 표로 채운다(클라이언트 값은 믿지 않는다) */
+  regionId?: string
   wards: RequestWard[]
 }
 
@@ -39,6 +41,10 @@ export interface VisitRequestDoc {
   status?: string
   units?: RequestUnit[]
   decisions?: Record<string, RequestDecision>
+  /** 칠십인이 CC를 둘 이상 맡았을 때 일요일마다 차례인 CC(visitRegionRotation) */
+  sundayRegions?: Record<string, string>
+  /** 화면에 보일 CC 이름 */
+  regions?: { id: string; name: string }[]
 }
 
 export interface PickInput {
@@ -121,6 +127,11 @@ export function validateRecommendation(
     if (decided && decided.unitId !== unit.id) {
       return { ok: false, code: 'failed-precondition', message: `${date} is already decided` }
     }
+    // 다른 CC 차례인 일요일 — 한 CC를 연달아 방문하지 않도록 칠십인이 정해 둔 것이다.
+    const turn = request.sundayRegions?.[date]
+    if (turn && unit.regionId !== turn) {
+      return { ok: false, code: 'failed-precondition', message: `${date} is for another CC` }
+    }
     // 이미 이 단위로 확정된 날은 그대로 둔다 — 확정 뒤 생긴 일정은 칠십인이 정리할 몫이다.
     if (!decided && unavailable(date, unit.id)) {
       return { ok: false, code: 'failed-precondition', message: `${date} is not available` }
@@ -160,13 +171,15 @@ export function publicVisitRequestView(
     status: request.status === 'open' ? 'open' : 'closed',
     sundays: [...(request.sundays ?? [])].sort(),
     units: request.units ?? [],
+    sundayRegions: request.sundayRegions ?? {},
+    regions: (request.regions ?? []).map((r) => ({ id: r.id, name: r.name })),
     decisions: Object.fromEntries(
       Object.entries(decisions).map(([date, d]) => [
         date,
         { unitId: d.unitId, wardId: d.wardId, wardName: d.wardName },
       ]),
     ),
-    // 메모는 내보내지 않는다 — 「칠십인께 남길 말」이라 링크를 가진 다른 회장이 볼 글이 아니다.
+    // 메모는 내보내지 않는다 — 「지역 칠십인에게 남길 말」이라 링크를 가진 다른 회장이 볼 글이 아니다.
     // 있는지만 알려 줘서, 다시 연 회장이 "남긴 말이 있다"는 것만 안다.
     recommendations: recommendations.map((r) => ({
       unitId: r.unitId,
@@ -298,11 +311,14 @@ export function trustedUnits(
   units: RequestUnit[] | undefined,
   allowedUnitIds: ReadonlySet<string>,
   wardUnits: Record<string, { unitId: string; ko: string }>,
+  /** unitId -> 소속 CC. 없으면 regionId를 비운다 */
+  unitRegions: Record<string, string> = {},
 ): RequestUnit[] {
   return (units ?? [])
     .filter((u) => allowedUnitIds.has(u.id))
     .map((u) => ({
       ...u,
+      regionId: unitRegions[u.id],
       wards: u.wards
         .filter((w) => wardUnits[w.id]?.unitId === u.id)
         .map((w) => ({ ...w, ko: wardUnits[w.id].ko })),

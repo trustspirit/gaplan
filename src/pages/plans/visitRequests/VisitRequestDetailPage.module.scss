@@ -343,3 +343,12 @@
   font-weight: $font-weight-semibold;
   white-space: pre-wrap;
 }
+
+.regionTurn {
+  padding: 0 $space-2;
+  border: 1px solid;
+  border-radius: $border-radius-md;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  line-height: 1.6;
+}

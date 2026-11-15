@@ -132,6 +132,16 @@
   border-color: #f8c471;
 }
 
+.cell_otherRegion {
+  background: $neutral-100;
+  border-color: $neutral-100;
+  color: $neutral-400;
+
+  .num {
+    color: $neutral-400;
+  }
+}
+
 .cell_decided {
   background: $color-sidebar;
   border-color: $color-sidebar;

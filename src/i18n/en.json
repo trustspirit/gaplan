@@ -1004,7 +1004,10 @@
     "detailPicked": "You recommended {{ward}}.",
     "detailNone": "No events on this day.",
     "pickHere": "Ward to recommend for this Sunday",
-    "clearPick": "No recommendation"
+    "clearPick": "No recommendation",
+    "otherRegion": "{{region}}'s turn",
+    "otherRegionHint": "The Area Seventy alternates between CCs, so each Sunday is assigned to one CC. You can recommend only on your CC's Sundays.",
+    "legendOtherRegion": "Another CC's turn"
   },
   "visitRequest": {
     "tab": "Recommendations",
@@ -1101,6 +1104,12 @@
     "textTitle": "Request text",
     "quarter": "Quarter",
     "quarterLabel": "Q{{q}} {{year}}",
-    "quarterTitle": "Q{{q}} {{year}} ward visits"
+    "quarterTitle": "Q{{q}} {{year}} ward visits",
+    "regionSwitch": "{{date}} assigned CC: {{region}} (tap to change)",
+    "regionHint": "CCs are assigned in turn. Tap the CC under a Sunday to change it.",
+    "regionRepeat": "{{dates}}: same CC as the previous Sunday.",
+    "regionRotate": "Reassign CCs in turn",
+    "boardRegion": "{{region}} turn",
+    "regionLast": "Started with another CC because the last visit was to {{region}}."
   }
 }

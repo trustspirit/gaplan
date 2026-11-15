@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin'
 import { confirmDeniedReason } from './confirmGuards'
 import { resolveScheduleLocation } from './adminScheduleFields'
 import { REGION_UNITS } from './regions'
+import { lastVisitRegion } from './visitRegionRotation'
 import { WARD_UNITS } from './wardUnitMap'
 import {
   sundayAvailability, isSundayBusy, publicCalendarEvents, type SundayStatus,
@@ -32,7 +33,7 @@ const DEFAULT_END = '13:00'
  */
 async function withTrustedUnits(request: VisitRequestDoc): Promise<VisitRequestDoc> {
   const { unitIds } = await seventyScope(request.seventyUid)
-  return { ...request, units: trustedUnits(request.units, new Set(unitIds), WARD_UNITS) }
+  return { ...request, units: trustedUnits(request.units, new Set(unitIds), WARD_UNITS, UNIT_REGIONS) }
 }
 
 /** 칠십인의 담당 CC와 그 CC의 단위들. 사용자 문서를 서버에서 읽는다. */
@@ -44,6 +45,11 @@ async function seventyScope(seventyUid: string | undefined) {
     : (typeof seventy.regionId === 'string' ? [seventy.regionId] : [])
   return { regionIds, unitIds: regionIds.flatMap((r) => REGION_UNITS[r] ?? []) }
 }
+
+/** unitId -> 소속 CC. REGION_UNITS를 뒤집은 것 */
+const UNIT_REGIONS: Record<string, string> = Object.fromEntries(
+  Object.entries(REGION_UNITS).flatMap(([regionId, ids]) => ids.map((id) => [id, regionId])),
+)
 
 const DAY_MS = 24 * 60 * 60 * 1000
 function shiftDays(date: string, days: number): string {
@@ -451,5 +457,19 @@ export const getVisitSundayStatus = functions
       const req = reqSnap.data() as VisitRequestDoc | undefined
       if (req && req.seventyUid === seventyUid) ignore = decidedScheduleIds(req)
     }
-    return loadSundayStatus(seventyUid, sundays, ignore)
+    const first = [...sundays].sort()[0]
+    const [status, before] = await Promise.all([
+      loadSundayStatus(seventyUid, sundays, ignore),
+      // 분기 경계에서 CC가 이어지지 않게 — 그 전 넉 달의 와드 방문 중 마지막 것의 CC
+      db.collection('schedules')
+        .where('seventyUid', '==', seventyUid)
+        .where('date', '>=', shiftDays(first, -120))
+        .where('date', '<', first)
+        .select('type', 'status', 'date', 'unitId')
+        .get(),
+    ])
+    return {
+      status,
+      lastVisitRegion: lastVisitRegion(before.docs.map((d) => d.data()), first, UNIT_REGIONS),
+    }
   })

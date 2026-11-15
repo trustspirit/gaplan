@@ -47,6 +47,7 @@ import {
   isGeneralConferenceSunday,
   type SundayStatus,
 } from '../../../../functions/src/visitSundayAvailability'
+import { getRegionColor } from '@/constants/regions'
 import styles from './VisitRequestDetailPage.module.scss'
 
 interface PendingDecision {
@@ -101,7 +102,7 @@ export function VisitRequestDetailPage() {
       .catch(() => {})
     if (seventyUid && sundaysKey) {
       fetchSundayStatus(seventyUid, sundaysKey.split(','), reqId)
-        .then((s) => !cancelled && setSundayStatus(s))
+        .then((s) => !cancelled && setSundayStatus(s.status))
         .catch(() => {})
     }
     return () => {
@@ -455,6 +456,11 @@ function SundayRow({
   const [otherOpen, setOtherOpen] = useState(false)
   const [otherUnit, setOtherUnit] = useState('')
   const [otherWard, setOtherWard] = useState('')
+  // CC 차례가 정해진 일요일이면 그 CC의 단위만 — 회장들도 그 CC만 추천할 수 있었다.
+  const turn = request.sundayRegions?.[date]
+  const turnName = turn ? (request.regions?.find((r) => r.id === turn)?.name ?? turn) : null
+  const turnColor = turn ? getRegionColor(turn) : null
+  const turnUnits = turn ? request.units.filter((u) => !u.regionId || u.regionId === turn) : request.units
   const otherWards = useMemo(
     () => request.units.find((u) => u.id === otherUnit)?.wards ?? [],
     [request.units, otherUnit],
@@ -466,6 +472,14 @@ function SundayRow({
       <div className={styles.sundayHead}>
         <span className={styles.sundayDate}>{label}</span>
         {special && <span className={styles.fast}>{special}</span>}
+        {turnName && turnColor && (
+          <span
+            className={styles.regionTurn}
+            style={{ background: turnColor.bg, color: turnColor.text, borderColor: turnColor.border }}
+          >
+            {t('visitRequest.boardRegion', { region: turnName })}
+          </span>
+        )}
         {decision && (
           <>
             <span className={styles.decidedText}>
@@ -557,7 +571,7 @@ function SundayRow({
               setOtherUnit(e.target.value)
               setOtherWard('')
             }}
-            options={request.units.map((u) => ({ value: u.id, label: u.ko }))}
+            options={turnUnits.map((u) => ({ value: u.id, label: u.ko }))}
           />
           <Select
             label={t('visitRequest.pickOtherWard')}

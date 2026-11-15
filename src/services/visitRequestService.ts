@@ -80,6 +80,9 @@ export interface CreateVisitRequestInput {
   sundays: string[]
   dueDate: string | null
   units: VisitRequestUnit[]
+  /** CC를 둘 이상 맡았을 때만 */
+  sundayRegions?: Record<string, string>
+  regions?: { id: string; name: string }[]
 }
 
 export async function createVisitRequest(
@@ -165,14 +168,20 @@ export function alreadyVisitingWard(err: unknown): string | null {
  * 칠십인의 일요일별 상황(일정·참석 행사·막은 날·금식/연차 대회 주일·단위 행사).
  * 집행서기는 칠십인의 가용 시간 설정을 직접 읽을 수 없어 서버에서 함께 계산한다.
  */
+/** 일요일마다 칠십인이 비어 있는지, 그리고 첫 일요일 전 마지막 와드 방문의 CC */
+export interface SundayStatusResult {
+  status: Record<string, SundayStatus>
+  lastVisitRegion: string | null
+}
+
 export async function fetchSundayStatus(
   seventyUid: string,
   sundays: string[],
   requestId?: string,
-): Promise<Record<string, SundayStatus>> {
+): Promise<SundayStatusResult> {
   const fn = httpsCallable<
     { seventyUid: string; sundays: string[]; requestId?: string },
-    Record<string, SundayStatus>
+    SundayStatusResult
   >(functions, 'getVisitSundayStatus')
   const res = await fn({ seventyUid, sundays, ...(requestId ? { requestId } : {}) })
   return res.data

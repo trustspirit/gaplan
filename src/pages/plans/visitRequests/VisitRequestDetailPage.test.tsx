@@ -30,7 +30,7 @@ vi.mock('@/services/visitRequestService', async (importOriginal) => {
     deleteVisitRequest: vi.fn(),
     setVisitRequestStatus: vi.fn(),
     fetchWardStats: vi.fn().mockResolvedValue({}),
-    fetchSundayStatus: vi.fn().mockResolvedValue({}),
+    fetchSundayStatus: vi.fn().mockResolvedValue({ status: {}, lastVisitRegion: null }),
     updateVisitRequestText: vi.fn(),
   }
 })

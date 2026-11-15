@@ -234,3 +234,41 @@
   font-size: $font-size-xs;
   color: $color-text-muted;
 }
+
+// CC 차례 — 칩 아래에 CC 이름 단추를 붙인다
+.sundayCellStack {
+  flex-direction: column;
+  align-items: center;
+  gap: $space-1;
+}
+
+.regionTag {
+  min-width: 48px;
+  min-height: 28px;
+  padding: 0 $space-1;
+  border: 1px solid;
+  border-radius: $border-radius-md;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.regionTagRepeat {
+  outline: 2px solid $color-danger;
+  outline-offset: 1px;
+}
+
+.regionSummary {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+// 고르지 않은 칩도 같은 높이로 — 칩 줄이 들쭉날쭉하지 않게
+.regionTagSpace {
+  height: 28px;
+}

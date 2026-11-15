@@ -17,7 +17,14 @@ export interface VisitRequestUnit {
   id: string
   ko: string
   en: string
+  /** 소속 CC — CC 차례(sundayRegions)를 맞출 때 쓴다 */
+  regionId?: string
   wards: VisitRequestWard[]
+}
+
+export interface VisitRequestRegion {
+  id: string
+  name: string
 }
 
 export interface VisitRequestDecision {
@@ -42,6 +49,12 @@ export interface VisitRequest {
   token: string
   status: VisitRequestStatus
   units: VisitRequestUnit[]
+  /**
+   * 칠십인이 CC를 둘 이상 맡았을 때 일요일마다 차례인 CC(date -> regionId). 한 CC를 연달아
+   * 방문하지 않도록 정해 두고, 그 일요일에는 그 CC의 단위만 추천한다. 없으면 CC 구분 없음.
+   */
+  sundayRegions?: Record<string, string>
+  regions?: VisitRequestRegion[]
   decisions: Record<string, VisitRequestDecision>
   respondedUnitIds?: string[]   // submitVisitRecommendation이 채운다 — 목록의 응답 현황용
   createdBy: string
@@ -73,6 +86,9 @@ export interface PublicVisitRequest {
   status: VisitRequestStatus
   sundays: string[]
   units: VisitRequestUnit[]
+  /** 배포 전 서버는 보내지 않는다 — 없으면 CC 구분 없음 */
+  sundayRegions?: Record<string, string>
+  regions?: VisitRequestRegion[]
   decisions: Record<string, VisitRequestDecision>
   /** 메모는 오지 않는다 — 다른 회장에게 보일 글이 아니라서 있는지만 온다 */
   recommendations: (Omit<VisitRecommendation, 'note'> & { hasNote: boolean })[]
