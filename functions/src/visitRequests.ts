@@ -94,6 +94,7 @@ async function loadSundayStatus(
       .filter((x) => x.isBlocked === true && typeof x.date === 'string')
       .map((x) => x.date as string),
     ignoreScheduleIds,
+    unitRegions: UNIT_REGIONS,
   })
 }
 
@@ -115,7 +116,7 @@ async function loadCalendarEvents(seventyUid: string, sundays: string[]) {
       .where('date', '<=', to)
       .get(),
   ])
-  return publicCalendarEvents(snap.docs.map((d) => d.data()), scope.regionIds, scope.unitIds, from, to)
+  return publicCalendarEvents(snap.docs.map((d) => d.data()), scope.regionIds, scope.unitIds, from, to, UNIT_REGIONS)
 }
 
 function decidedScheduleIds(request: VisitRequestDoc): Set<string> {

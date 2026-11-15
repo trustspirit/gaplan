@@ -77,6 +77,22 @@ describe('sundayAvailability', () => {
     expect(r['2027-01-17'].busy).toEqual([{ kind: 'event', label: '서울 스테이크 대회', publicLabel: true }])
   })
 
+  it('대상 CC와 대상 단위를 함께 지정하면 교집합만 — 그 CC 소속이 아닌 단위는 막지 않는다', () => {
+    const r = sundayAvailability({
+      ...base,
+      regionIds: ['seoul', 'seoul-south'],
+      regionUnitIds: ['seoul-stake', 'gyeonggi-stake'],
+      unitRegions: { 'seoul-stake': 'seoul', 'gyeonggi-stake': 'seoul-south' },
+      events: [
+        { title: '어긋난 지정', category: 'conference', date: '2027-01-10', isPublic: true, targetRegionIds: ['seoul'], targetUnitIds: ['seoul-stake', 'gyeonggi-stake'] },
+        { title: '아무도 아님', category: 'conference', date: '2027-01-17', isPublic: true, targetRegionIds: ['seoul'], targetUnitIds: ['gyeonggi-stake'] },
+      ],
+    })
+    expect(r['2027-01-10'].unitBlocks).toEqual({ 'seoul-stake': '어긋난 지정' })
+    expect(isSundayBusy(r['2027-01-17'])).toBe(false)
+    expect(r['2027-01-17'].unitBlocks).toEqual({})
+  })
+
   it('담당 지역 전체·교회 전체 대상의 대회/행사는 모두를 막는다', () => {
     const r = sundayAvailability({
       ...base,

@@ -108,19 +108,23 @@ export function isGeneralConferenceSunday(day: string): boolean {
  * 행사가 칠십인 담당 지역의 누구에게 해당하는가. null이면 무관하다.
  *   - 대상 단위가 있으면 그 단위만(wide=false). 스테이크 대회는 대상 단위와 함께 그 스테이크의
  *     CC도 targetRegionIds에 들어 있다(CC 캘린더에 싣기 위해) — 그 CC 전체 행사로 읽으면 안 된다.
+ *     CC도 지정돼 있으면 generalScheduleScope.ts처럼 교집합으로 — 그 CC 소속 대상 단위만 남긴다.
  *   - 대상 단위 없이 CC만 있으면 그 CC 전체, 아무 대상도 없으면 교회 전체(wide=true).
  */
 function eventScope(
   e: AvailabilityEvent,
   regions: ReadonlySet<string>,
   units: ReadonlySet<string>,
+  unitRegions: Readonly<Record<string, string>>,
 ): { wide: boolean; unitHits: string[] } | null {
   const targetUnits = strList(e.targetUnitIds)
+  const targetRegions = strList(e.targetRegionIds)
   if (targetUnits.length > 0) {
-    const unitHits = targetUnits.filter((u) => units.has(u))
+    const unitHits = targetUnits.filter(
+      (u) => units.has(u) && (targetRegions.length === 0 || !unitRegions[u] || targetRegions.includes(unitRegions[u])),
+    )
     return unitHits.length > 0 ? { wide: false, unitHits } : null
   }
-  const targetRegions = strList(e.targetRegionIds)
   if (targetRegions.length === 0 || targetRegions.some((r) => regions.has(r))) return { wide: true, unitHits: [] }
   return null
 }
@@ -133,11 +137,14 @@ export function sundayAvailability(input: {
   events: AvailabilityEvent[]
   blockedDates: string[]
   ignoreScheduleIds?: ReadonlySet<string>
+  /** unitId -> 소속 CC. 행사의 대상 CC·단위 교집합을 가리는 데 쓴다(eventScope) */
+  unitRegions?: Readonly<Record<string, string>>
 }): Record<string, SundayStatus> {
   const ignore = input.ignoreScheduleIds ?? new Set<string>()
   const regions = new Set(input.regionIds)
   const units = new Set(input.regionUnitIds)
   const blocked = new Set(input.blockedDates)
+  const unitRegions = input.unitRegions ?? {}
   const out: Record<string, SundayStatus> = {}
 
   for (const day of input.sundays) {
@@ -168,7 +175,7 @@ export function sundayAvailability(input: {
 
     for (const e of input.events) {
       if (!covers(str(e.date), str(e.endDate), day)) continue
-      const scope = eventScope(e, regions, units)
+      const scope = eventScope(e, regions, units, unitRegions)
       if (!scope) continue
       const { wide, unitHits } = scope
 
@@ -216,6 +223,7 @@ export function publicCalendarEvents(
   regionUnitIds: string[],
   from: string,
   to: string,
+  unitRegions: Readonly<Record<string, string>> = {},
 ): CalendarEvent[] {
   const regions = new Set(regionIds)
   const units = new Set(regionUnitIds)
@@ -226,7 +234,7 @@ export function publicCalendarEvents(
     const endRaw = str(e.endDate)
     const end = endRaw && endRaw >= date ? endRaw : date
     if (!date || end < from || date > to) continue
-    const scope = eventScope(e, regions, units)
+    const scope = eventScope(e, regions, units, unitRegions)
     if (!scope) continue
     const { wide, unitHits } = scope
     out.push({
