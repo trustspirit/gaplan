@@ -27,6 +27,9 @@ jobs:
               - 'vite.config.ts'
               - 'package.json'
               - 'package-lock.json'
+              # 클라이언트가 functions/src의 순수 모듈(scheduleRules, visitSundayAvailability 등)을
+              # 직접 import한다 — 그 파일이 바뀌면 웹 번들도 다시 배포해야 한다.
+              - 'functions/src/**'
             functions:
               - 'functions/**'
             firestore:
