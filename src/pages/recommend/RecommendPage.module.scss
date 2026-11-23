@@ -132,68 +132,6 @@ $page-bg: $neutral-50;
   line-height: $line-height-normal;
 }
 
-// ── 들어오는 첫 화면: 단위 고르기 ──
-.gateTitle {
-  margin: 0;
-  font-size: $font-size-lg;
-  font-weight: $font-weight-bold;
-  color: $color-sidebar;
-  line-height: $line-height-tight;
-}
-
-.unitList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  background: $color-surface;
-  border: 1px solid $color-border;
-  border-radius: $border-radius-lg;
-  overflow: hidden;
-
-  li + li {
-    border-top: 1px solid $color-border;
-  }
-}
-
-.unitRow {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto;
-  align-items: center;
-  column-gap: $space-3;
-  width: 100%;
-  min-height: 64px;
-  padding: $space-3 $space-4;
-  background: none;
-  border: none;
-  text-align: left;
-  color: $color-text;
-  cursor: pointer;
-
-  .unitName {
-    grid-column: 1;
-    font-size: $font-size-base;
-  }
-
-  .unitStatus {
-    grid-column: 1;
-  }
-
-  &:active {
-    background: $color-primary-weak;
-  }
-
-  &:focus-visible {
-    @include focus-ring;
-  }
-}
-
-.unitChevron {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  color: $neutral-400;
-}
-
 // ── 고른 뒤: 위에 붙는 단위 표시줄 ──
 .unitBar {
   position: sticky;
@@ -217,74 +155,6 @@ $page-bg: $neutral-50;
   font-size: 0.9375rem;
   font-weight: $font-weight-bold;
   color: $color-sidebar;
-}
-
-.unitBarChange,
-.linkBtn {
-  min-height: 44px;
-  padding: 0 $space-1;
-  background: none;
-  border: none;
-  font-size: $font-size-sm;
-  color: $color-primary;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.linkBtn {
-  display: block;
-  margin: $space-2 auto 0;
-}
-
-// ── (예전) 단위 고르기 ──
-.unitGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: $space-2;
-}
-
-.unitBtn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  min-height: 60px;
-  padding: $space-3;
-  background: $color-surface;
-  border: 1px solid $color-border-strong;
-  border-radius: $border-radius-lg;
-  text-align: left;
-  cursor: pointer;
-  color: $color-text;
-
-  &:focus-visible {
-    @include focus-ring;
-  }
-}
-
-.unitBtnActive {
-  background: $color-sidebar;
-  border-color: $color-sidebar;
-  color: $color-surface;
-
-  .unitStatus {
-    color: $color-sidebar-text;
-  }
-}
-
-.unitName {
-  font-size: 0.9375rem;
-  font-weight: $font-weight-semibold;
-}
-
-.unitStatus {
-  font-size: $font-size-xs;
-  color: $neutral-500;
-}
-
-.unitStatusDone {
-  color: $color-success;
 }
 
 // ── 와드 방문 기록 ──
@@ -493,33 +363,6 @@ $page-bg: $neutral-50;
   margin: 0;
   font-size: $font-size-xs;
   color: $neutral-600;
-}
-
-.others {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: $space-1 $space-2;
-  font-size: $font-size-xs;
-}
-
-.othersCount {
-  padding: 1px $space-2;
-  border-radius: $border-radius-full;
-  background: $neutral-100;
-  color: $neutral-700;
-  font-weight: $font-weight-semibold;
-}
-
-.othersNames {
-  color: $neutral-600;
-}
-
-.othersHint {
-  margin: 0;
-  font-size: $font-size-xs;
-  color: #8a4b0f;
-  line-height: $line-height-normal;
 }
 
 // ── 보내는 분 ──

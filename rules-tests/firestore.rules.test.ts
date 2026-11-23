@@ -400,7 +400,8 @@ describe('generalSchedules — 담당 지역 칠십인 참석', () => {
 // 방문 추천 요청: 칠십인 본인·그 칠십인의 집행서기·관리자만. 확정(decisions)과 추천은 CF만 쓴다.
 describe('visitRequests', () => {
   const request = {
-    title: '1월 방문', seventyUid: 's1', status: 'open', token: '0123456789abcdef',
+    title: '1월 방문', seventyUid: 's1', status: 'open',
+    unitTokens: { 'seoul-stake': '0123456789abcdef' },
     sundays: ['2027-01-10'], units: [], decisions: {},
   }
 
@@ -436,6 +437,21 @@ describe('visitRequests', () => {
     await assertFails(
       setDoc(doc(as('s1'), 'visitRequests/n3'), { ...request, createdBy: 's1', guidance: 'x'.repeat(501) }),
     )
+    const noTokens: Record<string, unknown> = { ...request }
+    delete noTokens.unitTokens
+    await assertFails(setDoc(doc(as('s1'), 'visitRequests/n4'), { ...noTokens, createdBy: 's1' }))
+  })
+
+  it('lets a manager fill per-stake tokens once on an old request, but never change them', async () => {
+    const old: Record<string, unknown> = { ...request }
+    delete old.unitTokens
+    await seed('visitRequests/old', { ...old, token: '0123456789abcdef', createdBy: 's1' })
+    await assertFails(updateDoc(doc(as('s2'), 'visitRequests/old'), { unitTokens: { a: 'ffffffffffffffff' } }))
+    await assertFails(
+      updateDoc(doc(as('s1'), 'visitRequests/old'), { unitTokens: { a: 'ffffffffffffffff' }, title: 'x' }),
+    )
+    await assertSucceeds(updateDoc(doc(as('e1'), 'visitRequests/old'), { unitTokens: { a: 'ffffffffffffffff' } }))
+    await assertFails(updateDoc(doc(as('s1'), 'visitRequests/old'), { unitTokens: { a: 'eeeeeeeeeeeeeeee' } }))
   })
 
   it('keeps the token-bearing document away from other seventies, other secretaries and presidents', async () => {
@@ -455,9 +471,12 @@ describe('visitRequests', () => {
   it('allows editing title, note, guidance, due date and status — but not decisions, token or sundays', async () => {
     await assertSucceeds(updateDoc(doc(as('e1'), 'visitRequests/r1'), { title: '바꿈', status: 'closed' }))
     await assertSucceeds(updateDoc(doc(as('s1'), 'visitRequests/r1'), { guidance: '성역이 필요한 와드를 추천해 주세요.' }))
+    await assertSucceeds(updateDoc(doc(as('e1'), 'visitRequests/r1'), { unitSundays: { 'seoul-stake': ['2027-01-10'] } }))
+    await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { unitSundays: ['2027-01-10'] }))
     await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { guidance: 'x'.repeat(501) }))
     await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { decisions: { x: 1 } }))
     await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { token: 'ffffffffffffffff' }))
+    await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { unitTokens: { x: 'ffffffffffffffff' } }))
     await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { sundays: [] }))
     await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { status: 'done' }))
     await assertFails(updateDoc(doc(as('s2'), 'visitRequests/r1'), { title: '남의 것' }))

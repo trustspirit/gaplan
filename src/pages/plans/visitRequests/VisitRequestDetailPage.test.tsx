@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { VisitRecommendation, VisitRequest } from '@/types'
-import { decideVisitRequestDate } from '@/services/visitRequestService'
+import { decideVisitRequestDate, ensureUnitTokens, setUnitSundays } from '@/services/visitRequestService'
 import { VisitRequestDetailPage } from './VisitRequestDetailPage'
 
 let request: VisitRequest
@@ -29,7 +29,8 @@ vi.mock('@/services/visitRequestService', async (importOriginal) => {
     decideVisitRequestDate: vi.fn(),
     deleteVisitRequest: vi.fn(),
     setVisitRequestStatus: vi.fn(),
-    fetchWardStats: vi.fn().mockResolvedValue({}),
+    ensureUnitTokens: vi.fn().mockResolvedValue(undefined),
+    setUnitSundays: vi.fn().mockResolvedValue(undefined),
     fetchSundayStatus: vi.fn().mockResolvedValue({ status: {}, lastVisitRegion: null }),
     updateVisitRequestText: vi.fn(),
   }
@@ -45,7 +46,7 @@ beforeEach(() => {
     seventyUid: 's1',
     seventyName: '김칠십',
     sundays: ['2027-01-10', '2027-01-17'],
-    token: '0123456789abcdef',
+    unitTokens: { u1: '0123456789abcdef', u2: 'fedcba9876543210' },
     status: 'open',
     units: [
       { id: 'u1', ko: '서울 스테이크', en: 'Seoul', wards: [{ id: 'w1', ko: '녹번 와드', en: 'N' }] },
@@ -73,9 +74,35 @@ function renderPage() {
 }
 
 describe('VisitRequestDetailPage', () => {
-  it('shows the public link to share', () => {
+  it('gives each stake its own link', () => {
     renderPage()
-    expect(screen.getByText(/\/recommend\/r1\/0123456789abcdef$/)).toBeInTheDocument()
+    const hrefs = screen.getAllByRole('link', { name: /visitRequest.open/ }).map((a) => a.getAttribute('href'))
+    expect(hrefs).toEqual([
+      expect.stringMatching(/\/recommend\/r1\/0123456789abcdef$/),
+      expect.stringMatching(/\/recommend\/r1\/fedcba9876543210$/),
+    ])
+  })
+
+  it('lets the seventy choose the Sundays for one stake, not ones decided elsewhere', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    // 서울 스테이크(u1): 1/10은 고를 수 있고, 1/17은 서울동으로 확정돼 고를 수 없다
+    const u1Row = screen.getAllByRole('link', { name: /visitRequest.open/ })[0].closest('li')!
+    const [jan10, jan17] = within(u1Row)
+      .getAllByRole('button')
+      .filter((b) => b.hasAttribute('aria-pressed'))
+    expect(jan10).toHaveAttribute('aria-pressed', 'true')
+    expect(jan17).toBeDisabled()
+    await user.click(jan10)
+    await waitFor(() => expect(setUnitSundays).toHaveBeenCalledWith('r1', 'u1', []))
+    expect(within(u1Row).getByText(/visitRequest.decidedElsewhere/)).toHaveTextContent('교문 와드')
+  })
+
+  it('fills per-stake tokens on a request made before per-stake links', () => {
+    request = { ...request, unitTokens: undefined }
+    renderPage()
+    expect(ensureUnitTokens).toHaveBeenCalled()
+    expect(screen.getAllByText('visitRequest.linkPreparing')).toHaveLength(2)
   })
 
   it('confirms a candidate only after the confirm sheet', async () => {

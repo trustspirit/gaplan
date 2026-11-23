@@ -13,7 +13,7 @@ import styles from './RecommendCalendar.module.scss'
 
 /** 요청 일요일 한 칸의 상태 — RecommendPage가 정해서 넘긴다 */
 export type SundayCellState =
-  | { kind: 'open'; pickedWard: string | null; others: number }
+  | { kind: 'open'; pickedWard: string | null }
   | { kind: 'busy'; reason: string }
   | { kind: 'unitBlocked'; reason: string }
   | { kind: 'otherRegion'; reason: string }
@@ -78,8 +78,6 @@ export function RecommendCalendar({ sundays, cells, events, wards, recencyOf, pi
               {selectedCell.kind === 'unitBlocked' && selectedCell.reason}
               {selectedCell.kind === 'otherRegion' && selectedCell.reason}
               {selectedCell.kind === 'decided' && selectedCell.label}
-              {selectedCell.kind === 'open' && selectedCell.others > 0 &&
-                ` · ${t('recommend.othersPicked', { count: selectedCell.others })}`}
             </p>
           )}
           {selectedEvents.length === 0 && !selectedCell && (

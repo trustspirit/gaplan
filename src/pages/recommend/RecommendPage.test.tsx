@@ -33,20 +33,12 @@ function data(over: Partial<PublicVisitRequest> = {}): PublicVisitRequest {
           { id: 'seoul-sinchon', ko: '신촌 와드', en: 'Sinchon Ward' },
         ],
       },
-      {
-        id: 'seoul-east-stake', ko: '서울동 스테이크', en: 'Seoul East Stake',
-        wards: [{ id: 'seoul-east-gyomun', ko: '교문 와드', en: 'Gyomun Ward' }],
-      },
     ],
+    // 서버는 다른 스테이크로 확정된 날을 빈 값으로만 보낸다
     decisions: {
-      '2027-01-24': { unitId: 'seoul-east-stake', wardId: 'seoul-east-gyomun', wardName: '교문 와드' },
+      '2027-01-24': { unitId: '', wardId: '', wardName: '' },
     },
-    recommendations: [
-      {
-        unitId: 'seoul-east-stake', submitterName: '이회장', submittedAt: '2026-11-01T00:00:00Z', hasNote: true,
-        picks: [{ date: '2027-01-10', wardId: 'seoul-east-gyomun', wardName: '교문 와드' }],
-      },
-    ],
+    recommendations: [],
     sundayStatus: {},
     wardStats: {
       'seoul-nokbeon': { lastVisit: null, nextVisit: null, count12m: 0 },
@@ -56,10 +48,13 @@ function data(over: Partial<PublicVisitRequest> = {}): PublicVisitRequest {
   }
 }
 
+const earlier = {
+  unitId: 'seoul-stake', submitterName: '이회장', submittedAt: '2026-11-01T00:00:00Z', hasNote: true,
+  picks: [{ date: '2027-01-10', wardId: 'seoul-sinchon', wardName: '신촌 와드' }],
+}
+
 beforeEach(() => {
   localStorage.clear()
-  // 고른 단위가 주소(?unit=)에 남는다 — 테스트마다 처음 화면에서 시작한다.
-  window.history.replaceState(null, '', '/recommend/r1/0123456789abcdef')
   getMock.mockReset()
   submitMock.mockReset()
   submitMock.mockResolvedValue({ data: { success: true } })
@@ -75,13 +70,15 @@ async function pick(user: ReturnType<typeof userEvent.setup>, index: number, war
   await user.click(screen.getByRole('button', { name: new RegExp(ward), pressed: false }))
 }
 
-async function openAsSeoul() {
-  getMock.mockResolvedValue({ data: data() })
+/** 스테이크 링크를 연다 — 링크가 곧 스테이크라 고르는 단계 없이 추천 화면이 뜬다 */
+async function open(over: Partial<PublicVisitRequest> = {}) {
+  getMock.mockResolvedValue({ data: data(over) })
   const user = userEvent.setup()
   render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
-  await user.click(await screen.findByRole('button', { name: /서울 스테이크/ }))
+  await screen.findByText('recommend.step2')
   return user
 }
+const openAsSeoul = () => open()
 
 describe('RecommendPage', () => {
   it('tells an invalid link apart from a load failure', async () => {
@@ -91,13 +88,11 @@ describe('RecommendPage', () => {
     expect(screen.queryByText('common.retry')).not.toBeInTheDocument()
   })
 
-  it('shows which units already submitted before one is chosen', async () => {
-    getMock.mockResolvedValue({ data: data() })
-    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
-    const east = await screen.findByRole('button', { name: /서울동 스테이크/ })
-    expect(east).toHaveTextContent('이회장')
-    // 단위를 고르기 전에는 일요일 목록을 보여 주지 않는다
-    expect(screen.queryByText('recommend.step2')).not.toBeInTheDocument()
+  it('opens straight into the stake of the link, without a unit picker', async () => {
+    await open()
+    expect(screen.getByText('서울 스테이크')).toBeInTheDocument()
+    expect(screen.queryByText('recommend.gateTitle')).not.toBeInTheDocument()
+    expect(screen.queryByText('recommend.changeUnit')).not.toBeInTheDocument()
   })
 
   it('lists the ward visit history with the longest-unvisited ward first', async () => {
@@ -109,10 +104,11 @@ describe('RecommendPage', () => {
     expect(rows[1]).toHaveTextContent('신촌 와드')
   })
 
-  it("shows other units' picks on a Sunday and locks a Sunday decided for another unit", async () => {
+  it('shows a Sunday decided elsewhere only as decided, without naming the stake', async () => {
     await openAsSeoul()
-    expect(screen.getAllByText(/recommend.othersPicked/)).toHaveLength(1)
-    expect(screen.getByText(/recommend.decided:/)).toHaveTextContent('교문 와드')
+    expect(screen.queryByText(/recommend.othersPicked/)).not.toBeInTheDocument()
+    expect(screen.getAllByText('recommend.decidedOther').length).toBeGreaterThan(0)
+    expect(document.body).not.toHaveTextContent('교문')
     // 정해지지 않은 두 일요일에만 고르는 칸이 있다
     expect(triggers()).toHaveLength(2)
   })
@@ -146,30 +142,22 @@ describe('RecommendPage', () => {
   })
 
   it("prefills a unit's earlier recommendation so a president only changes what changed", async () => {
-    getMock.mockResolvedValue({ data: data() })
-    const user = userEvent.setup()
-    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
-    await user.click(await screen.findByRole('button', { name: /서울동 스테이크/ }))
-    expect(screen.getByLabelText('recommend.nameLabel')).toHaveValue('이회장')
-    expect(triggers()[0]).toHaveTextContent('교문 와드')
+    await open({ recommendations: [earlier] })
+    // 받은 뒤 한 번 채운다(effect) — 채워질 때까지 기다린다
+    await waitFor(() => expect(screen.getByLabelText('recommend.nameLabel')).toHaveValue('이회장'))
+    expect(triggers()[0]).toHaveTextContent('신촌 와드')
     expect(screen.getByRole('button', { name: 'recommend.resubmit' })).toBeInTheDocument()
   })
 
   it('shows a closed request read-only', async () => {
-    getMock.mockResolvedValue({ data: data({ status: 'closed' }) })
-    const user = userEvent.setup()
-    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
-    await user.click(await screen.findByRole('button', { name: /서울 스테이크/ }))
+    await open({ status: 'closed' })
     expect(screen.getByText('recommend.closedBanner')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'recommend.submit' })).not.toBeInTheDocument()
     triggers().forEach((c) => expect(c).toBeDisabled())
   })
 
   it('keeps an earlier note unless the president writes a new one', async () => {
-    getMock.mockResolvedValue({ data: data() })
-    const user = userEvent.setup()
-    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
-    await user.click(await screen.findByRole('button', { name: /서울동 스테이크/ }))
+    const user = await open({ recommendations: [earlier] })
     expect(screen.getByText('recommend.noteKept')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'recommend.resubmit' }))
     await waitFor(() => expect(submitMock).toHaveBeenCalled())
@@ -191,7 +179,7 @@ describe('RecommendPage', () => {
     getMock.mockResolvedValueOnce({ data: data({ decisions: {} }) })
     const user = userEvent.setup()
     render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
-    await user.click(await screen.findByRole('button', { name: /^서울 스테이크/ }))
+    await screen.findByText('recommend.step2')
     await pick(user, 2, '신촌 와드') // 1월 24일
     await pick(user, 0, '녹번 와드')
     expect(screen.getByText(/recommend.pickedCount/)).toHaveTextContent('"count":2')
@@ -208,12 +196,8 @@ describe('RecommendPage', () => {
     expect(submitMock.mock.calls[1][0].picks).toEqual([{ date: '2027-01-10', wardId: 'seoul-nokbeon' }])
   })
 
-  it('shows the emphasis on the gate and on the recommendation screen', async () => {
-    getMock.mockResolvedValue({ data: data({ guidance: '오래 방문받지 못한 와드를 먼저 추천해 주세요.' }) })
-    const user = userEvent.setup()
-    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
-    expect(await screen.findByText('오래 방문받지 못한 와드를 먼저 추천해 주세요.')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /^서울 스테이크/ }))
+  it('shows the emphasis on the recommendation screen', async () => {
+    await open({ guidance: '오래 방문받지 못한 와드를 먼저 추천해 주세요.' })
     expect(screen.getByText('오래 방문받지 못한 와드를 먼저 추천해 주세요.')).toBeInTheDocument()
     // 강조가 있으면 고정 안내 문구는 빼서 같은 말을 두 번 하지 않는다
     expect(screen.queryByText('recommend.statsHint')).not.toBeInTheDocument()
@@ -221,36 +205,26 @@ describe('RecommendPage', () => {
   })
 
   it("does not offer a Sunday the seventy can't come or that has our own conference", async () => {
-    getMock.mockResolvedValue({
-      data: data({
-        decisions: {},
-        sundayStatus: {
-          '2027-01-10': { busy: [{ kind: 'event', label: '지역 대회' }], notes: [], unitBlocks: {} },
-          '2027-01-17': { busy: [], notes: [], unitBlocks: { 'seoul-stake': '서울 스테이크 대회' } },
-        },
-      }),
+    await open({
+      decisions: {},
+      sundayStatus: {
+        '2027-01-10': { busy: [{ kind: 'event', label: '지역 대회' }], notes: [], unitBlocks: {} },
+        '2027-01-17': { busy: [], notes: [], unitBlocks: { 'seoul-stake': '서울 스테이크 대회' } },
+      },
     })
-    const user = userEvent.setup()
-    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
-    await user.click(await screen.findByRole('button', { name: /^서울 스테이크/ }))
     expect(triggers()).toHaveLength(1)
     expect(screen.getByText(/recommend.busy · 지역 대회/)).toBeInTheDocument()
     expect(screen.getByText(/recommend.unitBlockedTitle/)).toHaveTextContent('서울 스테이크 대회')
   })
 
   it("puts only this unit's and area-wide events on the calendar", async () => {
-    getMock.mockResolvedValue({
-      data: data({
-        calendarEvents: [
-          { title: '서울 스테이크 대회', date: '2027-01-16', endDate: null, category: 'conference', unitIds: ['seoul-stake'], blocking: true, seventyAttends: false },
-          { title: '서울동 청년 활동', date: '2027-01-16', endDate: null, category: 'other', unitIds: ['seoul-east-stake'], blocking: false, seventyAttends: false },
-          { title: '지역 선교 대회', date: '2027-01-30', endDate: null, category: 'other', unitIds: null, blocking: false, seventyAttends: false },
-        ],
-      }),
+    const user = await open({
+      calendarEvents: [
+        { title: '서울 스테이크 대회', date: '2027-01-16', endDate: null, category: 'conference', unitIds: ['seoul-stake'], blocking: true, seventyAttends: false },
+        { title: '서울동 청년 활동', date: '2027-01-16', endDate: null, category: 'other', unitIds: ['seoul-east-stake'], blocking: false, seventyAttends: false },
+        { title: '지역 선교 대회', date: '2027-01-30', endDate: null, category: 'other', unitIds: null, blocking: false, seventyAttends: false },
+      ],
     })
-    const user = userEvent.setup()
-    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
-    await user.click(await screen.findByRole('button', { name: /^서울 스테이크/ }))
     await user.click(screen.getByRole('tab', { name: /recommend.viewCalendar/ }))
     const grid = screen.getByRole('grid')
     expect(within(grid).getByText('서울 스테이크 대회')).toBeInTheDocument()
@@ -259,10 +233,7 @@ describe('RecommendPage', () => {
   })
 
   it('picks a ward right from the calendar and keeps the list in sync', async () => {
-    getMock.mockResolvedValue({ data: data() })
-    const user = userEvent.setup()
-    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
-    await user.click(await screen.findByRole('button', { name: /^서울 스테이크/ }))
+    const user = await open()
     await user.click(screen.getByRole('tab', { name: /recommend.viewCalendar/ }))
     // 테스트의 t는 날짜 형식을 키 그대로 돌려줘 aria-label로는 못 찾는다 — 칸의 숫자로 찾는다
     const jan17 = within(screen.getByRole('grid'))
@@ -277,16 +248,11 @@ describe('RecommendPage', () => {
 
   it("only offers Sundays that are this unit's CC turn", async () => {
     const base = data()
-    getMock.mockResolvedValue({
-      data: data({
-        units: base.units.map((u) => ({ ...u, regionId: 'seoul' })),
-        sundayRegions: { '2027-01-10': 'seoul', '2027-01-17': 'seoul-south', '2027-01-24': 'seoul' },
-        regions: [{ id: 'seoul', name: '서울 CC' }, { id: 'seoul-south', name: '서울남 CC' }],
-      }),
+    await open({
+      units: base.units.map((u) => ({ ...u, regionId: 'seoul' })),
+      sundayRegions: { '2027-01-10': 'seoul', '2027-01-17': 'seoul-south', '2027-01-24': 'seoul' },
+      regions: [{ id: 'seoul', name: '서울 CC' }, { id: 'seoul-south', name: '서울남 CC' }],
     })
-    const user = userEvent.setup()
-    render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
-    await user.click(await screen.findByRole('button', { name: /^서울 스테이크/ }))
     expect(triggers()).toHaveLength(1)
     expect(screen.getAllByText(/recommend.otherRegion:/)[0]).toHaveTextContent('서울남 CC')
     expect(screen.getByText('recommend.otherRegionHint')).toBeInTheDocument()

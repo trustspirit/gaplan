@@ -180,19 +180,30 @@ service cloud.firestore {
         && canManageVisitRequest(request.resource.data.seventyUid)
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.status == 'open'
-        && request.resource.data.token is string
-        && request.resource.data.token.size() >= 16
+        // 스테이크별 공개 링크 토큰(unitId -> token). 토큰 형식은 CF가 다시 확인한다.
+        && request.resource.data.unitTokens is map
+        && request.resource.data.unitTokens.size() > 0
         && request.resource.data.get('decisions', {}).size() == 0
         && !('respondedUnitIds' in request.resource.data)
         && request.resource.data.get('guidance', '') is string
         && request.resource.data.get('guidance', '').size() <= 500;
       allow update: if isAuth()
         && canManageVisitRequest(resource.data.seventyUid)
-        && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['title', 'note', 'guidance', 'dueDate', 'status'])
-        && request.resource.data.status in ['open', 'closed']
-        && request.resource.data.get('guidance', '') is string
-        && request.resource.data.get('guidance', '').size() <= 500;
+        && (
+          (request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['title', 'note', 'guidance', 'dueDate', 'status', 'unitSundays'])
+           && request.resource.data.status in ['open', 'closed']
+           // 스테이크별 링크에 넣을 일요일. 요청 밖 날짜는 CF가 걸러 낸다.
+           && request.resource.data.get('unitSundays', {}) is map
+           && request.resource.data.get('guidance', '') is string
+           && request.resource.data.get('guidance', '').size() <= 500)
+          // 스테이크별 링크 이전의 요청: 스테이크별 토큰을 한 번만 채운다. 이미 있으면 못 바꾼다 —
+          // 바꾸면 회장들에게 보낸 링크가 끊긴다.
+          || (!('unitTokens' in resource.data)
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['unitTokens'])
+              && request.resource.data.unitTokens is map
+              && request.resource.data.unitTokens.size() > 0)
+        );
 
       // 스테이크별 추천. 쓰기는 submitVisitRecommendation만 — 지우기는 요청을 지울 때 함께.
       match /recommendations/{unitId} {

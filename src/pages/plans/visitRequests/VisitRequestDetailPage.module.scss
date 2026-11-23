@@ -72,37 +72,12 @@
   line-height: $line-height-normal;
 }
 
-.urlBox {
-  padding: $space-3;
-  background: $color-surface-sunken;
-  border: 1px solid $color-border;
-  border-radius: $border-radius-md;
-  overflow-x: auto;
-}
-
-.url {
-  font-size: $font-size-sm;
-  word-break: break-all;
-  color: $color-sidebar;
-}
-
 .shareActions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: $space-2;
   margin-top: $space-3;
-}
-
-.openLink {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-1;
-  min-height: 44px;
-  padding: 0 $space-2;
-  font-size: $font-size-sm;
-  color: $color-primary;
-  text-decoration: none;
 }
 
 .stats {

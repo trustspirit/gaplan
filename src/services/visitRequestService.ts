@@ -6,7 +6,7 @@ import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/firebase'
 import { generatePublicToken } from '@/utils/publicToken'
 import type {
-  AppUser, PublicVisitRequest, VisitRecommendation, VisitRequest, VisitRequestUnit, WardVisitStat,
+  AppUser, VisitRecommendation, VisitRequest, VisitRequestUnit, WardVisitStat,
 } from '@/types'
 import type { SundayStatus } from '../../functions/src/visitSundayAvailability'
 import { mapDocs, snapshotErrHandler } from './_utils'
@@ -85,6 +85,24 @@ export interface CreateVisitRequestInput {
   regions?: { id: string; name: string }[]
 }
 
+function newUnitTokens(units: { id: string }[]): Record<string, string> {
+  return Object.fromEntries(units.map((u) => [u.id, generatePublicToken()]))
+}
+
+/**
+ * 스테이크별 링크 이전에 만든 요청에 스테이크별 토큰을 채운다. 규칙이 한 번만 허락한다 —
+ * 이미 있으면 그대로 둔다(바꾸면 보낸 링크가 끊긴다).
+ */
+export async function ensureUnitTokens(request: Pick<VisitRequest, 'id' | 'units' | 'unitTokens'>): Promise<void> {
+  if (request.unitTokens && Object.keys(request.unitTokens).length > 0) return
+  await updateDoc(doc(db, 'visitRequests', request.id), { unitTokens: newUnitTokens(request.units) })
+}
+
+/** 스테이크 하나의 링크에 넣을 일요일을 바꾼다. */
+export async function setUnitSundays(requestId: string, unitId: string, sundays: string[]): Promise<void> {
+  await updateDoc(doc(db, 'visitRequests', requestId), { [`unitSundays.${unitId}`]: [...sundays].sort() })
+}
+
 export async function createVisitRequest(
   input: CreateVisitRequestInput,
   createdBy: string,
@@ -95,7 +113,8 @@ export async function createVisitRequest(
     // createdAt은 정렬용 문자열 — 목록이 클라이언트에서 문자열로 비교한다.
     createdAt: new Date().toISOString(),
     updatedAt: serverTimestamp(),
-    token: generatePublicToken(),
+    // 스테이크마다 따로 보내는 링크 — 링크 하나는 그 스테이크만 연다
+    unitTokens: newUnitTokens(input.units),
     status: 'open',
     decisions: {},
     createdBy,
@@ -139,22 +158,6 @@ export async function decideVisitRequestDate(
 ): Promise<void> {
   const fn = httpsCallable<DecideParams, { success: boolean }>(functions, 'decideVisitRequestDate')
   await fn(pick ? { requestId, date, ...pick } : { requestId, date, clear: true })
-}
-
-/**
- * 회장들이 보는 것과 같은 와드 방문 기록. 로그인한 칠십인도 같은 함수를 쓴다 —
- * 확정 화면과 추천 화면이 같은 와드를 서로 다른 숫자로 보여 주면 안 된다.
- */
-export async function fetchWardStats(
-  requestId: string,
-  token: string,
-): Promise<PublicVisitRequest['wardStats']> {
-  const fn = httpsCallable<{ requestId: string; token: string }, PublicVisitRequest>(
-    functions,
-    'getVisitRequestPublic',
-  )
-  const res = await fn({ requestId, token })
-  return res.data.wardStats ?? {}
 }
 
 /** decideVisitRequestDate가 겹치는 방문 때문에 거절했으면 그 와드 이름을, 아니면 null. */

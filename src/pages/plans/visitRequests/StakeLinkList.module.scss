@@ -1,0 +1,197 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: $space-3 0;
+  border-top: 1px solid $color-border;
+
+  &:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2;
+}
+
+.unit {
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.region {
+  padding: 0 $space-1;
+  border: 1px solid;
+  border-radius: $border-radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+.wards {
+  font-size: $font-size-xs;
+  color: $neutral-500;
+}
+
+.status {
+  margin-left: auto;
+  font-size: $font-size-xs;
+  color: $neutral-500;
+}
+
+.statusDone {
+  color: $color-success;
+}
+
+.dates {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.datesLegend {
+  width: 100%;
+  margin-bottom: $space-1;
+  padding: 0;
+  font-size: $font-size-xs;
+  color: $neutral-600;
+}
+
+.monthRow {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  align-items: start;
+  gap: $space-2;
+}
+
+.month {
+  padding-top: $space-2;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $neutral-600;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+}
+
+.chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  min-height: 44px;
+  padding: 0 $space-2;
+  border: 1px solid $color-border-strong;
+  border-radius: $border-radius-md;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-size-sm;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.chipOn {
+  background: $color-sidebar;
+  border-color: $color-sidebar;
+  color: $color-surface;
+}
+
+.chipBlocked {
+  background: $color-surface-sunken;
+  border-style: dashed;
+  color: $neutral-400;
+  cursor: not-allowed;
+}
+
+.chipOtherRegion {
+  opacity: 0.6;
+}
+
+.chipDay {
+  font-weight: $font-weight-semibold;
+}
+
+.chipReason {
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.details {
+  list-style: none;
+  margin: 0;
+  padding: $space-2 $space-3;
+  background: $color-surface-sunken;
+  border-radius: $border-radius-md;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: $font-size-xs;
+  color: $neutral-700;
+  line-height: $line-height-normal;
+
+  li {
+    display: grid;
+    grid-template-columns: 4.5rem 1fr;
+    gap: $space-2;
+  }
+}
+
+.detailDate {
+  color: $neutral-500;
+  font-variant-numeric: tabular-nums;
+}
+
+// 막지 않는 참고 행사
+.detailNote {
+  color: $neutral-500;
+}
+
+.none {
+  margin: 0;
+  font-size: $font-size-xs;
+  color: $neutral-500;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2;
+}
+
+.open {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  min-height: 44px;
+  padding: 0 $space-2;
+  font-size: $font-size-sm;
+  color: $color-primary;
+  text-decoration: none;
+}

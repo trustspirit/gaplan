@@ -45,6 +45,29 @@ export interface VisitRequestDoc {
   sundayRegions?: Record<string, string>
   /** 화면에 보일 CC 이름 */
   regions?: { id: string; name: string }[]
+  /**
+   * 스테이크별 공개 링크 토큰(unitId -> token). 링크 하나가 스테이크 하나만 연다.
+   * 예전 요청의 공용 토큰(token)은 더 받지 않는다.
+   */
+  unitTokens?: Record<string, string>
+  /** 스테이크별 링크에 넣을 일요일(unitId -> dates). 없으면 요청의 모든 일요일 */
+  unitSundays?: Record<string, string[]>
+}
+
+/**
+ * 이 스테이크의 링크에 들어가는 일요일. 요청의 일요일 중 그 스테이크 CC 차례인 날이고,
+ * 칠십인이 그 스테이크에 골라 두었으면 그중 고른 것만.
+ */
+export function sundaysForUnit(request: VisitRequestDoc, unitId: string): string[] {
+  const regionId = (request.units ?? []).find((u) => u.id === unitId)?.regionId
+  const turns = request.sundayRegions ?? {}
+  const ours = [...(request.sundays ?? [])]
+    .sort()
+    .filter((d) => !turns[d] || turns[d] === regionId)
+  const chosen = request.unitSundays?.[unitId]
+  if (!Array.isArray(chosen)) return ours
+  const set = new Set(chosen)
+  return ours.filter((d) => set.has(d))
 }
 
 export interface PickInput {
@@ -160,6 +183,8 @@ export interface RecommendationDoc {
 export function publicVisitRequestView(
   request: VisitRequestDoc,
   recommendations: RecommendationDoc[],
+  /** 링크가 연 스테이크. 다른 스테이크의 추천·확정 와드는 내보내지 않는다 */
+  unitId: string,
 ) {
   const decisions = request.decisions ?? {}
   return {
@@ -169,25 +194,29 @@ export function publicVisitRequestView(
     seventyName: request.seventyName ?? '',
     dueDate: request.dueDate ?? null,
     status: request.status === 'open' ? 'open' : 'closed',
-    sundays: [...(request.sundays ?? [])].sort(),
-    units: request.units ?? [],
+    sundays: sundaysForUnit(request, unitId),
+    units: (request.units ?? []).filter((u) => u.id === unitId),
     sundayRegions: request.sundayRegions ?? {},
     regions: (request.regions ?? []).map((r) => ({ id: r.id, name: r.name })),
+    // 다른 스테이크로 확정된 날은 "확정됨"만 알린다 — 어느 스테이크·와드인지는 빈 값.
     decisions: Object.fromEntries(
       Object.entries(decisions).map(([date, d]) => [
         date,
-        { unitId: d.unitId, wardId: d.wardId, wardName: d.wardName },
+        d.unitId === unitId
+          ? { unitId: d.unitId, wardId: d.wardId, wardName: d.wardName }
+          : { unitId: '', wardId: '', wardName: '' },
       ]),
     ),
-    // 메모는 내보내지 않는다 — 「지역 칠십인에게 남길 말」이라 링크를 가진 다른 회장이 볼 글이 아니다.
-    // 있는지만 알려 줘서, 다시 연 회장이 "남긴 말이 있다"는 것만 안다.
-    recommendations: recommendations.map((r) => ({
-      unitId: r.unitId,
-      submitterName: r.submitterName,
-      hasNote: !!r.note,
-      picks: r.picks,
-      submittedAt: r.submittedAt,
-    })),
+    // 메모는 내보내지 않는다 — 있는지만 알려 줘서, 다시 연 회장이 "남긴 말이 있다"는 것만 안다.
+    recommendations: recommendations
+      .filter((r) => r.unitId === unitId)
+      .map((r) => ({
+        unitId: r.unitId,
+        submitterName: r.submitterName,
+        hasNote: !!r.note,
+        picks: r.picks,
+        submittedAt: r.submittedAt,
+      })),
   }
 }
 
@@ -343,7 +372,45 @@ export function staleDecisionDate(
   return null
 }
 
-/** 공개 링크 경로의 요청 id·토큰이 이 문서와 맞는가. */
+/** 공개 링크 경로의 토큰이 저장된 토큰과 맞는가. 둘 다 형식이 맞아야 한다(짧은 토큰은 추측된다). */
 export function tokenMatches(stored: unknown, given: unknown): boolean {
-  return typeof stored === 'string' && typeof given === 'string' && TOKEN_RE.test(given) && stored === given
+  return (
+    typeof stored === 'string' && typeof given === 'string' &&
+    TOKEN_RE.test(stored) && TOKEN_RE.test(given) && stored === given
+  )
+}
+
+/** 공개 링크의 토큰이 여는 스테이크. 요청에 실린(믿을 수 있는) 스테이크여야 한다. 없으면 null. */
+export function unitIdForToken(request: VisitRequestDoc, token: unknown): string | null {
+  const units = new Set((request.units ?? []).map((u) => u.id))
+  for (const [unitId, stored] of Object.entries(request.unitTokens ?? {})) {
+    if (units.has(unitId) && tokenMatches(stored, token)) return unitId
+  }
+  return null
+}
+
+/**
+ * 공개 링크용 일요일 상황을 그 스테이크 기준으로 줄인다 — 다른 스테이크의 대회·행사는 빼고,
+ * 칠십인 일정은 종류와 공개 행사 제목만 남긴다.
+ */
+export function publicSundayStatusForUnit(
+  status: Record<string, {
+    busy: { kind: string; label: string; publicLabel: boolean }[]
+    notes: { title: string; unitIds: string[] | null }[]
+    unitBlocks: Record<string, string>
+  }>,
+  unitId: string,
+) {
+  return Object.fromEntries(
+    Object.entries(status).map(([date, st]) => [
+      date,
+      {
+        busy: st.busy.map((b) => ({ kind: b.kind, label: b.publicLabel ? b.label : '' })),
+        notes: st.notes
+          .filter((n) => !n.unitIds || n.unitIds.includes(unitId))
+          .map((n) => ({ title: n.title, unitIds: n.unitIds ? [unitId] : null })),
+        unitBlocks: unitId in st.unitBlocks ? { [unitId]: st.unitBlocks[unitId] } : {},
+      },
+    ]),
+  )
 }

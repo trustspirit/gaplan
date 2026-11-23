@@ -9,6 +9,9 @@ import {
   trustedUnits,
   staleDecisionDate,
   tokenMatches,
+  unitIdForToken,
+  publicSundayStatusForUnit,
+  sundaysForUnit,
   type VisitRequestDoc,
 } from './visitRequestLogic'
 
@@ -148,6 +151,7 @@ describe('publicVisitRequestView', () => {
         createdBy: 'admin-uid',
       } as VisitRequestDoc,
       [],
+      'seoul-stake',
     )
     const json = JSON.stringify(view)
     expect(json).not.toContain('vr_secret')
@@ -157,7 +161,97 @@ describe('publicVisitRequestView', () => {
   })
 
   it('open이 아닌 상태는 모두 closed로 보인다', () => {
-    expect(publicVisitRequestView(request({ status: 'weird' }), []).status).toBe('closed')
+    expect(publicVisitRequestView(request({ status: 'weird' }), [], 'seoul-stake').status).toBe('closed')
+  })
+
+  it('링크가 연 스테이크만 보이고, 다른 스테이크의 추천·확정 와드는 감춘다', () => {
+    const view = publicVisitRequestView(
+      request({
+        decisions: {
+          '2027-01-10': { unitId: 'seoul-east-stake', wardId: 'seoul-east-gyomun', wardName: '교문 와드', scheduleId: 'x' },
+          '2027-01-17': { unitId: 'seoul-stake', wardId: 'seoul-nokbeon', wardName: '녹번 와드', scheduleId: 'y' },
+        },
+      }),
+      [
+        { unitId: 'seoul-stake', submitterName: 'A', note: '', picks: [], submittedAt: 'x' },
+        { unitId: 'seoul-east-stake', submitterName: 'B', note: '', picks: [], submittedAt: 'x' },
+      ],
+      'seoul-stake',
+    )
+    expect(view.units.map((u) => u.id)).toEqual(['seoul-stake'])
+    expect(view.recommendations.map((r) => r.unitId)).toEqual(['seoul-stake'])
+    expect(view.decisions['2027-01-10']).toEqual({ unitId: '', wardId: '', wardName: '' })
+    expect(view.decisions['2027-01-17'].wardName).toBe('녹번 와드')
+    const json = JSON.stringify(view)
+    expect(json).not.toContain('교문')
+    expect(json).not.toContain('서울동')
+  })
+})
+
+describe('sundaysForUnit', () => {
+  it('고른 일요일이 없으면 요청의 모든 일요일, 있으면 그중 요청에 있는 것만', () => {
+    expect(sundaysForUnit(request(), 'seoul-stake')).toEqual(['2027-01-10', '2027-01-17'])
+    const req = request({ unitSundays: { 'seoul-stake': ['2027-01-17', '2099-01-01'] } })
+    expect(sundaysForUnit(req, 'seoul-stake')).toEqual(['2027-01-17'])
+    expect(sundaysForUnit(req, 'seoul-east-stake')).toEqual(['2027-01-10', '2027-01-17'])
+  })
+
+  it('그 스테이크 CC 차례가 아닌 일요일은 고른 것이라도 뺀다', () => {
+    const req = request({
+      units: request().units!.map((u) => ({ ...u, regionId: u.id === 'seoul-stake' ? 'seoul' : 'seoul-east' })),
+      sundayRegions: { '2027-01-10': 'seoul', '2027-01-17': 'seoul-east' },
+    })
+    expect(sundaysForUnit(req, 'seoul-stake')).toEqual(['2027-01-10'])
+    expect(sundaysForUnit({ ...req, unitSundays: { 'seoul-stake': ['2027-01-10', '2027-01-17'] } }, 'seoul-stake'))
+      .toEqual(['2027-01-10'])
+  })
+
+  it('공개 화면에는 그 스테이크의 일요일만 보인다', () => {
+    const req = request({ unitSundays: { 'seoul-stake': ['2027-01-17'] } })
+    expect(publicVisitRequestView(req, [], 'seoul-stake').sundays).toEqual(['2027-01-17'])
+  })
+})
+
+describe('unitIdForToken', () => {
+  const tokens = { 'seoul-stake': '0123456789abcdef', 'seoul-east-stake': 'fedcba9876543210' }
+
+  it('토큰이 여는 스테이크를 찾는다', () => {
+    expect(unitIdForToken(request({ unitTokens: tokens }), 'fedcba9876543210')).toBe('seoul-east-stake')
+    expect(unitIdForToken(request({ unitTokens: tokens }), 'aaaaaaaaaaaaaaaa')).toBeNull()
+  })
+
+  it('예전 공용 토큰은 받지 않는다', () => {
+    const old = { ...request(), token: '0123456789abcdef' } as VisitRequestDoc
+    expect(unitIdForToken(old, '0123456789abcdef')).toBeNull()
+  })
+
+  it('요청에 실리지 않은(믿을 수 없는) 스테이크의 토큰은 받지 않는다', () => {
+    const req = request({ unitTokens: { 'busan-stake': '0123456789abcdef' } })
+    expect(unitIdForToken(req, '0123456789abcdef')).toBeNull()
+  })
+})
+
+describe('publicSundayStatusForUnit', () => {
+  it('다른 스테이크의 대회·행사를 빼고 칠십인 일정 내용은 감춘다', () => {
+    const out = publicSundayStatusForUnit(
+      {
+        '2027-01-10': {
+          busy: [{ kind: 'schedule', label: '상당 와드', publicLabel: false }],
+          notes: [
+            { title: '지역 행사', unitIds: null },
+            { title: '서울동 청소년 대회', unitIds: ['seoul-east-stake'] },
+            { title: '합동 행사', unitIds: ['seoul-stake', 'seoul-east-stake'] },
+          ],
+          unitBlocks: { 'seoul-stake': '서울 스테이크 대회', 'seoul-east-stake': '서울동 스테이크 대회' },
+        },
+      },
+      'seoul-stake',
+    )
+    expect(out['2027-01-10']).toEqual({
+      busy: [{ kind: 'schedule', label: '' }],
+      notes: [{ title: '지역 행사', unitIds: null }, { title: '합동 행사', unitIds: ['seoul-stake'] }],
+      unitBlocks: { 'seoul-stake': '서울 스테이크 대회' },
+    })
   })
 })
 
@@ -242,7 +336,7 @@ describe('publicVisitRequestView — 메모', () => {
   it('다른 회장의 메모를 내보내지 않고 있는지만 알린다', () => {
     const view = publicVisitRequestView(request(), [
       { unitId: 'seoul-stake', submitterName: 'A', note: '감독 교체 예정', picks: [], submittedAt: 'x' },
-    ])
+    ], 'seoul-stake')
     expect(JSON.stringify(view)).not.toContain('감독 교체 예정')
     expect(view.recommendations[0].hasNote).toBe(true)
   })

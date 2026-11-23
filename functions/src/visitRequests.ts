@@ -19,7 +19,9 @@ import {
   wardVisitStats,
   trustedUnits,
   staleDecisionDate,
-  tokenMatches,
+  unitIdForToken,
+  publicSundayStatusForUnit,
+  sundaysForUnit,
   type VisitRequestDoc,
   type RecommendationDoc,
 } from './visitRequestLogic'
@@ -129,24 +131,11 @@ function decidedScheduleIds(request: VisitRequestDoc): Set<string> {
   )
 }
 
-/** 공개 링크용: 칠십인의 일정 내용은 빼고 막힌 이유의 종류와 공개 행사 제목만 남긴다. */
-function publicSundayStatus(status: Record<string, SundayStatus>) {
-  return Object.fromEntries(
-    Object.entries(status).map(([date, st]) => [
-      date,
-      {
-        busy: st.busy.map((b) => ({ kind: b.kind, label: b.publicLabel ? b.label : '' })),
-        notes: st.notes,
-        unitBlocks: st.unitBlocks,
-      },
-    ]),
-  )
-}
-
 /**
  * 공개 링크(`/recommend/{requestId}/{token}`)의 요청을 연다. 토큰으로 질의하지 않고 id로 문서를
  * 집은 뒤 토큰을 비교한다 — 토큰은 요청을 만든 클라이언트가 정하므로, 질의로 찾으면 남의 링크를
  * 본 사람이 같은 토큰의 요청을 하나 더 만들어 그 링크를 가로챌 수 있다.
+ * 링크는 스테이크마다 따로다 — 토큰이 연 스테이크(unitId)만 보고 그 스테이크로만 추천한다.
  */
 async function openRequest(requestId: unknown, token: unknown) {
   if (typeof requestId !== 'string' || !ID_RE.test(requestId)) {
@@ -155,21 +144,22 @@ async function openRequest(requestId: unknown, token: unknown) {
   const ref = admin.firestore().collection('visitRequests').doc(requestId)
   const snap = await ref.get()
   // 없는 문서와 틀린 토큰을 같은 오류로 — 문서 존재 여부를 흘리지 않는다.
-  if (!snap.exists || !tokenMatches(snap.data()!.token, token)) {
-    throw new HttpsError('permission-denied', 'Invalid link')
-  }
-  return { ref, request: await withTrustedUnits(snap.data() as VisitRequestDoc) }
+  if (!snap.exists) throw new HttpsError('permission-denied', 'Invalid link')
+  const request = await withTrustedUnits(snap.data() as VisitRequestDoc)
+  const unitId = unitIdForToken(request, token)
+  if (!unitId) throw new HttpsError('permission-denied', 'Invalid link')
+  return { ref, request, unitId }
 }
 
-/** 공개 링크: 요청 정보와 지금까지 들어온 추천(모든 스테이크)을 돌려준다. */
+/** 공개 링크: 그 스테이크 기준의 요청 정보와 그 스테이크의 추천. 다른 스테이크는 확정 여부만. */
 export const getVisitRequestPublic = onCall(
   { ...PUBLIC_HTTP_OPTS, maxInstances: PUBLIC_MAX_INSTANCES },
   async (req: CallableRequest<{ requestId?: unknown; token?: unknown }>) => {
     const data = req.data
-    const { ref, request } = await openRequest(data?.requestId, data?.token)
-    const recSnap = await ref.collection('recommendations').get()
-    const recs = recSnap.docs.map((d) => d.data() as RecommendationDoc)
-    const units = request.units ?? []
+    const { ref, request, unitId } = await openRequest(data?.requestId, data?.token)
+    const recSnap = await ref.collection('recommendations').doc(unitId).get()
+    const recs = recSnap.exists ? [recSnap.data() as RecommendationDoc] : []
+    const units = (request.units ?? []).filter((u) => u.id === unitId)
     const [unitSchedules, sundayStatus, calendarEvents] = await Promise.all([
       schedulesForUnits(units.map((u) => u.id)),
       loadSundayStatus(request.seventyUid ?? '', request.sundays ?? [], decidedScheduleIds(request)),
@@ -177,10 +167,13 @@ export const getVisitRequestPublic = onCall(
     ])
     const wardStats = wardVisitStats(units, unitSchedules, todayInSeoul())
     return {
-      ...publicVisitRequestView(request, recs),
+      ...publicVisitRequestView(request, recs, unitId),
       wardStats,
-      sundayStatus: publicSundayStatus(sundayStatus),
-      calendarEvents,
+      sundayStatus: publicSundayStatusForUnit(sundayStatus, unitId),
+      // 다른 스테이크만 대상인 행사는 빼고, 대상 단위 목록도 이 스테이크만 남긴다
+      calendarEvents: calendarEvents
+        .filter((e) => !e.unitIds || e.unitIds.includes(unitId))
+        .map((e) => (e.unitIds ? { ...e, unitIds: [unitId] } : e)),
     }
   },
 )
@@ -219,8 +212,8 @@ function todayInSeoul(): string {
 }
 
 /**
- * 공개 링크: 스테이크 하나의 추천을 저장한다. 스테이크당 문서 하나라 다시 내면 덮어쓴다 —
- * 회장이 마음을 바꾸거나 다른 회장 추천을 보고 날짜를 옮길 수 있어야 한다.
+ * 공개 링크: 링크가 연 스테이크의 추천을 저장한다. 스테이크당 문서 하나라 다시 내면 덮어쓴다 —
+ * 회장이 마음을 바꿀 수 있어야 한다. 다른 스테이크의 unitId로는 낼 수 없다.
  */
 export const submitVisitRecommendation = onCall(
   { ...PUBLIC_HTTP_OPTS, maxInstances: PUBLIC_MAX_INSTANCES },
@@ -233,7 +226,8 @@ export const submitVisitRecommendation = onCall(
     picks?: unknown
   }>) => {
     const data = req.data
-    const { ref, request } = await openRequest(data?.requestId, data?.token)
+    const { ref, request, unitId: linkUnitId } = await openRequest(data?.requestId, data?.token)
+    if (data?.unitId !== linkUnitId) throw new HttpsError('permission-denied', 'Invalid link')
     const db = admin.firestore()
     // 칠십인 일정·대회로 막힌 일요일. 읽기가 여러 컬렉션이라 트랜잭션 밖에서 한 번 본다.
     const status = await loadSundayStatus(
@@ -248,7 +242,9 @@ export const submitVisitRecommendation = onCall(
       // 확정·마감과 경합할 수 있어 트랜잭션 안에서 요청을 다시 읽고 판정한다.
       // 스테이크·와드 목록만은 위에서 걸러 둔 것을 쓴다 — 그 목록은 만든 뒤 바뀌지 않는다.
       const fresh = await tx.get(ref)
-      const current = { ...(fresh.data() as VisitRequestDoc), units: request.units }
+      const freshDoc = fresh.data() as VisitRequestDoc
+      // 이 스테이크 링크에 넣은 일요일만 받는다
+      const current = { ...freshDoc, units: request.units, sundays: sundaysForUnit(freshDoc, linkUnitId) }
       const result = validateRecommendation(current, data ?? {}, unavailable)
       if (!result.ok) throw new HttpsError(result.code, result.message)
 

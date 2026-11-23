@@ -46,7 +46,10 @@ export interface VisitRequest {
   seventyName: string
   sundays: string[]          // YYYY-MM-DD, 오름차순
   dueDate?: string | null    // YYYY-MM-DD
-  token: string
+  /** 스테이크별 공개 링크 토큰(unitId -> token). 스테이크별 링크 이전 요청에는 없다 — 상세 화면이 채운다 */
+  unitTokens?: Record<string, string>
+  /** 스테이크별 링크에 넣을 일요일(unitId -> dates). 없는 스테이크는 요청의 모든 일요일 */
+  unitSundays?: Record<string, string[]>
   status: VisitRequestStatus
   units: VisitRequestUnit[]
   /**

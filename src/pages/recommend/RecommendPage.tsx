@@ -1,9 +1,9 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
-import { CalendarDays, ChevronDown, ChevronRight, Info, List, ShieldCheck } from 'lucide-react'
+import { CalendarDays, ChevronDown, Info, List, ShieldCheck } from 'lucide-react'
 import type { HttpsCallable } from 'firebase/functions'
 import { publicCallable } from '@/services/publicFunctions'
 import { wardRecency, type RecencyTone } from '@/utils/visitRequest'
@@ -29,7 +29,7 @@ const getRequest = () =>
 const submitRecommendation = () =>
   (submitFn ??= publicCallable<SubmitRequest, { success: boolean }>('submitVisitRecommendation'))
 
-// 같은 휴대폰으로 다시 열면 고른 단위와 이름을 그대로 둔다. 저장소가 막혀 있어도 페이지는 돌아야 한다.
+// 같은 휴대폰으로 다시 열면 이름을 그대로 둔다. 저장소가 막혀 있어도 페이지는 돌아야 한다.
 function readStored(key: string): string {
   try {
     return localStorage.getItem(key) ?? ''
@@ -45,31 +45,11 @@ function writeStored(key: string, value: string) {
   }
 }
 
-function removeStored(key: string) {
-  try {
-    localStorage.removeItem(key)
-  } catch {
-    /* 사생활 보호 모드 등 */
-  }
-}
-
 /** 이 일요일이 다른 CC 차례인가 — 그러면 그 CC 이름, 아니면 null */
 function otherRegionTurn(data: PublicVisitRequest, unit: VisitRequestUnit, date: string): string | null {
   const turn = data.sundayRegions?.[date]
   if (!turn || unit.regionId === turn) return null
   return data.regions?.find((r) => r.id === turn)?.name ?? turn
-}
-
-function unitFromUrl(): string {
-  return new URLSearchParams(window.location.search).get('unit') ?? ''
-}
-
-function urlWithUnit(unitId: string): string {
-  const params = new URLSearchParams(window.location.search)
-  if (unitId) params.set('unit', unitId)
-  else params.delete('unit')
-  const q = params.toString()
-  return `${window.location.pathname}${q ? `?${q}` : ''}`
 }
 
 type LoadState =
@@ -90,17 +70,12 @@ export default function RecommendPage({
 
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [reloadKey, setReloadKey] = useState(0)
-  // 고른 단위는 주소(?unit=)에도 싣는다 — 휴대폰 뒤로 가기가 단위 선택 화면으로 돌아가게.
-  // 주소에 없으면 이 휴대폰에서 지난번에 고른 단위로 바로 들어간다.
-  const [unitId, setUnitId] = useState(
-    () => unitFromUrl() || (requestId ? readStored(`recommendUnit:${requestId}`) : ''),
-  )
   const [picks, setPicks] = useState<Record<string, string>>({}) // date -> wardId
   const [name, setName] = useState(() => readStored('recommendName'))
   const [note, setNote] = useState('')
   // 메모는 공개 응답에 오지 않는다. 손대지 않았으면 보내지 않아 예전 메모를 지키고, 적었으면 바꾼다.
   const [noteTouched, setNoteTouched] = useState(false)
-  // 이 단위의 저장된 추천으로 칸을 채웠는가. 다시 받아 올 때마다 채우면 고치던 선택이 날아간다.
+  // 저장된 추천으로 칸을 채웠는가. 다시 받아 올 때마다 채우면 고치던 선택이 날아간다.
   const prefilledFor = useRef<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -136,71 +111,19 @@ export default function RecommendPage({
   }, [requestId, token, reloadKey])
 
   const data = state.kind === 'ready' ? state.data : null
-  const unit = data?.units.find((u) => u.id === unitId) ?? null
+  // 링크는 스테이크마다 따로다 — 서버는 링크가 연 스테이크 하나만 보낸다.
+  const unit = data?.units[0] ?? null
+  const unitId = unit?.id ?? ''
   const myRec = data?.recommendations.find((r) => r.unitId === unitId) ?? null
 
-  // 단위를 고르면 그 단위가 이미 낸 추천으로 채운다 — 다시 연 회장은 고칠 것만 고치면 된다.
-  const loadUnit = useCallback(
-    (id: string, source: PublicVisitRequest) => {
-      const rec = source.recommendations.find((r) => r.unitId === id)
-      setPicks(Object.fromEntries((rec?.picks ?? []).map((p) => [p.date, p.wardId])))
-      setNote('')
-      setNoteTouched(false)
-      if (rec?.submitterName) setName(rec.submitterName)
-      prefilledFor.current = id
-    },
-    [],
-  )
-
-  // 저장해 둔 단위로 다시 연 경우, 처음 받은 데이터로 한 번만 채운다.
+  // 이미 낸 추천으로 채운다 — 다시 연 회장은 고칠 것만 고치면 된다. 처음 받은 데이터로 한 번만.
   useEffect(() => {
-    if (data && unitId && prefilledFor.current !== unitId && data.units.some((u) => u.id === unitId)) {
-      loadUnit(unitId, data)
-    }
-  }, [data, unitId, loadUnit])
-
-  // 뒤로 가기: 주소의 단위를 따라간다(선택 화면으로 돌아가거나 다시 앞으로).
-  useEffect(() => {
-    const onPop = () => {
-      const id = unitFromUrl()
-      setUnitId(id)
-      setSubmitError(null)
-      if (id && data) loadUnit(id, data)
-    }
-    window.addEventListener('popstate', onPop)
-    return () => window.removeEventListener('popstate', onPop)
-  }, [data, loadUnit])
-
-  const chooseUnit = (id: string) => {
-    if (!data) return
-    setUnitId(id)
-    if (requestId) writeStored(`recommendUnit:${requestId}`, id)
-    loadUnit(id, data)
-    setSubmitError(null)
-    window.history.pushState({ recommendUnit: id }, '', urlWithUnit(id))
-  }
-
-  // 저장하지 않은 수정이 있는가 — 단위를 바꾸면 그 수정은 버려진다.
-  const isDirty = () => {
-    const rec = data?.recommendations.find((r) => r.unitId === unitId)
-    const saved = Object.fromEntries((rec?.picks ?? []).map((p) => [p.date, p.wardId]))
-    const now = Object.fromEntries(Object.entries(picks).filter(([, w]) => w))
-    return noteTouched || JSON.stringify(Object.entries(saved).sort()) !== JSON.stringify(Object.entries(now).sort())
-  }
-
-  const leaveUnit = () => {
-    if (isDirty() && !window.confirm(t('recommend.changeUnitConfirm'))) return
-    if (requestId) removeStored(`recommendUnit:${requestId}`)
-    setSubmitError(null)
-    setDone(false)
-    // 선택 화면에서 들어왔으면 그 기록으로 돌아간다. 저장된 단위로 바로 열렸으면 주소만 고친다.
-    if ((window.history.state as { recommendUnit?: string } | null)?.recommendUnit) {
-      window.history.back()
-    } else {
-      setUnitId('')
-      window.history.replaceState(null, '', urlWithUnit(''))
-    }
-  }
+    if (!data || !unitId || prefilledFor.current === unitId) return
+    const rec = data.recommendations.find((r) => r.unitId === unitId)
+    setPicks(Object.fromEntries((rec?.picks ?? []).map((p) => [p.date, p.wardId])))
+    if (rec?.submitterName) setName(rec.submitterName)
+    prefilledFor.current = unitId
+  }, [data, unitId])
 
   const toggleLang = () => {
     const next = i18n.language === 'ko' ? 'en' : 'ko'
@@ -236,7 +159,7 @@ export default function RecommendPage({
         })
         .map(([d]) => d)
         .sort(),
-    [picks, data, unitId],
+    [picks, data, unit, unitId],
   )
 
   const cells = data && unit ? sundayCells(data, unit, picks, lang, t) : {}
@@ -266,7 +189,7 @@ export default function RecommendPage({
       setSent(payload)
       writeStored('recommendName', name.trim())
       setDone(true)
-      setReloadKey((k) => k + 1) // 다른 회장들의 추천·확정을 새로 받아 둔다
+      setReloadKey((k) => k + 1) // 그사이 바뀐 확정을 새로 받아 둔다
     } catch {
       // 서버 메시지는 영어 진단용이다. 그사이 마감·확정됐을 수 있으니 최신 상태를 다시 받는다.
       setSubmitError(t('recommend.submitFailed'))
@@ -276,8 +199,8 @@ export default function RecommendPage({
     }
   }
 
-  // 단위를 고른 화면은 넓은 화면에서 두 단으로 펼친다 — 머리글도 같은 폭에 맞춘다.
-  const wide = state.kind === 'ready' && !done && state.data.units.some((u) => u.id === unitId)
+  // 추천 화면은 넓은 화면에서 두 단으로 펼친다 — 머리글도 같은 폭에 맞춘다.
+  const wide = state.kind === 'ready' && !done && !!unit
   const header = (
     <header className={clsx(styles.header, wide && styles.headerWide)}>
       <button type="button" className={styles.langToggle} onClick={toggleLang}>
@@ -307,8 +230,9 @@ export default function RecommendPage({
     )
   }
 
-  if (state.kind === 'error' || !data) {
-    const invalid = state.kind === 'error' && state.invalid
+  if (state.kind === 'error' || !data || !unit) {
+    // 스테이크가 없으면(링크의 스테이크가 요청에서 빠졌으면) 잘못된 링크와 같다
+    const invalid = state.kind !== 'error' || state.invalid
     return (
       <div className={styles.page}>
         {header}
@@ -328,7 +252,7 @@ export default function RecommendPage({
 
   const isOpen = data.status === 'open'
 
-  if (done && unit) {
+  if (done) {
     return (
       <div className={styles.page}>
         {header}
@@ -353,9 +277,6 @@ export default function RecommendPage({
                 {t('recommend.edit')}
               </button>
             )}
-            <button type="button" className={styles.linkBtn} onClick={leaveUnit}>
-              {t('recommend.otherUnit')}
-            </button>
           </section>
         </main>
       </div>
@@ -369,46 +290,6 @@ export default function RecommendPage({
     </aside>
   ) : null
 
-  const submittedUnits = new Map(data.recommendations.map((r) => [r.unitId, r]))
-
-  // 들어오는 첫 화면: 단위만 고른다. 고르기 전에는 다른 것을 보여 주지 않는다.
-  if (!unit) {
-    return (
-      <div className={styles.page}>
-        {header}
-        <main className={styles.content}>
-          {guidanceBox}
-          {data.note && <p className={styles.note}>{data.note}</p>}
-          {!isOpen && <div className={styles.closedBanner}>{t('recommend.closedBanner')}</div>}
-          <section className={styles.section} aria-labelledby="rec-gate">
-            <h2 id="rec-gate" className={styles.gateTitle}>
-              {t('recommend.gateTitle')}
-            </h2>
-            <p className={styles.stepHint}>{t('recommend.gateHint')}</p>
-            <ul className={styles.unitList} aria-labelledby="rec-gate">
-              {data.units.map((u) => {
-                const rec = submittedUnits.get(u.id)
-                return (
-                  <li key={u.id}>
-                    <button type="button" className={styles.unitRow} onClick={() => chooseUnit(u.id)}>
-                      <span className={styles.unitName}>{unitName(u)}</span>
-                      <span className={clsx(styles.unitStatus, rec && styles.unitStatusDone)}>
-                        {rec
-                          ? t('recommend.submittedBy', { name: rec.submitterName })
-                          : t('recommend.notSubmitted')}
-                      </span>
-                      <ChevronRight size={18} aria-hidden className={styles.unitChevron} />
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </section>
-        </main>
-      </div>
-    )
-  }
-
   const wardOptions = unit.wards.map((w) => ({ id: w.id, label: w[lang] }))
   const recencyOf = (wardId: string) => recencyText(data.wardStats?.[wardId])
 
@@ -418,9 +299,6 @@ export default function RecommendPage({
       <div className={styles.unitBar}>
         <div className={styles.unitBarInner}>
           <span className={styles.unitBarName}>{unitName(unit)}</span>
-          <button type="button" className={styles.unitBarChange} onClick={leaveUnit}>
-            {t('recommend.changeUnit')}
-          </button>
         </div>
         <div className={styles.viewTabs} role="tablist" aria-label={t('recommend.calendarTitle')}>
           {(['list', 'calendar'] as const).map((v) => (
@@ -501,9 +379,6 @@ export default function RecommendPage({
                   const monthHead =
                     i === 0 || data.sundays[i - 1].slice(0, 7) !== date.slice(0, 7)
                   const decision = data.decisions[date]
-                  const others = data.recommendations.filter(
-                    (r) => r.unitId !== unit.id && r.picks.some((p) => p.date === date),
-                  )
                   const lockedByOther = !!decision && decision.unitId !== unit.id
                   const selectId = `rec-${date}`
                   const st = data.sundayStatus?.[date]
@@ -543,10 +418,7 @@ export default function RecommendPage({
                           <div className={styles.decision}>
                             {decision.unitId === unit.id
                               ? t('recommend.decidedOurs', { ward: wardLabel(unit, decision.wardId) || decision.wardName })
-                              : t('recommend.decided', {
-                                  unit: unitName(data.units.find((u) => u.id === decision.unitId)),
-                                  ward: decision.wardName,
-                                })}
+                              : t('recommend.decidedOther')}
                           </div>
                         ) : otherTurn !== null ? (
                           <div className={styles.unavailable}>{t('recommend.otherRegion', { region: otherTurn })}</div>
@@ -599,21 +471,6 @@ export default function RecommendPage({
                               {t('recommend.noteEvent', { title: n.title })}
                             </p>
                           ))}
-                        {!decision && !blocked && others.length > 0 && (
-                          <div className={styles.others}>
-                            <span className={styles.othersCount}>
-                              {t('recommend.othersPicked', { count: others.length })}
-                            </span>
-                            <span className={styles.othersNames}>
-                              {others
-                                .map((r) => unitName(data.units.find((u) => u.id === r.unitId)))
-                                .join(' · ')}
-                            </span>
-                          </div>
-                        )}
-                        {!blocked && !decision && picks[date] && others.length > 0 && (
-                          <p className={styles.othersHint}>{t('recommend.othersPickedHint')}</p>
-                        )}
                       </div>
                     </li>
                     </Fragment>
@@ -711,14 +568,12 @@ function sundayCells(
     const decision = data.decisions[date]
     const st = data.sundayStatus?.[date]
     if (decision) {
+      // 다른 스테이크로 확정된 날은 어디인지 알려 주지 않는다(서버도 보내지 않는다)
       const ours = decision.unitId === unit.id
-      const other = data.units.find((u) => u.id === decision.unitId)
       out[date] = {
         kind: 'decided',
         ours,
-        label: ours
-          ? wardLabel(decision.wardId) || decision.wardName
-          : `${other ? other[lang] : ''} · ${decision.wardName}`,
+        label: ours ? wardLabel(decision.wardId) || decision.wardName : t('recommend.decidedOther'),
       }
     } else if (otherRegionTurn(data, unit, date) !== null) {
       out[date] = {
@@ -738,9 +593,6 @@ function sundayCells(
       out[date] = {
         kind: 'open',
         pickedWard: picks[date] ? wardLabel(picks[date]) || null : null,
-        others: data.recommendations.filter(
-          (r) => r.unitId !== unit.id && r.picks.some((p) => p.date === date),
-        ).length,
       }
     }
   }

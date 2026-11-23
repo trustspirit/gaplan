@@ -4,15 +4,15 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
-import { ChevronLeft, Copy, ExternalLink, Check } from 'lucide-react'
+import { ChevronLeft, Check } from 'lucide-react'
 import { useVisitRequest } from '@/hooks/useVisitRequests'
 import { useTopBar } from '@/hooks/useTopBar'
 import {
   alreadyVisitingWard,
   decideVisitRequestDate,
   deleteVisitRequest,
+  ensureUnitTokens,
   fetchSundayStatus,
-  fetchWardStats,
   setVisitRequestStatus,
   updateVisitRequestText,
 } from '@/services/visitRequestService'
@@ -21,7 +21,6 @@ import {
   candidatesForSunday,
   GUIDANCE_MAX,
   rankCandidates,
-  recommendUrl,
   requestProgress,
   wardRecency,
   type RecencyTone,
@@ -41,6 +40,7 @@ import {
   Textarea,
 } from '@/components/ui'
 import { GuidanceField } from './GuidanceField'
+import { StakeLinkList } from './StakeLinkList'
 import type { VisitRequest, WardVisitStat } from '@/types'
 import {
   isFirstSunday,
@@ -88,28 +88,34 @@ export function VisitRequestDetailPage() {
   const [textDraft, setTextDraft] = useState<{ title: string; note: string; guidance: string } | null>(null)
   const [textSaving, setTextSaving] = useState(false)
 
-  const token = request?.token
   const reqId = request?.id
   const seventyUid = request?.seventyUid
   const sundaysKey = request?.sundays.join(',') ?? ''
   const decisionKey = request ? Object.keys(request.decisions ?? {}).sort().join(',') : ''
   useEffect(() => {
-    if (!token || !reqId) return
+    if (!reqId || !seventyUid || !sundaysKey) return
     let cancelled = false
-    // 통계는 참고용이라 실패해도 화면은 그대로 쓴다.
-    fetchWardStats(reqId, token)
-      .then((s) => !cancelled && setWardStats(s))
+    // 일요일 상황과 와드 방문 기록(회장들이 보는 것과 같은 집계). 참고용이라 실패해도 화면은 그대로 쓴다.
+    fetchSundayStatus(seventyUid, sundaysKey.split(','), reqId, { withWardStats: true })
+      .then((s) => {
+        if (cancelled) return
+        setSundayStatus(s.status)
+        setWardStats(s.wardStats ?? {})
+      })
       .catch(() => {})
-    if (seventyUid && sundaysKey) {
-      fetchSundayStatus(seventyUid, sundaysKey.split(','), reqId)
-        .then((s) => !cancelled && setSundayStatus(s.status))
-        .catch(() => {})
-    }
     return () => {
       cancelled = true
     }
     // 확정이 바뀌면 "다음 방문"이 달라지므로 다시 받는다.
-  }, [reqId, token, decisionKey, seventyUid, sundaysKey])
+  }, [reqId, decisionKey, seventyUid, sundaysKey])
+
+  // 스테이크별 링크 이전에 만든 요청 — 스테이크별 토큰을 한 번 채운다(공용 링크는 더 열리지 않는다).
+  const needsTokens = !!request && !request.unitTokens
+  useEffect(() => {
+    if (!needsTokens || !request) return
+    ensureUnitTokens(request).catch(() => toast.error(t('visitRequest.linkPrepareFailed')))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsTokens, reqId])
 
   if (loading) {
     return (
@@ -126,20 +132,9 @@ export function VisitRequestDetailPage() {
     )
   }
 
-  const url = recommendUrl(request.id, request.token)
   const unitById = new Map(request.units.map((u) => [u.id, u]))
   const progress = requestProgress(request, recommendations)
   const dateLabel = (date: string) => dayjs(date).format(`${t('recommend.dateFormat')} (ddd)`)
-
-  const shareMessage = t('visitRequest.shareMessage', {
-    title: request.title,
-    seventy: request.seventyName,
-    due: request.dueDate
-      ? t('visitRequest.shareDue', { date: dayjs(request.dueDate).format(t('recommend.dateFormat')) })
-      : '',
-    guidance: request.guidance ? t('visitRequest.shareGuidance', { text: request.guidance }) : '',
-    url,
-  })
 
   const handleSaveText = async () => {
     if (!textDraft || !textDraft.title.trim()) return
@@ -250,20 +245,12 @@ export function VisitRequestDetailPage() {
         <CardHeader title={t('visitRequest.shareTitle')} />
         <CardBody>
           <p className={styles.hint}>{t('visitRequest.shareHint')}</p>
-          <div className={styles.urlBox}>
-            <code className={styles.url}>{url}</code>
-          </div>
-          <div className={styles.shareActions}>
-            <Button size="sm" onClick={() => handleCopy(url)}>
-              <Copy size={14} aria-hidden /> {t('visitRequest.copyLink')}
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => handleCopy(shareMessage)}>
-              {t('visitRequest.copyMessage')}
-            </Button>
-            <a className={styles.openLink} href={url} target="_blank" rel="noreferrer">
-              <ExternalLink size={14} aria-hidden /> {t('visitRequest.open')}
-            </a>
-          </div>
+          <StakeLinkList
+            request={request}
+            recommendations={recommendations}
+            sundayStatus={sundayStatus}
+            onCopy={handleCopy}
+          />
         </CardBody>
       </Card>
 
