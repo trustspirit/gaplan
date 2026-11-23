@@ -125,6 +125,27 @@ describe('VisitRequestPanel', () => {
     expect(input.units.every((u) => u.regionId === 'seoul' || u.regionId === 'seoul-south')).toBe(true)
   })
 
+  it('shows the most overdue wards of the CC under each picked Sunday', async () => {
+    me = { ...me, regionIds: ['busan'] }
+    vi.mocked(fetchSundayStatus).mockResolvedValueOnce({
+      status: {},
+      lastVisitRegion: null,
+      wardStats: {
+        'busan-gwangan': { lastVisit: '2026-11-01', nextVisit: null, count12m: 1 },
+        'busan-gupo': { lastVisit: '2025-01-05', nextVisit: null, count12m: 0 },
+      },
+    })
+    renderPanel()
+    await waitFor(() => expect(screen.getByText('visitRequest.picksTitle')).toBeInTheDocument())
+    expect(fetchSundayStatus).toHaveBeenLastCalledWith('s1', expect.any(Array), undefined, { withWardStats: true })
+    // 10개 일요일마다 3곳씩
+    expect(screen.getAllByText(/^recommend\.tone/)).toHaveLength(30)
+    // 방문 기록이 있는 두 와드는 기록 없는 와드들 뒤로 밀린다 — 첫 일요일에는 나오지 않는다
+    const firstRow = screen.getAllByRole('listitem').find((li) => li.textContent?.includes('recommend.toneNever'))!
+    expect(firstRow).not.toHaveTextContent('광안 와드')
+    expect(firstRow).not.toHaveTextContent('구포 지부')
+  })
+
   it('does not assign CCs to a seventy with a single CC', async () => {
     me = { ...me, regionIds: ['busan'] }
     renderPanel()

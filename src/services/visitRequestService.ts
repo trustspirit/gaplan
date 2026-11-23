@@ -6,7 +6,7 @@ import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/firebase'
 import { generatePublicToken } from '@/utils/publicToken'
 import type {
-  AppUser, PublicVisitRequest, VisitRecommendation, VisitRequest, VisitRequestUnit,
+  AppUser, PublicVisitRequest, VisitRecommendation, VisitRequest, VisitRequestUnit, WardVisitStat,
 } from '@/types'
 import type { SundayStatus } from '../../functions/src/visitSundayAvailability'
 import { mapDocs, snapshotErrHandler } from './_utils'
@@ -172,17 +172,25 @@ export function alreadyVisitingWard(err: unknown): string | null {
 export interface SundayStatusResult {
   status: Record<string, SundayStatus>
   lastVisitRegion: string | null
+  /** withWardStats로 물었을 때만: 칠십인 담당 CC의 와드 방문 기록(공개 링크와 같은 집계) */
+  wardStats?: Record<string, WardVisitStat>
 }
 
 export async function fetchSundayStatus(
   seventyUid: string,
   sundays: string[],
   requestId?: string,
+  options: { withWardStats?: boolean } = {},
 ): Promise<SundayStatusResult> {
   const fn = httpsCallable<
-    { seventyUid: string; sundays: string[]; requestId?: string },
+    { seventyUid: string; sundays: string[]; requestId?: string; withWardStats?: boolean },
     SundayStatusResult
   >(functions, 'getVisitSundayStatus')
-  const res = await fn({ seventyUid, sundays, ...(requestId ? { requestId } : {}) })
+  const res = await fn({
+    seventyUid,
+    sundays,
+    ...(requestId ? { requestId } : {}),
+    ...(options.withWardStats ? { withWardStats: true } : {}),
+  })
   return res.data
 }

@@ -185,6 +185,20 @@ export const getVisitRequestPublic = onCall(
   },
 )
 
+/** 칠십인 담당 CC의 모든 와드 방문 기록. 회장들이 공개 링크에서 보는 숫자와 같은 함수로 센다. */
+async function seventyWardStats(seventyUid: string) {
+  const { unitIds } = await seventyScope(seventyUid)
+  const units = unitIds.map((id) => ({
+    id,
+    ko: '',
+    en: '',
+    wards: Object.entries(WARD_UNITS)
+      .filter(([, w]) => w.unitId === id)
+      .map(([wardId, w]) => ({ id: wardId, ko: w.ko, en: '' })),
+  }))
+  return wardVisitStats(units, await schedulesForUnits(unitIds), todayInSeoul())
+}
+
 /** 와드 방문 기록 집계용. `in`은 30개까지라 나눠 묻는다 — CC 하나에 스테이크는 그보다 훨씬 적다. */
 async function schedulesForUnits(unitIds: string[]) {
   const db = admin.firestore()
@@ -444,7 +458,9 @@ export const visitRequestScheduleSync = onDocumentWritten(
  */
 export const getVisitSundayStatus = onCall(
   PUBLIC_HTTP_OPTS,
-  async (req: CallableRequest<{ seventyUid?: unknown; sundays?: unknown; requestId?: unknown }>) => {
+  async (req: CallableRequest<{
+    seventyUid?: unknown; sundays?: unknown; requestId?: unknown; withWardStats?: unknown
+  }>) => {
     const data = req.data
     if (!req.auth) throw new HttpsError('unauthenticated', 'Login required')
     const seventyUid = typeof data?.seventyUid === 'string' ? data.seventyUid : ''
@@ -470,7 +486,7 @@ export const getVisitSundayStatus = onCall(
       if (req && req.seventyUid === seventyUid) ignore = decidedScheduleIds(req)
     }
     const first = [...sundays].sort()[0]
-    const [status, before] = await Promise.all([
+    const [status, before, wardStats] = await Promise.all([
       loadSundayStatus(seventyUid, sundays, ignore),
       // 분기 경계에서 CC가 이어지지 않게 — 그 전 넉 달의 와드 방문 중 마지막 것의 CC
       db.collection('schedules')
@@ -479,10 +495,13 @@ export const getVisitSundayStatus = onCall(
         .where('date', '<', first)
         .select('type', 'status', 'date', 'unitId')
         .get(),
+      // 요청을 만들기 전에 일요일마다 어느 와드가 급한지 보여 주려고 — 공개 링크와 같은 집계
+      data.withWardStats === true ? seventyWardStats(seventyUid) : Promise.resolve(undefined),
     ])
     return {
       status,
       lastVisitRegion: lastVisitRegion(before.docs.map((d) => d.data()), first, UNIT_REGIONS),
+      ...(wardStats ? { wardStats } : {}),
     }
   },
 )

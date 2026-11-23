@@ -30,8 +30,10 @@ import {
   quarterSundays,
   unitsSnapshotForRegions,
   upcomingQuarters,
+  wardRecency,
   type Quarter,
 } from '@/utils/visitRequest'
+import { sundayWardPicks } from '@/utils/sundayWardPicks'
 import { GuidanceField } from './GuidanceField'
 import { unavailableReasons, unitBlockText } from './sundayReasons'
 import {
@@ -47,10 +49,12 @@ import {
   ErrorState,
   LoadingState,
 } from '@/components/ui'
-import type { AppUser } from '@/types'
+import type { AppUser, WardVisitStat } from '@/types'
 import styles from './VisitRequestPanel.module.scss'
 
 const QUARTER_CHOICES = 4
+/** 일요일마다 먼저 가 볼 만한 와드를 몇 곳 보여 줄지 */
+const WARD_PICKS_PER_SUNDAY = 3
 
 /** 일요일이 막힌 이유들. 금식·연차 대회 주일은 서버 응답이 없어도(받기 전·빠진 날) 안다. */
 function busyKindsOf(date: string, status: Record<string, SundayStatus>): BusyKind[] {
@@ -126,6 +130,8 @@ export function VisitRequestPanel() {
   // 칠십인 기준으로 비어 있는 일요일만 고를 수 있게, 일요일마다 일정·참석 행사·막은 날을 받아 온다.
   const [status, setStatus] = useState<Record<string, SundayStatus>>({})
   const [statusState, setStatusState] = useState<'idle' | 'loading' | 'error'>('idle')
+  // 담당 CC 와드의 방문 기록 — 일요일마다 우선 방문할 와드를 함께 보여 준다
+  const [wardStats, setWardStats] = useState<Record<string, WardVisitStat> | null>(null)
   useEffect(() => {
     if (!seventyUid) {
       setStatus({})
@@ -136,11 +142,13 @@ export function VisitRequestPanel() {
     setStatusState('loading')
     setSundays([])
     setSundayRegions({})
+    setWardStats(null)
     const rotation = regionKey.split(',').filter(Boolean)
-    fetchSundayStatus(seventyUid, offered)
-      .then(({ status: st, lastVisitRegion }) => {
+    fetchSundayStatus(seventyUid, offered, undefined, { withWardStats: true })
+      .then(({ status: st, lastVisitRegion, wardStats: ws }) => {
         if (cancelled) return
         setStatus(st)
+        setWardStats(ws ?? null)
         setLastRegion(lastVisitRegion)
         setStatusState('idle')
         // 분기의 빈 일요일을 모두 골라 둔다 — 보통은 그대로 두고 몇 개만 뺀다.
@@ -209,6 +217,25 @@ export function VisitRequestPanel() {
     setSundays([])
     setSundayRegions({})
   }
+  // 고른 일요일마다 그날 CC에서 방문 우선순위가 높은 와드/지부
+  const wardPicks = wardStats
+    ? sundayWardPicks({
+        sundays,
+        regionOf: (d) => (multiRegion ? sundayRegions[d] : regionIds[0]),
+        units: snapshotUnits,
+        wardStats,
+        unitBlocks: Object.fromEntries(sundays.map((d) => [d, status[d]?.unitBlocks ?? {}])),
+        perSunday: WARD_PICKS_PER_SUNDAY,
+      })
+    : null
+  const today = dayjs().format('YYYY-MM-DD')
+  const recencyText = (lastVisit: string | null) => {
+    const r = wardRecency({ lastVisit }, today)
+    if (r.tone === 'never') return t('recommend.toneNever')
+    if (r.tone === 'fresh') return t('recommend.toneFresh')
+    return t('recommend.toneStale', { months: Math.max(1, r.monthsSince ?? 0) })
+  }
+
   // 같은 CC가 연달아 붙은 일요일 — 칠십인이 CC를 바꾸다 생길 수 있다.
   const repeated = new Set(multiRegion ? consecutiveSameRegion(sundayRegions) : [])
 
@@ -410,6 +437,52 @@ export function VisitRequestPanel() {
                       })}
                     </p>
                   )}
+                </div>
+              )}
+              {wardPicks && sundays.length > 0 && (
+                <div className={styles.picks}>
+                  <p className={styles.reasonsTitle}>{t('visitRequest.picksTitle')}</p>
+                  <p className={styles.picksHint}>{t('visitRequest.picksHint')}</p>
+                  <ul className={styles.pickList}>
+                    {[...sundays].sort().map((date) => {
+                      const region = multiRegion ? sundayRegions[date] : undefined
+                      const regionColor = region ? getRegionColor(region) : null
+                      const picks = wardPicks[date] ?? []
+                      return (
+                        <li key={date} className={styles.pickRow}>
+                          <span className={styles.pickDate}>
+                            {dayjs(date).format(t('visitRequest.reasonDateFormat'))}
+                            {region && regionColor && (
+                              <span
+                                className={styles.pickRegion}
+                                style={{ background: regionColor.bg, color: regionColor.text, borderColor: regionColor.border }}
+                              >
+                                {regionShort(region)}
+                              </span>
+                            )}
+                          </span>
+                          {picks.length === 0 ? (
+                            <span className={styles.pickNone}>{t('visitRequest.picksNone')}</span>
+                          ) : (
+                            <ol className={styles.pickWards}>
+                              {picks.map((p) => {
+                                const tone = wardRecency({ lastVisit: p.lastVisit }, today).tone
+                                return (
+                                  <li key={p.wardId} className={styles.pickWard}>
+                                    <span className={styles.pickWardName}>{p.wardName}</span>
+                                    <span className={styles.pickUnit}>{p.unitName}</span>
+                                    <span className={clsx(styles.pickRecency, tone === 'fresh' ? styles.toneFresh : tone === 'aging' ? styles.toneAging : styles.toneStale)}>
+                                      {recencyText(p.lastVisit)}
+                                    </span>
+                                  </li>
+                                )
+                              })}
+                            </ol>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
                 </div>
               )}
               <div className={styles.sundayActions}>
