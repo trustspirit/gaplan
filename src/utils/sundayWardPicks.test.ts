@@ -21,8 +21,8 @@ const units: VisitRequestUnit[] = [
   },
 ]
 
-const stat = (lastVisit: string | null, nextVisit: string | null = null): WardVisitStat => ({
-  lastVisit, nextVisit, count12m: 0,
+const stat = (lastVisit: string | null, nextVisit: string | null = null, count12m = 0): WardVisitStat => ({
+  lastVisit, nextVisit, count12m,
 })
 
 const stats: Record<string, WardVisitStat> = {
@@ -36,17 +36,50 @@ const stats: Record<string, WardVisitStat> = {
 describe('sundayWardPicks', () => {
   it('ranks never-visited first, then oldest visit, within the Sunday CC only', () => {
     const picks = sundayWardPicks({
-      sundays: ['2027-01-10'], regionOf: () => 'r1', units, wardStats: stats, unitBlocks: {}, perSunday: 3,
+      sundays: ['2027-01-10'], regionOf: () => 'r1', units, wardStats: stats, unitBlocks: {}, perSunday: 1,
     })
-    expect(picks['2027-01-10'].map((p) => p.wardId)).toEqual(['a2', 'a3', 'b1'])
+    expect(picks['2027-01-10'].map((p) => p.wardId)).toEqual(['a2'])
   })
 
-  it('does not repeat a ward across Sundays of the same CC', () => {
+  it('spreads the picks of one Sunday across stakes', () => {
     const picks = sundayWardPicks({
-      sundays: ['2027-01-10', '2027-01-17'], regionOf: () => 'r1', units, wardStats: stats, unitBlocks: {}, perSunday: 2,
+      sundays: ['2027-01-10'], regionOf: () => 'r1', units, wardStats: stats, unitBlocks: {}, perSunday: 3,
     })
-    expect(picks['2027-01-10'].map((p) => p.wardId)).toEqual(['a2', 'a3'])
-    expect(picks['2027-01-17'].map((p) => p.wardId)).toEqual(['b1', 'a1'])
+    // A의 1순위 → B의 1순위 → 다시 A
+    expect(picks['2027-01-10'].map((p) => p.wardId)).toEqual(['a2', 'b1', 'a3'])
+  })
+
+  it('prefers the stake with fewer visits even over an older ward elsewhere', () => {
+    const picks = sundayWardPicks({
+      sundays: ['2027-01-10'],
+      regionOf: () => 'r1',
+      units,
+      wardStats: { ...stats, a1: stat('2026-10-01', null, 3), b1: stat('2026-10-15') },
+      unitBlocks: {},
+      perSunday: 1,
+    })
+    // A 스테이크는 12개월에 3번, B는 0번 — 기록 없는 a2보다 B가 먼저
+    expect(picks['2027-01-10'][0].wardId).toBe('b1')
+  })
+
+  it('counts already scheduled visits toward the stake', () => {
+    const picks = sundayWardPicks({
+      sundays: ['2027-01-10'],
+      regionOf: () => 'r1',
+      units,
+      wardStats: { ...stats, a1: stat('2026-10-01', '2027-02-07') },
+      unitBlocks: {},
+      perSunday: 1,
+    })
+    expect(picks['2027-01-10'][0].wardId).toBe('b1')
+  })
+
+  it('alternates stakes across Sundays and does not repeat a ward', () => {
+    const picks = sundayWardPicks({
+      sundays: ['2027-01-10', '2027-01-17', '2027-01-24'],
+      regionOf: () => 'r1', units, wardStats: stats, unitBlocks: {}, perSunday: 1,
+    })
+    expect(['2027-01-10', '2027-01-17', '2027-01-24'].map((d) => picks[d][0].wardId)).toEqual(['a2', 'b1', 'a3'])
   })
 
   it('skips stakes blocked that Sunday and wards already scheduled', () => {
