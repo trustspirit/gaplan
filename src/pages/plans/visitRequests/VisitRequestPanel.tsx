@@ -33,7 +33,7 @@ import {
   wardRecency,
   type Quarter,
 } from '@/utils/visitRequest'
-import { sundayWardPicks } from '@/utils/sundayWardPicks'
+import { recommendUnitSundays } from '../../../../functions/src/visitPlanBalance'
 import { GuidanceField } from './GuidanceField'
 import { unavailableReasons, unitBlockText } from './sundayReasons'
 import {
@@ -217,17 +217,23 @@ export function VisitRequestPanel() {
     setSundays([])
     setSundayRegions({})
   }
-  // 고른 일요일마다 그날 CC에서 방문 우선순위가 높은 와드/지부
-  const wardPicks = wardStats
-    ? sundayWardPicks({
-        sundays,
-        regionOf: (d) => (multiRegion ? sundayRegions[d] : regionIds[0]),
-        units: snapshotUnits,
-        wardStats,
+  // 고른 일요일마다 1순위·예비 스테이크와 그날 CC에서 방문 우선순위가 높은 와드/지부.
+  // 방문 기록을 못 받아도 배정은 만든다(기록 없음으로 본다) — 목록만 기록이 있을 때 보인다.
+  const plan = useMemo(
+    () =>
+      recommendUnitSundays({
+        sundays: [...sundays].sort(),
+        request: {
+          units: snapshotUnits,
+          sundayRegions: multiRegion ? sundayRegions : undefined,
+        },
+        wardStats: wardStats ?? {},
         unitBlocks: Object.fromEntries(sundays.map((d) => [d, status[d]?.unitBlocks ?? {}])),
         perSunday: WARD_PICKS_PER_SUNDAY,
-      })
-    : null
+      }),
+    [sundays, snapshotUnits, multiRegion, sundayRegions, wardStats, status],
+  )
+  const wardPicks = wardStats ? plan.picks : null
   const today = dayjs().format('YYYY-MM-DD')
   const recencyText = (lastVisit: string | null) => {
     const r = wardRecency({ lastVisit }, today)
@@ -262,6 +268,8 @@ export function VisitRequestPanel() {
             : {}),
           dueDate: dueDate || null,
           units: unitsSnapshotForRegions(regionIds),
+          unitSundays: plan.unitSundays,
+          unitSundayRoles: plan.roles,
         },
         user.uid,
       )
@@ -448,6 +456,7 @@ export function VisitRequestPanel() {
                       const region = multiRegion ? sundayRegions[date] : undefined
                       const regionColor = region ? getRegionColor(region) : null
                       const picks = wardPicks[date] ?? []
+                      const roles = plan.roles[date]
                       return (
                         <li key={date} className={styles.pickRow}>
                           <span className={styles.pickDate}>
@@ -461,24 +470,34 @@ export function VisitRequestPanel() {
                               </span>
                             )}
                           </span>
-                          {picks.length === 0 ? (
-                            <span className={styles.pickNone}>{t('visitRequest.picksNone')}</span>
-                          ) : (
-                            <ol className={styles.pickWards}>
-                              {picks.map((p) => {
-                                const tone = wardRecency({ lastVisit: p.lastVisit }, today).tone
-                                return (
-                                  <li key={p.wardId} className={styles.pickWard}>
-                                    <span className={styles.pickWardName}>{p.wardName}</span>
-                                    <span className={styles.pickUnit}>{p.unitName}</span>
-                                    <span className={clsx(styles.pickRecency, tone === 'fresh' ? styles.toneFresh : tone === 'aging' ? styles.toneAging : styles.toneStale)}>
-                                      {recencyText(p.lastVisit)}
-                                    </span>
-                                  </li>
-                                )
-                              })}
-                            </ol>
-                          )}
+                          <div className={styles.pickBody}>
+                            {roles?.primary && (
+                              <span className={styles.pickRoles}>
+                                {t('visitRequest.pickRoles', {
+                                  primary: unitName(roles.primary),
+                                  backup: roles.backup ? unitName(roles.backup) : t('visitRequest.pickRolesNoBackup'),
+                                })}
+                              </span>
+                            )}
+                            {picks.length === 0 ? (
+                              <span className={styles.pickNone}>{t('visitRequest.picksNone')}</span>
+                            ) : (
+                              <ol className={styles.pickWards}>
+                                {picks.map((p) => {
+                                  const tone = wardRecency({ lastVisit: p.lastVisit }, today).tone
+                                  return (
+                                    <li key={p.wardId} className={styles.pickWard}>
+                                      <span className={styles.pickWardName}>{p.wardName}</span>
+                                      <span className={styles.pickUnit}>{p.unitName}</span>
+                                      <span className={clsx(styles.pickRecency, tone === 'fresh' ? styles.toneFresh : tone === 'aging' ? styles.toneAging : styles.toneStale)}>
+                                        {recencyText(p.lastVisit)}
+                                      </span>
+                                    </li>
+                                  )
+                                })}
+                              </ol>
+                            )}
+                          </div>
                         </li>
                       )
                     })}

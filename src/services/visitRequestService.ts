@@ -83,6 +83,9 @@ export interface CreateVisitRequestInput {
   /** CC를 둘 이상 맡았을 때만 */
   sundayRegions?: Record<string, string>
   regions?: { id: string; name: string }[]
+  /** 추천 배정 — 스테이크별 링크에 넣을 일요일과 일요일마다 1순위·예비 */
+  unitSundays?: Record<string, string[]>
+  unitSundayRoles?: Record<string, { primary?: string; backup?: string }>
 }
 
 function newUnitTokens(units: { id: string }[]): Record<string, string> {
@@ -101,6 +104,17 @@ export async function ensureUnitTokens(request: Pick<VisitRequest, 'id' | 'units
 /** 스테이크 하나의 링크에 넣을 일요일을 바꾼다. */
 export async function setUnitSundays(requestId: string, unitId: string, sundays: string[]): Promise<void> {
   await updateDoc(doc(db, 'visitRequests', requestId), { [`unitSundays.${unitId}`]: [...sundays].sort() })
+}
+
+/** 추천대로 다시 채우기 — 스테이크별 일요일과 1순위·예비를 한 번에 바꾼다. */
+export async function setUnitSundayPlan(
+  requestId: string,
+  plan: { unitSundays: Record<string, string[]>; roles: Record<string, { primary?: string; backup?: string }> },
+): Promise<void> {
+  await updateDoc(doc(db, 'visitRequests', requestId), {
+    unitSundays: plan.unitSundays,
+    unitSundayRoles: plan.roles,
+  })
 }
 
 export async function createVisitRequest(

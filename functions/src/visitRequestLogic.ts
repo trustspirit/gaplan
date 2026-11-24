@@ -52,6 +52,8 @@ export interface VisitRequestDoc {
   unitTokens?: Record<string, string>
   /** 스테이크별 링크에 넣을 일요일(unitId -> dates). 없으면 요청의 모든 일요일 */
   unitSundays?: Record<string, string[]>
+  /** 추천 배정의 1순위·예비 스테이크(date -> roles). 칠십인 화면 전용 — 공개 응답에 넣지 않는다 */
+  unitSundayRoles?: Record<string, { primary?: string; backup?: string }>
 }
 
 /**

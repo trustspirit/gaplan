@@ -191,10 +191,12 @@ service cloud.firestore {
         && canManageVisitRequest(resource.data.seventyUid)
         && (
           (request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['title', 'note', 'guidance', 'dueDate', 'status', 'unitSundays'])
+             .hasOnly(['title', 'note', 'guidance', 'dueDate', 'status', 'unitSundays', 'unitSundayRoles'])
            && request.resource.data.status in ['open', 'closed']
            // 스테이크별 링크에 넣을 일요일. 요청 밖 날짜는 CF가 걸러 낸다.
            && request.resource.data.get('unitSundays', {}) is map
+           // 추천 배정의 1순위·예비(date -> roles). 칠십인 화면 전용이라 내용은 보지 않는다.
+           && request.resource.data.get('unitSundayRoles', {}) is map
            && request.resource.data.get('guidance', '') is string
            && request.resource.data.get('guidance', '').size() <= 500)
           // 스테이크별 링크 이전의 요청: 스테이크별 토큰을 한 번만 채운다. 이미 있으면 못 바꾼다 —

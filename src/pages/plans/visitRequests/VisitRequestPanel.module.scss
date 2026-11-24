@@ -370,6 +370,20 @@
   font-weight: $font-weight-semibold;
 }
 
+.pickBody {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  min-width: 0;
+}
+
+/* 1순위·예비 스테이크 — 칠십인만 보는 추천 배정 */
+.pickRoles {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+}
+
 .pickNone {
   font-size: $font-size-xs;
   color: $neutral-500;

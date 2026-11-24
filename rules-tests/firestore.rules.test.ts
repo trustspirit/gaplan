@@ -473,6 +473,11 @@ describe('visitRequests', () => {
     await assertSucceeds(updateDoc(doc(as('s1'), 'visitRequests/r1'), { guidance: '성역이 필요한 와드를 추천해 주세요.' }))
     await assertSucceeds(updateDoc(doc(as('e1'), 'visitRequests/r1'), { unitSundays: { 'seoul-stake': ['2027-01-10'] } }))
     await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { unitSundays: ['2027-01-10'] }))
+    await assertSucceeds(updateDoc(doc(as('s1'), 'visitRequests/r1'), {
+      unitSundays: { 'seoul-stake': ['2027-01-10'] },
+      unitSundayRoles: { '2027-01-10': { primary: 'seoul-stake' } },
+    }))
+    await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { unitSundayRoles: 'x' }))
     await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { guidance: 'x'.repeat(501) }))
     await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { decisions: { x: 1 } }))
     await assertFails(updateDoc(doc(as('s1'), 'visitRequests/r1'), { token: 'ffffffffffffffff' }))

@@ -160,6 +160,19 @@ describe('publicVisitRequestView', () => {
     expect(view.decisions['2027-01-10']).toEqual({ unitId: 'seoul-stake', wardId: 'seoul-nokbeon', wardName: '녹번 와드' })
   })
 
+  it('추천 배정의 1순위·예비 구분은 회장에게 보내지 않는다', () => {
+    const view = publicVisitRequestView(
+      request({
+        unitSundays: { 'seoul-stake': ['2027-01-10'] },
+        unitSundayRoles: { '2027-01-10': { primary: 'seoul-stake', backup: 'seoul-east-stake' } },
+      }),
+      [],
+      'seoul-stake',
+    )
+    expect(Object.keys(view)).not.toContain('unitSundayRoles')
+    expect(JSON.stringify(view)).not.toContain('primary')
+  })
+
   it('open이 아닌 상태는 모두 closed로 보인다', () => {
     expect(publicVisitRequestView(request({ status: 'weird' }), [], 'seoul-stake').status).toBe('closed')
   })

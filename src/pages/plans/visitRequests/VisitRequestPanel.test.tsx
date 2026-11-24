@@ -146,6 +146,34 @@ describe('VisitRequestPanel', () => {
     expect(firstRow).not.toHaveTextContent('구포 지부')
   })
 
+  it('saves the recommended stakes for each Sunday with the request', async () => {
+    const user = userEvent.setup()
+    renderPanel()
+    await waitFor(() => expect(regionTags()).toHaveLength(10))
+    await user.click(screen.getByRole('button', { name: 'visitRequest.create' }))
+    await waitFor(() => expect(createVisitRequest).toHaveBeenCalled())
+    const input = vi.mocked(createVisitRequest).mock.calls.at(-1)![0]
+    expect(Object.keys(input.unitSundays ?? {}).sort()).toEqual(input.units.map((u) => u.id).sort())
+    const roles = input.unitSundayRoles ?? {}
+    expect(Object.keys(roles).sort()).toEqual([...input.sundays].sort())
+    for (const date of input.sundays) {
+      const { primary, backup } = roles[date]
+      expect(input.unitSundays?.[primary!]).toContain(date)
+      if (backup) expect(input.unitSundays?.[backup]).toContain(date)
+      // 그날 CC 차례의 스테이크만
+      const cc = input.sundayRegions?.[date]
+      expect(input.units.find((u) => u.id === primary)?.regionId).toBe(cc)
+    }
+  })
+
+  it('shows the primary and backup stake under each picked Sunday', async () => {
+    me = { ...me, regionIds: ['busan'] }
+    vi.mocked(fetchSundayStatus).mockResolvedValueOnce({ status: {}, lastVisitRegion: null, wardStats: {} })
+    renderPanel()
+    await waitFor(() => expect(screen.getByText('visitRequest.picksTitle')).toBeInTheDocument())
+    expect(screen.getAllByText(/^visitRequest\.pickRoles/)).toHaveLength(10)
+  })
+
   it('does not assign CCs to a seventy with a single CC', async () => {
     me = { ...me, regionIds: ['busan'] }
     renderPanel()

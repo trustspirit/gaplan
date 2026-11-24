@@ -50,6 +50,11 @@ export interface VisitRequest {
   unitTokens?: Record<string, string>
   /** 스테이크별 링크에 넣을 일요일(unitId -> dates). 없는 스테이크는 요청의 모든 일요일 */
   unitSundays?: Record<string, string[]>
+  /**
+   * 추천 배정에서 일요일마다 1순위·예비 스테이크(date -> roles). 칠십인 화면에서만 쓴다 —
+   * 회장 링크에는 가지 않는다(공개 응답은 필드를 골라 담는다).
+   */
+  unitSundayRoles?: Record<string, { primary?: string; backup?: string }>
   status: VisitRequestStatus
   units: VisitRequestUnit[]
   /**
