@@ -18,8 +18,6 @@ interface Input {
   /** date -> (unitId -> 행사 제목). 그 단위가 막힌 일요일 */
   unitBlocks: Record<string, Record<string, string>>
   perSunday: number
-  /** 예비(1순위와 다른 스테이크의 첫 후보)를 얼마나 물어본 것으로 셀지 — 마지막 방문이 같은 스테이크끼리 가를 때만 쓴다. 기본 0 */
-  backupWeight?: number
 }
 
 /** 방문 이력 없음 → 마지막 방문이 오래된 순. 통계 화면의 방문 우선순위(computeVisitInsights)와 같은 순서. */
@@ -40,14 +38,23 @@ function byDate(a: string | null, b: string | null): number {
 
 const later = (a: string | null, b: string | null) => (a === null ? b : b === null ? a : a > b ? a : b)
 
+/** YYYY-MM-DD의 하루 전 */
+function dayBefore(date: string): string {
+  const d = new Date(`${date}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() - 1)
+  return d.toISOString().slice(0, 10)
+}
+
 /**
  * 요청을 만들기 전에, 일요일마다 그날 CC에서 먼저 가 볼 만한 와드/지부를 고른다.
  *
  * 1. 스테이크/지방부 순서: 방문을 받은 적 없는 스테이크 → 마지막 방문이 오래된 스테이크.
- *    스테이크의 마지막 방문 = 그 와드들 중 가장 최근 방문. 이미 잡힌 예정 방문(nextVisit)도 방문으로 친다.
- *    이 계획의 앞 일요일에 1순위로 나온 스테이크는 그날 방문한 것으로 보고 뒤로 보낸다.
- *    마지막 방문이 같으면(둘 다 기록 없음 등) 이 계획에서 덜 물어본 스테이크(예비는 backupWeight만큼) →
- *    더 급한 와드가 있는 스테이크.
+ *    스테이크의 마지막 방문 = 그 와드들 중 가장 최근 방문. 이미 잡힌 예정 방문(nextVisit)은 계획 바로 전에
+ *    방문한 것으로 친다 — 예정일(미래)로 치면 그날까지 분기 내내 차례가 오지 않는다.
+ *    이 계획의 앞 일요일에 1순위나 예비로 나온 스테이크는 그날 물어본 것으로 보고 뒤로 보낸다 —
+ *    예비만 남겨 두면 그 주 예비가 다음 주 1순위가 되어 한 스테이크에 연달아 묻는다.
+ *    같은 일요일에 함께 물은 스테이크끼리는 물어본 순서(1순위 → 예비)를 지킨다 — 그래야 한 줄로 돌며
+ *    스테이크마다 1순위와 예비를 번갈아 받는다. 마지막 방문이 같으면(둘 다 기록 없음 등) 더 급한 와드가 있는 스테이크.
  * 2. 한 일요일의 후보는 스테이크를 위 순서로 하나씩 돌아가며 고른다 — 그래야 예비(1순위와 다른 스테이크)가 생긴다.
  * 3. 고른 스테이크 안에서는 방문 기록 없음 → 마지막 방문이 오래된 순(통계 화면의 방문 우선순위와 같다).
  *    이 계획에서 앞서 보인 와드는 그 스테이크의 다른 와드를 다 보인 뒤에 다시 보인다.
@@ -60,21 +67,23 @@ export function sundayWardPicks({
   wardStats,
   unitBlocks,
   perSunday,
-  backupWeight = 0,
 }: Input): Record<string, SundayWardPick[]> {
-  // 스테이크의 마지막 방문(예정 포함) — 계획을 따라가며 1순위로 나온 일요일로 늦춰진다
+  // 스테이크의 마지막 방문 — 계획을 따라가며 물어본 일요일로 늦춰진다
+  const first = [...sundays].sort()[0]
+  const scheduledAs = first ? dayBefore(first) : null
   const touched = new Map<string, string | null>()
   for (const u of units) {
     touched.set(
       u.id,
       u.wards.reduce<string | null>((acc, w) => {
         const st = wardStats[w.id]
-        return later(later(acc, st?.lastVisit ?? null), st?.nextVisit ?? null)
+        return later(later(acc, st?.lastVisit ?? null), st?.nextVisit ? scheduledAs : null)
       }, null),
     )
   }
-  // 이 계획에서 물어본 정도 — 마지막 방문이 같은 스테이크끼리만 가른다
-  const asked = new Map<string, number>()
+  // 이 계획에서 물어본 차례 — 같은 일요일에 함께 물은 스테이크끼리 가른다
+  const askedSeq = new Map<string, number>()
+  let seq = 0
   // 이 계획에서 와드를 보인 횟수
   const shown = new Map<string, number>()
 
@@ -112,7 +121,7 @@ export function sundayWardPicks({
     }
     const stakeOrder = (x: string, y: string) =>
       byDate(touched.get(x) ?? null, touched.get(y) ?? null) ||
-      (asked.get(x) ?? 0) - (asked.get(y) ?? 0) ||
+      (askedSeq.get(x) ?? -1) - (askedSeq.get(y) ?? -1) ||
       byUrgency(byUnit.get(x)![0], byUnit.get(y)![0])
     const ranked = [...byUnit.keys()].sort(stakeOrder)
 
@@ -129,13 +138,15 @@ export function sundayWardPicks({
     }
 
     picks.forEach((p) => shown.set(p.wardId, (shown.get(p.wardId) ?? 0) + 1))
-    // 1순위는 그날 방문한 것으로 본다. 예비는 순서를 바꾸지 않고, 마지막 방문이 같은 스테이크끼리만 backupWeight만큼 뒤로.
+    // 1순위와 예비 모두 그날 물어본 것으로 보고 뒤로 보낸다
     const primary = picks[0]
     if (primary) {
-      touched.set(primary.unitId, later(touched.get(primary.unitId) ?? null, date))
-      asked.set(primary.unitId, (asked.get(primary.unitId) ?? 0) + 1)
       const backup = picks.find((p) => p.unitId !== primary.unitId)
-      if (backup && backupWeight > 0) asked.set(backup.unitId, (asked.get(backup.unitId) ?? 0) + backupWeight)
+      for (const p of [primary, backup]) {
+        if (!p) continue
+        touched.set(p.unitId, later(touched.get(p.unitId) ?? null, date))
+        askedSeq.set(p.unitId, seq++)
+      }
     }
     out[date] = picks
   }

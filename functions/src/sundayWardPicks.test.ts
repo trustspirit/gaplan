@@ -130,22 +130,24 @@ describe('sundayWardPicks', () => {
   })
 })
 
-describe('sundayWardPicks backupWeight', () => {
+describe('sundayWardPicks rotation', () => {
   const three: VisitRequestUnit[] = ['a', 'b', 'c'].map((s) => ({
     id: s, ko: s.toUpperCase(), en: '', regionId: 'r1',
     wards: [1, 2].map((n) => ({ id: `${s}${n}`, ko: `${s.toUpperCase()}${n}`, en: '' })),
   }))
-  const run = (backupWeight?: number) =>
-    sundayWardPicks({
-      sundays: ['2027-01-10', '2027-01-17'], regionOf: () => 'r1', units: three,
-      wardStats: {}, unitBlocks: {}, perSunday: 3, backupWeight,
-    })
-
-  it('counts only the first pick by default — the backup stake leads the next Sunday', () => {
-    expect(run()['2027-01-17'][0].unitId).toBe('b')
+  const picks = sundayWardPicks({
+    sundays: ['2027-01-10', '2027-01-17', '2027-01-24'], regionOf: () => 'r1', units: three,
+    wardStats: {}, unitBlocks: {}, perSunday: 3,
   })
-  it('counts the backup stake partly so it does not lead the next Sunday too', () => {
-    expect(run(0.5)['2027-01-10'].map((p) => p.unitId)).toEqual(['a', 'b', 'c'])
-    expect(run(0.5)['2027-01-17'][0].unitId).toBe('c')
+  const order = (d: string) => picks[d].map((p) => p.unitId)
+
+  it('moves the backup stake back too, so the next Sunday leads with someone else', () => {
+    expect(order('2027-01-10')).toEqual(['a', 'b', 'c'])
+    expect(order('2027-01-17')[0]).toBe('c')
+  })
+  it('keeps the order of stakes asked the same Sunday, so primary and backup take turns', () => {
+    // 1주 (a, b) → 2주 (c, a) → 3주 (b, c)
+    expect(order('2027-01-17').slice(0, 2)).toEqual(['c', 'a'])
+    expect(order('2027-01-24').slice(0, 2)).toEqual(['b', 'c'])
   })
 })

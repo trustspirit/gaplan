@@ -22,8 +22,6 @@ export interface UnitSundayPlan {
   picks: Record<string, SundayWardPick[]>
 }
 
-/** 예비 스테이크를 얼마나 물어본 것으로 셀지(마지막 방문이 같을 때) — 1순위는 1 */
-export const BACKUP_WEIGHT = 0.5
 const PICKS_PER_SUNDAY = 3
 
 /**
@@ -57,7 +55,6 @@ export function recommendUnitSundays(input: {
     wardStats: input.wardStats,
     unitBlocks: input.unitBlocks,
     perSunday: input.perSunday ?? PICKS_PER_SUNDAY,
-    backupWeight: BACKUP_WEIGHT,
   })
 
   const regionOf = (d: string) => (noCc ? '' : regionOfSunday(request, d))

@@ -211,6 +211,42 @@ describe('recommendation on realistic visit history', () => {
   })
 })
 
+describe('recommendation over a whole quarter', () => {
+  const quarter = [
+    '2027-01-03', '2027-01-10', '2027-01-17', '2027-01-24', '2027-01-31', '2027-02-07', '2027-02-14',
+    '2027-02-21', '2027-02-28', '2027-03-07', '2027-03-14', '2027-03-21', '2027-03-28',
+  ]
+  const units = [unit('a', 'r1', 8), unit('b', 'r1', 7), unit('c', 'r1', 6), unit('d', 'r1', 5), unit('e', 'r1', 3)]
+  const lastOf: Record<string, string> = { a: '2026-03-01', b: '2026-05-10', c: '2026-08-02', d: '2026-10-04', e: '2026-11-08' }
+  const history: Record<string, WardVisitStat> = Object.fromEntries(
+    units.flatMap((u) => u.wards.map((w, i) => [w.id, { lastVisit: i === 0 ? lastOf[u.id] : '2025-06-01', nextVisit: null, count12m: 1 }])),
+  )
+  const plan = (wardStats: Record<string, WardVisitStat>) =>
+    recommendUnitSundays({ sundays: quarter, request: { units }, wardStats, unitBlocks: {} })
+  const asks = (p: ReturnType<typeof plan>) => units.map((u) => p.unitSundays[u.id].length)
+  const consecutive = (dates: string[]) =>
+    dates.some((d) => dates.includes(quarter[quarter.indexOf(d) + 1]))
+
+  it('leads with the stake visited longest ago', () => {
+    expect(plan(history).roles['2027-01-03']).toEqual({ primary: 'a', backup: 'b' })
+  })
+
+  it('does not ask a stake two Sundays in a row', () => {
+    const p = plan(history)
+    for (const u of units) expect(consecutive(p.unitSundays[u.id])).toBe(false)
+  })
+
+  it('asks every stake about as often', () => {
+    const n = asks(plan(history))
+    expect(Math.max(...n) - Math.min(...n)).toBeLessThanOrEqual(1)
+  })
+
+  it('still gives a stake its turns when one of its wards has a visit scheduled later in the quarter', () => {
+    const n = asks(plan({ ...history, c2: { ...history.c2, nextVisit: '2027-03-14' } }))
+    expect(Math.max(...n) - Math.min(...n)).toBeLessThanOrEqual(1)
+  })
+})
+
 describe('hasStakePlan', () => {
   const units = [unit('a', 'r1', 1), unit('b', 'r1', 1)]
   it('is false until every stake has its own Sundays', () => {
