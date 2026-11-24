@@ -118,6 +118,7 @@ jobs:
           KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         working-directory: functions
         run: |
           {
@@ -125,6 +126,7 @@ jobs:
             echo "KAKAO_CLIENT_SECRET=$KAKAO_CLIENT_SECRET"
             echo "EMAIL_USER=$EMAIL_USER"
             echo "EMAIL_PASS=$EMAIL_PASS"
+            echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
           } > .env
 
       - name: Build functions

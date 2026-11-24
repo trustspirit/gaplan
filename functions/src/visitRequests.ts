@@ -1,5 +1,6 @@
 import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https'
 import { onDocumentWritten } from 'firebase-functions/v2/firestore'
+import * as logger from 'firebase-functions/logger'
 import { BACKGROUND_OPTS, PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
 import { confirmDeniedReason } from './confirmGuards'
@@ -26,6 +27,9 @@ import {
   type RecommendationDoc,
 } from './visitRequestLogic'
 import { PUBLIC_MAX_INSTANCES } from './publicLimits'
+import Anthropic from '@anthropic-ai/sdk'
+import { checkPlanBalance } from './visitPlanBalance'
+import { buildReviewPayload, reviewPlan } from './visitPlanReview'
 
 const ID_RE = /^[\w-]+$/
 const DEFAULT_START = '10:00'
@@ -498,6 +502,62 @@ export const getVisitSundayStatus = onCall(
       status,
       lastVisitRegion: lastVisitRegion(before.docs.map((d) => d.data()), first, UNIT_REGIONS),
       ...(wardStats ? { wardStats } : {}),
+    }
+  },
+)
+
+/**
+ * 칠십인·집행서기: 스테이크별 일요일 배정을 Claude에게 검토받는다(버튼을 누를 때만).
+ * 요청·방문 기록·일요일 상황은 서버에서 직접 읽고, 사람·비밀 값을 뺀 요약만 보낸다(visitPlanReview).
+ * 키(ANTHROPIC_API_KEY)가 없으면 failed-precondition — 화면은 규칙 점검만 보인다.
+ */
+export const reviewVisitPlan = onCall(
+  { ...PUBLIC_HTTP_OPTS, timeoutSeconds: 60, maxInstances: 3 },
+  async (req: CallableRequest<{ requestId?: unknown }>) => {
+    if (!req.auth) throw new HttpsError('unauthenticated', 'Login required')
+    const requestId = req.data?.requestId
+    if (typeof requestId !== 'string' || !ID_RE.test(requestId)) {
+      throw new HttpsError('invalid-argument', 'Invalid request')
+    }
+    const db = admin.firestore()
+    const [callerSnap, reqSnap] = await Promise.all([
+      db.collection('users').doc(req.auth.uid).get(),
+      db.collection('visitRequests').doc(requestId).get(),
+    ])
+    if (!reqSnap.exists) throw new HttpsError('not-found', 'Request not found')
+    const caller = callerSnap.data() ?? {}
+    const raw = reqSnap.data() as VisitRequestDoc
+    const denied = confirmDeniedReason(
+      { role: caller.role, uid: req.auth.uid, assignedSeventyUid: caller.assignedSeventyUid },
+      raw.seventyUid,
+    )
+    if (denied) throw new HttpsError('permission-denied', denied)
+
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (!apiKey) throw new HttpsError('failed-precondition', 'ai-unavailable')
+
+    const request = await withTrustedUnits(raw)
+    const units = request.units ?? []
+    const sundays = request.sundays ?? []
+    const today = todayInSeoul()
+    const [schedules, status] = await Promise.all([
+      schedulesForUnits(units.map((u) => u.id)),
+      loadSundayStatus(request.seventyUid ?? '', sundays, decidedScheduleIds(request)),
+    ])
+    // 공개 링크와 같은 집계 — 요청에 찍힌 스테이크 기준
+    const wardStats = wardVisitStats(units, schedules, today)
+    const base = {
+      sundays, units, sundayRegions: request.sundayRegions,
+      unitSundays: request.unitSundays, decisions: request.decisions,
+    }
+    const issues = checkPlanBalance({ request: base, status, wardStats, today })
+    const payload = buildReviewPayload({ request, wardStats, status, issues, today })
+    try {
+      const suggestions = await reviewPlan(new Anthropic({ apiKey }), payload)
+      return { suggestions }
+    } catch (err) {
+      logger.error(`[reviewVisitPlan] failed request=${requestId}`, err)
+      throw new HttpsError('internal', 'ai-failed')
     }
   },
 )
