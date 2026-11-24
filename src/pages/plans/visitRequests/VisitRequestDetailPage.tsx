@@ -38,7 +38,6 @@ import {
   Input,
   LoadingState,
   Select,
-  StatCard,
   Textarea,
 } from '@/components/ui'
 import { GuidanceField } from './GuidanceField'
@@ -260,6 +259,20 @@ export function VisitRequestDetailPage() {
             </Badge>
           </div>
         </div>
+        <dl className={styles.progress}>
+          <div className={styles.progressItem}>
+            <dt>{t('visitRequest.statResponded')}</dt>
+            <dd>
+              <strong>{progress.respondedUnits}</strong> / {progress.totalUnits}
+            </dd>
+          </div>
+          <div className={styles.progressItem}>
+            <dt>{t('visitRequest.statDecided')}</dt>
+            <dd>
+              <strong>{progress.decidedSundays}</strong> / {progress.totalSundays}
+            </dd>
+          </div>
+        </dl>
         <div className={styles.headActions}>
           <Button variant="secondary" size="sm" loading={statusSaving} onClick={handleStatus}>
             {request.status === 'open' ? t('visitRequest.close') : t('visitRequest.reopen')}
@@ -270,159 +283,117 @@ export function VisitRequestDetailPage() {
         </div>
       </header>
 
-      {/* 넓은 화면: 왼쪽은 할 일(공유·일요일 결정), 오른쪽은 현황(진행·응답·문구). 좁은 화면은 한 줄 — 순서는 scss의 order */}
-      <div className={styles.layout}>
-        <div className={styles.main}>
-          {/* 공유 — 요청을 만든 직후 가장 먼저 할 일 */}
-          <Card className={styles.shareCard}>
-            <CardHeader title={t('visitRequest.shareTitle')} />
-            <CardBody>
-              <p className={styles.hint}>{t('visitRequest.shareHint')}</p>
-              <PlanBalance
+      {/* 스테이크별 배정 — 분포를 보고, 칸을 눌러 고치고, 링크를 보낸다. 요청을 만든 직후 가장 먼저 할 일 */}
+      <Card>
+        <CardHeader title={t('visitRequest.shareTitle')} />
+        <CardBody className={styles.assignBody}>
+          <PlanBalance
+            request={request}
+            sundayStatus={sundayStatus}
+            wardStats={wardStats}
+            load={statusLoad}
+            onRefill={handleRefill}
+            refilling={refilling && !confirmRefill}
+          >
+            <StakeLinkList
+              request={request}
+              recommendations={recommendations}
+              sundayStatus={sundayStatus}
+              wardStats={wardStats}
+              ready={statusLoad === 'ready'}
+              onCopy={handleCopy}
+            />
+          </PlanBalance>
+          <p className={styles.hint}>{t('visitRequest.shareHint')}</p>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title={t('visitRequest.boardTitle')} />
+        <CardBody>
+          <p className={styles.hint}>{t('visitRequest.boardHint')}</p>
+          <ol className={styles.board}>
+            {request.sundays.map((date) => (
+              <SundayRow
+                key={date}
                 request={request}
-                sundayStatus={sundayStatus}
+                date={date}
+                label={dateLabel(date)}
+                special={
+                  isGeneralConferenceSunday(date)
+                    ? t('recommend.generalConferenceSunday')
+                    : isFirstSunday(date)
+                      ? t('recommend.fastSunday')
+                      : null
+                }
+                status={sundayStatus[date]}
+                candidates={rankCandidates(candidatesForSunday(recommendations, date), request.decisions ?? {})}
+                unitName={(id) => unitById.get(id)?.ko ?? id}
                 wardStats={wardStats}
-                load={statusLoad}
-                onRefill={handleRefill}
-                refilling={refilling && !confirmRefill}
+                recencyText={recencyText}
+                onDecide={(pick) => setPending({ date, pick })}
               />
-              <StakeLinkList
-                request={request}
-                recommendations={recommendations}
-                sundayStatus={sundayStatus}
-                onCopy={handleCopy}
+            ))}
+          </ol>
+        </CardBody>
+      </Card>
+
+      {/* 회장들이 보는 문구 — 강조 사항은 요청 중에도 바꿀 수 있다 */}
+      <Card>
+        <CardHeader
+          title={t('visitRequest.textTitle')}
+          action={
+            !textDraft && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  setTextDraft({ title: request.title, note: request.note ?? '', guidance: request.guidance ?? '' })
+                }
+              >
+                {t('visitRequest.editText')}
+              </Button>
+            )
+          }
+        />
+        <CardBody>
+          {textDraft ? (
+            <div className={styles.textForm}>
+              <Input
+                label={t('visitRequest.title')}
+                value={textDraft.title}
+                maxLength={80}
+                onChange={(e) => setTextDraft({ ...textDraft, title: e.target.value })}
               />
-            </CardBody>
-          </Card>
-
-          <Card className={styles.boardCard}>
-            <CardHeader title={t('visitRequest.boardTitle')} />
-            <CardBody>
-              <p className={styles.hint}>{t('visitRequest.boardHint')}</p>
-              <ol className={styles.board}>
-                {request.sundays.map((date) => (
-                  <SundayRow
-                    key={date}
-                    request={request}
-                    date={date}
-                    label={dateLabel(date)}
-                    special={
-                      isGeneralConferenceSunday(date)
-                        ? t('recommend.generalConferenceSunday')
-                        : isFirstSunday(date)
-                          ? t('recommend.fastSunday')
-                          : null
-                    }
-                    status={sundayStatus[date]}
-                    candidates={rankCandidates(candidatesForSunday(recommendations, date), request.decisions ?? {})}
-                    unitName={(id) => unitById.get(id)?.ko ?? id}
-                    wardStats={wardStats}
-                    recencyText={recencyText}
-                    onDecide={(pick) => setPending({ date, pick })}
-                  />
-                ))}
-              </ol>
-            </CardBody>
-          </Card>
-        </div>
-        <div className={styles.side}>
-          <div className={styles.stats}>
-            <StatCard
-              label={t('visitRequest.statResponded')}
-              value={progress.respondedUnits}
-              unit={`/ ${progress.totalUnits}`}
-            />
-            <StatCard
-              label={t('visitRequest.statDecided')}
-              value={progress.decidedSundays}
-              unit={`/ ${progress.totalSundays}`}
-            />
-          </div>
-
-          <Card className={styles.unitsCard}>
-            <CardHeader title={t('visitRequest.unitsTitle')} />
-            <CardBody>
-              <ul className={styles.unitList}>
-                {request.units.map((u) => {
-                  const rec = recommendations.find((r) => r.unitId === u.id)
-                  return (
-                    <li key={u.id} className={styles.unitRow}>
-                      <span className={styles.unitName}>{u.ko}</span>
-                      {rec ? (
-                        <span className={styles.unitMeta}>
-                          <Check size={14} aria-hidden className={styles.unitCheck} />
-                          {dayjs(rec.submittedAt).format('M.D HH:mm')} ·{' '}
-                          {t('recommend.pickedCount', { count: rec.picks.length })}
-                          {rec.note && <span className={styles.unitNote}>{rec.note}</span>}
-                        </span>
-                      ) : (
-                        <span className={styles.unitPending}>{t('visitRequest.unitPending')}</span>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            </CardBody>
-          </Card>
-
-          {/* 회장들이 보는 문구 — 강조 사항은 요청 중에도 바꿀 수 있다 */}
-          <Card className={styles.textCard}>
-            <CardHeader
-              title={t('visitRequest.textTitle')}
-              action={
-                !textDraft && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() =>
-                      setTextDraft({ title: request.title, note: request.note ?? '', guidance: request.guidance ?? '' })
-                    }
-                  >
-                    {t('visitRequest.editText')}
-                  </Button>
-                )
-              }
-            />
-            <CardBody>
-              {textDraft ? (
-                <div className={styles.textForm}>
-                  <Input
-                    label={t('visitRequest.title')}
-                    value={textDraft.title}
-                    maxLength={80}
-                    onChange={(e) => setTextDraft({ ...textDraft, title: e.target.value })}
-                  />
-                  <GuidanceField
-                    value={textDraft.guidance}
-                    onChange={(guidance) => setTextDraft({ ...textDraft, guidance })}
-                  />
-                  <Textarea
-                    label={t('visitRequest.note')}
-                    value={textDraft.note}
-                    rows={3}
-                    onChange={(e) => setTextDraft({ ...textDraft, note: e.target.value })}
-                  />
-                  <div className={styles.shareActions}>
-                    <Button size="sm" loading={textSaving} disabled={!textDraft.title.trim()} onClick={handleSaveText}>
-                      {t('visitRequest.saveText')}
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setTextDraft(null)}>
-                      {t('common.cancel')}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <p className={clsx(styles.guidanceText, !request.guidance && styles.hint)}>
-                    {request.guidance || t('visitRequest.guidanceNone')}
-                  </p>
-                  {request.note && <p className={styles.hint}>{request.note}</p>}
-                </>
-              )}
-            </CardBody>
-          </Card>
-        </div>
-      </div>
+              <GuidanceField
+                value={textDraft.guidance}
+                onChange={(guidance) => setTextDraft({ ...textDraft, guidance })}
+              />
+              <Textarea
+                label={t('visitRequest.note')}
+                value={textDraft.note}
+                rows={3}
+                onChange={(e) => setTextDraft({ ...textDraft, note: e.target.value })}
+              />
+              <div className={styles.shareActions}>
+                <Button size="sm" loading={textSaving} disabled={!textDraft.title.trim()} onClick={handleSaveText}>
+                  {t('visitRequest.saveText')}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setTextDraft(null)}>
+                  {t('common.cancel')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.textView}>
+              <p className={clsx(styles.guidanceText, !request.guidance && styles.hint)}>
+                {request.guidance || t('visitRequest.guidanceNone')}
+              </p>
+              {request.note && <p className={styles.hint}>{request.note}</p>}
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       <ConfirmSheet
         open={!!pending}

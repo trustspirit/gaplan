@@ -1,232 +1,134 @@
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
-.list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.wrap {
   display: flex;
   flex-direction: column;
-}
-
-.row {
-  display: flex;
-  flex-direction: column;
-  gap: $space-2;
-  padding: $space-3 0;
-  border-top: 1px solid $color-border;
-
-  &:first-child {
-    border-top: none;
-    padding-top: 0;
-  }
-}
-
-.head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: $space-2;
-}
-
-.unit {
-  font-weight: $font-weight-semibold;
-  color: $color-text;
-}
-
-.region {
-  padding: 0 $space-1;
-  border: 1px solid;
-  border-radius: $border-radius-sm;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-semibold;
-}
-
-.wards {
-  font-size: $font-size-xs;
-  color: $neutral-500;
-}
-
-.status {
-  margin-left: auto;
-  font-size: $font-size-xs;
-  color: $neutral-500;
-}
-
-.statusDone {
-  color: $color-success;
-}
-
-.dates {
-  display: flex;
-  flex-direction: column;
-  gap: $space-1;
-  margin: 0;
-  padding: 0;
-  border: none;
+  gap: $space-3;
   min-width: 0;
 }
 
-.datesLegend {
-  width: 100%;
-  margin-bottom: $space-1;
-  padding: 0;
+.pending {
   font-size: $font-size-xs;
-  color: $neutral-600;
+  color: $neutral-500;
 }
 
-.monthRow {
-  display: grid;
-  grid-template-columns: 2.5rem 1fr;
-  align-items: start;
-  gap: $space-2;
+.responded {
+  display: flex;
+  flex-direction: column;
+  line-height: $line-height-tight;
 }
 
-.month {
-  padding-top: $space-2;
+.respondedMain {
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
-  color: $neutral-600;
+  color: $color-success;
 }
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
+.respondedSub {
+  font-size: $font-size-xs;
+  color: $neutral-500;
+}
+
+.links {
+  display: inline-flex;
+  align-items: center;
   gap: $space-1;
 }
 
-.chip {
+.linkBtn,
+.linkIcon {
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-width: 52px;
-  min-height: 44px;
+  gap: $space-1;
+  height: 30px;
   padding: 0 $space-2;
-  border: 1px solid $color-border-strong;
-  border-radius: $border-radius-md;
   background: $color-surface;
-  color: $color-text;
-  font-size: $font-size-sm;
-  font-variant-numeric: tabular-nums;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $neutral-700;
   cursor: pointer;
+  text-decoration: none;
+
+  &:hover:not(:disabled) {
+    border-color: $color-primary;
+    color: $color-primary;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
 
   &:focus-visible {
     @include focus-ring;
   }
 }
 
-.chipOn {
-  background: $color-sidebar;
-  border-color: $color-sidebar;
-  color: $color-surface;
+.linkBtn svg,
+.linkIcon svg {
+  flex: none;
 }
 
-.chipBlocked {
-  background: $color-surface-sunken;
-  border-style: dashed;
-  color: $neutral-400;
-  cursor: not-allowed;
+.linkIcon {
+  width: 30px;
+  justify-content: center;
+  padding: 0;
 }
 
-.chipOtherRegion {
-  opacity: 0.6;
+// 표 아래 참고 — 넓은 화면에서는 두 단
+.notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: $space-3 $space-6;
 }
 
-.chip {
-  position: relative;
-}
-
-/* 추천 배정 표시 — 1순위는 채운 점, 예비는 빈 점(칠십인 화면 전용) */
-.roleDot {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 7px;
-  height: 7px;
-  border-radius: $border-radius-full;
-  background: $color-primary;
-  border: 1.5px solid $color-primary;
-}
-
-.roleDotBackup {
-  background: transparent;
-}
-
-.chipOn .roleDot {
-  background: $color-surface;
-  border-color: $color-surface;
-}
-
-.chipOn .roleDotBackup {
-  background: transparent;
-}
-
-.chipDay {
+.notesTitle {
+  margin: 0 0 $space-1;
+  font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
+  color: $neutral-600;
 }
 
-.chipReason {
-  font-size: 10px;
-  line-height: 1.2;
-}
-
-.details {
-  list-style: none;
+.noteList {
   margin: 0;
-  padding: $space-2 $space-3;
-  background: $color-surface-sunken;
-  border-radius: $border-radius-md;
+  padding: 0;
+  list-style: none;
   display: flex;
   flex-direction: column;
   gap: 2px;
   font-size: $font-size-xs;
   color: $neutral-700;
-  line-height: $line-height-normal;
 
   li {
-    display: grid;
-    grid-template-columns: 4.5rem 1fr;
+    display: flex;
     gap: $space-2;
   }
 }
 
-.detailDate {
+.noteDate {
+  flex: none;
+  width: 2.5rem;
   color: $neutral-500;
   font-variant-numeric: tabular-nums;
 }
 
-// 막지 않는 참고 행사
-.detailNote {
-  color: $neutral-500;
+.noteUnit {
+  flex: none;
+  font-weight: $font-weight-semibold;
 }
 
-.none {
-  margin: 0;
-  font-size: $font-size-xs;
-  color: $neutral-500;
-}
+@include mobile {
+  // 휴대폰에서는 버튼 글자를 빼고 아이콘만
+  .linkBtn span {
+    @include visually-hidden;
+  }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: $space-2;
-}
-
-.open {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-1;
-  min-height: 44px;
-  padding: 0 $space-2;
-  font-size: $font-size-sm;
-  color: $color-primary;
-  text-decoration: none;
-}
-
-.legend {
-  margin: 0 0 $space-2;
-  font-size: $font-size-xs;
-  color: $neutral-600;
+  .linkBtn {
+    width: 30px;
+    justify-content: center;
+    padding: 0;
+  }
 }

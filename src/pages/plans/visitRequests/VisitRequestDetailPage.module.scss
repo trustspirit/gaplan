@@ -1,20 +1,16 @@
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
-// 이 폭부터 두 단 — 왼쪽 일요일 보드가 지금(880px 한 줄)과 비슷한 폭을 지킨다
-$wide-layout: 1200px;
 
 .page {
   display: flex;
   flex-direction: column;
   gap: $space-4;
   padding: $space-6;
-  max-width: 880px;
+  // 표와 일요일 격자가 폭을 쓰도록 넓게 — 아주 넓은 화면에서만 가운데로 모은다
+  max-width: 1440px;
   margin: 0 auto;
   width: 100%;
-  @media (min-width: $wide-layout) {
-    max-width: 1240px;
-  }
   @media (max-width: 768px) {
     padding: $space-3;
     padding-bottom: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px) + #{$space-3});
@@ -71,6 +67,57 @@ $wide-layout: 1200px;
   gap: $space-2;
 }
 
+// 머리 오른쪽의 진행 숫자 — 따로 카드로 세우지 않고 제목 줄에 붙인다
+.progress {
+  display: flex;
+  gap: $space-6;
+  margin: 0 0 0 auto;
+}
+
+.progressItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  dt {
+    font-size: $font-size-xs;
+    color: $neutral-500;
+  }
+
+  dd {
+    margin: 0;
+    font-size: $font-size-sm;
+    color: $neutral-600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  strong {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: $color-text;
+  }
+}
+
+.assignBody {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  .hint {
+    margin: 0;
+  }
+}
+
+.textView {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  .hint {
+    margin: 0;
+  }
+}
+
 .hint {
   margin: 0 0 $space-3;
   font-size: $font-size-sm;
@@ -86,20 +133,15 @@ $wide-layout: 1200px;
   margin-top: $space-3;
 }
 
-.stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: $space-3;
-}
-
-// ── 일요일별 결정 ──
+// ── 일요일별 결정 — 폭에 맞춰 여러 열 ──
 .board {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: $space-3;
+  align-items: start;
 }
 
 .sunday {
@@ -265,53 +307,6 @@ $wide-layout: 1200px;
 }
 
 // ── 단위별 응답 ──
-.unitList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.unitRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $space-1 $space-3;
-  padding: $space-2 0;
-  border-bottom: 1px solid $color-border;
-  font-size: $font-size-sm;
-
-  &:last-child {
-    border-bottom: none;
-  }
-}
-
-.unitName {
-  min-width: 8em;
-  font-weight: $font-weight-semibold;
-}
-
-.unitMeta {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: $space-1;
-  color: $neutral-600;
-}
-
-.unitCheck {
-  color: $color-success;
-}
-
-.unitNote {
-  flex-basis: 100%;
-  white-space: pre-wrap;
-  color: $neutral-700;
-}
-
-.unitPending {
-  color: $neutral-500;
-}
-
 .textForm {
   display: flex;
   flex-direction: column;
@@ -332,56 +327,4 @@ $wide-layout: 1200px;
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
   line-height: 1.6;
-}
-
-// ── 배치 ──
-// 좁은 화면: 두 묶음을 풀어 한 줄로 — 공유 → 문구 → 진행 → 일요일 → 응답 순
-.layout {
-  display: flex;
-  flex-direction: column;
-  gap: $space-4;
-}
-
-.main,
-.side {
-  display: contents;
-}
-
-.shareCard { order: 1; }
-.textCard { order: 2; }
-.stats { order: 3; }
-.boardCard { order: 4; }
-.unitsCard { order: 5; }
-
-// 넓은 화면: 왼쪽 할 일(공유·일요일 결정), 오른쪽 현황(진행 → 응답 → 문구). 오른쪽은 스크롤해도 따라온다
-@media (min-width: $wide-layout) {
-  .layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
-    gap: $space-6;
-    align-items: start;
-  }
-
-  .main,
-  .side {
-    display: flex;
-    flex-direction: column;
-    gap: $space-4;
-    min-width: 0;
-  }
-
-  .side {
-    position: sticky;
-    top: $space-4;
-    max-height: calc(100vh - #{$topbar-height} - #{$space-8});
-    overflow-y: auto;
-  }
-
-  .shareCard,
-  .textCard,
-  .stats,
-  .boardCard,
-  .unitsCard {
-    order: 0;
-  }
 }

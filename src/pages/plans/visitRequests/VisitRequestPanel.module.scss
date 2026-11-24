@@ -1,20 +1,18 @@
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
-// 이 폭부터 만들기 화면을 두 단으로 — 사이드바를 빼고도 입력 칸과 추천 칸이 모두 넉넉하다
-$wide-layout: 1200px;
+// 이 폭부터 일요일 고르기와 배정 미리보기를 나란히 — 사이드바를 빼고도 미리보기 표가 넉넉하다
+$wide-layout: 1100px;
 
 .panel {
   display: flex;
   flex-direction: column;
   gap: $space-4;
   padding: $space-6;
-  max-width: 800px;
+  // 표와 일요일 카드가 폭을 쓰도록 넓게 — 아주 넓은 화면에서만 가운데로 모은다
+  max-width: 1440px;
   margin: 0 auto;
   width: 100%;
-  @media (min-width: $wide-layout) {
-    max-width: 1200px;
-  }
   @media (max-width: 768px) {
     padding: $space-3;
     padding-bottom: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px) + #{$space-3});
@@ -26,12 +24,6 @@ $wide-layout: 1200px;
   font-size: $font-size-sm;
   color: $neutral-600;
   line-height: $line-height-normal;
-}
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: $space-3;
 }
 
 .warn {
@@ -321,11 +313,50 @@ $wide-layout: 1200px;
   height: 28px;
 }
 
-// 일요일별 추천 — 칩 아래 이유 목록과 같은 바탕을 쓴다.
+// ── 만들기: 기본 정보 한 줄 → 일요일 고르기 | 배정 미리보기 → 문구 두 칸 → 만들기 ──
+.create {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.fieldsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: $space-3;
+}
+
+.planRow {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.textRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: $space-3;
+  align-items: start;
+}
+
+.createFoot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+// 배정 미리보기 — 표와 일요일별 우선 와드
 .preview {
-  padding: $space-2 $space-3;
-  background: $color-surface-sunken;
-  border-radius: $border-radius-md;
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  min-width: 0;
+}
+
+.previewTitle {
+  margin: 0;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
 }
 
 // 아직 보여 줄 추천이 없을 때 — 좁은 화면에서는 자리를 차지하지 않는다
@@ -340,14 +371,8 @@ $wide-layout: 1200px;
   line-height: $line-height-normal;
 }
 
-.createLayout {
-  display: flex;
-  flex-direction: column;
-  gap: $space-3;
-}
-
 .picksHint {
-  margin: 0 0 $space-2;
+  margin: 0;
   font-size: $font-size-xs;
   color: $neutral-500;
   line-height: $line-height-normal;
@@ -357,33 +382,29 @@ $wide-layout: 1200px;
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: $space-2;
 }
 
+// 일요일 하나 — 작은 카드
 .pickRow {
-  display: grid;
-  grid-template-columns: 7.5rem 1fr;
-  gap: $space-2;
-  padding: $space-2 0;
-  border-top: 1px solid $neutral-200;
-
-  &:first-child {
-    border-top: none;
-  }
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-    gap: $space-1;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  background: $color-surface;
 }
 
 .pickDate {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: $space-1;
-  font-size: $font-size-xs;
-  color: $neutral-600;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-sidebar;
   font-variant-numeric: tabular-nums;
 }
 
@@ -462,44 +483,22 @@ $wide-layout: 1200px;
   color: $color-danger;
 }
 
-// ── 넓은 화면: 왼쪽 입력, 오른쪽 추천 결과 ──
+// ── 넓은 화면: 일요일 고르기 | 배정 미리보기 ──
 @media (min-width: $wide-layout) {
-  // 카드의 overflow:hidden이 있으면 오른쪽 칸이 따라 내려오지 않는다
-  .panel .createCard {
-    overflow: visible;
-  }
-
-  .createLayout {
+  .planRow {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 500px);
-    grid-template-areas:
-      'main preview'
-      'rest preview';
-    grid-template-rows: auto 1fr;
-    column-gap: $space-6;
-    row-gap: $space-3;
+    grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+    gap: $space-6;
     align-items: start;
   }
 
-  .createMain {
-    grid-area: main;
-  }
-
-  .createRest {
-    grid-area: rest;
-  }
-
-  .preview {
-    grid-area: preview;
-    position: sticky;
-    top: $space-4;
-    max-height: calc(100vh - #{$topbar-height} - #{$space-8});
-    overflow-y: auto;
-    padding: $space-3 $space-4;
-  }
-
   .previewIdle {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 240px;
+    border: 1px dashed $color-border-strong;
+    border-radius: $border-radius-md;
   }
 
   .rows {

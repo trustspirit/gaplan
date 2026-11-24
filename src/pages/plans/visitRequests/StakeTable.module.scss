@@ -1,0 +1,311 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+$cell-min: 40px;
+$row-height: 48px;
+$stake-col: 11rem;
+// 그날 물을 수 없는 칸의 빗금 / 다른 CC 차례 칸의 바탕
+$hatch: repeating-linear-gradient(-45deg, $neutral-200 0 2px, transparent 2px 7px);
+$off-turn-bg: $neutral-50;
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  min-width: 0;
+}
+
+// 표는 폭을 꽉 채우고, 좁으면 일요일만 옆으로 넘긴다 — 스테이크 칸과 횟수 칸은 붙어 있다
+.scroll {
+  overflow-x: auto;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  background: $color-surface;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: $font-size-sm;
+  font-variant-numeric: tabular-nums;
+}
+
+.srOnly {
+  @include visually-hidden;
+}
+
+.headLabel {
+  padding: $space-2 $space-3;
+  vertical-align: bottom;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $neutral-500;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid $color-border;
+}
+
+.stakeCol {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: $stake-col;
+  min-width: $stake-col;
+  max-width: $stake-col;
+  background: $color-surface;
+  border-right: 1px solid $color-border;
+}
+
+.monthHead {
+  padding: $space-2 $space-2 0;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $neutral-600;
+  text-align: left;
+}
+
+.dayHead {
+  min-width: $cell-min;
+  padding: $space-1 2px $space-2;
+  border-bottom: 1px solid $color-border;
+  text-align: center;
+}
+
+.day {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 $space-1;
+  border: 1px solid transparent;
+  border-radius: $border-radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $neutral-700;
+}
+
+// 달이 바뀌는 열 — 왼쪽에 옅은 선
+.monthStart {
+  border-left: 1px solid $color-border;
+}
+
+.regionRow th {
+  padding: $space-3 $space-3 $space-1;
+  text-align: left;
+  background: $color-surface;
+}
+
+.regionTag {
+  position: sticky;
+  left: $space-3;
+  display: inline-block;
+  padding: 0 $space-2;
+  border: 1px solid;
+  border-radius: $border-radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+.row:hover > * {
+  background-color: $color-surface-sunken;
+}
+
+.stake {
+  padding: $space-2 $space-3;
+  text-align: left;
+  border-top: 1px solid $neutral-100;
+}
+
+.stakeName {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: $font-weight-semibold;
+  color: $neutral-800;
+}
+
+.stakeMeta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-normal;
+  color: $neutral-500;
+}
+
+.cell {
+  min-width: $cell-min;
+  height: $row-height;
+  padding: 0;
+  border-top: 1px solid $neutral-100;
+  text-align: center;
+  vertical-align: middle;
+}
+
+// 그날 물을 수 없는 칸(행사·칠십인 일정·다른 곳 확정)
+.blocked {
+  background: $hatch;
+}
+
+// 다른 CC 차례 — 막힌 게 아니라 원래 그 CC 몫이 아닌 날이라 빗금 없이 옅게만
+.offTurn {
+  background: $off-turn-bg;
+}
+
+.row:hover > .blocked {
+  background: $hatch, $color-surface-sunken;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: $row-height;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: $color-primary-weak;
+  }
+
+  &:disabled {
+    cursor: progress;
+    opacity: 0.5;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+    outline-offset: -2px;
+  }
+}
+
+.mark {
+  display: inline-block;
+  flex: none;
+  border-radius: 50%;
+}
+
+.mark_primary {
+  width: 14px;
+  height: 14px;
+  background: $color-primary;
+}
+
+.mark_backup {
+  width: 14px;
+  height: 14px;
+  border: 2px solid $color-primary;
+}
+
+.mark_asked {
+  width: 8px;
+  height: 8px;
+  background: $neutral-500;
+}
+
+.check {
+  color: $color-success;
+}
+
+.countCol {
+  width: 1%;
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  min-width: 5rem;
+  background: $color-surface;
+  border-left: 1px solid $color-border;
+  text-align: right;
+}
+
+.count {
+  padding: 0 $space-3;
+  border-top: 1px solid $neutral-100;
+  font-weight: $font-weight-semibold;
+  color: $neutral-700;
+  white-space: nowrap;
+}
+
+// 한 번도 묻지 않는 스테이크 — 눈에 띄게
+.countZero {
+  color: $color-danger;
+}
+
+.extra {
+  font-weight: $font-weight-medium;
+  color: $neutral-500;
+}
+
+.extraHead {
+  width: 1%;
+  border-left: 1px solid $neutral-100;
+}
+
+.extraCell {
+  padding: 0 $space-3;
+  border-top: 1px solid $neutral-100;
+  border-left: 1px solid $neutral-100;
+  white-space: nowrap;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-1 $space-4;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: $font-size-xs;
+  color: $neutral-600;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
+  }
+}
+
+.legendHint {
+  margin-left: auto;
+  color: $neutral-500;
+}
+
+.swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 1px solid $color-border;
+  border-radius: 3px;
+}
+
+// 휴대폰: 고정 칸을 줄여 일요일이 더 보이게
+@include mobile {
+  .stakeCol {
+    width: 7.5rem;
+    min-width: 7.5rem;
+    max-width: 7.5rem;
+  }
+
+  .stake,
+  .headLabel {
+    padding-left: $space-2;
+    padding-right: $space-2;
+  }
+
+  .countCol {
+    position: static;
+    min-width: 3.5rem;
+  }
+
+  .legendHint {
+    margin-left: 0;
+  }
+}

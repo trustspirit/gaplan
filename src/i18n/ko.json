@@ -1064,6 +1064,20 @@
       "regionShare": "{{region}} — 일요일 {{count}}개로, 와드 수에 비해 적습니다(약 {{expected}}개)."
     },
     "matrix": {
+      "legendLabel": "표 기호",
+      "legendBlocked": "그날 물을 수 없음",
+      "editHint": "칸을 누르면 그 일요일을 묻거나 뺍니다",
+      "response": "응답",
+      "messageShort": "안내문 복사",
+      "links": "링크",
+      "responded": "응답 {{date}}",
+      "pending": "미응답",
+      "picked": "추천 {{count}}개",
+      "copyLink": "{{unit}} 링크 복사",
+      "copyMessage": "{{unit}} 안내문과 함께 복사",
+      "openLink": "{{unit}} 링크 열기",
+      "notesTitle": "참고",
+      "presidentNotes": "회장이 남긴 말",
       "lastNever": "방문 기록 없음",
       "lastFresh": "최근 방문",
       "lastMonths": "{{months}}개월 전 방문",
@@ -1072,7 +1086,6 @@
       "count": "1순위 / 예비",
       "countTitle": "1순위 {{primary}} · 예비 {{backup}} · 직접 넣은 날 {{extra}}",
       "scheduled": "예정 {{date}}",
-      "legend": "● 1순위  ○ 예비  • 직접 넣은 날  ✓ 확정  빗금은 그날 물을 수 없는 날(다른 CC 차례·행사·칠십인 일정)",
       "cell": {
         "primary": "1순위",
         "backup": "예비",

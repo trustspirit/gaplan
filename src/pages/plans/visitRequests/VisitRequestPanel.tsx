@@ -35,7 +35,7 @@ import {
 } from '@/utils/visitRequest'
 import { recommendUnitSundays } from '../../../../functions/src/visitPlanBalance'
 import { GuidanceField } from './GuidanceField'
-import { PlanMatrix } from './PlanMatrix'
+import { StakeTable } from './StakeTable'
 import { planMatrix } from './stakeSundayMatrix'
 import { unavailableReasons, unitBlockText } from './sundayReasons'
 import {
@@ -301,13 +301,13 @@ export function VisitRequestPanel() {
 
   return (
     <div className={styles.panel}>
-      <Card className={styles.createCard}>
+      <Card>
         <CardHeader title={t('visitRequest.newTitle')} />
         <CardBody>
           <p className={styles.hint}>{t('visitRequest.newHint')}</p>
-          {/* 넓은 화면: 왼쪽 입력, 오른쪽 추천 결과(일요일을 바꾸면 바로 옆에서 보인다). 좁은 화면은 위에서 아래로. */}
-          <div className={styles.createLayout}>
-            <div className={clsx(styles.form, styles.createMain)}>
+          {/* 넓은 화면: 위에 기본 정보 한 줄, 가운데 일요일 고르기 | 배정 미리보기, 아래 문구 두 칸. 좁은 화면은 위에서 아래로. */}
+          <div className={styles.create}>
+            <div className={styles.fieldsRow}>
               <Input
                 label={t('visitRequest.title')}
                 value={titleValue}
@@ -325,17 +325,25 @@ export function VisitRequestPanel() {
                   options={seventies.map((s) => ({ value: s.uid, label: s.name }))}
                 />
               )}
-              {fixedSeventyUid === '' && (
-                <p className={styles.warn} role="alert">
-                  {t('visitRequest.noSeventy')}
-                </p>
-              )}
-              {seventy && regionIds.length === 0 && (
-                <p className={styles.warn} role="alert">
-                  {t('visitRequest.noRegion')}
-                </p>
-              )}
+              <Input
+                type="date"
+                label={t('visitRequest.dueDate')}
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+            {fixedSeventyUid === '' && (
+              <p className={styles.warn} role="alert">
+                {t('visitRequest.noSeventy')}
+              </p>
+            )}
+            {seventy && regionIds.length === 0 && (
+              <p className={styles.warn} role="alert">
+                {t('visitRequest.noRegion')}
+              </p>
+            )}
 
+            <div className={styles.planRow}>
               <fieldset className={styles.sundayField}>
                 <legend className={styles.legend}>
                   {t('visitRequest.sundays')}
@@ -483,83 +491,76 @@ export function VisitRequestPanel() {
                   )}
                 </div>
               </fieldset>
+              <section
+                className={clsx(styles.preview, !(wardPicks && sundays.length > 0) && styles.previewIdle)}
+                aria-label={t('visitRequest.picksTitle')}
+              >
+                {wardPicks && sundays.length > 0 ? (
+                  <>
+                    <h3 className={styles.previewTitle}>{t('visitRequest.picksTitle')}</h3>
+                    <StakeTable matrix={matrix} today={today} />
+                    <p className={styles.picksHint}>{t('visitRequest.picksHint')}</p>
+                    <ul className={styles.pickList}>
+                      {[...sundays].sort().map((date) => {
+                        const region = multiRegion ? sundayRegions[date] : undefined
+                        const regionColor = region ? getRegionColor(region) : null
+                        const picks = wardPicks[date] ?? []
+                        const roles = plan.roles[date]
+                        return (
+                          <li key={date} className={styles.pickRow}>
+                            <span className={styles.pickDate}>
+                              {dayjs(date).format(t('visitRequest.reasonDateFormat'))}
+                              {region && regionColor && (
+                                <span
+                                  className={styles.pickRegion}
+                                  style={{ background: regionColor.bg, color: regionColor.text, borderColor: regionColor.border }}
+                                >
+                                  {regionShort(region)}
+                                </span>
+                              )}
+                            </span>
+                            <div className={styles.pickBody}>
+                              {roles?.primary && (
+                                <span className={styles.pickRoles}>
+                                  {t('visitRequest.pickRoles', {
+                                    primary: unitName(roles.primary),
+                                    backup: roles.backup ? unitName(roles.backup) : t('visitRequest.pickRolesNoBackup'),
+                                  })}
+                                </span>
+                              )}
+                              {picks.length === 0 ? (
+                                <span className={styles.pickNone}>{t('visitRequest.picksNone')}</span>
+                              ) : (
+                                <ol className={styles.pickWards}>
+                                  {picks.map((p) => {
+                                    const tone = wardRecency({ lastVisit: p.lastVisit }, today).tone
+                                    return (
+                                      <li key={p.wardId} className={styles.pickWard}>
+                                        <span className={styles.pickWardName}>{p.wardName}</span>
+                                        <span className={styles.pickUnit}>{p.unitName}</span>
+                                        <span className={clsx(styles.pickRecency, tone === 'fresh' ? styles.toneFresh : tone === 'aging' ? styles.toneAging : styles.toneStale)}>
+                                          {recencyText(p.lastVisit)}
+                                        </span>
+                                      </li>
+                                    )
+                                  })}
+                                </ol>
+                              )}
+                            </div>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </>
+                ) : (
+                  <p className={styles.previewEmpty}>
+                    {statusState === 'loading' ? t('visitRequest.sundayLoading') : t('visitRequest.picksEmpty')}
+                  </p>
+                )}
+              </section>
             </div>
 
-            <section
-              className={clsx(styles.preview, !(wardPicks && sundays.length > 0) && styles.previewIdle)}
-              aria-label={t('visitRequest.picksTitle')}
-            >
-              {wardPicks && sundays.length > 0 ? (
-                <>
-                  <p className={styles.reasonsTitle}>{t('visitRequest.picksTitle')}</p>
-                  <PlanMatrix matrix={matrix} today={today} />
-                  <p className={styles.picksHint}>{t('visitRequest.picksHint')}</p>
-                  <ul className={styles.pickList}>
-                    {[...sundays].sort().map((date) => {
-                      const region = multiRegion ? sundayRegions[date] : undefined
-                      const regionColor = region ? getRegionColor(region) : null
-                      const picks = wardPicks[date] ?? []
-                      const roles = plan.roles[date]
-                      return (
-                        <li key={date} className={styles.pickRow}>
-                          <span className={styles.pickDate}>
-                            {dayjs(date).format(t('visitRequest.reasonDateFormat'))}
-                            {region && regionColor && (
-                              <span
-                                className={styles.pickRegion}
-                                style={{ background: regionColor.bg, color: regionColor.text, borderColor: regionColor.border }}
-                              >
-                                {regionShort(region)}
-                              </span>
-                            )}
-                          </span>
-                          <div className={styles.pickBody}>
-                            {roles?.primary && (
-                              <span className={styles.pickRoles}>
-                                {t('visitRequest.pickRoles', {
-                                  primary: unitName(roles.primary),
-                                  backup: roles.backup ? unitName(roles.backup) : t('visitRequest.pickRolesNoBackup'),
-                                })}
-                              </span>
-                            )}
-                            {picks.length === 0 ? (
-                              <span className={styles.pickNone}>{t('visitRequest.picksNone')}</span>
-                            ) : (
-                              <ol className={styles.pickWards}>
-                                {picks.map((p) => {
-                                  const tone = wardRecency({ lastVisit: p.lastVisit }, today).tone
-                                  return (
-                                    <li key={p.wardId} className={styles.pickWard}>
-                                      <span className={styles.pickWardName}>{p.wardName}</span>
-                                      <span className={styles.pickUnit}>{p.unitName}</span>
-                                      <span className={clsx(styles.pickRecency, tone === 'fresh' ? styles.toneFresh : tone === 'aging' ? styles.toneAging : styles.toneStale)}>
-                                        {recencyText(p.lastVisit)}
-                                      </span>
-                                    </li>
-                                  )
-                                })}
-                              </ol>
-                            )}
-                          </div>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </>
-              ) : (
-                <p className={styles.previewEmpty}>
-                  {statusState === 'loading' ? t('visitRequest.sundayLoading') : t('visitRequest.picksEmpty')}
-                </p>
-              )}
-            </section>
-
-            <div className={clsx(styles.form, styles.createRest)}>
-              <Input
-                type="date"
-                label={t('visitRequest.dueDate')}
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-              />
+            <div className={styles.textRow}>
               <GuidanceField value={guidance} onChange={setGuidance} />
               <Textarea
                 label={t('visitRequest.note')}
@@ -568,6 +569,8 @@ export function VisitRequestPanel() {
                 placeholder={t('visitRequest.notePlaceholder')}
                 onChange={(e) => setNote(e.target.value)}
               />
+            </div>
+            <div className={styles.createFoot}>
               <Button onClick={handleCreate} loading={creating} disabled={!canCreate}>
                 {t('visitRequest.create')}
               </Button>

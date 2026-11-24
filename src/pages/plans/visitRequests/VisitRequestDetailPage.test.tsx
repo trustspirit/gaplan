@@ -78,7 +78,7 @@ function renderPage() {
 describe('VisitRequestDetailPage', () => {
   it('gives each stake its own link', () => {
     renderPage()
-    const hrefs = screen.getAllByRole('link', { name: /visitRequest.open/ }).map((a) => a.getAttribute('href'))
+    const hrefs = screen.getAllByRole('link', { name: /visitRequest.matrix.openLink/ }).map((a) => a.getAttribute('href'))
     expect(hrefs).toEqual([
       expect.stringMatching(/\/recommend\/r1\/0123456789abcdef$/),
       expect.stringMatching(/\/recommend\/r1\/fedcba9876543210$/),
@@ -88,14 +88,12 @@ describe('VisitRequestDetailPage', () => {
   it('lets the seventy choose the Sundays for one stake, not ones decided elsewhere', async () => {
     const user = userEvent.setup()
     renderPage()
-    // 서울 스테이크(u1): 1/10은 고를 수 있고, 1/17은 서울동으로 확정돼 고를 수 없다
-    const u1Row = screen.getAllByRole('link', { name: /visitRequest.open/ })[0].closest('li')!
-    const [jan10, jan17] = within(u1Row)
-      .getAllByRole('button')
-      .filter((b) => b.hasAttribute('aria-pressed'))
-    expect(jan10).toHaveAttribute('aria-pressed', 'true')
-    expect(jan17).toBeDisabled()
-    await user.click(jan10)
+    // 서울 스테이크(u1): 1/10은 표의 칸을 눌러 넣고 뺄 수 있고, 1/17은 서울동으로 확정돼 고를 수 없다
+    const u1Row = screen.getByRole('row', { name: /^서울 스테이크/ })
+    const toggles = within(u1Row).getAllByRole('button').filter((b) => b.hasAttribute('aria-pressed'))
+    expect(toggles).toHaveLength(1)
+    expect(toggles[0]).toHaveAttribute('aria-pressed', 'true')
+    await user.click(toggles[0])
     await waitFor(() => expect(setUnitSundays).toHaveBeenCalledWith('r1', 'u1', []))
     expect(within(u1Row).getByText(/visitRequest.decidedElsewhere/)).toHaveTextContent('교문 와드')
   })
@@ -166,18 +164,17 @@ describe('VisitRequestDetailPage', () => {
     await waitFor(() => expect(setUnitSundayPlan).toHaveBeenCalled())
   })
 
-  it('marks the primary and backup stake on the Sunday chips', () => {
+  it('marks the primary and backup stake in the stake table', () => {
     request = {
       ...request,
       unitSundays: { u1: ['2027-01-10'], u2: ['2027-01-10', '2027-01-17'] },
       unitSundayRoles: { '2027-01-10': { primary: 'u1', backup: 'u2' } },
     }
     const { container } = renderPage()
-    const rows = screen.getAllByRole('link', { name: /visitRequest.open/ }).map((a) => a.closest('li')!)
-    expect(rows[0].querySelector('[data-role="primary"]')).not.toBeNull()
-    expect(rows[1].querySelector('[data-role="backup"]')).not.toBeNull()
+    expect(screen.getByRole('row', { name: /^서울 스테이크/ }).querySelector('[data-role="primary"]')).not.toBeNull()
+    expect(screen.getByRole('row', { name: /^서울동 스테이크/ }).querySelector('[data-role="backup"]')).not.toBeNull()
     expect(container.querySelectorAll('[data-role]')).toHaveLength(2)
-    expect(screen.getByText('visitRequest.roleLegend')).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'visitRequest.matrix.legendLabel' })).toHaveTextContent('visitRequest.matrix.cell.primary')
   })
 
   it('says which stakes were asked about a Sunday that has no recommendation yet', () => {

@@ -1067,6 +1067,20 @@
       "regionShare": "{{region}} — {{count}} Sundays, few for its wards (about {{expected}})."
     },
     "matrix": {
+      "legendLabel": "Legend",
+      "legendBlocked": "Can't be asked",
+      "editHint": "Click a cell to ask or drop that Sunday",
+      "response": "Response",
+      "messageShort": "Copy message",
+      "links": "Link",
+      "responded": "Answered {{date}}",
+      "pending": "Not yet",
+      "picked": "{{count}} picked",
+      "copyLink": "Copy {{unit}} link",
+      "copyMessage": "Copy {{unit}} link with message",
+      "openLink": "Open {{unit}} link",
+      "notesTitle": "Notes",
+      "presidentNotes": "Notes from presidents",
       "lastNever": "No visits yet",
       "lastFresh": "Visited recently",
       "lastMonths": "Visited {{months}} mo ago",
@@ -1075,7 +1089,6 @@
       "count": "Primary / backup",
       "countTitle": "Primary {{primary}} · backup {{backup}} · added by hand {{extra}}",
       "scheduled": "scheduled {{date}}",
-      "legend": "● primary  ○ backup  • added by hand  ✓ decided  Hatched: the stake can't be asked that Sunday (other CC's turn, event, or the Area Seventy's schedule)",
       "cell": {
         "primary": "Primary",
         "backup": "Backup",
