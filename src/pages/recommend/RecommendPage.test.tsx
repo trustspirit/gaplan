@@ -1,4 +1,4 @@
-import { render, screen, within, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { PublicVisitRequest } from '@/types'
 import RecommendPage from './RecommendPage'
@@ -10,10 +10,11 @@ vi.mock('@/services/publicFunctions', () => ({
   publicCallable: (name: string) => (name === 'getVisitRequestPublic' ? getMock : submitMock),
 }))
 const changeLanguage = vi.hoisted(() => vi.fn())
+const langMock = vi.hoisted(() => ({ value: 'ko' }))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k),
-    i18n: { language: 'ko', changeLanguage },
+    i18n: { get language() { return langMock.value }, changeLanguage },
   }),
 }))
 
@@ -82,16 +83,38 @@ async function open(over: Partial<PublicVisitRequest> = {}) {
 const openAsSeoul = () => open()
 
 describe('RecommendPage', () => {
-  it('opens in the language the link asks for, and remembers it', async () => {
-    window.history.pushState({}, '', '/recommend/r1/0123456789abcdef?lang=en')
+  it('opens in the language the link asks for, and nothing else decides it', async () => {
     try {
+      window.history.pushState({}, '', '/recommend/r1/0123456789abcdef?lang=en')
       await open()
-      expect(changeLanguage).toHaveBeenCalledWith('en')
-      expect(localStorage.getItem('publicLang')).toBe('en')
+      expect(changeLanguage).toHaveBeenLastCalledWith('en')
+      cleanup()
+      changeLanguage.mockClear()
+      // 전에 영어 링크를 열었던 브라우저라도, lang 없는 링크는 한국어로 연다
+      localStorage.setItem('publicLang', 'en')
+      window.history.pushState({}, '', '/recommend/r1/0123456789abcdef')
+      await open()
+      expect(changeLanguage).not.toHaveBeenCalledWith('en')
+      expect(localStorage.getItem('gaplan-lang')).toBeNull()
     } finally {
       window.history.pushState({}, '', '/')
-      localStorage.removeItem('publicLang')
       changeLanguage.mockClear()
+    }
+  })
+
+  it('shows an English link the translated title, seventy and guidance', async () => {
+    langMock.value = 'en'
+    try {
+      await open({
+        title: '1월 방문', seventyName: '박경렬', guidance: '오래된 와드 먼저',
+        english: { title: 'January Visits', seventy: 'Park Kyungryeol', guidance: 'Longest-unvisited wards first' },
+      })
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('January Visits')
+      expect(screen.getByText(/Park Kyungryeol/)).toBeInTheDocument()
+      expect(screen.getByText('Longest-unvisited wards first')).toBeInTheDocument()
+      expect(screen.queryByText('오래된 와드 먼저')).not.toBeInTheDocument()
+    } finally {
+      langMock.value = 'ko'
     }
   })
 

@@ -131,6 +131,25 @@ describe('StakeLinkList message', () => {
     expect(onCopy.mock.calls[1][0]).toMatch(/\?lang=en$/)
   })
 
+  it('fills an English message with the translated title, names and guidance', async () => {
+    const user = userEvent.setup()
+    const onCopy = renderList({
+      shareLangs: { u1: 'en' },
+      english: { title: 'Ward Visits, January', guidance: 'Please put first…', seventy: 'Park Kyungryeol', presidents: { u1: 'Ha Taewan' } },
+    })
+    await user.click(screen.getByRole('button', { name: /visitRequest.matrix.copyMessage/ }))
+    const msg = onCopy.mock.calls[0][0] as string
+    expect(msg).toContain('[Ward visit recommendations] Ward Visits, January')
+    expect(msg).toContain('Dear President Ha Taewan,')
+    expect(msg).toContain('Area Seventy Park Kyungryeol')
+    expect(msg).not.toMatch(/[가-힣]/)
+  })
+
+  it('says it is translating', () => {
+    renderList({ englishPending: true })
+    expect(screen.getByRole('status')).toHaveTextContent('visitRequest.englishPending')
+  })
+
   it('switches a stake to English', async () => {
     const user = userEvent.setup()
     const onSetLang = vi.fn()

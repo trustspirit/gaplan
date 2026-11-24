@@ -1,3 +1,4 @@
+import type { RequestEnglish } from '../../functions/src/requestEnglish'
 /**
  * 방문 추천 요청. 칠십인(또는 담당 집행서기·관리자)이 방문 가능한 일요일을 골라 만들고,
  * 공개 링크 하나를 모든 스테이크/지방부 회장에게 공유한다. 회장들은 로그인 없이 일요일마다
@@ -44,6 +45,8 @@ export interface VisitRequest {
   guidance?: string
   seventyUid: string
   seventyName: string
+  /** 영어로 보내는 스테이크용 — 제목·강조 사항·칠십인·회장 이름을 옮긴 것(translateVisitRequest) */
+  english?: RequestEnglish
   sundays: string[]          // YYYY-MM-DD, 오름차순
   dueDate?: string | null    // YYYY-MM-DD
   /** 스테이크별 공개 링크 토큰(unitId -> token). 스테이크별 링크 이전 요청에는 없다 — 상세 화면이 채운다 */
@@ -91,6 +94,8 @@ export interface PublicVisitRequest {
   guidance: string
   seventyName: string
   dueDate: string | null
+  /** 영어로 연 회장에게 보일 값. 옮기지 않았거나 원문이 바뀌었으면 없다 */
+  english?: { title: string; guidance: string; seventy: string } | null
   status: VisitRequestStatus
   sundays: string[]
   units: VisitRequestUnit[]

@@ -231,6 +231,11 @@ export async function translateShareTemplate(text: string): Promise<string> {
   return res.data.english
 }
 
+/** 요청의 제목·강조 사항·이름들을 영어로 옮겨 요청 문서에 둔다(translateVisitRequest) */
+export async function translateVisitRequest(requestId: string): Promise<void> {
+  await httpsCallable<{ requestId: string }, unknown>(functions, 'translateVisitRequest')({ requestId })
+}
+
 /** reviewVisitPlan이 키가 없어 거절했는가(failed-precondition) */
 export function aiUnavailable(err: unknown): boolean {
   return (err as { code?: unknown } | null)?.code === 'functions/failed-precondition'

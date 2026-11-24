@@ -32,6 +32,10 @@ import { checkPlanBalance } from './visitPlanBalance'
 import { buildReviewPayload, reviewPlan } from './visitPlanReview'
 import { SHARE_TEMPLATE_MAX } from './shareTemplate'
 import { translateShareTemplate as translateText } from './shareTranslate'
+import {
+  englishForPage, englishIsCurrent, englishSource, presidentsOfUnits, PRESIDENT_ROLES,
+  type RequestEnglish, translateRequestTexts,
+} from './requestEnglish'
 
 const ID_RE = /^[\w-]+$/
 const DEFAULT_START = '10:00'
@@ -174,6 +178,8 @@ export const getVisitRequestPublic = onCall(
     const wardStats = wardVisitStats(units, unitSchedules, todayInSeoul())
     return {
       ...publicVisitRequestView(request, recs, unitId),
+      // 영어로 연 회장에게 보일 제목·강조 사항·칠십인 이름 — 원문이 바뀐 뒤면 보내지 않는다
+      english: englishForPage((request as { english?: RequestEnglish }).english, request),
       wardStats,
       sundayStatus: publicSundayStatusForUnit(sundayStatus, unitId),
       // 다른 스테이크만 대상인 행사는 빼고, 대상 단위 목록도 이 스테이크만 남긴다
@@ -586,6 +592,52 @@ export const translateShareTemplate = onCall(
       return { english: await translateText(new Anthropic({ apiKey }), text) }
     } catch (err) {
       logger.error('[translateShareTemplate] failed', err)
+      throw new HttpsError('internal', 'ai-failed')
+    }
+  },
+)
+
+/**
+ * 칠십인·집행서기·관리자: 영어로 보내는 스테이크를 위해 요청의 제목·강조 사항·칠십인 이름·회장 이름을
+ * 영어로 옮겨 요청 문서(english)에 둔다. 원문이 그대로면 다시 옮기지 않는다.
+ */
+export const translateVisitRequest = onCall(
+  { ...PUBLIC_HTTP_OPTS, timeoutSeconds: 60, maxInstances: 3 },
+  async (req: CallableRequest<{ requestId?: unknown }>) => {
+    if (!req.auth) throw new HttpsError('unauthenticated', 'Login required')
+    const requestId = req.data?.requestId
+    if (typeof requestId !== 'string' || !ID_RE.test(requestId)) {
+      throw new HttpsError('invalid-argument', 'Invalid request')
+    }
+    const db = admin.firestore()
+    const ref = db.collection('visitRequests').doc(requestId)
+    const [callerSnap, reqSnap, leaderSnap] = await Promise.all([
+      db.collection('users').doc(req.auth.uid).get(),
+      ref.get(),
+      db.collection('leaders').where('role', 'in', PRESIDENT_ROLES).get(),
+    ])
+    if (!reqSnap.exists) throw new HttpsError('not-found', 'Request not found')
+    const caller = callerSnap.data() ?? {}
+    const raw = reqSnap.data() as VisitRequestDoc & { english?: RequestEnglish }
+    const denied = confirmDeniedReason(
+      { role: caller.role, uid: req.auth.uid, assignedSeventyUid: caller.assignedSeventyUid },
+      raw.seventyUid,
+    )
+    if (denied) throw new HttpsError('permission-denied', denied)
+
+    const request = await withTrustedUnits(raw)
+    const leaders = leaderSnap.docs.map((d) => d.data() as { unitNameKo: string; role: string; name: string })
+    const source = englishSource(request, presidentsOfUnits(request.units ?? [], leaders))
+    if (englishIsCurrent(raw.english, source)) return { english: raw.english }
+
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (!apiKey) throw new HttpsError('failed-precondition', 'ai-unavailable')
+    try {
+      const english: RequestEnglish = { ...(await translateRequestTexts(new Anthropic({ apiKey }), source)), source }
+      await ref.update({ english })
+      return { english }
+    } catch (err) {
+      logger.error(`[translateVisitRequest] failed request=${requestId}`, err)
       throw new HttpsError('internal', 'ai-failed')
     }
   },

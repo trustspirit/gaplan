@@ -1232,6 +1232,8 @@
       "blocked": "Blocked in availability",
       "fast": "Fast Sunday",
       "generalConference": "General Conference Sunday"
-    }
+    },
+    "englishPending": "Translating the title, names and guidance for stakes that get English…",
+    "englishFailed": "Could not translate into English. English messages will carry the Korean values."
   }
 }

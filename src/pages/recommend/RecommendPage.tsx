@@ -28,7 +28,7 @@ const getRequest = () =>
 const submitRecommendation = () =>
   (submitFn ??= publicCallable<SubmitRequest, { success: boolean }>('submitVisitRecommendation'))
 
-// 같은 휴대폰으로 다시 열면 이름을 그대로 둔다. 저장소가 막혀 있어도 페이지는 돌아야 한다.
+// 저장소가 막혀 있어도(사생활 보호 모드 등) 페이지는 돌아야 한다.
 function readStored(key: string): string {
   try {
     return localStorage.getItem(key) ?? ''
@@ -36,13 +36,8 @@ function readStored(key: string): string {
     return ''
   }
 }
-function writeStored(key: string, value: string) {
-  try {
-    localStorage.setItem(key, value)
-  } catch {
-    /* 사생활 보호 모드 등 */
-  }
-}
+/** 본 앱이 언어를 저장하는 키(src/i18n) */
+const APP_LANG_KEY = 'gaplan-lang'
 
 /** 이 일요일이 다른 CC 차례인가 — 그러면 그 CC 이름, 아니면 null */
 function otherRegionTurn(data: PublicVisitRequest, unit: VisitRequestUnit, date: string): string | null {
@@ -101,13 +96,16 @@ export default function RecommendPage({
   const [openDate, setOpenDate] = useState<string | null>(null)
   const isWide = useWide()
 
-  // 링크가 언어를 정해 보냈으면(?lang=en — 영어로 보내는 스테이크) 그 언어로 열고 기억한다.
-  // 회장이 화면에서 바꾸면 그다음부터는 그 선택을 따른다.
+  // 언어는 링크가 정한다 — 영어로 보내는 스테이크의 링크만 ?lang=en, 나머지는 한국어.
+  // 브라우저에 남기지 않는다: 남기면 같은 브라우저로 연 한국어 링크까지 영어로 열린다.
+  // 나갈 때 앱 언어로 되돌린다(이 페이지는 본 앱 안에서 돈다).
   useEffect(() => {
-    const asked = new URLSearchParams(window.location.search).get('lang')
-    if (asked === 'en' || asked === 'ko') writeStored('publicLang', asked)
-    const want = asked === 'en' || asked === 'ko' ? asked : readStored('publicLang')
-    if (want && want !== i18n.language) i18n.changeLanguage(want)
+    const want = new URLSearchParams(window.location.search).get('lang') === 'en' ? 'en' : 'ko'
+    if (want !== i18n.language) i18n.changeLanguage(want)
+    return () => {
+      const app = readStored(APP_LANG_KEY) || 'ko'
+      if (app !== i18n.language) i18n.changeLanguage(app)
+    }
   }, [i18n])
 
   useEffect(() => {
@@ -143,13 +141,27 @@ export default function RecommendPage({
     prefilledFor.current = unitId
   }, [data, unitId])
 
+  // 화면에서 바꾸면 주소에만 적는다 — 새로 고쳐도 그 언어로
   const toggleLang = () => {
     const next = i18n.language === 'ko' ? 'en' : 'ko'
     i18n.changeLanguage(next)
-    writeStored('publicLang', next)
+    try {
+      const url = new URL(window.location.href)
+      if (next === 'en') url.searchParams.set('lang', 'en')
+      else url.searchParams.delete('lang')
+      window.history.replaceState(window.history.state, '', url)
+    } catch {
+      /* 주소를 못 바꿔도 화면 언어는 바뀌었다 */
+    }
   }
 
   const unitName = (u: Pick<VisitRequestUnit, 'ko' | 'en'> | undefined) => (u ? u[lang] : '')
+  // 영어로 열었고 옮겨 둔 값이 있으면 그것으로 — 없으면 입력한 그대로
+  const texts = data
+    ? lang === 'en' && data.english
+      ? data.english
+      : { title: data.title, guidance: data.guidance, seventy: data.seventyName }
+    : null
   const wardLabel = (u: VisitRequestUnit, wardId: string) =>
     u.wards.find((w) => w.id === wardId)?.[lang] ?? ''
 
@@ -219,10 +231,10 @@ export default function RecommendPage({
         {i18n.language === 'ko' ? 'EN' : '한'}
       </button>
       <div className={styles.kicker}>{t('recommend.kicker')}</div>
-      {data && <h1 className={styles.title}>{data.title}</h1>}
+      {data && <h1 className={styles.title}>{texts?.title}</h1>}
       {data && (
         <div className={styles.meta}>
-          {data.seventyName && <span>{t('recommend.seventyBy', { name: data.seventyName })}</span>}
+          {texts?.seventy && <span>{t('recommend.seventyBy', { name: texts.seventy })}</span>}
           {data.dueDate && (
             <span className={styles.due}>
               {t('recommend.dueBy', { date: dayjs(data.dueDate).format(t('recommend.dateFormat')) })}
@@ -295,10 +307,10 @@ export default function RecommendPage({
     )
   }
 
-  const guidanceBox = data.guidance ? (
+  const guidanceBox = texts?.guidance ? (
     <aside className={styles.guidance} aria-label={t('recommend.guidanceTitle')}>
       <Info size={18} aria-hidden className={styles.guidanceIcon} />
-      <p className={styles.guidanceText}>{data.guidance}</p>
+      <p className={styles.guidanceText}>{texts.guidance}</p>
     </aside>
   ) : null
 
@@ -349,7 +361,7 @@ export default function RecommendPage({
                 {t('recommend.statsTitle')}
               </h2>
               {/* 강조 사항이 있으면 위에서 이미 말했다 */}
-              {!data.guidance && <p className={styles.stepHint}>{t('recommend.statsHint')}</p>}
+              {!texts?.guidance && <p className={styles.stepHint}>{t('recommend.statsHint')}</p>}
               <WardStatsTable
                 unit={unit}
                 stats={data.wardStats ?? {}}

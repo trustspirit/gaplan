@@ -34,4 +34,5 @@ export { kakaoTokenRefresh } from './kakaoTokenRefresh'
 export {
   getVisitRequestPublic, submitVisitRecommendation, decideVisitRequestDate, visitRequestScheduleSync,
   getVisitSundayStatus, reviewVisitPlan, translateShareTemplate,
+  translateVisitRequest,
 } from './visitRequests'

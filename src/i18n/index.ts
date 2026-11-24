@@ -31,7 +31,8 @@ i18n
 
 // Keep dayjs locale in sync with i18n language
 i18n.on('languageChanged', (lng) => {
-  localStorage.setItem(STORAGE_KEY, lng)
+  // 공개 추천 링크는 링크가 언어를 정한다 — 앱 설정으로 남기지 않는다
+  if (!window.location.pathname.startsWith('/recommend/')) localStorage.setItem(STORAGE_KEY, lng)
   dayjs.locale(lng === 'en' ? 'en' : 'ko')
 })
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -21,7 +21,10 @@ import {
   setUnitSundayPlan,
   setVisitRequestStatus,
   updateVisitRequestText,
+  translateVisitRequest,
+  aiUnavailable,
 } from '@/services/visitRequestService'
+import { englishIsCurrent, englishSource, presidentsOfUnits } from '../../../../functions/src/requestEnglish'
 import { hasStakePlan, recommendUnitSundays } from '../../../../functions/src/visitPlanBalance'
 import { ROUTES } from '@/router/routes'
 import {
@@ -130,14 +133,31 @@ export function VisitRequestDetailPage() {
   }
   // 안내문의 {회장} — 스테이크/지방부 회장 명단에서 이름을 찾는다
   const { leaders } = useLeaders()
-  const presidents = useMemo(() => {
-    const out: Record<string, string> = {}
-    for (const u of request?.units ?? []) {
-      const l = leaders.find((x) => x.unitNameKo === u.ko && (x.role === '스테이크 회장' || x.role === '지방부 회장'))
-      if (l?.name) out[u.id] = l.name
-    }
-    return out
-  }, [leaders, request?.units])
+  const presidents = useMemo(
+    () => presidentsOfUnits(request?.units ?? [], leaders),
+    [leaders, request?.units],
+  )
+  // 영어로 보내는 스테이크가 있으면 요청 값을 영어로 옮겨 둔다(원문이 바뀌면 다시). 요청마다 한 번만 묻는다.
+  const englishSrc = useMemo(
+    () => (request ? englishSource(request, presidents) : null),
+    [request, presidents],
+  )
+  const english = englishSrc && englishIsCurrent(request?.english, englishSrc) ? request?.english ?? null : null
+  const needsEnglish = !!request?.units.some((u) => share.langs[u.id] === 'en')
+  const [englishPending, setEnglishPending] = useState(false)
+  const askedEnglish = useRef<string | null>(null)
+  useEffect(() => {
+    if (!request || !englishSrc || !needsEnglish || english || !uid) return
+    const key = `${request.id}:${JSON.stringify(englishSrc)}`
+    if (askedEnglish.current === key) return
+    askedEnglish.current = key
+    setEnglishPending(true)
+    translateVisitRequest(request.id)
+      .catch((err) => {
+        if (!aiUnavailable(err)) toast.error(t('visitRequest.englishFailed'))
+      })
+      .finally(() => setEnglishPending(false))
+  }, [request, englishSrc, needsEnglish, english, uid, t])
   const [refilling, setRefilling] = useState(false)
 
   const reqId = request?.id
@@ -352,6 +372,8 @@ export function VisitRequestDetailPage() {
               shareTemplates={share.templates}
               shareLangs={share.langs}
               presidents={presidents}
+              english={english}
+              englishPending={englishPending}
               onSaveTemplates={uid ? saveShareTemplates : undefined}
               onSetLang={uid ? changeShareLang : undefined}
             />

@@ -16,6 +16,7 @@ import { StakeTable, type StakeTableColumn } from './StakeTable'
 import { ShareTemplateDialog } from './ShareTemplateDialog'
 import { planMatrix, type MatrixCell } from './stakeSundayMatrix'
 import type { VisitRecommendation, VisitRequest, WardVisitStat } from '@/types'
+import type { EnglishTexts } from '../../../../functions/src/requestEnglish'
 import type { SundayStatus } from '../../../../functions/src/visitSundayAvailability'
 import styles from './StakeLinkList.module.scss'
 
@@ -37,6 +38,10 @@ interface Props {
   onSaveTemplates?: (templates: Record<ShareLang, string | null>) => Promise<void>
   /** 그 스테이크에 보낼 언어 바꾸기 */
   onSetLang?: (unitId: string, lang: ShareLang) => void
+  /** 영어로 옮긴 요청 값(지금 원문 기준). 없으면 영어 안내문에도 한국어 값이 들어간다 */
+  english?: EnglishTexts | null
+  /** 영어로 옮기는 중 */
+  englishPending?: boolean
 }
 
 /**
@@ -46,7 +51,7 @@ interface Props {
  */
 export function StakeLinkList({
   request, recommendations, sundayStatus, wardStats, ready, onCopy,
-  shareTemplates, shareLangs, presidents, onSaveTemplates, onSetLang,
+  shareTemplates, shareLangs, presidents, onSaveTemplates, onSetLang, english, englishPending,
 }: Props) {
   const { t } = useTranslation()
   const [editingTemplate, setEditingTemplate] = useState(false)
@@ -100,14 +105,15 @@ export function StakeLinkList({
   /** 안내문에 채울 값 — 그 스테이크에 보낼 언어로 */
   const shareValues = (unitId: string, link: string, lang: ShareLang): ShareValues => {
     const unit = request.units.find((u) => u.id === unitId)
+    const en = lang === 'en' ? english : null
     return {
-      title: request.title,
+      title: en ? en.title : request.title,
       unit: (lang === 'en' ? unit?.en : unit?.ko) || unitName(unitId),
-      president: presidentLabel(presidents[unitId], lang),
-      seventy: request.seventyName,
+      president: presidentLabel(en ? en.presidents[unitId] : presidents[unitId], lang),
+      seventy: en ? en.seventy : request.seventyName,
       dates: selectedOf(unitId).map((d) => dayjs(d).format('M/D')).join(', '),
       due: request.dueDate ? dayjs(request.dueDate).locale(lang).format(lang === 'en' ? 'MMM D' : 'M월 D일') : '',
-      guidance: request.guidance ?? '',
+      guidance: en ? en.guidance : request.guidance ?? '',
       link,
     }
   }
@@ -233,6 +239,11 @@ export function StakeLinkList({
 
   return (
     <div className={styles.wrap}>
+      {englishPending && (
+        <p className={styles.englishNote} role="status">
+          {t('visitRequest.englishPending')}
+        </p>
+      )}
       <StakeTable
         matrix={matrix}
         today={today}
