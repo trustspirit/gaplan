@@ -20,7 +20,8 @@ interface SubmitRequest {
   picks: { date: string; wardId: string }[]
 }
 
-type GetRequest = { requestId: string; token: string }
+/** lang=en이면 서버가 행사·일정·CC 이름도 영어로 보낸다 */
+type GetRequest = { requestId: string; token: string; lang?: 'en' }
 let getFn: HttpsCallable<GetRequest, PublicVisitRequest> | null = null
 let submitFn: HttpsCallable<SubmitRequest, { success: boolean }> | null = null
 const getRequest = () =>
@@ -116,7 +117,7 @@ export default function RecommendPage({
     let cancelled = false
     // 다시 받을 때(제출 뒤 새로고침)는 화면을 비우지 않는다.
     setState((prev) => (prev.kind === 'ready' ? prev : { kind: 'loading' }))
-    getRequest()({ requestId, token })
+    getRequest()({ requestId, token, ...(lang === 'en' && { lang: 'en' as const }) })
       .then((res) => !cancelled && setState({ kind: 'ready', data: res.data }))
       .catch((err: { code?: string }) => {
         if (cancelled) return
@@ -125,7 +126,7 @@ export default function RecommendPage({
     return () => {
       cancelled = true
     }
-  }, [requestId, token, reloadKey])
+  }, [requestId, token, reloadKey, lang])
 
   const data = state.kind === 'ready' ? state.data : null
   // 링크는 스테이크마다 따로다 — 서버는 링크가 연 스테이크 하나만 보낸다.

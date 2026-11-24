@@ -109,6 +109,8 @@ describe('RecommendPage', () => {
         title: '1월 방문', seventyName: '박경렬', guidance: '오래된 와드 먼저', note: '감사합니다.',
         english: { title: 'January Visits', seventy: 'Park Kyungryeol', guidance: 'Longest-unvisited wards first', note: 'Thank you.' },
       })
+      // 행사·일정·CC 이름도 영어로 달라고 묻는다
+      expect(getMock).toHaveBeenCalledWith(expect.objectContaining({ lang: 'en' }))
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('January Visits')
       expect(screen.getByText(/Park Kyungryeol/)).toBeInTheDocument()
       expect(screen.getByText('Longest-unvisited wards first')).toBeInTheDocument()
@@ -125,6 +127,11 @@ describe('RecommendPage', () => {
     render(<RecommendPage requestId="r1" token="0123456789abcdef" />)
     expect(await screen.findByRole('alert')).toHaveTextContent('recommend.invalidLink')
     expect(screen.queryByText('common.retry')).not.toBeInTheDocument()
+  })
+
+  it('asks for Korean data in Korean', async () => {
+    await open()
+    expect(getMock.mock.calls.at(-1)?.[0]).not.toHaveProperty('lang')
   })
 
   it('opens straight into the stake of the link, without a unit picker', async () => {

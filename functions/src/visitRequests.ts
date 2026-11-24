@@ -36,6 +36,9 @@ import {
   englishForPage, englishIsCurrent, englishSource, presidentsOfUnits, PRESIDENT_ROLES, type RequestEnglish,
 } from './requestEnglish'
 import { translateRequestTexts } from './requestTranslate'
+import { koreanTextsOf, withEnglishTexts } from './publicEnglish'
+import { translateTexts } from './textTranslate'
+import { createHash } from 'crypto'
 
 const ID_RE = /^[\w-]+$/
 const DEFAULT_START = '10:00'
@@ -164,7 +167,7 @@ async function openRequest(requestId: unknown, token: unknown) {
 /** 공개 링크: 그 스테이크 기준의 요청 정보와 그 스테이크의 추천. 다른 스테이크는 확정 여부만. */
 export const getVisitRequestPublic = onCall(
   { ...PUBLIC_HTTP_OPTS, maxInstances: PUBLIC_MAX_INSTANCES },
-  async (req: CallableRequest<{ requestId?: unknown; token?: unknown }>) => {
+  async (req: CallableRequest<{ requestId?: unknown; token?: unknown; lang?: unknown }>) => {
     const data = req.data
     const { ref, request, unitId } = await openRequest(data?.requestId, data?.token)
     const recSnap = await ref.collection('recommendations').doc(unitId).get()
@@ -176,7 +179,7 @@ export const getVisitRequestPublic = onCall(
       loadCalendarEvents(request.seventyUid ?? '', request.sundays ?? []),
     ])
     const wardStats = wardVisitStats(units, unitSchedules, todayInSeoul())
-    return {
+    const view = {
       ...publicVisitRequestView(request, recs, unitId),
       // 영어로 연 회장에게 보일 제목·강조 사항·칠십인 이름 — 원문이 바뀐 뒤면 보내지 않는다
       english: englishForPage((request as { english?: RequestEnglish }).english, request),
@@ -187,8 +190,49 @@ export const getVisitRequestPublic = onCall(
         .filter((e) => !e.unitIds || e.unitIds.includes(unitId))
         .map((e) => (e.unitIds ? { ...e, unitIds: [unitId] } : e)),
     }
+    // 영어로 연 회장에게는 행사·일정·CC 이름도 영어로(한 번 옮긴 것은 저장해 두고 쓴다)
+    if (data?.lang !== 'en') return view
+    return withEnglishTexts(view, await englishTexts(koreanTextsOf(view)))
   },
 )
+
+/**
+ * 한국어 이름들의 영어. textTranslations에 옮겨 둔 것을 먼저 쓰고, 없는 것만 Claude에게 묻는다.
+ * 글은 모두 DB에서 온 것이라(사람이 보낸 글이 아니라) 묻는 양이 늘지 않는다. 실패하면 있는 것만.
+ */
+async function englishTexts(texts: string[]): Promise<Record<string, string>> {
+  if (!texts.length) return {}
+  const db = admin.firestore()
+  const refs = texts.map((t) =>
+    db.collection('textTranslations').doc(createHash('sha256').update(t).digest('hex').slice(0, 40)))
+  const out: Record<string, string> = {}
+  const missing: string[] = []
+  try {
+    const snaps = await db.getAll(...refs)
+    snaps.forEach((snap, i) => {
+      const en = snap.get('en')
+      if (snap.exists && typeof en === 'string' && snap.get('ko') === texts[i]) out[texts[i]] = en
+      else missing.push(texts[i])
+    })
+  } catch (err) {
+    logger.warn('[englishTexts] cache read failed', err)
+    return out
+  }
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!missing.length || !apiKey) return out
+  try {
+    const got = await translateTexts(new Anthropic({ apiKey }), missing)
+    const batch = db.batch()
+    for (const [ko, en] of Object.entries(got)) {
+      out[ko] = en
+      batch.set(refs[texts.indexOf(ko)], { ko, en, at: admin.firestore.FieldValue.serverTimestamp() })
+    }
+    await batch.commit()
+  } catch (err) {
+    logger.warn('[englishTexts] translate failed', err)
+  }
+  return out
+}
 
 /** 칠십인 담당 CC의 모든 와드 방문 기록. 회장들이 공개 링크에서 보는 숫자와 같은 함수로 센다. */
 async function seventyWardStats(seventyUid: string) {
