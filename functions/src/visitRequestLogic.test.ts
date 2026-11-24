@@ -115,8 +115,12 @@ describe('validateRecommendation', () => {
     expect(r).toMatchObject({ ok: false, code: 'invalid-argument' })
   })
 
-  it('이름이 비었거나 너무 길면 거절한다', () => {
-    expect(validateRecommendation(request(), { ...base, submitterName: '  ', picks: [] }).ok).toBe(false)
+  it('이름 없이도 받는다 — 링크가 스테이크마다 따로라 누가 냈는지는 정해져 있다', () => {
+    expect(validateRecommendation(request(), { unitId: 'seoul-stake', picks: [] })).toMatchObject({ ok: true, submitterName: '' })
+    expect(validateRecommendation(request(), { ...base, submitterName: '  ', picks: [] })).toMatchObject({ ok: true, submitterName: '' })
+  })
+
+  it('예전 화면이 보낸 이름이 너무 길면 거절한다', () => {
     expect(
       validateRecommendation(request(), { ...base, submitterName: 'x'.repeat(41), picks: [] }).ok,
     ).toBe(false)

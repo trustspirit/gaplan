@@ -113,18 +113,15 @@ describe('RecommendPage', () => {
     expect(triggers()).toHaveLength(2)
   })
 
-  it('asks for a name before sending', async () => {
-    const user = await openAsSeoul()
-    await user.click(screen.getByRole('button', { name: 'recommend.submit' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('recommend.nameRequired')
-    expect(submitMock).not.toHaveBeenCalled()
+  it('does not ask for a name — the link already tells which stake sent it', async () => {
+    await openAsSeoul()
+    expect(screen.queryByLabelText('recommend.nameLabel')).not.toBeInTheDocument()
   })
 
   it('sends one ward per picked Sunday and then confirms', async () => {
     const user = await openAsSeoul()
     await pick(user, 1, '신촌 와드')
     await pick(user, 0, '녹번 와드')
-    await user.type(screen.getByLabelText('recommend.nameLabel'), '홍길동 회장')
     await user.click(screen.getByRole('button', { name: 'recommend.submit' }))
 
     await waitFor(() => expect(submitMock).toHaveBeenCalled())
@@ -132,7 +129,6 @@ describe('RecommendPage', () => {
       requestId: 'r1',
       token: '0123456789abcdef',
       unitId: 'seoul-stake',
-      submitterName: '홍길동 회장',
       picks: [
         { date: '2027-01-10', wardId: 'seoul-nokbeon' },
         { date: '2027-01-17', wardId: 'seoul-sinchon' },
@@ -144,8 +140,7 @@ describe('RecommendPage', () => {
   it("prefills a unit's earlier recommendation so a president only changes what changed", async () => {
     await open({ recommendations: [earlier] })
     // 받은 뒤 한 번 채운다(effect) — 채워질 때까지 기다린다
-    await waitFor(() => expect(screen.getByLabelText('recommend.nameLabel')).toHaveValue('이회장'))
-    expect(triggers()[0]).toHaveTextContent('신촌 와드')
+    await waitFor(() => expect(triggers()[0]).toHaveTextContent('신촌 와드'))
     expect(screen.getByRole('button', { name: 'recommend.resubmit' })).toBeInTheDocument()
   })
 
@@ -168,7 +163,6 @@ describe('RecommendPage', () => {
     const user = await openAsSeoul()
     submitMock.mockRejectedValueOnce(new Error('closed'))
     await pick(user, 1, '신촌 와드')
-    await user.type(screen.getByLabelText('recommend.nameLabel'), '홍길동 회장')
     await user.click(screen.getByRole('button', { name: 'recommend.submit' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('recommend.submitFailed')
     await waitFor(() => expect(getMock).toHaveBeenCalledTimes(2))
@@ -187,7 +181,6 @@ describe('RecommendPage', () => {
     // 그사이 1월 24일이 다른 단위로 확정됐다 — 제출이 실패하고 새 상태를 받는다
     submitMock.mockRejectedValueOnce(new Error('decided'))
     getMock.mockResolvedValue({ data: data() })
-    await user.type(screen.getByLabelText('recommend.nameLabel'), '홍')
     await user.click(screen.getByRole('button', { name: 'recommend.submit' }))
     await waitFor(() => expect(screen.getByText(/recommend.pickedCount/)).toHaveTextContent('"count":1'))
 
@@ -257,7 +250,6 @@ describe('RecommendPage', () => {
     })
     expect(triggers()).toHaveLength(1)
     expect(screen.getAllByText(/recommend.otherRegion:/)[0]).toHaveTextContent('서울남 CC')
-    expect(screen.getByText('recommend.otherRegionHint')).toBeInTheDocument()
   })
 
   it('marks the Sundays still to pick on the calendar, rather than ticking them', async () => {

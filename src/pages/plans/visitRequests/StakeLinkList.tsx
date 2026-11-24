@@ -118,7 +118,7 @@ export function StakeLinkList({ request, recommendations, sundayStatus, onCopy }
                 )}
                 <span className={styles.wards}>{t('visitRequest.unitWardCount', { count: u.wards.length })}</span>
                 <span className={clsx(styles.status, rec && styles.statusDone)}>
-                  {rec ? t('visitRequest.unitResponded', { name: rec.submitterName }) : t('visitRequest.unitPending')}
+                  {rec ? t('visitRequest.unitResponded') : t('visitRequest.unitPending')}
                 </span>
               </div>
               <fieldset className={styles.dates} disabled={saving === u.id}>

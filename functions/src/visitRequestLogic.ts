@@ -116,9 +116,11 @@ export function validateRecommendation(
   const unit = (request.units ?? []).find((u) => u.id === input.unitId)
   if (!unit) return { ok: false, code: 'invalid-argument', message: 'Unknown unit' }
 
+  // 이름은 받지 않는다 — 링크가 스테이크마다 따로라 스테이크·지방부 회장이 낸 것이다.
+  // 이전 화면이 보낸 이름은 그대로 두되 길이는 지킨다.
   const submitterName = typeof input.submitterName === 'string' ? input.submitterName.trim() : ''
-  if (!submitterName || submitterName.length > SUBMITTER_NAME_MAX) {
-    return { ok: false, code: 'invalid-argument', message: 'Submitter name is required' }
+  if (submitterName.length > SUBMITTER_NAME_MAX) {
+    return { ok: false, code: 'invalid-argument', message: 'Submitter name is too long' }
   }
 
   const note = typeof input.note === 'string' ? input.note.trim() : null

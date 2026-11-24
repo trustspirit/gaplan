@@ -16,7 +16,6 @@ interface SubmitRequest {
   requestId: string
   token: string
   unitId: string
-  submitterName: string
   note?: string   // 안 보내면 서버가 예전 메모를 그대로 둔다
   picks: { date: string; wardId: string }[]
 }
@@ -87,7 +86,6 @@ export default function RecommendPage({
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [reloadKey, setReloadKey] = useState(0)
   const [picks, setPicks] = useState<Record<string, string>>({}) // date -> wardId
-  const [name, setName] = useState(() => readStored('recommendName'))
   const [note, setNote] = useState('')
   // 메모는 공개 응답에 오지 않는다. 손대지 않았으면 보내지 않아 예전 메모를 지키고, 적었으면 바꾼다.
   const [noteTouched, setNoteTouched] = useState(false)
@@ -138,7 +136,6 @@ export default function RecommendPage({
     if (!data || !unitId || prefilledFor.current === unitId) return
     const rec = data.recommendations.find((r) => r.unitId === unitId)
     setPicks(Object.fromEntries((rec?.picks ?? []).map((p) => [p.date, p.wardId])))
-    if (rec?.submitterName) setName(rec.submitterName)
     prefilledFor.current = unitId
   }, [data, unitId])
 
@@ -187,10 +184,6 @@ export default function RecommendPage({
 
   const handleSubmit = async () => {
     if (!token || !requestId || !unit || !data) return
-    if (!name.trim()) {
-      setSubmitError(t('recommend.nameRequired'))
-      return
-    }
     setSubmitting(true)
     setSubmitError(null)
     try {
@@ -199,12 +192,10 @@ export default function RecommendPage({
         requestId,
         token,
         unitId: unit.id,
-        submitterName: name.trim(),
         ...(noteTouched ? { note: note.trim() } : {}),
         picks: payload,
       })
       setSent(payload)
-      writeStored('recommendName', name.trim())
       setDone(true)
       setReloadKey((k) => k + 1) // 그사이 바뀐 확정을 새로 받아 둔다
     } catch {
@@ -393,9 +384,6 @@ export default function RecommendPage({
                 {t('recommend.step2')}
               </h2>
               <p className={styles.stepHint}>{t('recommend.step2Hint')}</p>
-              {Object.keys(data.sundayRegions ?? {}).length > 0 && (
-                <p className={styles.stepHint}>{t('recommend.otherRegionHint')}</p>
-              )}
               <ol className={styles.sundayList}>
                 {data.sundays.map((date, i) => {
                   const d = dayjs(date)
@@ -506,24 +494,12 @@ export default function RecommendPage({
 
             {isOpen && (
               <>
-                {/* 3. 보내는 분 */}
+                {/* 2. 남길 말 */}
                 <section className={styles.section} aria-labelledby="rec-step3">
                   <h2 id="rec-step3" className={styles.stepTitle}>
                     <span className={styles.stepNo}>2</span>
                     {t('recommend.step3')}
                   </h2>
-                  <label className={styles.fieldLabel} htmlFor="rec-name">
-                    {t('recommend.nameLabel')}
-                  </label>
-                  <input
-                    id="rec-name"
-                    className={styles.input}
-                    value={name}
-                    maxLength={40}
-                    autoComplete="name"
-                    placeholder={t('recommend.namePlaceholder')}
-                    onChange={(e) => setName(e.target.value)}
-                  />
                   <label className={styles.fieldLabel} htmlFor="rec-note">
                     {t('recommend.noteLabel')}
                   </label>

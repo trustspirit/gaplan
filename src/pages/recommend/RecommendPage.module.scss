@@ -363,7 +363,7 @@ $page-bg: $neutral-50;
   color: $neutral-600;
 }
 
-// ── 보내는 분 ──
+// ── 남길 말 ──
 .fieldLabel {
   display: block;
   margin: $space-3 0 $space-1;
@@ -371,7 +371,6 @@ $page-bg: $neutral-50;
   font-weight: $font-weight-medium;
 }
 
-.input,
 .textarea {
   width: 100%;
   padding: $space-2 $space-3;
@@ -381,10 +380,6 @@ $page-bg: $neutral-50;
   font-size: $font-size-base;
   font-family: inherit;
   color: $color-text;
-}
-
-.input {
-  min-height: 44px;
 }
 
 .fieldHint {

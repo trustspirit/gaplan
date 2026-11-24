@@ -351,7 +351,7 @@ export function VisitRequestDetailPage() {
                       {rec ? (
                         <span className={styles.unitMeta}>
                           <Check size={14} aria-hidden className={styles.unitCheck} />
-                          {rec.submitterName} · {dayjs(rec.submittedAt).format('M.D HH:mm')} ·{' '}
+                          {dayjs(rec.submittedAt).format('M.D HH:mm')} ·{' '}
                           {t('recommend.pickedCount', { count: rec.picks.length })}
                           {rec.note && <span className={styles.unitNote}>{rec.note}</span>}
                         </span>
@@ -586,7 +586,6 @@ function SundayRow({
                     <span className={clsx(styles.tone, TONE_CLASS[tone])}>
                       {t('visitRequest.lastVisit', { recency: recencyText(stat) })}
                     </span>
-                    {c.submitterName}
                   </span>
                 </div>
                 {chosen ? (
