@@ -33,9 +33,9 @@ import { buildReviewPayload, reviewPlan } from './visitPlanReview'
 import { SHARE_TEMPLATE_MAX } from './shareTemplate'
 import { translateShareTemplate as translateText } from './shareTranslate'
 import {
-  englishForPage, englishIsCurrent, englishSource, presidentsOfUnits, PRESIDENT_ROLES,
-  type RequestEnglish, translateRequestTexts,
+  englishForPage, englishIsCurrent, englishSource, presidentsOfUnits, PRESIDENT_ROLES, type RequestEnglish,
 } from './requestEnglish'
+import { translateRequestTexts } from './requestTranslate'
 
 const ID_RE = /^[\w-]+$/
 const DEFAULT_START = '10:00'
