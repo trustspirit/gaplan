@@ -283,172 +283,196 @@ export function VisitRequestPanel() {
 
   return (
     <div className={styles.panel}>
-      <Card>
+      <Card className={styles.createCard}>
         <CardHeader title={t('visitRequest.newTitle')} />
         <CardBody>
           <p className={styles.hint}>{t('visitRequest.newHint')}</p>
-          <div className={styles.form}>
-            <Input
-              label={t('visitRequest.title')}
-              value={titleValue}
-              placeholder={t('visitRequest.titlePlaceholder')}
-              onChange={(e) => {
-                setTitle(e.target.value)
-                setTitleTouched(true)
-              }}
-            />
-            {fixedSeventyUid === null && (
-              <Select
-                label={t('visitRequest.seventy')}
-                value={pickedSeventy}
-                onChange={(e) => setPickedSeventy(e.target.value)}
-                options={seventies.map((s) => ({ value: s.uid, label: s.name }))}
+          {/* 넓은 화면: 왼쪽 입력, 오른쪽 추천 결과(일요일을 바꾸면 바로 옆에서 보인다). 좁은 화면은 위에서 아래로. */}
+          <div className={styles.createLayout}>
+            <div className={clsx(styles.form, styles.createMain)}>
+              <Input
+                label={t('visitRequest.title')}
+                value={titleValue}
+                placeholder={t('visitRequest.titlePlaceholder')}
+                onChange={(e) => {
+                  setTitle(e.target.value)
+                  setTitleTouched(true)
+                }}
               />
-            )}
-            {fixedSeventyUid === '' && (
-              <p className={styles.warn} role="alert">
-                {t('visitRequest.noSeventy')}
-              </p>
-            )}
-            {seventy && regionIds.length === 0 && (
-              <p className={styles.warn} role="alert">
-                {t('visitRequest.noRegion')}
-              </p>
-            )}
+              {fixedSeventyUid === null && (
+                <Select
+                  label={t('visitRequest.seventy')}
+                  value={pickedSeventy}
+                  onChange={(e) => setPickedSeventy(e.target.value)}
+                  options={seventies.map((s) => ({ value: s.uid, label: s.name }))}
+                />
+              )}
+              {fixedSeventyUid === '' && (
+                <p className={styles.warn} role="alert">
+                  {t('visitRequest.noSeventy')}
+                </p>
+              )}
+              {seventy && regionIds.length === 0 && (
+                <p className={styles.warn} role="alert">
+                  {t('visitRequest.noRegion')}
+                </p>
+              )}
 
-            <fieldset className={styles.sundayField}>
-              <legend className={styles.legend}>
-                {t('visitRequest.sundays')}
-                <span className={styles.count}>
-                  {t('visitRequest.sundaysHint', { count: sundays.length })}
-                </span>
-              </legend>
-              <div className={styles.quarters} role="radiogroup" aria-label={t('visitRequest.quarter')}>
-                {quarters.map((qt) => {
-                  const on = quarterKey(qt) === quarterKey(quarter)
-                  return (
-                    <button
-                      key={quarterKey(qt)}
-                      type="button"
-                      role="radio"
-                      aria-checked={on}
-                      className={clsx(styles.quarterBtn, on && styles.quarterBtnOn)}
-                      onClick={() => setQuarter(qt)}
-                    >
-                      {quarterLabel(qt)}
-                    </button>
-                  )
-                })}
-              </div>
-              <div className={styles.monthRows}>
-                {[...new Set(offered.map((d) => d.slice(0, 7)))].map((month) => (
-                  <div key={month} className={styles.monthRow}>
-                    <span className={styles.month}>{dayjs(`${month}-01`).format(t('visitRequest.monthFormat'))}</span>
-                    <div className={styles.sundayGrid}>
-                      {offered.filter((d) => d.startsWith(month)).map((date) => {
-                  const d = dayjs(date)
-                  const on = sundays.includes(date)
-                  const kinds = busyKinds(date)
-                  const st = status[date]
-                  const partial = unitBlockText(st, unitName)
-                  const reasons = [
-                    ...unavailableReasons(date, st, t),
-                    ...(partial ? [t('visitRequest.boardUnitBlocks', { units: partial })] : []),
-                  ]
-                  const region = on && multiRegion ? sundayRegions[date] : undefined
-                  const regionColor = region ? getRegionColor(region) : null
-                  return (
-                    <span key={date} className={clsx(styles.sundayCell, multiRegion && styles.sundayCellStack)}>
+              <fieldset className={styles.sundayField}>
+                <legend className={styles.legend}>
+                  {t('visitRequest.sundays')}
+                  <span className={styles.count}>
+                    {t('visitRequest.sundaysHint', { count: sundays.length })}
+                  </span>
+                </legend>
+                <div className={styles.quarters} role="radiogroup" aria-label={t('visitRequest.quarter')}>
+                  {quarters.map((qt) => {
+                    const on = quarterKey(qt) === quarterKey(quarter)
+                    return (
                       <button
+                        key={quarterKey(qt)}
                         type="button"
-                        aria-pressed={on}
-                        disabled={kinds.length > 0}
-                        title={reasons.join(' / ') || undefined}
-                        className={clsx(
-                          styles.sundayChip,
-                          on && styles.sundayChipOn,
-                          kinds.length > 0 && styles.sundayChipBusy,
-                          st && Object.keys(st.unitBlocks).length > 0 && styles.sundayChipPartial,
-                        )}
-                        onClick={() => toggleSunday(date)}
+                        role="radio"
+                        aria-checked={on}
+                        className={clsx(styles.quarterBtn, on && styles.quarterBtnOn)}
+                        onClick={() => setQuarter(qt)}
                       >
-                        <span className={styles.chipDay}>{d.format('D')}</span>
-                        {kinds.length > 0 && (
-                          <span className={styles.chipFast}>{t(`visitRequest.busyKind.${kinds[0]}`)}</span>
-                        )}
-                        {kinds.length === 0 && st?.councilRegionId && (
-                          <span className={styles.chipFast}>{t('visitRequest.councilShort')}</span>
-                        )}
+                        {quarterLabel(qt)}
                       </button>
-                      {region && regionColor && pins[date] === region && (
-                        <span
-                          className={styles.regionTag}
-                          style={{ background: regionColor.bg, color: regionColor.text, borderColor: regionColor.border }}
-                          title={t('visitRequest.councilPinned', { region: regionName(region) })}
-                        >
-                          {regionShort(region)}
-                        </span>
-                      )}
-                      {region && regionColor && pins[date] !== region && (
+                    )
+                  })}
+                </div>
+                <div className={styles.monthRows}>
+                  {[...new Set(offered.map((d) => d.slice(0, 7)))].map((month) => (
+                    <div key={month} className={styles.monthRow}>
+                      <span className={styles.month}>{dayjs(`${month}-01`).format(t('visitRequest.monthFormat'))}</span>
+                      <div className={styles.sundayGrid}>
+                        {offered.filter((d) => d.startsWith(month)).map((date) => {
+                    const d = dayjs(date)
+                    const on = sundays.includes(date)
+                    const kinds = busyKinds(date)
+                    const st = status[date]
+                    const partial = unitBlockText(st, unitName)
+                    const reasons = [
+                      ...unavailableReasons(date, st, t),
+                      ...(partial ? [t('visitRequest.boardUnitBlocks', { units: partial })] : []),
+                    ]
+                    const region = on && multiRegion ? sundayRegions[date] : undefined
+                    const regionColor = region ? getRegionColor(region) : null
+                    return (
+                      <span key={date} className={clsx(styles.sundayCell, multiRegion && styles.sundayCellStack)}>
                         <button
                           type="button"
-                          className={clsx(styles.regionTag, repeated.has(date) && styles.regionTagRepeat)}
-                          style={{ background: regionColor.bg, color: regionColor.text, borderColor: regionColor.border }}
-                          aria-label={t('visitRequest.regionSwitch', { date: d.format('M/D'), region: regionName(region) })}
-                          onClick={() => cycleRegion(date)}
+                          aria-pressed={on}
+                          disabled={kinds.length > 0}
+                          title={reasons.join(' / ') || undefined}
+                          className={clsx(
+                            styles.sundayChip,
+                            on && styles.sundayChipOn,
+                            kinds.length > 0 && styles.sundayChipBusy,
+                            st && Object.keys(st.unitBlocks).length > 0 && styles.sundayChipPartial,
+                          )}
+                          onClick={() => toggleSunday(date)}
                         >
-                          {regionShort(region)}
+                          <span className={styles.chipDay}>{d.format('D')}</span>
+                          {kinds.length > 0 && (
+                            <span className={styles.chipFast}>{t(`visitRequest.busyKind.${kinds[0]}`)}</span>
+                          )}
+                          {kinds.length === 0 && st?.councilRegionId && (
+                            <span className={styles.chipFast}>{t('visitRequest.councilShort')}</span>
+                          )}
                         </button>
-                      )}
-                      {multiRegion && !region && <span className={styles.regionTagSpace} aria-hidden />}
-                    </span>
-                  )
-                })}
+                        {region && regionColor && pins[date] === region && (
+                          <span
+                            className={styles.regionTag}
+                            style={{ background: regionColor.bg, color: regionColor.text, borderColor: regionColor.border }}
+                            title={t('visitRequest.councilPinned', { region: regionName(region) })}
+                          >
+                            {regionShort(region)}
+                          </span>
+                        )}
+                        {region && regionColor && pins[date] !== region && (
+                          <button
+                            type="button"
+                            className={clsx(styles.regionTag, repeated.has(date) && styles.regionTagRepeat)}
+                            style={{ background: regionColor.bg, color: regionColor.text, borderColor: regionColor.border }}
+                            aria-label={t('visitRequest.regionSwitch', { date: d.format('M/D'), region: regionName(region) })}
+                            onClick={() => cycleRegion(date)}
+                          >
+                            {regionShort(region)}
+                          </button>
+                        )}
+                        {multiRegion && !region && <span className={styles.regionTagSpace} aria-hidden />}
+                      </span>
+                    )
+                  })}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              {skipped.length > 0 && (
-                <div className={styles.reasons}>
-                  <p className={styles.reasonsTitle}>{t('visitRequest.reasonTitle')}</p>
-                  <ul className={styles.reasonList}>
-                    {skipped.map((r) => (
-                      <li key={r.date} className={clsx(r.partial && styles.reasonPartial)}>
-                        <span className={styles.reasonDate}>{dayjs(r.date).format(t('visitRequest.reasonDateFormat'))}</span>
-                        <span>{r.text}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  ))}
                 </div>
-              )}
-              <p className={styles.sundayHint}>
-                {statusState === 'loading'
-                  ? t('visitRequest.sundayLoading')
-                  : statusState === 'error'
-                    ? t('visitRequest.sundayLoadFailed')
-                    : t('visitRequest.sundaysFreeHint')}
-              </p>
-              {multiRegion && sundays.length > 0 && (
-                <div className={styles.regionSummary}>
-                  <p className={styles.sundayHint}>
-                    {t('visitRequest.regionHint')}{' '}
-                    {lastRegion && `${t('visitRequest.regionLast', { region: regionName(lastRegion) })} `}
-                    {Object.keys(pins).some((d) => sundays.includes(d)) && `${t('visitRequest.councilHint')} `}
-                    {regionIds
-                      .map((id) => `${regionShort(id)} ${sundays.filter((d) => sundayRegions[d] === id).length}`)
-                      .join(' · ')}
-                  </p>
-                  {repeated.size > 0 && (
-                    <p className={styles.warn} role="alert">
-                      {t('visitRequest.regionRepeat', {
-                        dates: [...repeated].map((d) => dayjs(d).format('M/D')).join(', '),
-                      })}
+                {skipped.length > 0 && (
+                  <div className={styles.reasons}>
+                    <p className={styles.reasonsTitle}>{t('visitRequest.reasonTitle')}</p>
+                    <ul className={styles.reasonList}>
+                      {skipped.map((r) => (
+                        <li key={r.date} className={clsx(r.partial && styles.reasonPartial)}>
+                          <span className={styles.reasonDate}>{dayjs(r.date).format(t('visitRequest.reasonDateFormat'))}</span>
+                          <span>{r.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <p className={styles.sundayHint}>
+                  {statusState === 'loading'
+                    ? t('visitRequest.sundayLoading')
+                    : statusState === 'error'
+                      ? t('visitRequest.sundayLoadFailed')
+                      : t('visitRequest.sundaysFreeHint')}
+                </p>
+                {multiRegion && sundays.length > 0 && (
+                  <div className={styles.regionSummary}>
+                    <p className={styles.sundayHint}>
+                      {t('visitRequest.regionHint')}{' '}
+                      {lastRegion && `${t('visitRequest.regionLast', { region: regionName(lastRegion) })} `}
+                      {Object.keys(pins).some((d) => sundays.includes(d)) && `${t('visitRequest.councilHint')} `}
+                      {regionIds
+                        .map((id) => `${regionShort(id)} ${sundays.filter((d) => sundayRegions[d] === id).length}`)
+                        .join(' · ')}
                     </p>
+                    {repeated.size > 0 && (
+                      <p className={styles.warn} role="alert">
+                        {t('visitRequest.regionRepeat', {
+                          dates: [...repeated].map((d) => dayjs(d).format('M/D')).join(', '),
+                        })}
+                      </p>
+                    )}
+                  </div>
+                )}
+                <div className={styles.sundayActions}>
+                  <Button variant="secondary" size="sm" disabled={!seventyUid} onClick={selectAllFree}>
+                    {t('visitRequest.selectAllFree')}
+                  </Button>
+                  {multiRegion && sundays.length > 1 && (
+                    <Button variant="ghost" size="sm" onClick={reRotate}>
+                      {t('visitRequest.regionRotate')}
+                    </Button>
+                  )}
+                  {sundays.length > 0 && (
+                    <Button variant="ghost" size="sm" onClick={clearSundays}>
+                      {t('visitRequest.clearSundays')}
+                    </Button>
                   )}
                 </div>
-              )}
-              {wardPicks && sundays.length > 0 && (
-                <div className={styles.picks}>
+              </fieldset>
+            </div>
+
+            <section
+              className={clsx(styles.preview, !(wardPicks && sundays.length > 0) && styles.previewIdle)}
+              aria-label={t('visitRequest.picksTitle')}
+            >
+              {wardPicks && sundays.length > 0 ? (
+                <>
                   <p className={styles.reasonsTitle}>{t('visitRequest.picksTitle')}</p>
                   <p className={styles.picksHint}>{t('visitRequest.picksHint')}</p>
                   <ul className={styles.pickList}>
@@ -502,42 +526,33 @@ export function VisitRequestPanel() {
                       )
                     })}
                   </ul>
-                </div>
+                </>
+              ) : (
+                <p className={styles.previewEmpty}>
+                  {statusState === 'loading' ? t('visitRequest.sundayLoading') : t('visitRequest.picksEmpty')}
+                </p>
               )}
-              <div className={styles.sundayActions}>
-                <Button variant="secondary" size="sm" disabled={!seventyUid} onClick={selectAllFree}>
-                  {t('visitRequest.selectAllFree')}
-                </Button>
-                {multiRegion && sundays.length > 1 && (
-                  <Button variant="ghost" size="sm" onClick={reRotate}>
-                    {t('visitRequest.regionRotate')}
-                  </Button>
-                )}
-                {sundays.length > 0 && (
-                  <Button variant="ghost" size="sm" onClick={clearSundays}>
-                    {t('visitRequest.clearSundays')}
-                  </Button>
-                )}
-              </div>
-            </fieldset>
+            </section>
 
-            <Input
-              type="date"
-              label={t('visitRequest.dueDate')}
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
-            <GuidanceField value={guidance} onChange={setGuidance} />
-            <Textarea
-              label={t('visitRequest.note')}
-              value={note}
-              rows={3}
-              placeholder={t('visitRequest.notePlaceholder')}
-              onChange={(e) => setNote(e.target.value)}
-            />
-            <Button onClick={handleCreate} loading={creating} disabled={!canCreate}>
-              {t('visitRequest.create')}
-            </Button>
+            <div className={clsx(styles.form, styles.createRest)}>
+              <Input
+                type="date"
+                label={t('visitRequest.dueDate')}
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+              <GuidanceField value={guidance} onChange={setGuidance} />
+              <Textarea
+                label={t('visitRequest.note')}
+                value={note}
+                rows={3}
+                placeholder={t('visitRequest.notePlaceholder')}
+                onChange={(e) => setNote(e.target.value)}
+              />
+              <Button onClick={handleCreate} loading={creating} disabled={!canCreate}>
+                {t('visitRequest.create')}
+              </Button>
+            </div>
           </div>
         </CardBody>
       </Card>
@@ -550,37 +565,39 @@ export function VisitRequestPanel() {
           {!loading && !error && requests.length === 0 && (
             <EmptyState title={t('visitRequest.empty')} />
           )}
-          {!loading &&
-            !error &&
-            requests.map((r) => {
-              const decided = r.sundays.filter((d) => r.decisions?.[d]).length
-              return (
-                <button
-                  key={r.id}
-                  type="button"
-                  className={styles.row}
-                  onClick={() => navigate(planVisitRequestDetailPath(r.id))}
-                >
-                  <span className={styles.rowMain}>
-                    <span className={styles.rowTitle}>{r.title}</span>
-                    <span className={styles.rowMeta}>
-                      {r.seventyName} ·{' '}
-                      {t('visitRequest.progress', {
-                        responded: r.respondedUnitIds?.length ?? 0,
-                        units: r.units.length,
-                        decided,
-                        sundays: r.sundays.length,
-                      })}
+          {!loading && !error && requests.length > 0 && (
+            <div className={styles.rows}>
+              {requests.map((r) => {
+                const decided = r.sundays.filter((d) => r.decisions?.[d]).length
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    className={styles.row}
+                    onClick={() => navigate(planVisitRequestDetailPath(r.id))}
+                  >
+                    <span className={styles.rowMain}>
+                      <span className={styles.rowTitle}>{r.title}</span>
+                      <span className={styles.rowMeta}>
+                        {r.seventyName} ·{' '}
+                        {t('visitRequest.progress', {
+                          responded: r.respondedUnitIds?.length ?? 0,
+                          units: r.units.length,
+                          decided,
+                          sundays: r.sundays.length,
+                        })}
+                      </span>
                     </span>
-                  </span>
-                  <Badge variant={r.status === 'open' ? 'success' : 'default'}>
-                    {r.status === 'open'
-                      ? t('visitRequest.statusOpen')
-                      : t('visitRequest.statusClosed')}
-                  </Badge>
-                </button>
-              )
-            })}
+                    <Badge variant={r.status === 'open' ? 'success' : 'default'}>
+                      {r.status === 'open'
+                        ? t('visitRequest.statusOpen')
+                        : t('visitRequest.statusClosed')}
+                    </Badge>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </CardBody>
       </Card>
     </div>

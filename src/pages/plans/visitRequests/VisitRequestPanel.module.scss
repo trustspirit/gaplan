@@ -1,6 +1,9 @@
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
+// 이 폭부터 만들기 화면을 두 단으로 — 사이드바를 빼고도 입력 칸과 추천 칸이 모두 넉넉하다
+$wide-layout: 1200px;
+
 .panel {
   display: flex;
   flex-direction: column;
@@ -9,6 +12,9 @@
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
+  @media (min-width: $wide-layout) {
+    max-width: 1200px;
+  }
   @media (max-width: 768px) {
     padding: $space-3;
     padding-bottom: calc(#{$bottom-tab-height} + env(safe-area-inset-bottom, 0px) + #{$space-3});
@@ -315,11 +321,29 @@
   height: 28px;
 }
 
-// 일요일별 우선 방문 와드 — 참고용. 칩 아래 이유 목록과 같은 바탕을 쓴다.
-.picks {
+// 일요일별 추천 — 칩 아래 이유 목록과 같은 바탕을 쓴다.
+.preview {
   padding: $space-2 $space-3;
   background: $color-surface-sunken;
   border-radius: $border-radius-md;
+}
+
+// 아직 보여 줄 추천이 없을 때 — 좁은 화면에서는 자리를 차지하지 않는다
+.previewIdle {
+  display: none;
+}
+
+.previewEmpty {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: $neutral-500;
+  line-height: $line-height-normal;
+}
+
+.createLayout {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
 }
 
 .picksHint {
@@ -436,4 +460,56 @@
 .toneStale {
   background: $color-danger-weak;
   color: $color-danger;
+}
+
+// ── 넓은 화면: 왼쪽 입력, 오른쪽 추천 결과 ──
+@media (min-width: $wide-layout) {
+  // 카드의 overflow:hidden이 있으면 오른쪽 칸이 따라 내려오지 않는다
+  .panel .createCard {
+    overflow: visible;
+  }
+
+  .createLayout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+    grid-template-areas:
+      'main preview'
+      'rest preview';
+    grid-template-rows: auto 1fr;
+    column-gap: $space-6;
+    row-gap: $space-3;
+    align-items: start;
+  }
+
+  .createMain {
+    grid-area: main;
+  }
+
+  .createRest {
+    grid-area: rest;
+  }
+
+  .preview {
+    grid-area: preview;
+    position: sticky;
+    top: $space-4;
+    max-height: calc(100vh - #{$topbar-height} - #{$space-8});
+    overflow-y: auto;
+    padding: $space-3 $space-4;
+  }
+
+  .previewIdle {
+    display: block;
+  }
+
+  .rows {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: $space-6;
+  }
+
+  // 두 줄로 놓이면 마지막 줄의 두 칸 모두 밑줄을 뺀다
+  .rows .row:nth-last-child(2):nth-child(odd) {
+    border-bottom: none;
+  }
 }
