@@ -113,18 +113,23 @@ export function PlanBalance({ request, sundayStatus, wardStats, onRefill, refill
       )}
       {!legacy && (
         <div className={styles.ai}>
-          <div className={styles.aiHead}>
-            <Button size="sm" variant="secondary" loading={reviewing} onClick={askReview}>
-              {review ? t('visitRequest.ai.again') : t('visitRequest.ai.button')}
-            </Button>
-            {!review && <span className={styles.aiHint}>{t('visitRequest.ai.hint')}</span>}
-          </div>
+          {!review && (
+            <div className={styles.aiHead}>
+              <Button size="sm" variant="secondary" loading={reviewing} onClick={askReview}>
+                {t('visitRequest.ai.button')}
+              </Button>
+              <span className={styles.aiHint}>{t('visitRequest.ai.hint')}</span>
+            </div>
+          )}
           {review && (
             <div className={styles.aiResult}>
-              <p className={styles.aiTitle}>
-                {t('visitRequest.ai.title')}
+              <div className={styles.aiTitle}>
+                <span>{t('visitRequest.ai.title')}</span>
                 {review.key !== planKey && <span className={styles.aiStale}>{t('visitRequest.ai.stale')}</span>}
-              </p>
+                <Button size="sm" variant="ghost" loading={reviewing} onClick={askReview} className={styles.aiAgain}>
+                  {t('visitRequest.ai.again')}
+                </Button>
+              </div>
               {review.suggestions.length === 0 ? (
                 <p className={styles.aiEmpty}>{t('visitRequest.ai.empty')}</p>
               ) : (

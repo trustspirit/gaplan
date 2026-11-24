@@ -497,6 +497,10 @@ function SundayRow({
     [request.units, otherUnit],
   )
   const today = dayjs().format('YYYY-MM-DD')
+  // 이 일요일을 물어본 스테이크 — 추천이 아직 없을 때 누구를 기다리는지 보인다
+  const asked = request.unitSundays
+    ? request.units.filter((u) => request.unitSundays?.[u.id]?.includes(date))
+    : []
 
   return (
     <li className={clsx(styles.sunday, decision && styles.sundayDecided)}>
@@ -550,7 +554,11 @@ function SundayRow({
       )}
 
       {candidates.length === 0 && !decision && (
-        <p className={styles.noCandidates}>{t('visitRequest.noCandidates')}</p>
+        <p className={styles.noCandidates}>
+          {asked.length > 0
+            ? t('visitRequest.noCandidatesAsked', { units: asked.map((u) => u.ko).join(', ') })
+            : t('visitRequest.noCandidates')}
+        </p>
       )}
 
       {candidates.length > 0 && (

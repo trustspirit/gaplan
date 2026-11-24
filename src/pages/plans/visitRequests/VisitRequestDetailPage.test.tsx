@@ -179,4 +179,12 @@ describe('VisitRequestDetailPage', () => {
     expect(container.querySelectorAll('[data-role]')).toHaveLength(2)
     expect(screen.getByText('visitRequest.roleLegend')).toBeInTheDocument()
   })
+
+  it('says which stakes were asked about a Sunday that has no recommendation yet', () => {
+    recommendations = []
+    request = { ...request, unitSundays: { u1: ['2027-01-10'], u2: ['2027-01-10', '2027-01-17'] } }
+    renderPage()
+    expect(screen.getByText(/visitRequest.noCandidatesAsked/)).toHaveTextContent('서울 스테이크, 서울동 스테이크')
+  })
 })
+

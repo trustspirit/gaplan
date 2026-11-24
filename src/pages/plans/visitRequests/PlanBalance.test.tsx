@@ -84,6 +84,8 @@ describe('PlanBalance', () => {
     expect(reviewVisitPlan).toHaveBeenCalledWith('r1')
     expect(await screen.findByText('녹번 와드가 18개월째 빠져 있어요')).toBeInTheDocument()
     expect(screen.getByText('visitRequest.ai.title')).toBeInTheDocument()
+    // 결과 머리글에서 다시 물을 수 있다
+    expect(screen.getByRole('button', { name: 'visitRequest.ai.again' }).closest('p, div')).toHaveTextContent('visitRequest.ai.title')
   })
 
   it('marks the review as out of date once the assignment changes, without asking again', async () => {
