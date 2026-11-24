@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
-import { Check } from 'lucide-react'
 import {
   isFirstSunday,
   isGeneralConferenceSunday,
@@ -31,6 +30,10 @@ interface Props {
   onPick: (date: string, wardId: string) => void
   /** 마감된 요청은 보기만 */
   readOnly: boolean
+  /** 추천할 수 있는 일요일을 눌렀을 때 — 넓은 화면은 목록의 그 일요일을 연다 */
+  onSelect?: (date: string) => void
+  /** 고른 날 아래에 와드 고르는 칸을 둘지. 넓은 화면은 목록 하나에서만 고른다 */
+  inlinePicker?: boolean
 }
 
 function eventsOn(events: CalendarEvent[], day: string) {
@@ -43,7 +46,9 @@ function eventsOn(events: CalendarEvent[], day: string) {
  * 공개 행사를 얹는다. 날짜를 누르면 아래에 그날 일정이 뜨고, 추천할 수 있는 일요일이면 거기서
  * 바로 와드를 고른다(목록의 선택과 같은 상태를 쓴다).
  */
-export function RecommendCalendar({ sundays, cells, events, wards, recencyOf, picks, onPick, readOnly }: Props) {
+export function RecommendCalendar({
+  sundays, cells, events, wards, recencyOf, picks, onPick, readOnly, onSelect, inlinePicker = true,
+}: Props) {
   const { t } = useTranslation()
   const [selected, setSelected] = useState<string | null>(null)
 
@@ -98,7 +103,7 @@ export function RecommendCalendar({ sundays, cells, events, wards, recencyOf, pi
               ))}
             </ul>
           )}
-          {selectedCell?.kind === 'open' && !readOnly && (
+          {selectedCell?.kind === 'open' && !readOnly && inlinePicker && (
             <div className={styles.pick}>
               <WardPicker
                 legend={t('recommend.pickHere')}
@@ -168,11 +173,14 @@ export function RecommendCalendar({ sundays, cells, events, wards, recencyOf, pi
                       .filter(Boolean)
                       .join(', ')}
                     aria-pressed={selected === key}
-                    onClick={() => setSelected(selected === key ? null : key)}
+                    onClick={() => {
+                      setSelected(selected === key ? null : key)
+                      if (cell?.kind === 'open' && !readOnly) onSelect?.(key)
+                    }}
                   >
                     <span className={styles.num}>{d.date()}</span>
                     {cell?.kind === 'open' && !cell.pickedWard && (
-                      <Check size={12} aria-hidden className={styles.okMark} />
+                      <span className={styles.cellPick}>{t('recommend.cellPick')}</span>
                     )}
                     {cell?.kind === 'open' && cell.pickedWard && (
                       <span className={styles.cellText}>{cell.pickedWard}</span>

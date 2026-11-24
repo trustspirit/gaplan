@@ -64,7 +64,7 @@
   }
 
   @media (min-width: 960px) {
-    min-height: 72px;
+    min-height: 60px;
   }
 }
 
@@ -88,10 +88,10 @@
   line-height: 1.2;
 }
 
-.okMark {
-  position: absolute;
-  top: 4px;
-  right: 4px;
+.cellPick {
+  font-size: 0.625rem;
+  font-weight: $font-weight-semibold;
+  line-height: 1.2;
   color: $color-primary;
 }
 
@@ -107,16 +107,17 @@
 // 요청 일요일의 상태 — 범례의 견본도 같은 클래스를 쓴다.
 .cell_open {
   background: $color-primary-weak;
-  border-color: $color-primary-border;
+  border-color: $color-primary;
+  border-style: dashed;
 }
 
 .cell_picked {
   background: $color-primary;
   border-color: $color-primary;
+  border-style: solid;
   color: $color-surface;
 
-  .num,
-  .okMark {
+  .num {
     color: $color-surface;
   }
 }

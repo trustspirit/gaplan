@@ -201,7 +201,9 @@ describe('RecommendPage', () => {
     expect(screen.getByText('오래 방문받지 못한 와드를 먼저 추천해 주세요.')).toBeInTheDocument()
     // 강조가 있으면 고정 안내 문구는 빼서 같은 말을 두 번 하지 않는다
     expect(screen.queryByText('recommend.statsHint')).not.toBeInTheDocument()
-    expect(screen.getByText('recommend.verifiedTitle')).toBeInTheDocument()
+    // 확인된 날이라는 설명은 단계 안내 한 줄로 — 따로 상자를 두지 않는다
+    expect(screen.queryByText('recommend.verifiedTitle')).not.toBeInTheDocument()
+    expect(screen.getByText('recommend.step2Hint')).toBeInTheDocument()
   })
 
   it("does not offer a Sunday the seventy can't come or that has our own conference", async () => {
@@ -256,5 +258,35 @@ describe('RecommendPage', () => {
     expect(triggers()).toHaveLength(1)
     expect(screen.getAllByText(/recommend.otherRegion:/)[0]).toHaveTextContent('서울남 CC')
     expect(screen.getByText('recommend.otherRegionHint')).toBeInTheDocument()
+  })
+
+  it('marks the Sundays still to pick on the calendar, rather than ticking them', async () => {
+    const user = await open()
+    await user.click(screen.getByRole('tab', { name: /recommend.viewCalendar/ }))
+    // 1/10, 1/17은 고를 수 있고 1/24는 다른 곳으로 확정
+    expect(within(screen.getByRole('grid')).getAllByText('recommend.cellPick')).toHaveLength(2)
+  })
+
+  describe('on a wide screen', () => {
+    beforeEach(() => {
+      vi.stubGlobal('matchMedia', (q: string) => ({
+        matches: q.includes('min-width: 960px'), media: q,
+        addEventListener: vi.fn(), removeEventListener: vi.fn(),
+      }))
+      Element.prototype.scrollIntoView = vi.fn()
+    })
+    afterEach(() => vi.unstubAllGlobals())
+
+    it('opens the Sunday in the list when it is picked on the calendar', async () => {
+      const user = await open()
+      const jan17 = within(screen.getByRole('grid'))
+        .getAllByRole('button')
+        .find((b) => b.textContent?.startsWith('17'))!
+      await user.click(jan17)
+      expect(triggers()[1]).toHaveAttribute('aria-expanded', 'true')
+      expect(Element.prototype.scrollIntoView).toHaveBeenCalled()
+      // 고르는 곳은 목록 하나 — 달력 안에 따로 고르는 칸을 열지 않는다
+      expect(screen.queryByText('recommend.pickHere')).not.toBeInTheDocument()
+    })
   })
 })

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
-import { CalendarDays, ChevronDown, Info, List, ShieldCheck } from 'lucide-react'
+import { CalendarDays, ChevronDown, Info, List } from 'lucide-react'
 import type { HttpsCallable } from 'firebase/functions'
 import { publicCallable } from '@/services/publicFunctions'
 import { wardRecency, type RecencyTone } from '@/utils/visitRequest'
@@ -52,6 +52,22 @@ function otherRegionTurn(data: PublicVisitRequest, unit: VisitRequestUnit, date:
   return data.regions?.find((r) => r.id === turn)?.name ?? turn
 }
 
+const WIDE_QUERY = '(min-width: 960px)'
+
+/** 두 단으로 펼치는 넓은 화면인가 — 그때는 달력에서 고른 일요일을 목록에서 연다 */
+function useWide(): boolean {
+  const query = () => (typeof window.matchMedia === 'function' ? window.matchMedia(WIDE_QUERY) : null)
+  const [wide, setWide] = useState(() => query()?.matches ?? false)
+  useEffect(() => {
+    const mq = query()
+    if (!mq) return
+    const onChange = () => setWide(mq.matches)
+    mq.addEventListener?.('change', onChange)
+    return () => mq.removeEventListener?.('change', onChange)
+  }, [])
+  return wide
+}
+
 type LoadState =
   | { kind: 'loading' }
   | { kind: 'error'; invalid: boolean }
@@ -85,6 +101,7 @@ export default function RecommendPage({
   const [view, setView] = useState<'list' | 'calendar'>('list')
   // 목록에서 와드 고르는 칸은 한 번에 하나만 펼친다.
   const [openDate, setOpenDate] = useState<string | null>(null)
+  const isWide = useWide()
 
   useEffect(() => {
     const saved = readStored('publicLang')
@@ -291,6 +308,12 @@ export default function RecommendPage({
   ) : null
 
   const wardOptions = unit.wards.map((w) => ({ id: w.id, label: w[lang] }))
+  // 넓은 화면: 달력에서 누른 일요일을 목록에서 펼친다 — 고르는 곳은 목록 하나
+  const openFromCalendar = (date: string) => {
+    if (!isWide) return
+    setOpenDate(date)
+    document.getElementById(`rec-row-${date}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
   const recencyOf = (wardId: string) => recencyText(data.wardStats?.[wardId])
 
   return (
@@ -321,26 +344,12 @@ export default function RecommendPage({
         {data.note && <p className={styles.note}>{data.note}</p>}
         {!isOpen && <div className={styles.closedBanner}>{t('recommend.closedBanner')}</div>}
 
+        {/* 넓은 화면: 왼쪽은 할 일(일요일별 추천·보내기), 오른쪽은 참고(방문 기록·달력).
+            좁은 화면은 목록/달력 탭으로 나눠 보인다. */}
         <div className={styles.layout} data-view={view}>
-          <section className={styles.calendarCol} aria-labelledby="rec-calendar">
-            <h2 id="rec-calendar" className={styles.stepTitle}>
-              {t('recommend.calendarTitle')}
-            </h2>
-            <RecommendCalendar
-              sundays={data.sundays}
-              cells={cells}
-              events={unitEvents}
-              wards={wardOptions}
-              recencyOf={recencyOf}
-              picks={picks}
-              onPick={(date, wardId) => setPicks((prev) => ({ ...prev, [date]: wardId }))}
-              readOnly={!isOpen}
-            />
-          </section>
-
-          <div className={styles.listCol}>
+          <aside className={styles.refCol}>
             {/* 와드 방문 기록 — 추천의 근거 */}
-            <section className={styles.section} aria-labelledby="rec-stats">
+            <section className={clsx(styles.section, styles.statsSection)} aria-labelledby="rec-stats">
               <h2 id="rec-stats" className={styles.stepTitle}>
                 {t('recommend.statsTitle')}
               </h2>
@@ -355,6 +364,28 @@ export default function RecommendPage({
               />
             </section>
 
+            <section className={styles.calendarCol} aria-labelledby="rec-calendar">
+              <h2 id="rec-calendar" className={styles.stepTitle}>
+                {t('recommend.calendarTitle')}
+              </h2>
+              <p className={styles.stepHint}>{t(isWide ? 'recommend.calendarHintWide' : 'recommend.calendarHint')}</p>
+              <RecommendCalendar
+                sundays={data.sundays}
+                cells={cells}
+                events={unitEvents}
+                wards={wardOptions}
+                recencyOf={recencyOf}
+                picks={picks}
+                onPick={(date, wardId) => setPicks((prev) => ({ ...prev, [date]: wardId }))}
+                readOnly={!isOpen}
+                onSelect={openFromCalendar}
+                inlinePicker={!isWide}
+              />
+            </section>
+          </aside>
+
+          <div className={styles.listCol}>
+
             {/* 1. 일요일별 추천 */}
             <section className={styles.section} aria-labelledby="rec-step2">
               <h2 id="rec-step2" className={styles.stepTitle}>
@@ -362,16 +393,9 @@ export default function RecommendPage({
                 {t('recommend.step2')}
               </h2>
               <p className={styles.stepHint}>{t('recommend.step2Hint')}</p>
-              <div className={styles.verified}>
-                <ShieldCheck size={18} aria-hidden className={styles.verifiedIcon} />
-                <div>
-                  <div className={styles.verifiedTitle}>{t('recommend.verifiedTitle')}</div>
-                  <p className={styles.verifiedBody}>{t('recommend.verifiedBody')}</p>
-                  {Object.keys(data.sundayRegions ?? {}).length > 0 && (
-                    <p className={styles.verifiedBody}>{t('recommend.otherRegionHint')}</p>
-                  )}
-                </div>
-              </div>
+              {Object.keys(data.sundayRegions ?? {}).length > 0 && (
+                <p className={styles.stepHint}>{t('recommend.otherRegionHint')}</p>
+              )}
               <ol className={styles.sundayList}>
                 {data.sundays.map((date, i) => {
                   const d = dayjs(date)
@@ -397,6 +421,7 @@ export default function RecommendPage({
                       </li>
                     )}
                     <li
+                      id={`rec-row-${date}`}
                       className={clsx(
                         styles.sunday,
                         picks[date] && !lockedByOther && !blocked && styles.sundayPicked,
