@@ -22,13 +22,13 @@ export interface UnitSundayPlan {
   picks: Record<string, SundayWardPick[]>
 }
 
-/** 예비 스테이크를 부담에 얼마나 셀지 — 1순위는 1 */
+/** 예비 스테이크를 얼마나 물어본 것으로 셀지(마지막 방문이 같을 때) — 1순위는 1 */
 export const BACKUP_WEIGHT = 0.5
 const PICKS_PER_SUNDAY = 3
 
 /**
  * 일요일마다 1순위와 예비(1순위와 다른 스테이크) 두 곳에 묻도록 배정한다.
- * 우선순위는 sundayWardPicks(방문 부담이 적은 스테이크 → 오래 방문받지 못한 와드).
+ * 우선순위는 sundayWardPicks(방문 없거나 오래된 스테이크 → 그 안에서 방문 없거나 오래된 와드).
  * 확정된 일요일은 다시 고르지 않고 확정된 스테이크의 목록에 그대로 둔다 — 빼면 그 회장 링크에서 그날이 사라진다.
  */
 export function recommendUnitSundays(input: {
@@ -72,7 +72,7 @@ export function recommendUnitSundays(input: {
     asked.get(primary)?.add(date)
     if (backup) asked.get(backup)?.add(date)
   }
-  // 부담 순으로만 고르면 방문이 많았던 큰 스테이크는 분기 내내 밀린다 — 예약 안 된 와드가 있는
+  // 일요일이 스테이크 수보다 적으면 최근에 방문받은 스테이크는 한 번도 안 물어보게 된다 — 예약 안 된 와드가 있는
   // 스테이크는 한 번은 예비로라도 묻는다. 예비를 가장 많이 받은 스테이크의 자리를 넘겨받는다.
   const freeWards = (u: RequestUnit) =>
     u.wards.filter((w) => !input.wardStats[w.id]?.nextVisit)

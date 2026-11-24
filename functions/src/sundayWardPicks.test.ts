@@ -34,52 +34,70 @@ const stats: Record<string, WardVisitStat> = {
 }
 
 describe('sundayWardPicks', () => {
-  it('ranks never-visited first, then oldest visit, within the Sunday CC only', () => {
+  it('leads with the stake visited longest ago, then its never-visited ward first', () => {
     const picks = sundayWardPicks({
       sundays: ['2027-01-10'], regionOf: () => 'r1', units, wardStats: stats, unitBlocks: {}, perSunday: 1,
     })
-    expect(picks['2027-01-10'].map((p) => p.wardId)).toEqual(['a2'])
+    // A의 마지막 방문은 10월, B는 6월 — B가 먼저
+    expect(picks['2027-01-10'].map((p) => p.wardId)).toEqual(['b1'])
   })
 
-  it('spreads the picks of one Sunday across stakes', () => {
+  it('spreads the picks of one Sunday across stakes, in stake order', () => {
     const picks = sundayWardPicks({
       sundays: ['2027-01-10'], regionOf: () => 'r1', units, wardStats: stats, unitBlocks: {}, perSunday: 3,
     })
-    // A의 1순위 → B의 1순위 → 다시 A
-    expect(picks['2027-01-10'].map((p) => p.wardId)).toEqual(['a2', 'b1', 'a3'])
+    // B의 1순위 → A의 기록 없는 와드 → A의 가장 오래된 와드
+    expect(picks['2027-01-10'].map((p) => p.wardId)).toEqual(['b1', 'a2', 'a3'])
   })
 
-  it('prefers the stake with fewer visits even over an older ward elsewhere', () => {
+  it('puts a never-visited stake ahead of any visited one', () => {
+    const picks = sundayWardPicks({
+      sundays: ['2027-01-10'],
+      regionOf: () => 'r1',
+      units: [...units, { id: 'd-stake', ko: 'D 스테이크', en: 'D', regionId: 'r1', wards: [{ id: 'd1', ko: 'D1 와드', en: '' }] }],
+      wardStats: stats,
+      unitBlocks: {},
+      perSunday: 1,
+    })
+    expect(picks['2027-01-10'][0].wardId).toBe('d1')
+  })
+
+  it('ranks by the last visit, not by how many visits a stake had', () => {
     const picks = sundayWardPicks({
       sundays: ['2027-01-10'],
       regionOf: () => 'r1',
       units,
-      wardStats: { ...stats, a1: stat('2026-10-01', null, 3), b1: stat('2026-10-15') },
+      // A는 12개월에 방문이 많아도 마지막 방문이 B보다 오래됐다
+      wardStats: { ...stats, a1: stat('2026-05-01', null, 6), a3: stat('2026-04-01', null, 4), b1: stat('2026-10-15', null, 1) },
       unitBlocks: {},
       perSunday: 1,
     })
-    // A 스테이크는 12개월에 3번, B는 0번 — 기록 없는 a2보다 B가 먼저
-    expect(picks['2027-01-10'][0].wardId).toBe('b1')
+    expect(picks['2027-01-10'][0].wardId).toBe('a2')
   })
 
-  it('counts already scheduled visits toward the stake', () => {
-    const picks = sundayWardPicks({
-      sundays: ['2027-01-10'],
-      regionOf: () => 'r1',
-      units,
-      wardStats: { ...stats, a1: stat('2026-10-01', '2027-02-07') },
-      unitBlocks: {},
-      perSunday: 1,
-    })
-    expect(picks['2027-01-10'][0].wardId).toBe('b1')
+  it('treats an already scheduled visit as the stake’s latest visit', () => {
+    const recentB = { ...stats, b1: stat('2026-11-01') }
+    const run = (wardStats: Record<string, WardVisitStat>) =>
+      sundayWardPicks({ sundays: ['2027-01-10'], regionOf: () => 'r1', units, wardStats, unitBlocks: {}, perSunday: 1 })
+    expect(run(recentB)['2027-01-10'][0].wardId).toBe('a2')
+    expect(run({ ...recentB, a3: stat('2026-03-01', '2027-02-07') })['2027-01-10'][0].wardId).toBe('b1')
   })
 
-  it('alternates stakes across Sundays and does not repeat a ward', () => {
+  it('moves a stake to the back once it leads a Sunday of the plan', () => {
     const picks = sundayWardPicks({
       sundays: ['2027-01-10', '2027-01-17', '2027-01-24'],
       regionOf: () => 'r1', units, wardStats: stats, unitBlocks: {}, perSunday: 1,
     })
-    expect(['2027-01-10', '2027-01-17', '2027-01-24'].map((d) => picks[d][0].wardId)).toEqual(['a2', 'b1', 'a3'])
+    // B → A → 다시 B(B는 와드가 하나라 같은 와드)
+    expect(['2027-01-10', '2027-01-17', '2027-01-24'].map((d) => picks[d][0].wardId)).toEqual(['b1', 'a2', 'b1'])
+  })
+
+  it('does not repeat a ward of the stake until its other wards were shown', () => {
+    const onlyA = sundayWardPicks({
+      sundays: ['2027-01-10', '2027-01-17', '2027-01-24'],
+      regionOf: () => 'r1', units: [units[0]], wardStats: stats, unitBlocks: {}, perSunday: 1,
+    })
+    expect(['2027-01-10', '2027-01-17', '2027-01-24'].map((d) => onlyA[d][0].wardId)).toEqual(['a2', 'a3', 'a1'])
   })
 
   it('skips stakes blocked that Sunday and wards already scheduled', () => {
@@ -101,7 +119,7 @@ describe('sundayWardPicks', () => {
       units, wardStats: stats, unitBlocks: {}, perSunday: 1,
     })
     expect(picks['2027-01-10'][0]).toMatchObject({ wardId: 'c1', unitName: 'C 스테이크', lastVisit: null })
-    expect(picks['2027-01-17'][0].wardId).toBe('a2')
+    expect(picks['2027-01-17'][0].wardId).toBe('b1')
   })
 
   it('starts over once every ward in the CC has been suggested', () => {
