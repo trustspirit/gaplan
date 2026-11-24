@@ -101,9 +101,13 @@ export default function RecommendPage({
   const [openDate, setOpenDate] = useState<string | null>(null)
   const isWide = useWide()
 
+  // 링크가 언어를 정해 보냈으면(?lang=en — 영어로 보내는 스테이크) 그 언어로 열고 기억한다.
+  // 회장이 화면에서 바꾸면 그다음부터는 그 선택을 따른다.
   useEffect(() => {
-    const saved = readStored('publicLang')
-    if (saved && saved !== i18n.language) i18n.changeLanguage(saved)
+    const asked = new URLSearchParams(window.location.search).get('lang')
+    if (asked === 'en' || asked === 'ko') writeStored('publicLang', asked)
+    const want = asked === 'en' || asked === 'ko' ? asked : readStored('publicLang')
+    if (want && want !== i18n.language) i18n.changeLanguage(want)
   }, [i18n])
 
   useEffect(() => {

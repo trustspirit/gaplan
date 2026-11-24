@@ -4,6 +4,7 @@ import { defaultShareTemplate, renderShareTemplate, SHARE_TOKENS } from './share
 const values = {
   title: '2027년 1분기 와드 방문',
   unit: '서울 스테이크',
+  president: '홍길동 회장님',
   seventy: '박경렬',
   dates: '1/17, 3/21',
   due: '12월 31일',
@@ -13,8 +14,8 @@ const values = {
 
 describe('renderShareTemplate', () => {
   it('fills every token, in Korean or English', () => {
-    expect(renderShareTemplate('{스테이크} 회장님, {일요일} 중에 추천해 주세요. {unit}', values)).toBe(
-      '서울 스테이크 회장님, 1/17, 3/21 중에 추천해 주세요. 서울 스테이크\nhttps://example.test/recommend/r1/t1',
+    expect(renderShareTemplate('{회장}, {일요일} 중에 추천해 주세요. {unit} {president}', values)).toBe(
+      '홍길동 회장님, 1/17, 3/21 중에 추천해 주세요. 서울 스테이크 홍길동 회장님\nhttps://example.test/recommend/r1/t1',
     )
   })
 
@@ -53,13 +54,45 @@ describe('defaultShareTemplate', () => {
     }
   })
 
-  it('reads like the old fixed message when everything is filled', () => {
+  it('greets the president and fills everything in Korean', () => {
     expect(renderShareTemplate(defaultShareTemplate('ko'), values)).toBe(
-      '[와드 방문 추천 요청] 2027년 1분기 와드 방문 · 서울 스테이크\n' +
-        '박경렬 지역 칠십인께서 방문 가능한 일요일(1/17, 3/21)에 서울 스테이크의 와드를 추천해 주세요.\n' +
+      '[와드 방문 추천 요청] 2027년 1분기 와드 방문\n' +
+        '홍길동 회장님, 안녕하세요.\n' +
+        '박경렬 지역 칠십인께서 방문 가능한 일요일(1/17, 3/21)에 서울 스테이크의 와드를 추천해 주시기 바랍니다.\n' +
         '※ 오래 방문받지 못한 와드를 먼저 추천해 주세요.\n' +
         '마감: 12월 31일\n' +
         'https://example.test/recommend/r1/t1',
     )
+  })
+
+  it('has an English message too', () => {
+    const en = renderShareTemplate(defaultShareTemplate('en'), {
+      ...values, unit: 'Seoul Stake', president: 'President Hong', due: 'Dec 31', guidance: '',
+    })
+    expect(en).toBe(
+      '[Ward visit recommendations] 2027년 1분기 와드 방문\n' +
+        'Dear President Hong,\n' +
+        'Please recommend a ward in Seoul Stake for the Sundays Area Seventy 박경렬 is available (1/17, 3/21).\n' +
+        'Due: Dec 31\n' +
+        'https://example.test/recommend/r1/t1',
+    )
+  })
+})
+
+describe('presidentLabel', () => {
+  it('names the president in each language, or just the title', async () => {
+    const { presidentLabel } = await import('./shareTemplate')
+    expect(presidentLabel('홍길동', 'ko')).toBe('홍길동 회장님')
+    expect(presidentLabel('홍길동', 'en')).toBe('President 홍길동')
+    expect(presidentLabel(undefined, 'ko')).toBe('회장님')
+    expect(presidentLabel('  ', 'en')).toBe('President')
+  })
+})
+
+describe('linkFor', () => {
+  it('opens the page in English for an English stake', async () => {
+    const { linkFor } = await import('./shareTemplate')
+    expect(linkFor('https://x.test/recommend/r1/t', 'en')).toBe('https://x.test/recommend/r1/t?lang=en')
+    expect(linkFor('https://x.test/recommend/r1/t', 'ko')).toBe('https://x.test/recommend/r1/t')
   })
 })

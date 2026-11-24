@@ -78,6 +78,42 @@
   padding: 0;
 }
 
+// 스테이크별 보낼 언어 KO/EN
+.lang {
+  display: inline-flex;
+  margin-right: $space-1;
+  padding: 2px;
+  background: $neutral-100;
+  border-radius: $border-radius-md;
+}
+
+.langBtn {
+  min-width: 28px;
+  height: 26px;
+  padding: 0 $space-1;
+  background: none;
+  border: none;
+  border-radius: $border-radius-sm;
+  font-size: 11px; // one-off: compact language switch inside a table row
+  font-weight: $font-weight-semibold;
+  color: $neutral-500;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.langOn {
+  background: $color-surface;
+  color: $color-primary;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); // one-off: lifted segment on the neutral track
+}
+
 // 지금 쓰는 안내문 한 줄과 고치기
 .template {
   display: flex;

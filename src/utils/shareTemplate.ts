@@ -6,6 +6,8 @@
 export interface ShareValues {
   title: string
   unit: string
+  /** "홍길동 회장님" / "President Hong" — 명단에 없으면 "회장님" / "President" */
+  president: string
   seventy: string
   dates: string
   /** 마감일이 없으면 빈 문자열 */
@@ -18,6 +20,7 @@ export interface ShareValues {
 export const SHARE_TOKENS: { key: keyof ShareValues; ko: string; en: string }[] = [
   { key: 'title', ko: '제목', en: 'title' },
   { key: 'unit', ko: '스테이크', en: 'unit' },
+  { key: 'president', ko: '회장', en: 'president' },
   { key: 'seventy', ko: '칠십인', en: 'seventy' },
   { key: 'dates', ko: '일요일', en: 'dates' },
   { key: 'due', ko: '마감일', en: 'due' },
@@ -29,16 +32,18 @@ export const SHARE_TOKENS: { key: keyof ShareValues; ko: string; en: string }[] 
 export const SHARE_TEMPLATE_MAX = 1000
 
 const KO_DEFAULT = [
-  '[와드 방문 추천 요청] {제목} · {스테이크}',
-  '{칠십인} 지역 칠십인께서 방문 가능한 일요일({일요일})에 {스테이크}의 와드를 추천해 주세요.',
+  '[와드 방문 추천 요청] {제목}',
+  '{회장}, 안녕하세요.',
+  '{칠십인} 지역 칠십인께서 방문 가능한 일요일({일요일})에 {스테이크}의 와드를 추천해 주시기 바랍니다.',
   '※ {강조}',
   '마감: {마감일}',
   '{링크}',
 ].join('\n')
 
 const EN_DEFAULT = [
-  '[Ward visit recommendations] {title} · {unit}',
-  'Please recommend a ward from {unit} for the Sundays Area Seventy {seventy} is available ({dates}).',
+  '[Ward visit recommendations] {title}',
+  'Dear {president},',
+  'Please recommend a ward in {unit} for the Sundays Area Seventy {seventy} is available ({dates}).',
   '* {guidance}',
   'Due: {due}',
   '{link}',
@@ -75,4 +80,18 @@ export function renderShareTemplate(template: string, values: ShareValues): stri
   })
   const body = lines.join('\n').trim()
   return hasLink ? body : `${body}\n${values.link}`
+}
+
+export type ShareLang = 'ko' | 'en'
+
+/** {회장} 자리 — 명단에서 이름을 못 찾으면 호칭만 */
+export function presidentLabel(name: string | undefined, lang: ShareLang): string {
+  const n = name?.trim()
+  if (lang === 'en') return n ? `President ${n}` : 'President'
+  return n ? `${n} 회장님` : '회장님'
+}
+
+/** 영어로 보내는 스테이크의 링크는 추천 페이지가 영어로 열리게 한다 */
+export function linkFor(url: string, lang: ShareLang): string {
+  return lang === 'en' ? `${url}?lang=en` : url
 }

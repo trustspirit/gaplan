@@ -1067,10 +1067,13 @@
       "regionShare": "{{region}} — {{count}} Sundays, few for its wards (about {{expected}})."
     },
     "shareTemplate": {
+      "langLabel": "Message language",
+      "lang": {"ko": "한국어", "en": "English"},
+      "sendLang": "Message language for {{unit}}",
       "title": "Message",
       "button": "Edit message",
       "label": "Message",
-      "hint": "This is the text sent with each stake's link when you use 'Copy message'. Save it once and it is used for every request. {Tokens} are filled per stake; if you leave out the link, it is added at the end. Lines whose values are empty (e.g. no due date) are dropped.",
+      "hint": "This is the text sent with each stake's link when you use 'Copy message'. Save a Korean and an English version once and they are used for every request. Pick KO/EN per stake in the table; English links also open the recommendation page in English. {Tokens} are filled per stake; if you leave out the link, it is added at the end. Lines whose values are empty (e.g. no due date) are dropped.",
       "tokensLabel": "Tokens",
       "preview": "Preview · {{unit}}",
       "reset": "Use default",
@@ -1082,6 +1085,7 @@
       "token": {
         "title": "Request title",
         "unit": "Stake/district name",
+        "president": "President's name — President Hong",
         "seventy": "Area Seventy's name",
         "dates": "Sundays asked of that stake",
         "due": "Due date",

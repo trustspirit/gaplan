@@ -5,7 +5,10 @@ import dayjs from 'dayjs'
 import { Copy, ExternalLink, MessageSquareText, PencilLine } from 'lucide-react'
 import { setUnitSundays } from '@/services/visitRequestService'
 import { recommendUrl } from '@/utils/visitRequest'
-import { defaultShareTemplate, renderShareTemplate, type ShareValues } from '@/utils/shareTemplate'
+import {
+  defaultShareTemplate, linkFor, presidentLabel, renderShareTemplate, type ShareLang, type ShareValues,
+} from '@/utils/shareTemplate'
+import clsx from 'clsx'
 import { unitSundayOptions } from '@/utils/unitSundays'
 import { REGIONS } from '@/constants/regions'
 import { unavailableReasons } from './sundayReasons'
@@ -24,10 +27,16 @@ interface Props {
   /** 일요일 상황·방문 기록을 받았는가 — 받기 전에는 마지막 방문을 적지 않는다 */
   ready: boolean
   onCopy: (text: string) => void
-  /** 저장해 둔 안내문. null이면 기본 안내문 */
-  shareTemplate: string | null
+  /** 저장해 둔 안내문(언어별). null이면 그 언어의 기본 안내문 */
+  shareTemplates: Record<ShareLang, string | null>
+  /** 영어로 보내는 스테이크(unitId -> 'en') */
+  shareLangs: Record<string, 'en'>
+  /** 스테이크/지방부 회장 이름(unitId -> 이름). 명단에 없으면 호칭만 쓴다 */
+  presidents: Record<string, string>
   /** 안내문 저장 — 못 하는 화면(로그인 정보 없음)이면 넘기지 않는다 */
-  onSaveTemplate?: (template: string | null) => Promise<void>
+  onSaveTemplates?: (templates: Record<ShareLang, string | null>) => Promise<void>
+  /** 그 스테이크에 보낼 언어 바꾸기 */
+  onSetLang?: (unitId: string, lang: ShareLang) => void
 }
 
 /**
@@ -36,9 +45,10 @@ interface Props {
  * 칸을 눌러 그 스테이크에 물어볼 일요일을 넣고 뺀다(그 스테이크가 가능한 날만).
  */
 export function StakeLinkList({
-  request, recommendations, sundayStatus, wardStats, ready, onCopy, shareTemplate, onSaveTemplate,
+  request, recommendations, sundayStatus, wardStats, ready, onCopy,
+  shareTemplates, shareLangs, presidents, onSaveTemplates, onSetLang,
 }: Props) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [editingTemplate, setEditingTemplate] = useState(false)
   const [savingTemplate, setSavingTemplate] = useState(false)
   const [saving, setSaving] = useState<string | null>(null)
@@ -86,25 +96,36 @@ export function StakeLinkList({
     }
   }
 
-  const shareValues = (unitId: string, link: string): ShareValues => ({
-    title: request.title,
-    unit: unitName(unitId),
-    seventy: request.seventyName,
-    dates: selectedOf(unitId).map((d) => dayjs(d).format('M/D')).join(', '),
-    due: request.dueDate ? dayjs(request.dueDate).format(t('recommend.dateFormat')) : '',
-    guidance: request.guidance ?? '',
-    link,
-  })
-  const template = shareTemplate ?? defaultShareTemplate(i18n.language === 'en' ? 'en' : 'ko')
-  const shareMessage = (unitId: string, url: string) => renderShareTemplate(template, shareValues(unitId, url))
+  const langOf = (unitId: string): ShareLang => shareLangs[unitId] ?? 'ko'
+  /** 안내문에 채울 값 — 그 스테이크에 보낼 언어로 */
+  const shareValues = (unitId: string, link: string, lang: ShareLang): ShareValues => {
+    const unit = request.units.find((u) => u.id === unitId)
+    return {
+      title: request.title,
+      unit: (lang === 'en' ? unit?.en : unit?.ko) || unitName(unitId),
+      president: presidentLabel(presidents[unitId], lang),
+      seventy: request.seventyName,
+      dates: selectedOf(unitId).map((d) => dayjs(d).format('M/D')).join(', '),
+      due: request.dueDate ? dayjs(request.dueDate).locale(lang).format(lang === 'en' ? 'MMM D' : 'M월 D일') : '',
+      guidance: request.guidance ?? '',
+      link,
+    }
+  }
+  const templateFor = (lang: ShareLang) => shareTemplates[lang] ?? defaultShareTemplate(lang)
+  const shareMessage = (unitId: string, url: string) => {
+    const lang = langOf(unitId)
+    return renderShareTemplate(templateFor(lang), shareValues(unitId, linkFor(url, lang), lang))
+  }
   const sampleUnit = request.units[0]
   const sampleToken = sampleUnit ? request.unitTokens?.[sampleUnit.id] : undefined
+  const sampleUrl = sampleToken ? recommendUrl(request.id, sampleToken) : 'https://…'
+  const customized = !!(shareTemplates.ko || shareTemplates.en)
 
-  const saveTemplate = async (next: string | null) => {
-    if (!onSaveTemplate) return
+  const saveTemplate = async (next: Record<ShareLang, string | null>) => {
+    if (!onSaveTemplates) return
     setSavingTemplate(true)
     try {
-      await onSaveTemplate(next)
+      await onSaveTemplates(next)
       toast.success(t('visitRequest.shareTemplate.saved'))
       setEditingTemplate(false)
     } catch {
@@ -137,10 +158,27 @@ export function StakeLinkList({
       render: (row) => {
         const token = request.unitTokens?.[row.unit.id]
         if (!token) return <span className={styles.pending}>{t('visitRequest.linkPreparing')}</span>
-        const url = recommendUrl(request.id, token)
+        const lang = langOf(row.unit.id)
+        const url = linkFor(recommendUrl(request.id, token), lang)
         const none = row.total === 0 && !Object.values(row.cells).some((c) => c.kind === 'decided')
         return (
           <span className={styles.links}>
+            {/* 이 스테이크에 보낼 언어 — 안내문과 추천 페이지 모두 */}
+            <span className={styles.lang} role="radiogroup" aria-label={t('visitRequest.shareTemplate.sendLang', { unit: row.unit.ko })}>
+              {(['ko', 'en'] as const).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  role="radio"
+                  aria-checked={lang === l}
+                  className={clsx(styles.langBtn, lang === l && styles.langOn)}
+                  disabled={!onSetLang}
+                  onClick={() => lang !== l && onSetLang?.(row.unit.id, l)}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </span>
             <button
               type="button"
               className={styles.linkBtn}
@@ -158,7 +196,7 @@ export function StakeLinkList({
               disabled={none}
               aria-label={t('visitRequest.matrix.copyMessage', { unit: row.unit.ko })}
               title={t('visitRequest.copyMessage')}
-              onClick={() => onCopy(shareMessage(row.unit.id, url))}
+              onClick={() => onCopy(shareMessage(row.unit.id, recommendUrl(request.id, token)))}
             >
               <MessageSquareText size={15} aria-hidden />
               <span>{t('visitRequest.matrix.messageShort')}</span>
@@ -208,21 +246,24 @@ export function StakeLinkList({
       <div className={styles.template}>
         <MessageSquareText size={15} aria-hidden className={styles.templateIcon} />
         <span className={styles.templateLabel}>
-          {shareTemplate ? t('visitRequest.shareTemplate.custom') : t('visitRequest.shareTemplate.default')}
+          {customized ? t('visitRequest.shareTemplate.custom') : t('visitRequest.shareTemplate.default')}
         </span>
-        <span className={styles.templateText}>{template.split('\n')[0]}</span>
-        {onSaveTemplate && sampleUnit && (
+        <span className={styles.templateText}>{templateFor('ko').split('\n')[0]}</span>
+        {onSaveTemplates && sampleUnit && (
           <button type="button" className={styles.linkBtn} onClick={() => setEditingTemplate(true)}>
             <PencilLine size={15} aria-hidden />
             <span>{t('visitRequest.shareTemplate.button')}</span>
           </button>
         )}
       </div>
-      {onSaveTemplate && sampleUnit && (
+      {onSaveTemplates && sampleUnit && (
         <ShareTemplateDialog
           open={editingTemplate}
-          template={shareTemplate}
-          sample={shareValues(sampleUnit.id, sampleToken ? recommendUrl(request.id, sampleToken) : 'https://…')}
+          templates={shareTemplates}
+          samples={{
+            ko: shareValues(sampleUnit.id, sampleUrl, 'ko'),
+            en: shareValues(sampleUnit.id, linkFor(sampleUrl, 'en'), 'en'),
+          }}
           saving={savingTemplate}
           onSave={(next) => void saveTemplate(next)}
           onClose={() => !savingTemplate && setEditingTemplate(false)}

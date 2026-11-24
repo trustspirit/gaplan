@@ -8,7 +8,9 @@ import { ChevronLeft, Check } from 'lucide-react'
 import { useAtomValue } from 'jotai'
 import { useVisitRequest } from '@/hooks/useVisitRequests'
 import { authUserAtom } from '@/store/authAtom'
-import { getShareTemplate, setShareTemplate } from '@/services/userSettingsService'
+import { getShareSettings, setShareLang, setShareTemplate, type ShareSettings } from '@/services/userSettingsService'
+import { useLeaders } from '@/hooks/useLeaders'
+import type { ShareLang } from '@/utils/shareTemplate'
 import { useTopBar } from '@/hooks/useTopBar'
 import {
   alreadyVisitingWard,
@@ -94,25 +96,48 @@ export function VisitRequestDetailPage() {
   const [textDraft, setTextDraft] = useState<{ title: string; note: string; guidance: string } | null>(null)
   const [textSaving, setTextSaving] = useState(false)
   const [confirmRefill, setConfirmRefill] = useState(false)
-  // 스테이크별 링크에 붙이는 안내문 — 사람마다 하나, 모든 요청에 쓴다
+  // 스테이크별 링크 보내기 설정(언어별 안내문, 스테이크별 언어) — 사람마다 하나, 모든 요청에 쓴다
   const authUser = useAtomValue(authUserAtom)
   const uid = authUser?.uid
-  const [shareTemplate, setShareTemplateState] = useState<string | null>(null)
+  const [share, setShare] = useState<ShareSettings>({ templates: { ko: null, en: null }, langs: {} })
   useEffect(() => {
     if (!uid) return
     let cancelled = false
-    getShareTemplate(uid)
-      .then((tpl) => !cancelled && setShareTemplateState(tpl))
-      .catch(() => {}) // 못 받으면 기본 안내문을 쓴다
+    getShareSettings(uid)
+      .then((s) => !cancelled && setShare(s))
+      .catch(() => {}) // 못 받으면 기본 안내문·한국어로 보낸다
     return () => {
       cancelled = true
     }
   }, [uid])
-  const saveShareTemplate = async (next: string | null) => {
+  const saveShareTemplates = async (next: Record<ShareLang, string | null>) => {
     if (!uid) return
-    await setShareTemplate(uid, next)
-    setShareTemplateState(next)
+    const changed = (['ko', 'en'] as const).filter((l) => next[l] !== share.templates[l])
+    await Promise.all(changed.map((l) => setShareTemplate(uid, l, next[l])))
+    setShare((prev) => ({ ...prev, templates: next }))
   }
+  const changeShareLang = (unitId: string, lang: ShareLang) => {
+    if (!uid) return
+    const before = share.langs
+    const langs = { ...before }
+    if (lang === 'en') langs[unitId] = 'en'
+    else delete langs[unitId]
+    setShare((prev) => ({ ...prev, langs }))
+    setShareLang(uid, unitId, lang).catch(() => {
+      setShare((prev) => ({ ...prev, langs: before }))
+      toast.error(t('visitRequest.shareTemplate.saveFailed'))
+    })
+  }
+  // 안내문의 {회장} — 스테이크/지방부 회장 명단에서 이름을 찾는다
+  const { leaders } = useLeaders()
+  const presidents = useMemo(() => {
+    const out: Record<string, string> = {}
+    for (const u of request?.units ?? []) {
+      const l = leaders.find((x) => x.unitNameKo === u.ko && (x.role === '스테이크 회장' || x.role === '지방부 회장'))
+      if (l?.name) out[u.id] = l.name
+    }
+    return out
+  }, [leaders, request?.units])
   const [refilling, setRefilling] = useState(false)
 
   const reqId = request?.id
@@ -324,8 +349,11 @@ export function VisitRequestDetailPage() {
               wardStats={wardStats}
               ready={statusLoad === 'ready'}
               onCopy={handleCopy}
-              shareTemplate={shareTemplate}
-              onSaveTemplate={uid ? saveShareTemplate : undefined}
+              shareTemplates={share.templates}
+              shareLangs={share.langs}
+              presidents={presidents}
+              onSaveTemplates={uid ? saveShareTemplates : undefined}
+              onSetLang={uid ? changeShareLang : undefined}
             />
           </PlanBalance>
           <p className={styles.hint}>{t('visitRequest.shareHint')}</p>

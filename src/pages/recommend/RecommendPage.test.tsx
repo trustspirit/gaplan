@@ -9,10 +9,11 @@ const submitMock = vi.fn()
 vi.mock('@/services/publicFunctions', () => ({
   publicCallable: (name: string) => (name === 'getVisitRequestPublic' ? getMock : submitMock),
 }))
+const changeLanguage = vi.hoisted(() => vi.fn())
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k),
-    i18n: { language: 'ko', changeLanguage: vi.fn() },
+    i18n: { language: 'ko', changeLanguage },
   }),
 }))
 
@@ -81,6 +82,19 @@ async function open(over: Partial<PublicVisitRequest> = {}) {
 const openAsSeoul = () => open()
 
 describe('RecommendPage', () => {
+  it('opens in the language the link asks for, and remembers it', async () => {
+    window.history.pushState({}, '', '/recommend/r1/0123456789abcdef?lang=en')
+    try {
+      await open()
+      expect(changeLanguage).toHaveBeenCalledWith('en')
+      expect(localStorage.getItem('publicLang')).toBe('en')
+    } finally {
+      window.history.pushState({}, '', '/')
+      localStorage.removeItem('publicLang')
+      changeLanguage.mockClear()
+    }
+  })
+
   it('tells an invalid link apart from a load failure', async () => {
     getMock.mockRejectedValue({ code: 'functions/permission-denied' })
     render(<RecommendPage requestId="r1" token="0123456789abcdef" />)

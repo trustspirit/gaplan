@@ -18,6 +18,7 @@ vi.mock('react-i18next', () => ({
 }))
 vi.mock('jotai', () => ({ useAtomValue: () => null, useSetAtom: () => vi.fn(), atom: vi.fn() }))
 vi.mock('@/hooks/useTopBar', () => ({ useTopBar: vi.fn() }))
+vi.mock('@/hooks/useLeaders', () => ({ useLeaders: () => ({ leaders: [], loading: false }) }))
 vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 vi.mock('@/hooks/useVisitRequests', () => ({

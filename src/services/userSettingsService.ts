@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, arrayUnion } from 'firebase/firestore'
+import { doc, getDoc, setDoc, arrayUnion, deleteField } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { validateNewZoomLink, type ZoomLink, type ZoomLinkRejection } from '@/utils/zoomLinkRules'
 
@@ -65,14 +65,36 @@ export async function deleteZoomLink(uid: string, id: string): Promise<void> {
   await writeZoomLinks(uid, existing.filter((l) => l.id !== id))
 }
 
-/** 스테이크별 링크에 붙이는 안내문(없으면 기본 안내문을 쓴다). 사람마다 하나 — 모든 요청에 쓴다 */
-export async function getShareTemplate(uid: string): Promise<string | null> {
-  const snap = await getDoc(doc(db, 'userSettings', uid))
-  const v = snap.data()?.shareTemplate
-  return typeof v === 'string' && v.trim() ? v : null
+/** 스테이크별 링크 보내기 설정 — 사람마다 하나, 모든 요청에 쓴다 */
+export interface ShareSettings {
+  /** 언어별 안내문. null이면 기본 안내문 */
+  templates: { ko: string | null; en: string | null }
+  /** 영어로 보내는 스테이크(unitId -> 'en'). 없으면 한국어 */
+  langs: Record<string, 'en'>
 }
 
-/** null이면 기본 안내문으로 되돌린다 */
-export async function setShareTemplate(uid: string, template: string | null): Promise<void> {
-  await setDoc(doc(db, 'userSettings', uid), { shareTemplate: template?.trim() || null }, { merge: true })
+const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v : null)
+
+export async function getShareSettings(uid: string): Promise<ShareSettings> {
+  const data = (await getDoc(doc(db, 'userSettings', uid))).data() ?? {}
+  const langs = data.shareLangs && typeof data.shareLangs === 'object' ? (data.shareLangs as Record<string, unknown>) : {}
+  return {
+    templates: { ko: str(data.shareTemplate), en: str(data.shareTemplateEn) },
+    langs: Object.fromEntries(Object.entries(langs).filter(([, v]) => v === 'en')) as Record<string, 'en'>,
+  }
+}
+
+/** null이면 그 언어의 기본 안내문으로 되돌린다 */
+export async function setShareTemplate(uid: string, lang: 'ko' | 'en', template: string | null): Promise<void> {
+  const field = lang === 'en' ? 'shareTemplateEn' : 'shareTemplate'
+  await setDoc(doc(db, 'userSettings', uid), { [field]: template?.trim() || null }, { merge: true })
+}
+
+/** 그 스테이크에 보낼 언어. 한국어면 키를 지운다 */
+export async function setShareLang(uid: string, unitId: string, lang: 'ko' | 'en'): Promise<void> {
+  await setDoc(
+    doc(db, 'userSettings', uid),
+    { shareLangs: { [unitId]: lang === 'en' ? 'en' : deleteField() } },
+    { merge: true },
+  )
 }
