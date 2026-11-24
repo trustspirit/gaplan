@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { RequestUnit, WardVisitStat } from './visitRequestLogic'
-import { recommendUnitSundays } from './visitPlanBalance'
+import { checkPlanBalance, recommendUnitSundays } from './visitPlanBalance'
+import type { SundayStatus } from './visitSundayAvailability'
 
 const unit = (id: string, regionId: string, wards: number): RequestUnit => ({
   id, ko: id.toUpperCase(), en: '', regionId,
@@ -75,5 +76,95 @@ describe('recommendUnitSundays', () => {
     expect(plan.unitSundays.c).toEqual([D2])
     expect(plan.unitSundays.d).toEqual([D2])
     expect([...plan.unitSundays.a, ...plan.unitSundays.b].sort()).toEqual([D1, D1, D3, D3])
+  })
+})
+
+describe('checkPlanBalance', () => {
+  const D4 = '2027-01-31'
+  const sundays = [D1, D2, D3, D4]
+  const units = [unit('a', 'r1', 2), unit('b', 'r1', 1), unit('c', 'r1', 1)]
+  const today = '2027-01-01'
+  const recent: Record<string, WardVisitStat> = Object.fromEntries(
+    ['a1', 'a2', 'b1', 'c1'].map((id) => [id, { lastVisit: '2026-10-01', nextVisit: null, count12m: 1 }]),
+  )
+  const free = (): SundayStatus => ({ busy: [], notes: [], unitBlocks: {}, councilRegionId: null })
+  const check = (unitSundays: Record<string, string[]> | undefined, extra: {
+    status?: Record<string, SundayStatus>; wardStats?: Record<string, WardVisitStat>
+    decisions?: Record<string, { unitId: string; wardName: string }>
+  } = {}) =>
+    checkPlanBalance({
+      request: { sundays, units, unitSundays, decisions: extra.decisions },
+      status: extra.status ?? {}, wardStats: extra.wardStats ?? recent, today,
+    })
+  const kinds = (issues: ReturnType<typeof check>) => issues.map((i) => `${i.kind}:${i.date ?? i.unitId ?? i.regionId}`)
+
+  it('finds nothing to warn about in its own recommendation', () => {
+    const plan = recommendUnitSundays({ sundays, request: { units }, wardStats: recent, unitBlocks: {} })
+    expect(check(plan.unitSundays).filter((i) => i.level === 'warn')).toEqual([])
+  })
+
+  it('returns nothing for an older request without stake Sundays', () => {
+    expect(check(undefined)).toEqual([])
+  })
+
+  it('warns about a Sunday no stake is asked about', () => {
+    const issues = check({ a: [D2, D3, D4], b: [D2, D3], c: [D4] })
+    expect(issues).toContainEqual({ level: 'warn', kind: 'sundayEmpty', date: D1 })
+  })
+
+  it('warns when three or more stakes are asked the same Sunday', () => {
+    const issues = check({ a: [D1, D2], b: [D1, D3], c: [D1, D4] })
+    expect(issues).toContainEqual({ level: 'warn', kind: 'sundayCrowded', date: D1, count: 3 })
+  })
+
+  it('notes a Sunday with no backup stake', () => {
+    const issues = check({ a: [D1, D2], b: [D2, D3, D4], c: [D3, D4] })
+    expect(issues).toContainEqual({ level: 'info', kind: 'sundayNoBackup', date: D1, unitId: 'a' })
+  })
+
+  it('does not ask for a backup when only one stake can take the Sunday', () => {
+    const status = { [D1]: { ...free(), unitBlocks: { b: '대회', c: '대회' } } }
+    const issues = check({ a: [D1, D2], b: [D2, D3, D4], c: [D3, D4] }, { status })
+    expect(kinds(issues)).not.toContain(`sundayNoBackup:${D1}`)
+  })
+
+  it('warns about a stake with no Sunday, and stresses it when a ward is long unvisited', () => {
+    const us = { a: [D1, D2, D3, D4], b: [D1, D2, D3, D4], c: [] }
+    expect(check(us)).toContainEqual({ level: 'warn', kind: 'unitMissing', unitId: 'c' })
+    const stale = { ...recent, c1: { lastVisit: '2025-11-01', nextVisit: null, count12m: 0 } }
+    expect(check(us, { wardStats: stale })).toContainEqual({ level: 'warn', kind: 'unitUrgentMissing', unitId: 'c' })
+    expect(kinds(check(us, { wardStats: stale }))).not.toContain('unitMissing:c')
+  })
+
+  it('notes a stake asked more than its share by ward count', () => {
+    // 일요일 4 × 2곳 = 8칸, 와드 a2 b1 c1 → 몫 a4 b2 c2, 적정 상한 a5 b3 c3
+    const issues = check({ a: [D1, D2, D3, D4], b: [D1, D2, D3, D4], c: [] })
+    expect(issues).toContainEqual({ level: 'info', kind: 'unitOver', unitId: 'b', count: 4, min: 2, max: 3 })
+    expect(kinds(issues)).not.toContain('unitOver:a')
+  })
+
+  it('leaves decided and busy Sundays out', () => {
+    const status = { [D2]: { ...free(), busy: [{ kind: 'schedule' as const, label: '출장' }] } }
+    const decisions = { [D1]: { unitId: 'a', wardName: 'A1' } }
+    const issues = check({ a: [D1, D3, D4], b: [D3], c: [D4] }, { status, decisions })
+    expect(issues.filter((i) => i.date === D1 || i.date === D2)).toEqual([])
+  })
+
+  it('notes a CC with fewer Sundays than its ward share', () => {
+    const two = [unit('a', 'r1', 2), unit('b', 'r1', 2), unit('c', 'r2', 2), unit('d', 'r2', 2)]
+    const six = ['2027-01-03', D1, D2, D3, D4, '2027-02-07']
+    const turns = Object.fromEntries(six.map((d, i) => [d, i === 0 ? 'r1' : 'r2']))
+    const issues = checkPlanBalance({
+      request: { sundays: six, units: two, sundayRegions: turns, unitSundays: { a: [six[0]], b: [six[0]], c: six.slice(1), d: six.slice(1) } },
+      status: {}, wardStats: {}, today,
+    })
+    expect(issues).toContainEqual({ level: 'info', kind: 'regionShare', regionId: 'r1', count: 1, expected: 3 })
+  })
+
+  it('lists warnings before notes', () => {
+    const issues = check({ a: [D1, D2], b: [D2, D3, D4], c: [] })
+    const firstInfo = issues.findIndex((i) => i.level === 'info')
+    expect(firstInfo).toBeGreaterThan(0)
+    expect(issues.slice(firstInfo).every((i) => i.level === 'info')).toBe(true)
   })
 })

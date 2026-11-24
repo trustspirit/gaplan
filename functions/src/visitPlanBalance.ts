@@ -4,7 +4,8 @@
  */
 import type { RequestUnit, WardVisitStat } from './visitRequestLogic'
 import { sundayWardPicks, type SundayWardPick } from './sundayWardPicks'
-import { regionOfSunday } from './unitSundays'
+import { regionOfSunday, unitSundayOptions, type UnitSundayOption, type UnitSundayRequest } from './unitSundays'
+import type { SundayStatus } from './visitSundayAvailability'
 
 /** 일요일마다 추천한 스테이크. 칠십인 화면에서만 쓴다 — 회장 링크에는 구분 없이 일요일만 간다 */
 export interface SundayRoles {
@@ -77,4 +78,112 @@ export function recommendUnitSundays(input: {
     roles,
     picks,
   }
+}
+
+export type BalanceKind =
+  | 'sundayEmpty' | 'sundayCrowded' | 'sundayNoBackup'
+  | 'unitMissing' | 'unitUrgentMissing' | 'unitOver' | 'regionShare'
+
+/** 점검 결과 하나. 문구는 화면이 kind로 i18n(visitRequest.balance.<kind>)에서 고른다 */
+export interface BalanceIssue {
+  level: 'warn' | 'info'
+  kind: BalanceKind
+  date?: string
+  unitId?: string
+  regionId?: string
+  count?: number
+  min?: number
+  max?: number
+  expected?: number
+}
+
+/** 한 일요일에 묻는 스테이크 수 — 1순위와 예비 */
+const ASKS_PER_SUNDAY = 2
+
+function monthsBefore(date: string, months: number): string {
+  const [y, m, d] = date.split('-').map(Number)
+  const total = y * 12 + (m - 1) - months
+  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+}
+
+/**
+ * 스테이크별 일요일 배정이 고르게 갔는지 본다. 칠십인이 칩을 바꿀 때마다 화면이 다시 부른다.
+ * - 확정된 일요일과 칠십인이 막힌 일요일은 뺀다(이미 끝났거나 못 가는 날).
+ * - "묻는다" = unitSundayOptions가 selected로 보는 날(그 스테이크가 가능하고 칠십인이 골라 둔 날).
+ * - 스테이크 몫 = CC별 묻는 칸(일요일마다 열린 스테이크 수와 2 중 작은 것)을 와드 수 비례로 나눈 것.
+ * 스테이크별 배정이 없는 이전 요청(unitSundays 없음)은 빈 결과 — 화면이 다시 채우기 안내를 대신 보인다.
+ */
+export function checkPlanBalance(input: {
+  request: UnitSundayRequest
+  status: Record<string, SundayStatus>
+  wardStats: Record<string, WardVisitStat>
+  today: string
+}): BalanceIssue[] {
+  const { request, status, wardStats, today } = input
+  if (!request.unitSundays) return []
+  const decisions = request.decisions ?? {}
+  const units = request.units
+  const target = [...request.sundays].sort().filter((d) => !decisions[d] && !(status[d]?.busy.length))
+  const options = new Map<string, Map<string, UnitSundayOption>>(
+    units.map((u) => [u.id, new Map(unitSundayOptions(request, u.id, status).map((o) => [o.date, o]))]),
+  )
+  const isOpen = (unitId: string, date: string) => options.get(unitId)?.get(date)?.block === null
+  const isAsked = (unitId: string, date: string) => options.get(unitId)?.get(date)?.selected === true
+  const regionKey = (u: RequestUnit) => u.regionId ?? ''
+
+  const issues: BalanceIssue[] = []
+  const asked = new Map(units.map((u) => [u.id, 0]))
+  const slots = new Map<string, number>()
+  for (const date of target) {
+    const open = units.filter((u) => isOpen(u.id, date))
+    if (open.length === 0) continue
+    const byRegion = new Map<string, number>()
+    for (const u of open) byRegion.set(regionKey(u), (byRegion.get(regionKey(u)) ?? 0) + 1)
+    for (const [r, n] of byRegion) slots.set(r, (slots.get(r) ?? 0) + Math.min(ASKS_PER_SUNDAY, n))
+
+    const here = open.filter((u) => isAsked(u.id, date))
+    for (const u of here) asked.set(u.id, (asked.get(u.id) ?? 0) + 1)
+    if (here.length === 0) issues.push({ level: 'warn', kind: 'sundayEmpty', date })
+    else if (here.length > ASKS_PER_SUNDAY) issues.push({ level: 'warn', kind: 'sundayCrowded', date, count: here.length })
+    else if (here.length === 1 && open.length > 1) {
+      issues.push({ level: 'info', kind: 'sundayNoBackup', date, unitId: here[0].id })
+    }
+  }
+
+  const cutoff = monthsBefore(today, 12)
+  const regionWards = new Map<string, number>()
+  for (const u of units) regionWards.set(regionKey(u), (regionWards.get(regionKey(u)) ?? 0) + u.wards.length)
+  for (const u of units) {
+    const count = asked.get(u.id) ?? 0
+    if (count === 0 && target.some((d) => isOpen(u.id, d))) {
+      const urgent = u.wards.some((w) => {
+        const st = wardStats[w.id]
+        return !st?.nextVisit && (!st?.lastVisit || st.lastVisit < cutoff)
+      })
+      issues.push({ level: 'warn', kind: urgent ? 'unitUrgentMissing' : 'unitMissing', unitId: u.id })
+      continue
+    }
+    const wards = regionWards.get(regionKey(u)) ?? 0
+    if (wards === 0) continue
+    const share = ((slots.get(regionKey(u)) ?? 0) * u.wards.length) / wards
+    const max = Math.ceil(share) + 1
+    if (count > max) issues.push({ level: 'info', kind: 'unitOver', unitId: u.id, count, min: Math.floor(share), max })
+  }
+
+  // CC를 둘 이상 맡았을 때: CC 차례가 와드 수에 비해 적은가
+  const regions = [...regionWards.keys()].filter(Boolean)
+  if (regions.length > 1) {
+    const totalWards = [...regionWards.values()].reduce((a, b) => a + b, 0)
+    for (const regionId of regions) {
+      const count = request.sundays.filter((d) => regionOfSunday(request, d) === regionId).length
+      const expected = Math.round((request.sundays.length * (regionWards.get(regionId) ?? 0)) / totalWards)
+      if (count <= expected - 2) issues.push({ level: 'info', kind: 'regionShare', regionId, count, expected })
+    }
+  }
+
+  const order = (i: BalanceIssue) => (i.level === 'warn' ? 0 : 1)
+  return issues
+    .map((issue, index) => ({ issue, index }))
+    .sort((a, b) => order(a.issue) - order(b.issue) || a.index - b.index)
+    .map((x) => x.issue)
 }
