@@ -96,7 +96,7 @@ export function sundayWardPicks({
   const out: Record<string, SundayWardPick[]> = {}
   for (const date of [...sundays].sort()) {
     const regionId = regionOf(date)
-    if (!regionId) {
+    if (regionId === undefined) {
       out[date] = []
       continue
     }

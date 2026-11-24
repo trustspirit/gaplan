@@ -1031,6 +1031,32 @@
     "otherRegionTurn": "{{region}}'s turn",
     "decidedElsewhere": "Confirmed for {{unit}} {{ward}}",
     "unitSundaysFailed": "Could not save the Sundays.",
+    "refillDone": "Refilled the Sundays from the recommendation.",
+    "refillConfirmMessage_one": "The Sundays of {{count}} stake that already answered will change too. Decided Sundays stay as they are.",
+    "refillConfirmMessage_other": "The Sundays of {{count}} stakes that already answered will change too. Decided Sundays stay as they are.",
+    "roleLegend": "● primary  ○ backup — visible only to you",
+    "role": {
+      "primary": "primary",
+      "backup": "backup"
+    },
+    "balance": {
+      "title": "Balance check",
+      "warnCount_one": "{{count}} to fix",
+      "warnCount_other": "{{count}} to fix",
+      "noteCount_one": "{{count}} note",
+      "noteCount_other": "{{count}} notes",
+      "fill": "Fill from recommendation",
+      "refill": "Refill from recommendation",
+      "legacy": "No recommended assignment yet, so every stake is asked about every Sunday. Filling it asks only two stakes (primary and backup) each Sunday.",
+      "allGood": "Sundays are spread evenly across stakes and CCs.",
+      "sundayEmpty": "{{date}} — no stake is asked. Add at least one.",
+      "sundayCrowded": "{{date}} — {{count}} stakes overlap. Two is enough.",
+      "sundayNoBackup": "{{date}} — only {{unit}} is asked; no backup stake.",
+      "unitMissing": "{{unit}} — has no Sunday to answer.",
+      "unitUrgentMissing": "{{unit}} — has long-unvisited wards but no Sunday to answer.",
+      "unitOver": "{{unit}} — {{count}} Sundays is a lot ({{min}}–{{max}} by ward count).",
+      "regionShare": "{{region}} — {{count}} Sundays, few for its wards (about {{expected}})."
+    },
     "unitSundayBlock": {
       "otherRegion": "Other CC",
       "busy": "Seventy busy",

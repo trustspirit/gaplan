@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { VisitRecommendation, VisitRequest } from '@/types'
-import { decideVisitRequestDate, ensureUnitTokens, setUnitSundays } from '@/services/visitRequestService'
+import { decideVisitRequestDate, ensureUnitTokens, setUnitSundayPlan, setUnitSundays } from '@/services/visitRequestService'
 import { VisitRequestDetailPage } from './VisitRequestDetailPage'
 
 let request: VisitRequest
@@ -31,6 +31,7 @@ vi.mock('@/services/visitRequestService', async (importOriginal) => {
     setVisitRequestStatus: vi.fn(),
     ensureUnitTokens: vi.fn().mockResolvedValue(undefined),
     setUnitSundays: vi.fn().mockResolvedValue(undefined),
+    setUnitSundayPlan: vi.fn().mockResolvedValue(undefined),
     fetchSundayStatus: vi.fn().mockResolvedValue({ status: {}, lastVisitRegion: null }),
     updateVisitRequestText: vi.fn(),
   }
@@ -40,6 +41,7 @@ beforeEach(() => {
   vi.mocked(decideVisitRequestDate).mockReset()
   vi.mocked(decideVisitRequestDate).mockResolvedValue()
   vi.mocked(toast.error).mockClear()
+  vi.mocked(setUnitSundayPlan).mockClear()
   request = {
     id: 'r1',
     title: '1월 방문',
@@ -137,5 +139,44 @@ describe('VisitRequestDetailPage', () => {
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith('visitRequest.alreadyVisiting:{"ward":"신촌 와드"}'),
     )
+  })
+
+  it('refills the recommended Sundays right away when no stake has answered', async () => {
+    recommendations = []
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByRole('button', { name: 'visitRequest.balance.fill' }))
+    await waitFor(() => expect(setUnitSundayPlan).toHaveBeenCalled())
+    const [id, plan] = vi.mocked(setUnitSundayPlan).mock.calls[0]
+    expect(id).toBe('r1')
+    // 1/17은 서울동(u2)으로 확정 — 그 스테이크 링크에 남는다
+    expect(plan.unitSundays.u2).toContain('2027-01-17')
+    expect(plan.unitSundays.u1).not.toContain('2027-01-17')
+    expect(plan.roles['2027-01-10'].primary).toBeDefined()
+  })
+
+  it('asks before refilling when a stake has already answered', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByRole('button', { name: 'visitRequest.balance.fill' }))
+    expect(setUnitSundayPlan).not.toHaveBeenCalled()
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog).toHaveTextContent('visitRequest.refillConfirmMessage')
+    await user.click(within(dialog).getByRole('button', { name: 'visitRequest.balance.refill' }))
+    await waitFor(() => expect(setUnitSundayPlan).toHaveBeenCalled())
+  })
+
+  it('marks the primary and backup stake on the Sunday chips', () => {
+    request = {
+      ...request,
+      unitSundays: { u1: ['2027-01-10'], u2: ['2027-01-10', '2027-01-17'] },
+      unitSundayRoles: { '2027-01-10': { primary: 'u1', backup: 'u2' } },
+    }
+    const { container } = renderPage()
+    const rows = screen.getAllByRole('link', { name: /visitRequest.open/ }).map((a) => a.closest('li')!)
+    expect(rows[0].querySelector('[data-role="primary"]')).not.toBeNull()
+    expect(rows[1].querySelector('[data-role="backup"]')).not.toBeNull()
+    expect(container.querySelectorAll('[data-role]')).toHaveLength(2)
+    expect(screen.getByText('visitRequest.roleLegend')).toBeInTheDocument()
   })
 })

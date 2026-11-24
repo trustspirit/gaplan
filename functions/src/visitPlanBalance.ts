@@ -47,10 +47,13 @@ export function recommendUnitSundays(input: {
   const { request } = input
   const decisions = request.decisions ?? {}
   const open = input.sundays.filter((d) => !decisions[d])
+  // CC가 찍히지 않은 옛 스냅숏이면 모든 스테이크를 한 CC로 본다
+  const noCc = request.units.every((u) => !u.regionId)
+  const units = noCc ? request.units.map((u) => ({ ...u, regionId: '' })) : request.units
   const picks = sundayWardPicks({
     sundays: open,
-    regionOf: (d) => regionOfSunday(request, d),
-    units: request.units,
+    regionOf: (d) => (noCc ? '' : regionOfSunday(request, d)),
+    units,
     wardStats: input.wardStats,
     unitBlocks: input.unitBlocks,
     perSunday: input.perSunday ?? PICKS_PER_SUNDAY,

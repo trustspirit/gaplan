@@ -40,6 +40,8 @@ $color-primary-weak: #f0f8fb;
 $color-primary-border: #cfe4ec;
 $color-danger-weak: #fff7f6;
 $color-warning-weak: #fff9ec;
+// 연한 경고 배경($color-warning-weak) 위 글자색 — 주황 본색은 흰 바탕 글자로 대비가 모자란다
+$color-warning-text: #8a4b0f;
 $color-success-weak: #eff7ea;
 $color-sidebar-deep: #002744;
 $color-sidebar-active: #0b4166;

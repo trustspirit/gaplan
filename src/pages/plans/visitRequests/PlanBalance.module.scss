@@ -1,0 +1,87 @@
+@use '@/styles/variables' as *;
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin-bottom: $space-4;
+  padding: $space-3;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  background: $color-surface-sunken;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.title {
+  margin: 0;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.summary {
+  font-size: $font-size-xs;
+  color: $neutral-600;
+}
+
+.summaryWarn {
+  color: $color-warning-text;
+  font-weight: $font-weight-semibold;
+}
+
+.refill {
+  margin-left: auto;
+}
+
+.legacy,
+.good {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: $neutral-700;
+}
+
+.good {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  color: $color-success;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-2;
+  padding: $space-1 $space-2;
+  border-radius: $border-radius-md;
+  font-size: $font-size-sm;
+  line-height: 1.4;
+}
+
+.icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.warn {
+  background: $color-warning-weak;
+  color: $color-warning-text;
+}
+
+.info {
+  color: $neutral-700;
+}

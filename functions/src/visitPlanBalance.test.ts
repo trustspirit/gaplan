@@ -54,6 +54,13 @@ describe('recommendUnitSundays', () => {
     expect(plan.picks[D1].length).toBeGreaterThan(0)
   })
 
+  it('still recommends when the stored stakes carry no CC at all', () => {
+    const bare = [unit('a', 'r1', 1), unit('b', 'r1', 1)].map(({ regionId: _r, ...u }) => u)
+    const plan = recommendUnitSundays({ sundays: [D1], request: { units: bare }, wardStats: {}, unitBlocks: {} })
+    expect(plan.roles[D1].primary).toBeDefined()
+    expect(plan.roles[D1].backup).toBeDefined()
+  })
+
   it('lists every stake, with an empty list when it is not asked', () => {
     const plan = recommendUnitSundays({
       sundays: [D1],

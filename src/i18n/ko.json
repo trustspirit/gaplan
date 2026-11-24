@@ -1031,6 +1031,29 @@
     "otherRegionTurn": "{{region}} 차례",
     "decidedElsewhere": "{{unit}} {{ward}}(으)로 확정",
     "unitSundaysFailed": "일요일을 저장하지 못했습니다.",
+    "refillDone": "추천대로 일요일을 다시 채웠습니다.",
+    "refillConfirmMessage": "이미 응답한 스테이크 {{count}}곳의 링크 일요일도 바뀝니다. 확정된 일요일은 그대로 둡니다.",
+    "roleLegend": "● 1순위 추천  ○ 예비 추천 — 칠십인 화면에만 보입니다",
+    "role": {
+      "primary": "1순위 추천",
+      "backup": "예비 추천"
+    },
+    "balance": {
+      "title": "분포 점검",
+      "warnCount": "고칠 것 {{count}}개",
+      "noteCount": "참고 {{count}}개",
+      "fill": "추천대로 채우기",
+      "refill": "추천대로 다시 채우기",
+      "legacy": "아직 추천 배정이 없어 모든 스테이크에 모든 일요일을 묻고 있습니다. 추천대로 채우면 일요일마다 두 스테이크(1순위·예비)에만 묻습니다.",
+      "allGood": "스테이크와 CC에 고르게 배정됐습니다.",
+      "sundayEmpty": "{{date}} — 아무 스테이크에도 묻지 않았습니다. 한 곳 이상 넣어 주세요.",
+      "sundayCrowded": "{{date}} — {{count}}개 스테이크에 겹쳐 있습니다. 두 곳이면 충분합니다.",
+      "sundayNoBackup": "{{date}} — {{unit}}에만 묻습니다. 예비 스테이크가 없습니다.",
+      "unitMissing": "{{unit}} — 물어볼 일요일이 없습니다.",
+      "unitUrgentMissing": "{{unit}} — 오래 방문받지 못한 와드가 있는데 물어볼 일요일이 없습니다.",
+      "unitOver": "{{unit}} — {{count}}회로 많습니다(와드 수로 보면 {{min}}~{{max}}회).",
+      "regionShare": "{{region}} — 일요일 {{count}}개로, 와드 수에 비해 적습니다(약 {{expected}}개)."
+    },
     "unitSundayBlock": {
       "otherRegion": "다른 CC",
       "busy": "칠십인 일정",

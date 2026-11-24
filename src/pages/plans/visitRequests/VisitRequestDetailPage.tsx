@@ -13,9 +13,11 @@ import {
   deleteVisitRequest,
   ensureUnitTokens,
   fetchSundayStatus,
+  setUnitSundayPlan,
   setVisitRequestStatus,
   updateVisitRequestText,
 } from '@/services/visitRequestService'
+import { recommendUnitSundays } from '../../../../functions/src/visitPlanBalance'
 import { ROUTES } from '@/router/routes'
 import {
   candidatesForSunday,
@@ -41,6 +43,7 @@ import {
 } from '@/components/ui'
 import { GuidanceField } from './GuidanceField'
 import { StakeLinkList } from './StakeLinkList'
+import { PlanBalance } from './PlanBalance'
 import type { VisitRequest, WardVisitStat } from '@/types'
 import {
   isFirstSunday,
@@ -87,6 +90,8 @@ export function VisitRequestDetailPage() {
   const [deleting, setDeleting] = useState(false)
   const [textDraft, setTextDraft] = useState<{ title: string; note: string; guidance: string } | null>(null)
   const [textSaving, setTextSaving] = useState(false)
+  const [confirmRefill, setConfirmRefill] = useState(false)
+  const [refilling, setRefilling] = useState(false)
 
   const reqId = request?.id
   const seventyUid = request?.seventyUid
@@ -191,6 +196,29 @@ export function VisitRequestDetailPage() {
     }
   }
 
+  /** 지금 방문 기록·일요일 상황으로 추천 배정을 다시 만든다. 칠십인이 막힌 날은 빼고, 확정된 날은 그대로 둔다. */
+  const refill = async () => {
+    const sundays = request.sundays.filter((d) => request.decisions?.[d] || !sundayStatus[d]?.busy.length)
+    const plan = recommendUnitSundays({
+      sundays,
+      request,
+      wardStats,
+      unitBlocks: Object.fromEntries(sundays.map((d) => [d, sundayStatus[d]?.unitBlocks ?? {}])),
+    })
+    setRefilling(true)
+    try {
+      await setUnitSundayPlan(request.id, { unitSundays: plan.unitSundays, roles: plan.roles })
+      toast.success(t('visitRequest.refillDone'))
+      setConfirmRefill(false)
+    } catch {
+      toast.error(t('visitRequest.unitSundaysFailed'))
+    } finally {
+      setRefilling(false)
+    }
+  }
+  // 이미 응답한 스테이크가 있으면 그 스테이크의 일요일도 바뀐다 — 한 번 묻는다.
+  const handleRefill = () => (recommendations.length > 0 ? setConfirmRefill(true) : void refill())
+
   const handleDelete = async () => {
     setDeleting(true)
     try {
@@ -245,6 +273,13 @@ export function VisitRequestDetailPage() {
         <CardHeader title={t('visitRequest.shareTitle')} />
         <CardBody>
           <p className={styles.hint}>{t('visitRequest.shareHint')}</p>
+          <PlanBalance
+            request={request}
+            sundayStatus={sundayStatus}
+            wardStats={wardStats}
+            onRefill={handleRefill}
+            refilling={refilling && !confirmRefill}
+          />
           <StakeLinkList
             request={request}
             recommendations={recommendations}
@@ -399,6 +434,15 @@ export function VisitRequestDetailPage() {
         loading={deciding}
         onConfirm={handleDecide}
         onCancel={() => !deciding && setPending(null)}
+      />
+      <ConfirmSheet
+        open={confirmRefill}
+        title={t('visitRequest.balance.refill')}
+        message={t('visitRequest.refillConfirmMessage', { count: recommendations.length })}
+        confirmLabel={t('visitRequest.balance.refill')}
+        loading={refilling}
+        onConfirm={refill}
+        onCancel={() => !refilling && setConfirmRefill(false)}
       />
       <ConfirmSheet
         open={showDelete}

@@ -133,6 +133,35 @@
   opacity: 0.6;
 }
 
+.chip {
+  position: relative;
+}
+
+/* 추천 배정 표시 — 1순위는 채운 점, 예비는 빈 점(칠십인 화면 전용) */
+.roleDot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: $border-radius-full;
+  background: $color-primary;
+  border: 1.5px solid $color-primary;
+}
+
+.roleDotBackup {
+  background: transparent;
+}
+
+.chipOn .roleDot {
+  background: $color-surface;
+  border-color: $color-surface;
+}
+
+.chipOn .roleDotBackup {
+  background: transparent;
+}
+
 .chipDay {
   font-weight: $font-weight-semibold;
 }
@@ -194,4 +223,10 @@
   font-size: $font-size-sm;
   color: $color-primary;
   text-decoration: none;
+}
+
+.legend {
+  margin: 0 0 $space-2;
+  font-size: $font-size-xs;
+  color: $neutral-600;
 }

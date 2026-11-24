@@ -67,125 +67,138 @@ export function StakeLinkList({ request, recommendations, sundayStatus, onCopy }
     }
   }
 
+  const hasRoles = Object.keys(request.unitSundayRoles ?? {}).length > 0
   return (
-    <ul className={styles.list}>
-      {request.units.map((u) => {
-        const token = request.unitTokens?.[u.id]
-        const options = unitSundayOptions(request, u.id, sundayStatus)
-        const selected = options.filter((o) => o.selected).map((o) => o.date)
-        const available = options.filter((o) => o.block === null).length
-        const months = [...new Set(options.map((o) => o.date.slice(0, 7)))]
-        // 칩 아래에 적는 것: 고를 수 없는 이유(다른 CC 차례는 칩에 이미 적혀 있어 뺀다)와,
-        // 고를 수 있는 날의 이 스테이크 관련 참고 행사
-        const details = options.flatMap((o) => {
-          if (o.block === 'otherRegion') return []
-          if (o.block) return [{ date: o.date, text: blockDetail(o, u.id), note: false }]
-          return (sundayStatus[o.date]?.notes ?? [])
-            .filter((n) => !n.unitIds || n.unitIds.includes(u.id))
-            .map((n) => ({ date: o.date, text: t('visitRequest.unitNote', { title: n.title }), note: true }))
-        })
-        const rec = responded.get(u.id)
-        const url = token ? recommendUrl(request.id, token) : ''
-        const message = t('visitRequest.shareMessage', {
-          title: request.title,
-          unit: u.ko,
-          seventy: request.seventyName,
-          dates: selected.map((d) => dayjs(d).format('M/D')).join(', '),
-          due: request.dueDate
-            ? t('visitRequest.shareDue', { date: dayjs(request.dueDate).format(t('recommend.dateFormat')) })
-            : '',
-          guidance: request.guidance ? t('visitRequest.shareGuidance', { text: request.guidance }) : '',
-          url,
-        })
-        return (
-          <li key={u.id} className={styles.row}>
-            <div className={styles.head}>
-              <span className={styles.unit}>{u.ko}</span>
-              {multiRegion && u.regionId && (
-                <span
-                  className={styles.region}
-                  style={{
-                    background: getRegionColor(u.regionId).bg,
-                    color: getRegionColor(u.regionId).text,
-                    borderColor: getRegionColor(u.regionId).border,
-                  }}
-                >
-                  {regionName(u.regionId)}
+    <>
+      {hasRoles && <p className={styles.legend}>{t('visitRequest.roleLegend')}</p>}
+      <ul className={styles.list}>
+        {request.units.map((u) => {
+          const token = request.unitTokens?.[u.id]
+          const options = unitSundayOptions(request, u.id, sundayStatus)
+          const selected = options.filter((o) => o.selected).map((o) => o.date)
+          const available = options.filter((o) => o.block === null).length
+          const months = [...new Set(options.map((o) => o.date.slice(0, 7)))]
+          // 칩 아래에 적는 것: 고를 수 없는 이유(다른 CC 차례는 칩에 이미 적혀 있어 뺀다)와,
+          // 고를 수 있는 날의 이 스테이크 관련 참고 행사
+          const details = options.flatMap((o) => {
+            if (o.block === 'otherRegion') return []
+            if (o.block) return [{ date: o.date, text: blockDetail(o, u.id), note: false }]
+            return (sundayStatus[o.date]?.notes ?? [])
+              .filter((n) => !n.unitIds || n.unitIds.includes(u.id))
+              .map((n) => ({ date: o.date, text: t('visitRequest.unitNote', { title: n.title }), note: true }))
+          })
+          const rec = responded.get(u.id)
+          const url = token ? recommendUrl(request.id, token) : ''
+          const message = t('visitRequest.shareMessage', {
+            title: request.title,
+            unit: u.ko,
+            seventy: request.seventyName,
+            dates: selected.map((d) => dayjs(d).format('M/D')).join(', '),
+            due: request.dueDate
+              ? t('visitRequest.shareDue', { date: dayjs(request.dueDate).format(t('recommend.dateFormat')) })
+              : '',
+            guidance: request.guidance ? t('visitRequest.shareGuidance', { text: request.guidance }) : '',
+            url,
+          })
+          return (
+            <li key={u.id} className={styles.row}>
+              <div className={styles.head}>
+                <span className={styles.unit}>{u.ko}</span>
+                {multiRegion && u.regionId && (
+                  <span
+                    className={styles.region}
+                    style={{
+                      background: getRegionColor(u.regionId).bg,
+                      color: getRegionColor(u.regionId).text,
+                      borderColor: getRegionColor(u.regionId).border,
+                    }}
+                  >
+                    {regionName(u.regionId)}
+                  </span>
+                )}
+                <span className={styles.wards}>{t('visitRequest.unitWardCount', { count: u.wards.length })}</span>
+                <span className={clsx(styles.status, rec && styles.statusDone)}>
+                  {rec ? t('visitRequest.unitResponded', { name: rec.submitterName }) : t('visitRequest.unitPending')}
                 </span>
-              )}
-              <span className={styles.wards}>{t('visitRequest.unitWardCount', { count: u.wards.length })}</span>
-              <span className={clsx(styles.status, rec && styles.statusDone)}>
-                {rec ? t('visitRequest.unitResponded', { name: rec.submitterName }) : t('visitRequest.unitPending')}
-              </span>
-            </div>
-            <fieldset className={styles.dates} disabled={saving === u.id}>
-              <legend className={styles.datesLegend}>
-                {t('visitRequest.unitSundays', { count: selected.length, total: options.length })}
-              </legend>
-              {available === 0 && <p className={styles.none}>{t('visitRequest.unitSundaysNone')}</p>}
-              {months.map((month) => (
-                <div key={month} className={styles.monthRow}>
-                  <span className={styles.month}>{dayjs(`${month}-01`).format(t('visitRequest.monthFormat'))}</span>
-                  <div className={styles.chips}>
-                    {options.filter((o) => o.date.startsWith(month)).map((o) => (
-                      <button
-                        key={o.date}
-                        type="button"
-                        aria-pressed={o.selected}
-                        aria-label={dayjs(o.date).format(t('visitRequest.reasonDateFormat'))}
-                        disabled={o.block !== null}
-                        title={o.block ? blockDetail(o, u.id) : undefined}
-                        className={clsx(
-                          styles.chip,
-                          o.selected && styles.chipOn,
-                          o.block && styles.chipBlocked,
-                          o.block === 'otherRegion' && styles.chipOtherRegion,
-                        )}
-                        onClick={() => toggle(u.id, o.date, selected)}
-                      >
-                        <span className={styles.chipDay}>{dayjs(o.date).format('D')}</span>
-                        {o.block && (
-                          <span className={styles.chipReason}>{t(`visitRequest.unitSundayBlock.${o.block}`)}</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </fieldset>
-            {details.length > 0 && (
-              <ul className={styles.details}>
-                {details.map((d) => (
-                  <li key={d.date + d.text} className={clsx(d.note && styles.detailNote)}>
-                    <span className={styles.detailDate}>{dayjs(d.date).format(t('visitRequest.reasonDateFormat'))}</span>
-                    <span>{d.text}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {token ? (
-              <div className={styles.actions}>
-                <Button size="sm" disabled={selected.length === 0} onClick={() => onCopy(url)}>
-                  <Copy size={14} aria-hidden /> {t('visitRequest.copyLink')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={selected.length === 0}
-                  onClick={() => onCopy(message)}
-                >
-                  {t('visitRequest.copyMessage')}
-                </Button>
-                <a className={styles.open} href={url} target="_blank" rel="noreferrer">
-                  <ExternalLink size={14} aria-hidden /> {t('visitRequest.open')}
-                </a>
               </div>
-            ) : (
-              <p className={styles.none}>{t('visitRequest.linkPreparing')}</p>
-            )}
-          </li>
-        )
-      })}
-    </ul>
+              <fieldset className={styles.dates} disabled={saving === u.id}>
+                <legend className={styles.datesLegend}>
+                  {t('visitRequest.unitSundays', { count: selected.length, total: options.length })}
+                </legend>
+                {available === 0 && <p className={styles.none}>{t('visitRequest.unitSundaysNone')}</p>}
+                {months.map((month) => (
+                  <div key={month} className={styles.monthRow}>
+                    <span className={styles.month}>{dayjs(`${month}-01`).format(t('visitRequest.monthFormat'))}</span>
+                    <div className={styles.chips}>
+                      {options.filter((o) => o.date.startsWith(month)).map((o) => {
+                        const roles = request.unitSundayRoles?.[o.date]
+                        const role = roles?.primary === u.id ? 'primary' : roles?.backup === u.id ? 'backup' : undefined
+                        return (
+                          <button
+                            key={o.date}
+                            type="button"
+                            aria-pressed={o.selected}
+                            aria-label={[
+                              dayjs(o.date).format(t('visitRequest.reasonDateFormat')),
+                              role ? t(`visitRequest.role.${role}`) : '',
+                            ].filter(Boolean).join(' · ')}
+                            data-role={role}
+                            disabled={o.block !== null}
+                            title={o.block ? blockDetail(o, u.id) : undefined}
+                            className={clsx(
+                              styles.chip,
+                              o.selected && styles.chipOn,
+                              o.block && styles.chipBlocked,
+                              o.block === 'otherRegion' && styles.chipOtherRegion,
+                            )}
+                            onClick={() => toggle(u.id, o.date, selected)}
+                          >
+                            {role && <span className={clsx(styles.roleDot, role === 'backup' && styles.roleDotBackup)} aria-hidden />}
+                            <span className={styles.chipDay}>{dayjs(o.date).format('D')}</span>
+                            {o.block && (
+                              <span className={styles.chipReason}>{t(`visitRequest.unitSundayBlock.${o.block}`)}</span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </fieldset>
+              {details.length > 0 && (
+                <ul className={styles.details}>
+                  {details.map((d) => (
+                    <li key={d.date + d.text} className={clsx(d.note && styles.detailNote)}>
+                      <span className={styles.detailDate}>{dayjs(d.date).format(t('visitRequest.reasonDateFormat'))}</span>
+                      <span>{d.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {token ? (
+                <div className={styles.actions}>
+                  <Button size="sm" disabled={selected.length === 0} onClick={() => onCopy(url)}>
+                    <Copy size={14} aria-hidden /> {t('visitRequest.copyLink')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={selected.length === 0}
+                    onClick={() => onCopy(message)}
+                  >
+                    {t('visitRequest.copyMessage')}
+                  </Button>
+                  <a className={styles.open} href={url} target="_blank" rel="noreferrer">
+                    <ExternalLink size={14} aria-hidden /> {t('visitRequest.open')}
+                  </a>
+                </div>
+              ) : (
+                <p className={styles.none}>{t('visitRequest.linkPreparing')}</p>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </>
   )
 }
