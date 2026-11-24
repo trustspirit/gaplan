@@ -1,4 +1,6 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import { toast } from 'sonner'
+import { reviewVisitPlan } from '@/services/visitRequestService'
 import userEvent from '@testing-library/user-event'
 import type { VisitRequest } from '@/types'
 import { PlanBalance } from './PlanBalance'
@@ -8,6 +10,12 @@ vi.mock('react-i18next', () => ({
     t: (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k),
   }),
   initReactI18next: { type: '3rdParty', init: () => {} },
+}))
+
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
+vi.mock('@/services/visitRequestService', () => ({
+  reviewVisitPlan: vi.fn(),
+  aiUnavailable: (e: unknown) => (e as { code?: string })?.code === 'functions/failed-precondition',
 }))
 
 const D1 = '2027-01-10'
@@ -26,9 +34,16 @@ function makeRequest(unitSundays: VisitRequest['unitSundays']): VisitRequest {
 }
 
 function renderBalance(request: VisitRequest, onRefill = vi.fn()) {
-  render(<PlanBalance request={request} sundayStatus={{}} wardStats={{}} onRefill={onRefill} />)
-  return onRefill
+  const view = render(<PlanBalance request={request} sundayStatus={{}} wardStats={{}} onRefill={onRefill} />)
+  return Object.assign(onRefill, { rerender: (r: VisitRequest) => view.rerender(
+    <PlanBalance request={r} sundayStatus={{}} wardStats={{}} onRefill={onRefill} />,
+  ) })
 }
+
+beforeEach(() => {
+  vi.mocked(reviewVisitPlan).mockReset()
+  vi.mocked(toast.error).mockClear()
+})
 
 describe('PlanBalance', () => {
   it('lists warnings before notes, naming the stake and the day', () => {
@@ -59,5 +74,48 @@ describe('PlanBalance', () => {
     const onRefill = renderBalance(makeRequest({ u1: [D1], u2: [D2] }))
     await user.click(screen.getByRole('button', { name: 'visitRequest.balance.refill' }))
     expect(onRefill).toHaveBeenCalled()
+  })
+
+  it('shows Claude’s suggestions after asking for a review', async () => {
+    vi.mocked(reviewVisitPlan).mockResolvedValue([{ level: 'warn', text: '녹번 와드가 18개월째 빠져 있어요' }])
+    const user = userEvent.setup()
+    renderBalance(makeRequest({ u1: [D1, D2], u2: [D1, D2] }))
+    await user.click(screen.getByRole('button', { name: 'visitRequest.ai.button' }))
+    expect(reviewVisitPlan).toHaveBeenCalledWith('r1')
+    expect(await screen.findByText('녹번 와드가 18개월째 빠져 있어요')).toBeInTheDocument()
+    expect(screen.getByText('visitRequest.ai.title')).toBeInTheDocument()
+  })
+
+  it('marks the review as out of date once the assignment changes, without asking again', async () => {
+    vi.mocked(reviewVisitPlan).mockResolvedValue([{ level: 'tip', text: '괜찮아요' }])
+    const user = userEvent.setup()
+    const r = renderBalance(makeRequest({ u1: [D1, D2], u2: [D1, D2] }))
+    await user.click(screen.getByRole('button', { name: 'visitRequest.ai.button' }))
+    await screen.findByText('괜찮아요')
+    r.rerender(makeRequest({ u1: [D1], u2: [D1, D2] }))
+    expect(screen.getByText('visitRequest.ai.stale')).toBeInTheDocument()
+    expect(reviewVisitPlan).toHaveBeenCalledTimes(1)
+  })
+
+  it('says when AI review is not set up, and keeps the checks', async () => {
+    vi.mocked(reviewVisitPlan).mockRejectedValue({ code: 'functions/failed-precondition' })
+    const user = userEvent.setup()
+    renderBalance(makeRequest({ u1: [D1], u2: [] }))
+    await user.click(screen.getByRole('button', { name: 'visitRequest.ai.button' }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('visitRequest.ai.unavailable'))
+    expect(screen.getAllByRole('listitem')[0]).toHaveTextContent('visitRequest.balance.sundayEmpty')
+  })
+
+  it('reports other failures plainly', async () => {
+    vi.mocked(reviewVisitPlan).mockRejectedValue(new Error('boom'))
+    const user = userEvent.setup()
+    renderBalance(makeRequest({ u1: [D1, D2], u2: [D1, D2] }))
+    await user.click(screen.getByRole('button', { name: 'visitRequest.ai.button' }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('visitRequest.ai.failed'))
+  })
+
+  it('does not offer a review before the plan is filled', () => {
+    renderBalance(makeRequest(undefined))
+    expect(screen.queryByRole('button', { name: 'visitRequest.ai.button' })).not.toBeInTheDocument()
   })
 })

@@ -1039,6 +1039,16 @@
       "primary": "primary",
       "backup": "backup"
     },
+    "ai": {
+      "button": "Review with Claude",
+      "again": "Review again",
+      "hint": "Points out what the rules miss (long-unvisited wards, one stake getting too much). Only stake and ward names and visit history are sent.",
+      "title": "Claude's review",
+      "stale": "The assignment changed — review again",
+      "empty": "Nothing more to change, it says.",
+      "unavailable": "AI review isn't set up yet.",
+      "failed": "Couldn't get a review. Try again shortly."
+    },
     "balance": {
       "title": "Balance check",
       "warnCount_one": "{{count}} to fix",

@@ -211,3 +211,20 @@ export async function fetchSundayStatus(
   })
   return res.data
 }
+
+export interface PlanReviewSuggestion {
+  level: 'warn' | 'tip'
+  text: string
+}
+
+/** 스테이크별 일요일 배정을 Claude에게 검토받는다(reviewVisitPlan). 서버가 요청을 직접 읽는다. */
+export async function reviewVisitPlan(requestId: string): Promise<PlanReviewSuggestion[]> {
+  const fn = httpsCallable<{ requestId: string }, { suggestions: PlanReviewSuggestion[] }>(functions, 'reviewVisitPlan')
+  const res = await fn({ requestId })
+  return res.data.suggestions ?? []
+}
+
+/** reviewVisitPlan이 키가 없어 거절했는가(failed-precondition) */
+export function aiUnavailable(err: unknown): boolean {
+  return (err as { code?: unknown } | null)?.code === 'functions/failed-precondition'
+}

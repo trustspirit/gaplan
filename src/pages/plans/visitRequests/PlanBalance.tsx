@@ -1,10 +1,12 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
+import { toast } from 'sonner'
 import { AlertTriangle, CheckCircle2, Info, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { REGIONS } from '@/constants/regions'
+import { aiUnavailable, reviewVisitPlan, type PlanReviewSuggestion } from '@/services/visitRequestService'
 import { checkPlanBalance, type BalanceIssue } from '../../../../functions/src/visitPlanBalance'
 import type { SundayStatus } from '../../../../functions/src/visitSundayAvailability'
 import type { VisitRequest, WardVisitStat } from '@/types'
@@ -17,14 +19,13 @@ interface Props {
   /** 추천대로 (다시) 채우기 — 확인 시트는 부르는 쪽이 띄운다 */
   onRefill: () => void
   refilling?: boolean
-  children?: React.ReactNode
 }
 
 /**
  * 스테이크별 일요일 배정이 고르게 갔는지 — 칩을 바꿀 때마다 요청 문서가 갱신되고 여기서 다시 계산한다.
  * 칠십인·집행서기 화면 전용(회장 링크에는 나가지 않는다).
  */
-export function PlanBalance({ request, sundayStatus, wardStats, onRefill, refilling, children }: Props) {
+export function PlanBalance({ request, sundayStatus, wardStats, onRefill, refilling }: Props) {
   const { t } = useTranslation()
   const issues = useMemo(
     () => checkPlanBalance({ request, status: sundayStatus, wardStats, today: dayjs().format('YYYY-MM-DD') }),
@@ -45,6 +46,20 @@ export function PlanBalance({ request, sundayStatus, wardStats, onRefill, refill
     })
 
   const legacy = !request.unitSundays
+  // AI 검토는 누를 때만 — 받은 뒤 배정이 바뀌면 "다시 검토" 표시만 하고 저절로 부르지 않는다
+  const planKey = JSON.stringify(request.unitSundays ?? null)
+  const [review, setReview] = useState<{ key: string; suggestions: PlanReviewSuggestion[] } | null>(null)
+  const [reviewing, setReviewing] = useState(false)
+  const askReview = async () => {
+    setReviewing(true)
+    try {
+      setReview({ key: planKey, suggestions: await reviewVisitPlan(request.id) })
+    } catch (err) {
+      toast.error(aiUnavailable(err) ? t('visitRequest.ai.unavailable') : t('visitRequest.ai.failed'))
+    } finally {
+      setReviewing(false)
+    }
+  }
   const warnings = issues.filter((i) => i.level === 'warn').length
 
   return (
@@ -96,7 +111,35 @@ export function PlanBalance({ request, sundayStatus, wardStats, onRefill, refill
           ))}
         </ul>
       )}
-      {children}
+      {!legacy && (
+        <div className={styles.ai}>
+          <div className={styles.aiHead}>
+            <Button size="sm" variant="secondary" loading={reviewing} onClick={askReview}>
+              {review ? t('visitRequest.ai.again') : t('visitRequest.ai.button')}
+            </Button>
+            {!review && <span className={styles.aiHint}>{t('visitRequest.ai.hint')}</span>}
+          </div>
+          {review && (
+            <div className={styles.aiResult}>
+              <p className={styles.aiTitle}>
+                {t('visitRequest.ai.title')}
+                {review.key !== planKey && <span className={styles.aiStale}>{t('visitRequest.ai.stale')}</span>}
+              </p>
+              {review.suggestions.length === 0 ? (
+                <p className={styles.aiEmpty}>{t('visitRequest.ai.empty')}</p>
+              ) : (
+                <ul className={styles.aiList}>
+                  {review.suggestions.map((s, i) => (
+                    <li key={i} className={clsx(styles.aiItem, s.level === 'warn' && styles.aiWarn)}>
+                      {s.text}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </section>
   )
 }
