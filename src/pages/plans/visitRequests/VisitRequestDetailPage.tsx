@@ -17,7 +17,7 @@ import {
   setVisitRequestStatus,
   updateVisitRequestText,
 } from '@/services/visitRequestService'
-import { recommendUnitSundays } from '../../../../functions/src/visitPlanBalance'
+import { hasStakePlan, recommendUnitSundays } from '../../../../functions/src/visitPlanBalance'
 import { ROUTES } from '@/router/routes'
 import {
   candidatesForSunday,
@@ -83,6 +83,7 @@ export function VisitRequestDetailPage() {
 
   const [wardStats, setWardStats] = useState<Record<string, WardVisitStat>>({})
   const [sundayStatus, setSundayStatus] = useState<Record<string, SundayStatus>>({})
+  const [statusLoad, setStatusLoad] = useState<'loading' | 'ready' | 'failed'>('loading')
   const [pending, setPending] = useState<PendingDecision | null>(null)
   const [deciding, setDeciding] = useState(false)
   const [statusSaving, setStatusSaving] = useState(false)
@@ -106,8 +107,9 @@ export function VisitRequestDetailPage() {
         if (cancelled) return
         setSundayStatus(s.status)
         setWardStats(s.wardStats ?? {})
+        setStatusLoad('ready')
       })
-      .catch(() => {})
+      .catch(() => !cancelled && setStatusLoad('failed'))
     return () => {
       cancelled = true
     }
@@ -277,6 +279,7 @@ export function VisitRequestDetailPage() {
             request={request}
             sundayStatus={sundayStatus}
             wardStats={wardStats}
+            load={statusLoad}
             onRefill={handleRefill}
             refilling={refilling && !confirmRefill}
           />
@@ -498,7 +501,7 @@ function SundayRow({
   )
   const today = dayjs().format('YYYY-MM-DD')
   // 이 일요일을 물어본 스테이크 — 추천이 아직 없을 때 누구를 기다리는지 보인다
-  const asked = request.unitSundays
+  const asked = hasStakePlan(request)
     ? request.units.filter((u) => request.unitSundays?.[u.id]?.includes(date))
     : []
 

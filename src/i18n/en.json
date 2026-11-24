@@ -1052,6 +1052,8 @@
     },
     "balance": {
       "title": "Balance check",
+      "loading": "Loading Sunday status and visit history…",
+      "loadFailed": "Couldn't load Sunday status and visit history, so the check can't run. Reload the page.",
       "warnCount_one": "{{count}} to fix",
       "warnCount_other": "{{count}} to fix",
       "noteCount_one": "{{count}} note",

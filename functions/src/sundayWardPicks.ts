@@ -110,10 +110,16 @@ export function sundayWardPicks({
     const extra = new Map<string, number>()   // 이 일요일 안에서만 — 후보끼리 스테이크를 번갈아
     const picks: SundayWardPick[] = []
     while (picks.length < perSunday) {
-      const pool = fresh.length > 0 ? fresh : stale
+      // 아직 이날 후보에 없는 스테이크를 먼저 — 앞에서 보인 와드라도 다른 스테이크 것이면 낫다.
+      // 그래야 작은 스테이크의 와드를 다 보인 뒤에도 예비(1순위와 다른 스테이크)가 남는다.
+      const taken = new Set(picks.map((x) => x.unitId))
+      const others = (list: SundayWardPick[]) => list.filter((x) => !taken.has(x.unitId))
+      const pool = [others(fresh), others(stale), fresh, stale].find((l) => l.length > 0)
+      if (!pool) break
       const p = pickFrom(pool, extra)
       if (!p) break
-      pool.splice(pool.indexOf(p), 1)
+      const from = fresh.includes(p) ? fresh : stale
+      from.splice(from.indexOf(p), 1)
       picks.push(p)
       extra.set(p.unitId, (extra.get(p.unitId) ?? 0) + 1)
     }

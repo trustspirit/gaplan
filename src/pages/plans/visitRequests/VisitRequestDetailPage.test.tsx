@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { VisitRecommendation, VisitRequest } from '@/types'
-import { decideVisitRequestDate, ensureUnitTokens, setUnitSundayPlan, setUnitSundays } from '@/services/visitRequestService'
+import { decideVisitRequestDate, ensureUnitTokens, fetchSundayStatus, setUnitSundayPlan, setUnitSundays } from '@/services/visitRequestService'
 import { VisitRequestDetailPage } from './VisitRequestDetailPage'
 
 let request: VisitRequest
@@ -185,6 +185,12 @@ describe('VisitRequestDetailPage', () => {
     request = { ...request, unitSundays: { u1: ['2027-01-10'], u2: ['2027-01-10', '2027-01-17'] } }
     renderPage()
     expect(screen.getByText(/visitRequest.noCandidatesAsked/)).toHaveTextContent('서울 스테이크, 서울동 스테이크')
+  })
+
+  it('keeps refill off until the Sunday status and visit history arrive', () => {
+    vi.mocked(fetchSundayStatus).mockReturnValueOnce(new Promise(() => {}))
+    renderPage()
+    expect(screen.getByRole('button', { name: 'visitRequest.balance.fill' })).toBeDisabled()
   })
 })
 

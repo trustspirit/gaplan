@@ -33,10 +33,10 @@ function makeRequest(unitSundays: VisitRequest['unitSundays']): VisitRequest {
   }
 }
 
-function renderBalance(request: VisitRequest, onRefill = vi.fn()) {
-  const view = render(<PlanBalance request={request} sundayStatus={{}} wardStats={{}} onRefill={onRefill} />)
+function renderBalance(request: VisitRequest, onRefill = vi.fn(), load: 'ready' | 'loading' | 'failed' = 'ready') {
+  const view = render(<PlanBalance request={request} sundayStatus={{}} wardStats={{}} load={load} onRefill={onRefill} />)
   return Object.assign(onRefill, { rerender: (r: VisitRequest) => view.rerender(
-    <PlanBalance request={r} sundayStatus={{}} wardStats={{}} onRefill={onRefill} />,
+    <PlanBalance request={r} sundayStatus={{}} wardStats={{}} load={load} onRefill={onRefill} />,
   ) })
 }
 
@@ -120,4 +120,24 @@ describe('PlanBalance', () => {
     renderBalance(makeRequest(undefined))
     expect(screen.queryByRole('button', { name: 'visitRequest.ai.button' })).not.toBeInTheDocument()
   })
+
+  it('waits for the visit history before checking or refilling', () => {
+    renderBalance(makeRequest({ u1: [D1], u2: [] }), vi.fn(), 'loading')
+    expect(screen.getByText('visitRequest.balance.loading')).toBeInTheDocument()
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0)
+    expect(screen.getByRole('button', { name: 'visitRequest.balance.refill' })).toBeDisabled()
+  })
+
+  it('says so when the visit history could not be loaded, and does not refill from nothing', () => {
+    renderBalance(makeRequest(undefined), vi.fn(), 'failed')
+    expect(screen.getByText('visitRequest.balance.loadFailed')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'visitRequest.balance.fill' })).toBeDisabled()
+  })
+
+  it('treats a request where only some stakes have Sundays as not filled yet', () => {
+    renderBalance(makeRequest({ u1: [D1] }))
+    expect(screen.getByText('visitRequest.balance.legacy')).toBeInTheDocument()
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0)
+  })
 })
+

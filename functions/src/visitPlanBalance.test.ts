@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { RequestUnit, WardVisitStat } from './visitRequestLogic'
-import { checkPlanBalance, recommendUnitSundays } from './visitPlanBalance'
+import { checkPlanBalance, hasStakePlan, recommendUnitSundays } from './visitPlanBalance'
 import type { SundayStatus } from './visitSundayAvailability'
 
 const unit = (id: string, regionId: string, wards: number): RequestUnit => ({
@@ -175,3 +175,55 @@ describe('checkPlanBalance', () => {
     expect(issues.slice(firstInfo).every((i) => i.level === 'info')).toBe(true)
   })
 })
+
+describe('recommendation on realistic visit history', () => {
+  const sundays = ['2027-01-10', '2027-01-17', '2027-01-24', '2027-01-31']
+  const visited = (ids: string[], count12m: number, nextVisit: string | null = null) =>
+    Object.fromEntries(ids.map((id) => [id, { lastVisit: '2026-09-01', nextVisit, count12m }]))
+
+  it('still asks a backup stake when the small stakes have shown all their wards', () => {
+    const units = [unit('a', 'r1', 8), unit('b', 'r1', 3), unit('c', 'r1', 3)]
+    const wardStats = { ...visited(['a1', 'a2', 'a3', 'a4'], 1) }
+    const plan = recommendUnitSundays({ sundays, request: { units }, wardStats, unitBlocks: {} })
+    for (const d of sundays) expect(plan.roles[d].backup).toBeDefined()
+  })
+
+  it('gives every stake with an unscheduled ward at least one Sunday, and warns about nothing', () => {
+    const units = [unit('a', 'r1', 8), unit('b', 'r1', 7), unit('c', 'r1', 7)]
+    const wardStats = { ...visited(['a1', 'a2', 'a3', 'a4'], 1) }
+    const plan = recommendUnitSundays({ sundays, request: { units }, wardStats, unitBlocks: {} })
+    expect(plan.unitSundays.a.length).toBeGreaterThan(0)
+    const issues = checkPlanBalance({
+      request: { sundays, units, unitSundays: plan.unitSundays }, status: {}, wardStats, today: '2027-01-01',
+    })
+    expect(issues.filter((i) => i.level === 'warn')).toEqual([])
+  })
+
+  it('does not count a stake whose wards are all scheduled as one that could be asked', () => {
+    const units = [unit('a', 'r1', 2), unit('b', 'r1', 2), unit('c', 'r1', 1)]
+    const wardStats = { ...visited(['c1'], 1, '2027-02-07') }
+    const plan = recommendUnitSundays({ sundays, request: { units }, wardStats, unitBlocks: {} })
+    expect(plan.unitSundays.c).toEqual([])
+    const issues = checkPlanBalance({
+      request: { sundays, units, unitSundays: plan.unitSundays }, status: {}, wardStats, today: '2027-01-01',
+    })
+    expect(issues).toEqual([])
+  })
+})
+
+describe('hasStakePlan', () => {
+  const units = [unit('a', 'r1', 1), unit('b', 'r1', 1)]
+  it('is false until every stake has its own Sundays', () => {
+    expect(hasStakePlan({ units })).toBe(false)
+    expect(hasStakePlan({ units, unitSundays: { a: ['2027-01-10'] } })).toBe(false)
+    expect(hasStakePlan({ units, unitSundays: { a: ['2027-01-10'], b: [] } })).toBe(true)
+  })
+  it('keeps the checks quiet on a half-filled older request', () => {
+    const issues = checkPlanBalance({
+      request: { sundays: ['2027-01-10'], units: [...units, unit('c', 'r1', 1)], unitSundays: { a: [] } },
+      status: {}, wardStats: {}, today: '2027-01-01',
+    })
+    expect(issues).toEqual([])
+  })
+})
+

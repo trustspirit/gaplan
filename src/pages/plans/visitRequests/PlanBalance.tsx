@@ -7,7 +7,7 @@ import { AlertTriangle, CheckCircle2, Info, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { REGIONS } from '@/constants/regions'
 import { aiUnavailable, reviewVisitPlan, type PlanReviewSuggestion } from '@/services/visitRequestService'
-import { checkPlanBalance, type BalanceIssue } from '../../../../functions/src/visitPlanBalance'
+import { checkPlanBalance, hasStakePlan, type BalanceIssue } from '../../../../functions/src/visitPlanBalance'
 import type { SundayStatus } from '../../../../functions/src/visitSundayAvailability'
 import type { VisitRequest, WardVisitStat } from '@/types'
 import styles from './PlanBalance.module.scss'
@@ -16,6 +16,8 @@ interface Props {
   request: VisitRequest
   sundayStatus: Record<string, SundayStatus>
   wardStats: Record<string, WardVisitStat>
+  /** 일요일 상황·방문 기록을 받았는가. 받기 전·실패면 점검도 다시 채우기도 하지 않는다(빈 자료로 덮어쓰지 않게) */
+  load: 'loading' | 'ready' | 'failed'
   /** 추천대로 (다시) 채우기 — 확인 시트는 부르는 쪽이 띄운다 */
   onRefill: () => void
   refilling?: boolean
@@ -25,7 +27,7 @@ interface Props {
  * 스테이크별 일요일 배정이 고르게 갔는지 — 칩을 바꿀 때마다 요청 문서가 갱신되고 여기서 다시 계산한다.
  * 칠십인·집행서기 화면 전용(회장 링크에는 나가지 않는다).
  */
-export function PlanBalance({ request, sundayStatus, wardStats, onRefill, refilling }: Props) {
+export function PlanBalance({ request, sundayStatus, wardStats, load, onRefill, refilling }: Props) {
   const { t } = useTranslation()
   const issues = useMemo(
     () => checkPlanBalance({ request, status: sundayStatus, wardStats, today: dayjs().format('YYYY-MM-DD') }),
@@ -45,7 +47,8 @@ export function PlanBalance({ request, sundayStatus, wardStats, onRefill, refill
       expected: i.expected,
     })
 
-  const legacy = !request.unitSundays
+  const legacy = !hasStakePlan(request)
+  const ready = load === 'ready'
   // AI 검토는 누를 때만 — 받은 뒤 배정이 바뀌면 "다시 검토" 표시만 하고 저절로 부르지 않는다
   const planKey = JSON.stringify(request.unitSundays ?? null)
   const [review, setReview] = useState<{ key: string; suggestions: PlanReviewSuggestion[] } | null>(null)
@@ -66,7 +69,7 @@ export function PlanBalance({ request, sundayStatus, wardStats, onRefill, refill
     <section className={styles.box} aria-label={t('visitRequest.balance.title')}>
       <div className={styles.head}>
         <h3 className={styles.title}>{t('visitRequest.balance.title')}</h3>
-        {!legacy && (
+        {!legacy && ready && (
           <span className={clsx(styles.summary, warnings > 0 && styles.summaryWarn)}>
             {warnings > 0
               ? t('visitRequest.balance.warnCount', { count: warnings })
@@ -79,6 +82,7 @@ export function PlanBalance({ request, sundayStatus, wardStats, onRefill, refill
           size="sm"
           variant={legacy ? 'primary' : 'ghost'}
           loading={refilling}
+          disabled={!ready}
           onClick={onRefill}
           className={styles.refill}
         >
@@ -87,7 +91,11 @@ export function PlanBalance({ request, sundayStatus, wardStats, onRefill, refill
         </Button>
       </div>
 
-      {legacy ? (
+      {!ready ? (
+        <p className={styles.legacy}>
+          {t(load === 'failed' ? 'visitRequest.balance.loadFailed' : 'visitRequest.balance.loading')}
+        </p>
+      ) : legacy ? (
         <p className={styles.legacy}>{t('visitRequest.balance.legacy')}</p>
       ) : issues.length === 0 ? (
         <p className={styles.good}>

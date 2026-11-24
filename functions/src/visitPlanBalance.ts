@@ -60,6 +60,7 @@ export function recommendUnitSundays(input: {
     backupWeight: BACKUP_WEIGHT,
   })
 
+  const regionOf = (d: string) => (noCc ? '' : regionOfSunday(request, d))
   const asked = new Map<string, Set<string>>(request.units.map((u) => [u.id, new Set()]))
   const roles: Record<string, SundayRoles> = {}
   for (const date of open) {
@@ -71,6 +72,35 @@ export function recommendUnitSundays(input: {
     asked.get(primary)?.add(date)
     if (backup) asked.get(backup)?.add(date)
   }
+  // 부담 순으로만 고르면 방문이 많았던 큰 스테이크는 분기 내내 밀린다 — 예약 안 된 와드가 있는
+  // 스테이크는 한 번은 예비로라도 묻는다. 예비를 가장 많이 받은 스테이크의 자리를 넘겨받는다.
+  const freeWards = (u: RequestUnit) =>
+    u.wards.filter((w) => !input.wardStats[w.id]?.nextVisit)
+  for (const u of units) {
+    if ((asked.get(u.id)?.size ?? 0) > 0) continue
+    const free = freeWards(u)
+    if (free.length === 0) continue
+    const count = (id: string | undefined) => (id ? (asked.get(id)?.size ?? 0) : -1)
+    const date = open
+      .filter((d) => roles[d] && roles[d].primary !== u.id && regionOf(d) === u.regionId && !(u.id in (input.unitBlocks[d] ?? {})))
+      .filter((d) => !roles[d].backup || count(roles[d].backup) > 1)
+      .sort((x, y) => count(roles[y].backup) - count(roles[x].backup) || x.localeCompare(y))[0]
+    if (!date) continue
+    const old = roles[date].backup
+    if (old) asked.get(old)?.delete(date)
+    roles[date] = { ...roles[date], backup: u.id }
+    asked.get(u.id)?.add(date)
+    // 그날 목록에서도 예비 스테이크의 와드를 바꿔 둔다(만들기 화면이 보인다)
+    const ward = [...free].sort((a, b) =>
+      (input.wardStats[a.id]?.lastVisit ?? '').localeCompare(input.wardStats[b.id]?.lastVisit ?? ''))[0]
+    const entry: SundayWardPick = {
+      wardId: ward.id, wardName: ward.ko, unitId: u.id, unitName: u.ko,
+      lastVisit: input.wardStats[ward.id]?.lastVisit ?? null,
+    }
+    const list = (picks[date] ?? []).filter((p) => p.unitId !== old)
+    picks[date] = [list[0], entry, ...list.slice(1)].filter(Boolean).slice(0, input.perSunday ?? PICKS_PER_SUNDAY)
+  }
+
   for (const date of input.sundays) {
     const d = decisions[date]
     if (d) asked.get(d.unitId)?.add(date)
@@ -103,6 +133,15 @@ export interface BalanceIssue {
 /** 한 일요일에 묻는 스테이크 수 — 1순위와 예비 */
 const ASKS_PER_SUNDAY = 2
 
+/**
+ * 스테이크마다 배정이 있는가. 칩 하나만 바꾼 이전 요청은 그 스테이크 키만 있고 나머지는
+ * "모든 일요일"로 남는다 — 그런 요청은 아직 채우지 않은 것으로 본다(겹침 경고가 쏟아지지 않게).
+ */
+export function hasStakePlan(request: { units: { id: string }[]; unitSundays?: Record<string, string[]> }): boolean {
+  const us = request.unitSundays
+  return !!us && request.units.every((u) => Array.isArray(us[u.id]))
+}
+
 function monthsBefore(date: string, months: number): string {
   const [y, m, d] = date.split('-').map(Number)
   const total = y * 12 + (m - 1) - months
@@ -123,14 +162,19 @@ export function checkPlanBalance(input: {
   today: string
 }): BalanceIssue[] {
   const { request, status, wardStats, today } = input
-  if (!request.unitSundays) return []
+  if (!hasStakePlan(request)) return []
   const decisions = request.decisions ?? {}
   const units = request.units
   const target = [...request.sundays].sort().filter((d) => !decisions[d] && !(status[d]?.busy.length))
   const options = new Map<string, Map<string, UnitSundayOption>>(
     units.map((u) => [u.id, new Map(unitSundayOptions(request, u.id, status).map((o) => [o.date, o]))]),
   )
-  const isOpen = (unitId: string, date: string) => options.get(unitId)?.get(date)?.block === null
+  // 와드가 모두 방문 예정이면 물어볼 곳이 없다 — 열린 스테이크로 세지 않는다
+  const hasFree = new Set(
+    units.filter((u) => u.wards.some((w) => !wardStats[w.id]?.nextVisit)).map((u) => u.id),
+  )
+  const isOpen = (unitId: string, date: string) =>
+    hasFree.has(unitId) && options.get(unitId)?.get(date)?.block === null
   const isAsked = (unitId: string, date: string) => options.get(unitId)?.get(date)?.selected === true
   const regionKey = (u: RequestUnit) => u.regionId ?? ''
 
