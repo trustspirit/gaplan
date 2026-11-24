@@ -1068,12 +1068,15 @@
     },
     "shareTemplate": {
       "langLabel": "Message language",
-      "lang": {"ko": "한국어", "en": "English"},
+      "lang": {
+        "ko": "한국어",
+        "en": "English"
+      },
       "sendLang": "Message language for {{unit}}",
       "title": "Message",
       "button": "Edit message",
       "label": "Message",
-      "hint": "This is the text sent with each stake's link when you use 'Copy message'. Save a Korean and an English version once and they are used for every request. Pick KO/EN per stake in the table; English links also open the recommendation page in English. {Tokens} are filled per stake; if you leave out the link, it is added at the end. Lines whose values are empty (e.g. no due date) are dropped.",
+      "hint": "This text goes with each stake link when you copy the message. Save it once and it is used for every request. When you change the Korean and save, Claude writes a new English version in the Church's official style and saves it too (you can also edit it on the English tab). Choose KO/EN for each stake in the table; English links open the recommendation page in English. {Tokens} are filled per stake, the link is added at the end if you leave it out, and lines with no value (for example, no due date) are dropped.",
       "tokensLabel": "Tokens",
       "preview": "Preview · {{unit}}",
       "reset": "Use default",
@@ -1091,7 +1094,11 @@
         "due": "Due date",
         "guidance": "Emphasis",
         "link": "Recommendation link"
-      }
+      },
+      "autoNote": "Rewritten from the Korean when you change the Korean and save. Edits you make here are saved as they are.",
+      "retranslate": "Translate again from Korean",
+      "translating": "Translating to English…",
+      "translateFailed": "Could not write the English message. The English stays as it was saved."
     },
     "matrix": {
       "legendLabel": "Legend",

@@ -30,6 +30,8 @@ import { PUBLIC_MAX_INSTANCES } from './publicLimits'
 import Anthropic from '@anthropic-ai/sdk'
 import { checkPlanBalance } from './visitPlanBalance'
 import { buildReviewPayload, reviewPlan } from './visitPlanReview'
+import { SHARE_TEMPLATE_MAX } from './shareTemplate'
+import { translateShareTemplate as translateText } from './shareTranslate'
 
 const ID_RE = /^[\w-]+$/
 const DEFAULT_START = '10:00'
@@ -557,6 +559,33 @@ export const reviewVisitPlan = onCall(
       return { suggestions }
     } catch (err) {
       logger.error(`[reviewVisitPlan] failed request=${requestId}`, err)
+      throw new HttpsError('internal', 'ai-failed')
+    }
+  },
+)
+
+/**
+ * 칠십인·집행서기·관리자: 한국어 안내문을 교회 공식 문체의 영어로 옮긴다(저장할 때).
+ * 저장은 하지 않는다 — 화면이 영어 칸에 넣고 두 안내문을 함께 저장한다.
+ */
+export const translateShareTemplate = onCall(
+  { ...PUBLIC_HTTP_OPTS, timeoutSeconds: 60, maxInstances: 3 },
+  async (req: CallableRequest<{ text?: unknown }>) => {
+    if (!req.auth) throw new HttpsError('unauthenticated', 'Login required')
+    const text = req.data?.text
+    if (typeof text !== 'string' || !text.trim() || text.length > SHARE_TEMPLATE_MAX) {
+      throw new HttpsError('invalid-argument', 'Invalid text')
+    }
+    const caller = (await admin.firestore().collection('users').doc(req.auth.uid).get()).data() ?? {}
+    if (!['admin', 'seventy', 'exec_secretary'].includes(caller.role)) {
+      throw new HttpsError('permission-denied', 'Not allowed')
+    }
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (!apiKey) throw new HttpsError('failed-precondition', 'ai-unavailable')
+    try {
+      return { english: await translateText(new Anthropic({ apiKey }), text) }
+    } catch (err) {
+      logger.error('[translateShareTemplate] failed', err)
       throw new HttpsError('internal', 'ai-failed')
     }
   },

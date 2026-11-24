@@ -224,6 +224,13 @@ export async function reviewVisitPlan(requestId: string): Promise<PlanReviewSugg
   return res.data.suggestions ?? []
 }
 
+/** 한국어 안내문을 교회 공식 문체의 영어로 옮긴다(translateShareTemplate). 저장은 부른 쪽이 한다 */
+export async function translateShareTemplate(text: string): Promise<string> {
+  const fn = httpsCallable<{ text: string }, { english: string }>(functions, 'translateShareTemplate')
+  const res = await fn({ text })
+  return res.data.english
+}
+
 /** reviewVisitPlan이 키가 없어 거절했는가(failed-precondition) */
 export function aiUnavailable(err: unknown): boolean {
   return (err as { code?: unknown } | null)?.code === 'functions/failed-precondition'

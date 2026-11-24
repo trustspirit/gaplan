@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
 import { Copy, ExternalLink, MessageSquareText, PencilLine } from 'lucide-react'
-import { setUnitSundays } from '@/services/visitRequestService'
+import { setUnitSundays, translateShareTemplate } from '@/services/visitRequestService'
 import { recommendUrl } from '@/utils/visitRequest'
 import {
   defaultShareTemplate, linkFor, presidentLabel, renderShareTemplate, type ShareLang, type ShareValues,
@@ -267,6 +267,7 @@ export function StakeLinkList({
           saving={savingTemplate}
           onSave={(next) => void saveTemplate(next)}
           onClose={() => !savingTemplate && setEditingTemplate(false)}
+          translate={translateShareTemplate}
         />
       )}
       {(notes.length > 0 || presidentNotes.length > 0) && (

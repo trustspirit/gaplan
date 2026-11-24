@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { VisitRequest } from '@/types'
 import { StakeLinkList } from './StakeLinkList'
@@ -13,7 +13,11 @@ vi.mock('react-i18next', () => ({
 }))
 vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
-vi.mock('@/services/visitRequestService', () => ({ setUnitSundays: vi.fn().mockResolvedValue(undefined) }))
+const translate = vi.hoisted(() => vi.fn())
+vi.mock('@/services/visitRequestService', () => ({
+  setUnitSundays: vi.fn().mockResolvedValue(undefined),
+  translateShareTemplate: translate,
+}))
 
 const request: VisitRequest = {
   id: 'r1',
@@ -50,6 +54,8 @@ function renderList(props: Partial<Parameters<typeof StakeLinkList>[0]> = {}) {
 }
 
 describe('StakeLinkList message', () => {
+  beforeEach(() => translate.mockReset())
+
   it('copies the saved message with this stake’s values and its link', async () => {
     const user = userEvent.setup()
     const onCopy = renderList({ shareTemplates: { ko: '{회장}, {스테이크}에서 {일요일}에 추천해 주세요.', en: null } })
@@ -76,8 +82,37 @@ describe('StakeLinkList message', () => {
     await user.clear(box)
     await user.type(box, '안녕하세요 ')
     await user.click(screen.getByRole('button', { name: '{스테이크}' }))
+    translate.mockResolvedValueOnce('Hello {unit}')
     await user.click(screen.getByRole('button', { name: 'visitRequest.shareTemplate.save' }))
-    expect(onSaveTemplates).toHaveBeenCalledWith({ ko: '안녕하세요 {스테이크}', en: null })
+    expect(translate).toHaveBeenCalledWith('안녕하세요 {스테이크}')
+    await waitFor(() => expect(onSaveTemplates).toHaveBeenCalledWith({ ko: '안녕하세요 {스테이크}', en: 'Hello {unit}' }))
+  })
+
+  it('keeps the English as it was when the translation fails, and saves the Korean', async () => {
+    const user = userEvent.setup()
+    const onSaveTemplates = vi.fn().mockResolvedValue(undefined)
+    renderList({ onSaveTemplates, shareTemplates: { ko: null, en: 'Dear {president}, {link}' } })
+    await user.click(screen.getByRole('button', { name: 'visitRequest.shareTemplate.button' }))
+    await user.type(screen.getByLabelText('visitRequest.shareTemplate.label'), '!')
+    translate.mockRejectedValueOnce(new Error('ai-failed'))
+    await user.click(screen.getByRole('button', { name: 'visitRequest.shareTemplate.save' }))
+    await waitFor(() => expect(onSaveTemplates).toHaveBeenCalled())
+    expect(onSaveTemplates.mock.calls[0][0].en).toBe('Dear {president}, {link}')
+    expect(onSaveTemplates.mock.calls[0][0].ko).toMatch(/!$/)
+  })
+
+  it('does not overwrite English edited by hand, and does not translate an unchanged Korean', async () => {
+    const user = userEvent.setup()
+    const onSaveTemplates = vi.fn().mockResolvedValue(undefined)
+    renderList({ onSaveTemplates })
+    await user.click(screen.getByRole('button', { name: 'visitRequest.shareTemplate.button' }))
+    await user.click(screen.getByRole('tab', { name: 'visitRequest.shareTemplate.lang.en' }))
+    const box = screen.getByLabelText('visitRequest.shareTemplate.label')
+    await user.clear(box)
+    await user.type(box, 'My own {{link}')
+    await user.click(screen.getByRole('button', { name: 'visitRequest.shareTemplate.save' }))
+    await waitFor(() => expect(onSaveTemplates).toHaveBeenCalledWith({ ko: null, en: 'My own {link}' }))
+    expect(translate).not.toHaveBeenCalled()
   })
 
   it('hides the edit button when the message cannot be saved', () => {

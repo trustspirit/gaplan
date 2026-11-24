@@ -1,6 +1,8 @@
 import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
+import { Languages } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button, ResponsiveDialog, Textarea } from '@/components/ui'
 import {
   defaultShareTemplate,
@@ -24,6 +26,8 @@ interface Props {
   /** 기본 안내문과 같으면 null로 넘긴다 */
   onSave: (templates: Templates) => void
   onClose: () => void
+  /** 한국어 안내문을 교회 공식 문체의 영어로 옮긴다(Claude). 없으면 영어는 손으로만 고친다 */
+  translate?: (korean: string) => Promise<string>
 }
 
 const LANGS: ShareLang[] = ['ko', 'en']
@@ -31,24 +35,52 @@ const LANGS: ShareLang[] = ['ko', 'en']
 /**
  * 스테이크별 링크에 붙일 안내문 고치기 — 한국어와 영어를 따로. 한 번 저장하면 모든 요청에 쓴다.
  * {자리}는 복사할 때 스테이크마다 채운다 — 단추를 누르면 커서 자리에 넣는다.
+ * 한국어를 고쳐 저장하면 영어는 Claude가 새로 옮긴다 — 이번에 영어를 손으로 고쳤으면 그대로 둔다.
  */
-export function ShareTemplateDialog({ open, templates, samples, saving, onSave, onClose }: Props) {
+export function ShareTemplateDialog({ open, templates, samples, saving, onSave, onClose, translate }: Props) {
   const { t } = useTranslation()
   const [lang, setLang] = useState<ShareLang>('ko')
   const [texts, setTexts] = useState<Record<ShareLang, string>>({
     ko: templates.ko ?? defaultShareTemplate('ko'),
     en: templates.en ?? defaultShareTemplate('en'),
   })
+  const [enTouched, setEnTouched] = useState(false)
+  const [translating, setTranslating] = useState(false)
   const fieldId = useId()
 
   // 열 때마다 저장된 안내문으로 다시 시작한다
   useEffect(() => {
     if (!open) return
     setTexts({ ko: templates.ko ?? defaultShareTemplate('ko'), en: templates.en ?? defaultShareTemplate('en') })
+    setEnTouched(false)
   }, [open, templates.ko, templates.en])
 
   const text = texts[lang]
-  const setText = (v: string) => setTexts((prev) => ({ ...prev, [lang]: v }))
+  const setText = (v: string) => {
+    if (lang === 'en') setEnTouched(true)
+    setTexts((prev) => ({ ...prev, [lang]: v }))
+  }
+
+  /** 한국어 안내문을 영어로 옮긴다. 실패하면 null(알림은 여기서) */
+  const toEnglish = async (): Promise<string | null> => {
+    if (!translate) return null
+    setTranslating(true)
+    try {
+      return await translate(texts.ko)
+    } catch {
+      toast.error(t('visitRequest.shareTemplate.translateFailed'))
+      return null
+    } finally {
+      setTranslating(false)
+    }
+  }
+
+  const retranslate = async () => {
+    const en = await toEnglish()
+    if (en === null) return
+    setTexts((prev) => ({ ...prev, en }))
+    setEnTouched(true)
+  }
 
   const insert = (token: string) => {
     const el = document.getElementById(fieldId) as HTMLTextAreaElement | null
@@ -62,8 +94,22 @@ export function ShareTemplateDialog({ open, templates, samples, saving, onSave, 
   }
 
   const isDefault = (l: ShareLang) => texts[l].trim() === defaultShareTemplate(l).trim()
-  const save = () =>
-    onSave({ ko: isDefault('ko') ? null : texts.ko, en: isDefault('en') ? null : texts.en })
+  const save = async () => {
+    const koSaved = (templates.ko ?? defaultShareTemplate('ko')).trim()
+    let en = texts.en
+    if (translate && !enTouched && texts.ko.trim() !== koSaved) {
+      // 한국어를 기본으로 되돌렸으면 영어도 기본으로, 아니면 새로 옮긴다
+      const next = isDefault('ko') ? defaultShareTemplate('en') : await toEnglish()
+      if (next !== null) {
+        en = next
+        setTexts((prev) => ({ ...prev, en: next }))
+      }
+    }
+    onSave({
+      ko: isDefault('ko') ? null : texts.ko,
+      en: en.trim() === defaultShareTemplate('en').trim() ? null : en,
+    })
+  }
 
   return (
     <ResponsiveDialog open={open} onClose={onClose} title={t('visitRequest.shareTemplate.title')} className={styles.dialog}>
@@ -93,6 +139,15 @@ export function ShareTemplateDialog({ open, templates, samples, saving, onSave, 
               maxLength={SHARE_TEMPLATE_MAX}
               onChange={(e) => setText(e.target.value)}
             />
+            {lang === 'en' && translate && (
+              <p className={styles.autoNote}>
+                <span>{t('visitRequest.shareTemplate.autoNote')}</span>
+                <Button variant="ghost" size="sm" loading={translating} disabled={!texts.ko.trim()} onClick={retranslate}>
+                  <Languages size={14} aria-hidden />
+                  {t('visitRequest.shareTemplate.retranslate')}
+                </Button>
+              </p>
+            )}
             <div className={styles.tokens} role="group" aria-label={t('visitRequest.shareTemplate.tokensLabel')}>
               {SHARE_TOKENS.map((tk) => (
                 <button
@@ -119,10 +174,16 @@ export function ShareTemplateDialog({ open, templates, samples, saving, onSave, 
             {t('visitRequest.shareTemplate.reset')}
           </Button>
           <span className={styles.spacer} />
-          <Button variant="secondary" size="sm" onClick={onClose} disabled={saving}>
+          {translating && <span className={styles.status}>{t('visitRequest.shareTemplate.translating')}</span>}
+          <Button variant="secondary" size="sm" onClick={onClose} disabled={saving || translating}>
             {t('common.cancel')}
           </Button>
-          <Button size="sm" loading={saving} disabled={!texts.ko.trim() || !texts.en.trim()} onClick={save}>
+          <Button
+            size="sm"
+            loading={saving || translating}
+            disabled={!texts.ko.trim() || !texts.en.trim()}
+            onClick={save}
+          >
             {t('visitRequest.shareTemplate.save')}
           </Button>
         </div>
