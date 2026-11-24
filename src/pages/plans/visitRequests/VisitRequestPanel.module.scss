@@ -471,7 +471,7 @@ $wide-layout: 1200px;
 
   .createLayout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 500px);
     grid-template-areas:
       'main preview'
       'rest preview';

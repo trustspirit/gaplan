@@ -1063,6 +1063,24 @@
       "unitOver": "{{unit}} — {{count}}회로 많습니다(와드 수로 보면 {{min}}~{{max}}회).",
       "regionShare": "{{region}} — 일요일 {{count}}개로, 와드 수에 비해 적습니다(약 {{expected}}개)."
     },
+    "matrix": {
+      "lastNever": "방문 기록 없음",
+      "lastFresh": "최근 방문",
+      "lastMonths": "{{months}}개월 전 방문",
+      "caption": "스테이크별로 일요일마다 묻는 자리",
+      "stake": "스테이크",
+      "count": "1순위 / 예비",
+      "countTitle": "1순위 {{primary}} · 예비 {{backup}} · 직접 넣은 날 {{extra}}",
+      "scheduled": "예정 {{date}}",
+      "legend": "● 1순위  ○ 예비  • 직접 넣은 날  ✓ 확정  빗금은 그날 물을 수 없는 날(다른 CC 차례·행사·칠십인 일정)",
+      "cell": {
+        "primary": "1순위",
+        "backup": "예비",
+        "asked": "직접 넣은 날",
+        "decided": "확정",
+        "none": "묻지 않음"
+      }
+    },
     "unitSundayBlock": {
       "otherRegion": "다른 CC",
       "busy": "칠십인 일정",

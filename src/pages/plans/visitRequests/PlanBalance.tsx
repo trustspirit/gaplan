@@ -10,6 +10,8 @@ import { aiUnavailable, reviewVisitPlan, type PlanReviewSuggestion } from '@/ser
 import { checkPlanBalance, hasStakePlan, type BalanceIssue } from '../../../../functions/src/visitPlanBalance'
 import type { SundayStatus } from '../../../../functions/src/visitSundayAvailability'
 import type { VisitRequest, WardVisitStat } from '@/types'
+import { PlanMatrix } from './PlanMatrix'
+import { planMatrix } from './stakeSundayMatrix'
 import styles from './PlanBalance.module.scss'
 
 interface Props {
@@ -29,8 +31,13 @@ interface Props {
  */
 export function PlanBalance({ request, sundayStatus, wardStats, load, onRefill, refilling }: Props) {
   const { t } = useTranslation()
+  const today = dayjs().format('YYYY-MM-DD')
   const issues = useMemo(
-    () => checkPlanBalance({ request, status: sundayStatus, wardStats, today: dayjs().format('YYYY-MM-DD') }),
+    () => checkPlanBalance({ request, status: sundayStatus, wardStats, today }),
+    [request, sundayStatus, wardStats, today],
+  )
+  const matrix = useMemo(
+    () => planMatrix({ request, roles: request.unitSundayRoles ?? {}, status: sundayStatus, wardStats }),
     [request, sundayStatus, wardStats],
   )
   const unitName = (id?: string) => request.units.find((u) => u.id === id)?.ko ?? id ?? ''
@@ -97,7 +104,9 @@ export function PlanBalance({ request, sundayStatus, wardStats, load, onRefill, 
         </p>
       ) : legacy ? (
         <p className={styles.legacy}>{t('visitRequest.balance.legacy')}</p>
-      ) : issues.length === 0 ? (
+      ) : null}
+      {ready && !legacy && <PlanMatrix matrix={matrix} today={today} />}
+      {!ready || legacy ? null : issues.length === 0 ? (
         <p className={styles.good}>
           <CheckCircle2 size={16} aria-hidden />
           {t('visitRequest.balance.allGood')}

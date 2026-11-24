@@ -35,6 +35,8 @@ import {
 } from '@/utils/visitRequest'
 import { recommendUnitSundays } from '../../../../functions/src/visitPlanBalance'
 import { GuidanceField } from './GuidanceField'
+import { PlanMatrix } from './PlanMatrix'
+import { planMatrix } from './stakeSundayMatrix'
 import { unavailableReasons, unitBlockText } from './sundayReasons'
 import {
   Card,
@@ -234,6 +236,22 @@ export function VisitRequestPanel() {
     [sundays, snapshotUnits, multiRegion, sundayRegions, wardStats, status],
   )
   const wardPicks = wardStats ? plan.picks : null
+  // 스테이크 × 일요일 표 — 만들기 전에 분포를 한눈에
+  const matrix = useMemo(
+    () =>
+      planMatrix({
+        request: {
+          sundays,
+          units: snapshotUnits,
+          sundayRegions: multiRegion ? sundayRegions : undefined,
+          unitSundays: plan.unitSundays,
+        },
+        roles: plan.roles,
+        status,
+        wardStats: wardStats ?? {},
+      }),
+    [sundays, snapshotUnits, multiRegion, sundayRegions, plan, status, wardStats],
+  )
   const today = dayjs().format('YYYY-MM-DD')
   const recencyText = (lastVisit: string | null) => {
     const r = wardRecency({ lastVisit }, today)
@@ -474,6 +492,7 @@ export function VisitRequestPanel() {
               {wardPicks && sundays.length > 0 ? (
                 <>
                   <p className={styles.reasonsTitle}>{t('visitRequest.picksTitle')}</p>
+                  <PlanMatrix matrix={matrix} today={today} />
                   <p className={styles.picksHint}>{t('visitRequest.picksHint')}</p>
                   <ul className={styles.pickList}>
                     {[...sundays].sort().map((date) => {
