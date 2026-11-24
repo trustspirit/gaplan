@@ -1,0 +1,99 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+// 고치는 칸과 미리보기를 나란히 두려면 기본 모달(480px)보다 넓어야 한다
+.dialog {
+  max-width: 880px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  min-width: 0;
+}
+
+.hint {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: $neutral-600;
+  line-height: $line-height-normal;
+}
+
+.editor {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: $space-4;
+  align-items: start;
+}
+
+.edit {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  min-width: 0;
+}
+
+.tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+}
+
+.token {
+  padding: 2px $space-2;
+  background: $color-primary-weak;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-primary;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $color-primary;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.previewCol {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  min-width: 0;
+}
+
+.previewLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+// 단톡방에 붙여 넣었을 때 모습
+.preview {
+  margin: 0;
+  padding: $space-3;
+  background: $color-surface-sunken;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  font-family: inherit;
+  font-size: $font-size-sm;
+  line-height: $line-height-normal;
+  color: $color-text;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2;
+}
+
+.spacer {
+  flex: 1;
+}

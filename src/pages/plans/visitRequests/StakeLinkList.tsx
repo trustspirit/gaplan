@@ -2,13 +2,15 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
-import { Copy, ExternalLink, MessageSquareText } from 'lucide-react'
+import { Copy, ExternalLink, MessageSquareText, PencilLine } from 'lucide-react'
 import { setUnitSundays } from '@/services/visitRequestService'
 import { recommendUrl } from '@/utils/visitRequest'
+import { defaultShareTemplate, renderShareTemplate, type ShareValues } from '@/utils/shareTemplate'
 import { unitSundayOptions } from '@/utils/unitSundays'
 import { REGIONS } from '@/constants/regions'
 import { unavailableReasons } from './sundayReasons'
 import { StakeTable, type StakeTableColumn } from './StakeTable'
+import { ShareTemplateDialog } from './ShareTemplateDialog'
 import { planMatrix, type MatrixCell } from './stakeSundayMatrix'
 import type { VisitRecommendation, VisitRequest, WardVisitStat } from '@/types'
 import type { SundayStatus } from '../../../../functions/src/visitSundayAvailability'
@@ -22,6 +24,10 @@ interface Props {
   /** 일요일 상황·방문 기록을 받았는가 — 받기 전에는 마지막 방문을 적지 않는다 */
   ready: boolean
   onCopy: (text: string) => void
+  /** 저장해 둔 안내문. null이면 기본 안내문 */
+  shareTemplate: string | null
+  /** 안내문 저장 — 못 하는 화면(로그인 정보 없음)이면 넘기지 않는다 */
+  onSaveTemplate?: (template: string | null) => Promise<void>
 }
 
 /**
@@ -29,8 +35,12 @@ interface Props {
  * 링크 하나는 그 스테이크만 연다 — 다른 스테이크의 추천은 보이지 않고, 다른 곳으로 확정된 날은 "확정됨"으로만 보인다.
  * 칸을 눌러 그 스테이크에 물어볼 일요일을 넣고 뺀다(그 스테이크가 가능한 날만).
  */
-export function StakeLinkList({ request, recommendations, sundayStatus, wardStats, ready, onCopy }: Props) {
-  const { t } = useTranslation()
+export function StakeLinkList({
+  request, recommendations, sundayStatus, wardStats, ready, onCopy, shareTemplate, onSaveTemplate,
+}: Props) {
+  const { t, i18n } = useTranslation()
+  const [editingTemplate, setEditingTemplate] = useState(false)
+  const [savingTemplate, setSavingTemplate] = useState(false)
   const [saving, setSaving] = useState<string | null>(null)
   const today = dayjs().format('YYYY-MM-DD')
   const responded = new Map(recommendations.map((r) => [r.unitId, r]))
@@ -76,18 +86,33 @@ export function StakeLinkList({ request, recommendations, sundayStatus, wardStat
     }
   }
 
-  const shareMessage = (unitId: string, url: string) =>
-    t('visitRequest.shareMessage', {
-      title: request.title,
-      unit: unitName(unitId),
-      seventy: request.seventyName,
-      dates: selectedOf(unitId).map((d) => dayjs(d).format('M/D')).join(', '),
-      due: request.dueDate
-        ? t('visitRequest.shareDue', { date: dayjs(request.dueDate).format(t('recommend.dateFormat')) })
-        : '',
-      guidance: request.guidance ? t('visitRequest.shareGuidance', { text: request.guidance }) : '',
-      url,
-    })
+  const shareValues = (unitId: string, link: string): ShareValues => ({
+    title: request.title,
+    unit: unitName(unitId),
+    seventy: request.seventyName,
+    dates: selectedOf(unitId).map((d) => dayjs(d).format('M/D')).join(', '),
+    due: request.dueDate ? dayjs(request.dueDate).format(t('recommend.dateFormat')) : '',
+    guidance: request.guidance ?? '',
+    link,
+  })
+  const template = shareTemplate ?? defaultShareTemplate(i18n.language === 'en' ? 'en' : 'ko')
+  const shareMessage = (unitId: string, url: string) => renderShareTemplate(template, shareValues(unitId, url))
+  const sampleUnit = request.units[0]
+  const sampleToken = sampleUnit ? request.unitTokens?.[sampleUnit.id] : undefined
+
+  const saveTemplate = async (next: string | null) => {
+    if (!onSaveTemplate) return
+    setSavingTemplate(true)
+    try {
+      await onSaveTemplate(next)
+      toast.success(t('visitRequest.shareTemplate.saved'))
+      setEditingTemplate(false)
+    } catch {
+      toast.error(t('visitRequest.shareTemplate.saveFailed'))
+    } finally {
+      setSavingTemplate(false)
+    }
+  }
 
   const columns: StakeTableColumn[] = [
     {
@@ -179,6 +204,30 @@ export function StakeLinkList({ request, recommendations, sundayStatus, wardStat
         cellDetail={cellDetail}
         columns={columns}
       />
+      {/* 안내문 — 한 번 고쳐 두면 모든 요청의 '안내문 복사'에 쓴다 */}
+      <div className={styles.template}>
+        <MessageSquareText size={15} aria-hidden className={styles.templateIcon} />
+        <span className={styles.templateLabel}>
+          {shareTemplate ? t('visitRequest.shareTemplate.custom') : t('visitRequest.shareTemplate.default')}
+        </span>
+        <span className={styles.templateText}>{template.split('\n')[0]}</span>
+        {onSaveTemplate && sampleUnit && (
+          <button type="button" className={styles.linkBtn} onClick={() => setEditingTemplate(true)}>
+            <PencilLine size={15} aria-hidden />
+            <span>{t('visitRequest.shareTemplate.button')}</span>
+          </button>
+        )}
+      </div>
+      {onSaveTemplate && sampleUnit && (
+        <ShareTemplateDialog
+          open={editingTemplate}
+          template={shareTemplate}
+          sample={shareValues(sampleUnit.id, sampleToken ? recommendUrl(request.id, sampleToken) : 'https://…')}
+          saving={savingTemplate}
+          onSave={(next) => void saveTemplate(next)}
+          onClose={() => !savingTemplate && setEditingTemplate(false)}
+        />
+      )}
       {(notes.length > 0 || presidentNotes.length > 0) && (
         <div className={styles.notes}>
           {notes.length > 0 && (

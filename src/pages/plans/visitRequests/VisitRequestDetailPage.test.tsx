@@ -12,6 +12,7 @@ let recommendations: VisitRecommendation[]
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k),
+    i18n: { language: 'ko' },
   }),
   initReactI18next: { type: '3rdParty', init: () => {} },
 }))

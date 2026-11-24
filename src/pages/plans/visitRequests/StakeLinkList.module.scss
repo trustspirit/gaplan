@@ -78,6 +78,39 @@
   padding: 0;
 }
 
+// 지금 쓰는 안내문 한 줄과 고치기
+.template {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-width: 0;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  background: $color-surface-sunken;
+  font-size: $font-size-sm;
+}
+
+.templateIcon {
+  flex: none;
+  color: $neutral-500;
+}
+
+.templateLabel {
+  flex: none;
+  font-weight: $font-weight-semibold;
+  color: $neutral-700;
+}
+
+.templateText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: $neutral-500;
+}
+
 // 표 아래 참고 — 넓은 화면에서는 두 단
 .notes {
   display: grid;

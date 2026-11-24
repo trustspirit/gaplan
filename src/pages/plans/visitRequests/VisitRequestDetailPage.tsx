@@ -5,7 +5,10 @@ import { toast } from 'sonner'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
 import { ChevronLeft, Check } from 'lucide-react'
+import { useAtomValue } from 'jotai'
 import { useVisitRequest } from '@/hooks/useVisitRequests'
+import { authUserAtom } from '@/store/authAtom'
+import { getShareTemplate, setShareTemplate } from '@/services/userSettingsService'
 import { useTopBar } from '@/hooks/useTopBar'
 import {
   alreadyVisitingWard,
@@ -91,6 +94,25 @@ export function VisitRequestDetailPage() {
   const [textDraft, setTextDraft] = useState<{ title: string; note: string; guidance: string } | null>(null)
   const [textSaving, setTextSaving] = useState(false)
   const [confirmRefill, setConfirmRefill] = useState(false)
+  // 스테이크별 링크에 붙이는 안내문 — 사람마다 하나, 모든 요청에 쓴다
+  const authUser = useAtomValue(authUserAtom)
+  const uid = authUser?.uid
+  const [shareTemplate, setShareTemplateState] = useState<string | null>(null)
+  useEffect(() => {
+    if (!uid) return
+    let cancelled = false
+    getShareTemplate(uid)
+      .then((tpl) => !cancelled && setShareTemplateState(tpl))
+      .catch(() => {}) // 못 받으면 기본 안내문을 쓴다
+    return () => {
+      cancelled = true
+    }
+  }, [uid])
+  const saveShareTemplate = async (next: string | null) => {
+    if (!uid) return
+    await setShareTemplate(uid, next)
+    setShareTemplateState(next)
+  }
   const [refilling, setRefilling] = useState(false)
 
   const reqId = request?.id
@@ -302,6 +324,8 @@ export function VisitRequestDetailPage() {
               wardStats={wardStats}
               ready={statusLoad === 'ready'}
               onCopy={handleCopy}
+              shareTemplate={shareTemplate}
+              onSaveTemplate={uid ? saveShareTemplate : undefined}
             />
           </PlanBalance>
           <p className={styles.hint}>{t('visitRequest.shareHint')}</p>

@@ -64,3 +64,15 @@ export async function deleteZoomLink(uid: string, id: string): Promise<void> {
   const existing = await getZoomLinks(uid)
   await writeZoomLinks(uid, existing.filter((l) => l.id !== id))
 }
+
+/** 스테이크별 링크에 붙이는 안내문(없으면 기본 안내문을 쓴다). 사람마다 하나 — 모든 요청에 쓴다 */
+export async function getShareTemplate(uid: string): Promise<string | null> {
+  const snap = await getDoc(doc(db, 'userSettings', uid))
+  const v = snap.data()?.shareTemplate
+  return typeof v === 'string' && v.trim() ? v : null
+}
+
+/** null이면 기본 안내문으로 되돌린다 */
+export async function setShareTemplate(uid: string, template: string | null): Promise<void> {
+  await setDoc(doc(db, 'userSettings', uid), { shareTemplate: template?.trim() || null }, { merge: true })
+}

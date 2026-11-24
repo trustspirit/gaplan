@@ -1063,6 +1063,29 @@
       "unitOver": "{{unit}} — {{count}}회로 많습니다(와드 수로 보면 {{min}}~{{max}}회).",
       "regionShare": "{{region}} — 일요일 {{count}}개로, 와드 수에 비해 적습니다(약 {{expected}}개)."
     },
+    "shareTemplate": {
+      "title": "안내문",
+      "button": "안내문 고치기",
+      "label": "안내문",
+      "hint": "스테이크별 링크를 '안내문 복사'할 때 붙는 글입니다. 한 번 저장하면 모든 요청에 씁니다. {자리}는 스테이크마다 채워지고, 링크를 넣지 않으면 맨 끝에 붙습니다. 값이 없는 줄(예: 마감일이 없을 때)은 빠집니다.",
+      "tokensLabel": "넣을 자리",
+      "preview": "미리보기 · {{unit}}",
+      "reset": "기본 안내문으로",
+      "save": "저장",
+      "saved": "안내문을 저장했습니다.",
+      "saveFailed": "안내문을 저장하지 못했습니다.",
+      "custom": "직접 쓴 안내문",
+      "default": "기본 안내문",
+      "token": {
+        "title": "요청 제목",
+        "unit": "스테이크/지방부 이름",
+        "seventy": "지역 칠십인 이름",
+        "dates": "그 스테이크에 묻는 일요일",
+        "due": "추천 마감일",
+        "guidance": "강조 사항",
+        "link": "추천 링크"
+      }
+    },
     "matrix": {
       "legendLabel": "표 기호",
       "legendBlocked": "그날 물을 수 없음",
@@ -1108,8 +1131,6 @@
     "open": "열어 보기",
     "copied": "복사했습니다.",
     "copyFailed": "복사하지 못했습니다. 링크를 길게 눌러 복사해 주세요.",
-    "shareMessage": "[와드 방문 추천 요청] {{title}} · {{unit}}\n{{seventy}} 지역 칠십인께서 방문 가능한 일요일({{dates}})에 {{unit}}의 와드를 추천해 주세요.{{guidance}}{{due}}\n{{url}}",
-    "shareDue": "\n마감: {{date}}",
     "statResponded": "응답한 단위",
     "statDecided": "확정한 일요일",
     "unitsTitle": "단위별 응답",
@@ -1177,7 +1198,6 @@
     "textSaved": "저장했습니다.",
     "textSaveFailed": "저장하지 못했습니다. 다시 시도해 주세요.",
     "guidanceNone": "참고 사항 없음",
-    "shareGuidance": "\n※ {{text}}",
     "textTitle": "요청 문구",
     "quarter": "분기",
     "quarterLabel": "{{year}}년 {{q}}분기",

@@ -1066,6 +1066,29 @@
       "unitOver": "{{unit}} — {{count}} Sundays is a lot ({{min}}–{{max}} by ward count).",
       "regionShare": "{{region}} — {{count}} Sundays, few for its wards (about {{expected}})."
     },
+    "shareTemplate": {
+      "title": "Message",
+      "button": "Edit message",
+      "label": "Message",
+      "hint": "This is the text sent with each stake's link when you use 'Copy message'. Save it once and it is used for every request. {Tokens} are filled per stake; if you leave out the link, it is added at the end. Lines whose values are empty (e.g. no due date) are dropped.",
+      "tokensLabel": "Tokens",
+      "preview": "Preview · {{unit}}",
+      "reset": "Use default",
+      "save": "Save",
+      "saved": "Message saved.",
+      "saveFailed": "Couldn't save the message.",
+      "custom": "Your message",
+      "default": "Default message",
+      "token": {
+        "title": "Request title",
+        "unit": "Stake/district name",
+        "seventy": "Area Seventy's name",
+        "dates": "Sundays asked of that stake",
+        "due": "Due date",
+        "guidance": "Emphasis",
+        "link": "Recommendation link"
+      }
+    },
     "matrix": {
       "legendLabel": "Legend",
       "legendBlocked": "Can't be asked",
@@ -1111,8 +1134,6 @@
     "open": "Open",
     "copied": "Copied.",
     "copyFailed": "Could not copy. Long-press the link to copy it.",
-    "shareMessage": "[Ward visit recommendations] {{title}} · {{unit}}\nPlease recommend a ward from {{unit}} for the Sundays Area Seventy {{seventy}} is available ({{dates}}).{{guidance}}{{due}}\n{{url}}",
-    "shareDue": "\nDue: {{date}}",
     "statResponded": "Units responded",
     "statDecided": "Sundays confirmed",
     "unitsTitle": "Responses by unit",
@@ -1180,7 +1201,6 @@
     "textSaved": "Saved.",
     "textSaveFailed": "Could not save. Please try again.",
     "guidanceNone": "No note",
-    "shareGuidance": "\n* {{text}}",
     "textTitle": "Request text",
     "quarter": "Quarter",
     "quarterLabel": "Q{{q}} {{year}}",
