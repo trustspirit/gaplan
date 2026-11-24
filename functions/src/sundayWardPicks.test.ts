@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { VisitRequestUnit, WardVisitStat } from '@/types'
+import type { RequestUnit as VisitRequestUnit, WardVisitStat } from './visitRequestLogic'
 import { sundayWardPicks } from './sundayWardPicks'
 
 const units: VisitRequestUnit[] = [
@@ -109,5 +109,25 @@ describe('sundayWardPicks', () => {
       sundays: ['2027-01-10', '2027-01-17'], regionOf: () => 'r2', units, wardStats: stats, unitBlocks: {}, perSunday: 1,
     })
     expect(picks['2027-01-17'][0].wardId).toBe('c1')
+  })
+})
+
+describe('sundayWardPicks backupWeight', () => {
+  const three: VisitRequestUnit[] = ['a', 'b', 'c'].map((s) => ({
+    id: s, ko: s.toUpperCase(), en: '', regionId: 'r1',
+    wards: [1, 2].map((n) => ({ id: `${s}${n}`, ko: `${s.toUpperCase()}${n}`, en: '' })),
+  }))
+  const run = (backupWeight?: number) =>
+    sundayWardPicks({
+      sundays: ['2027-01-10', '2027-01-17'], regionOf: () => 'r1', units: three,
+      wardStats: {}, unitBlocks: {}, perSunday: 3, backupWeight,
+    })
+
+  it('counts only the first pick by default — the backup stake leads the next Sunday', () => {
+    expect(run()['2027-01-17'][0].unitId).toBe('b')
+  })
+  it('counts the backup stake partly so it does not lead the next Sunday too', () => {
+    expect(run(0.5)['2027-01-10'].map((p) => p.unitId)).toEqual(['a', 'b', 'c'])
+    expect(run(0.5)['2027-01-17'][0].unitId).toBe('c')
   })
 })

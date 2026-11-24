@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import type { VisitRequest } from '@/types'
-import { unitSundayOptions } from './unitSundays'
+import { regionOfSunday, unitSundayOptions, type UnitSundayRequest } from './unitSundays'
 
 const free = { busy: [], notes: [], unitBlocks: {}, councilRegionId: null }
 
-const request: Pick<VisitRequest, 'sundays' | 'units' | 'sundayRegions' | 'unitSundays' | 'decisions'> = {
+const request: UnitSundayRequest = {
   sundays: ['2027-01-10', '2027-01-17', '2027-01-24', '2027-01-31'],
   units: [
     { id: 'a', ko: 'A', en: 'A', regionId: 'r1', wards: [] },
@@ -44,5 +43,18 @@ describe('unitSundayOptions', () => {
   it('keeps the seventy’s choice', () => {
     const opts = unitSundayOptions({ ...request, unitSundays: { a: ['2027-01-24'] } }, 'a', {})
     expect(opts.filter((o) => o.selected).map((o) => o.date)).toEqual(['2027-01-24'])
+  })
+})
+
+describe('regionOfSunday', () => {
+  const d = '2027-01-03'
+  it('uses the only CC when the request has one CC and no turns', () => {
+    expect(regionOfSunday({ units: [{ regionId: 'r1' }, { regionId: 'r1' }] }, d)).toBe('r1')
+  })
+  it('is undefined with several CCs and no turn for that day', () => {
+    expect(regionOfSunday({ units: [{ regionId: 'r1' }, { regionId: 'r2' }] }, d)).toBeUndefined()
+  })
+  it('follows the stored turn', () => {
+    expect(regionOfSunday({ units: [{ regionId: 'r1' }, { regionId: 'r2' }], sundayRegions: { [d]: 'r2' } }, d)).toBe('r2')
   })
 })
