@@ -9,6 +9,7 @@ const values = {
   dates: '1/17, 3/21',
   due: '12월 31일',
   guidance: '오래 방문받지 못한 와드를 먼저 추천해 주세요.',
+  note: '바쁘신 중에 감사합니다.\n문의는 집행서기에게 주세요.',
   link: 'https://example.test/recommend/r1/t1',
 }
 
@@ -60,6 +61,7 @@ describe('defaultShareTemplate', () => {
         '홍길동 회장님, 안녕하세요.\n' +
         '박경렬 지역 칠십인께서 방문 가능한 일요일(1/17, 3/21)에 서울 스테이크의 와드를 추천해 주시기 바랍니다.\n' +
         '※ 오래 방문받지 못한 와드를 먼저 추천해 주세요.\n' +
+        '바쁘신 중에 감사합니다.\n문의는 집행서기에게 주세요.\n' +
         '마감: 12월 31일\n' +
         'https://example.test/recommend/r1/t1',
     )
@@ -67,12 +69,13 @@ describe('defaultShareTemplate', () => {
 
   it('has an English message too', () => {
     const en = renderShareTemplate(defaultShareTemplate('en'), {
-      ...values, unit: 'Seoul Stake', president: 'President Hong', due: 'Dec 31', guidance: '',
+      ...values, unit: 'Seoul Stake', president: 'President Hong', due: 'Dec 31', guidance: '', note: 'Thank you.',
     })
     expect(en).toBe(
       '[Ward visit recommendations] 2027년 1분기 와드 방문\n' +
         'Dear President Hong,\n' +
         'Please recommend a ward in Seoul Stake for the Sundays Area Seventy 박경렬 is available (1/17, 3/21).\n' +
+        'Thank you.\n' +
         'Due: Dec 31\n' +
         'https://example.test/recommend/r1/t1',
     )

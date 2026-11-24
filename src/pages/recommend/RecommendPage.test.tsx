@@ -106,13 +106,15 @@ describe('RecommendPage', () => {
     langMock.value = 'en'
     try {
       await open({
-        title: '1월 방문', seventyName: '박경렬', guidance: '오래된 와드 먼저',
-        english: { title: 'January Visits', seventy: 'Park Kyungryeol', guidance: 'Longest-unvisited wards first' },
+        title: '1월 방문', seventyName: '박경렬', guidance: '오래된 와드 먼저', note: '감사합니다.',
+        english: { title: 'January Visits', seventy: 'Park Kyungryeol', guidance: 'Longest-unvisited wards first', note: 'Thank you.' },
       })
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('January Visits')
       expect(screen.getByText(/Park Kyungryeol/)).toBeInTheDocument()
       expect(screen.getByText('Longest-unvisited wards first')).toBeInTheDocument()
       expect(screen.queryByText('오래된 와드 먼저')).not.toBeInTheDocument()
+      expect(screen.getByText('Thank you.')).toBeInTheDocument()
+      expect(screen.queryByText('감사합니다.')).not.toBeInTheDocument()
     } finally {
       langMock.value = 'ko'
     }

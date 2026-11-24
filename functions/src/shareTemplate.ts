@@ -14,6 +14,8 @@ export interface ShareValues {
   due: string
   /** 강조 사항이 없으면 빈 문자열 */
   guidance: string
+  /** 요청 문구의 '회장들에게 전할 말' — 없으면 빈 문자열 */
+  note: string
   link: string
 }
 
@@ -25,6 +27,7 @@ export const SHARE_TOKENS: { key: keyof ShareValues; ko: string; en: string }[] 
   { key: 'dates', ko: '일요일', en: 'dates' },
   { key: 'due', ko: '마감일', en: 'due' },
   { key: 'guidance', ko: '강조', en: 'guidance' },
+  { key: 'note', ko: '전할말', en: 'message' },
   { key: 'link', ko: '링크', en: 'link' },
 ]
 
@@ -36,6 +39,7 @@ const KO_DEFAULT = [
   '{회장}, 안녕하세요.',
   '{칠십인} 지역 칠십인께서 방문 가능한 일요일({일요일})에 {스테이크}의 와드를 추천해 주시기 바랍니다.',
   '※ {강조}',
+  '{전할말}',
   '마감: {마감일}',
   '{링크}',
 ].join('\n')
@@ -45,6 +49,7 @@ const EN_DEFAULT = [
   'Dear {president},',
   'Please recommend a ward in {unit} for the Sundays Area Seventy {seventy} is available ({dates}).',
   '* {guidance}',
+  '{message}',
   'Due: {due}',
   '{link}',
 ].join('\n')

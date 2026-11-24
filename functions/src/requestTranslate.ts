@@ -11,7 +11,8 @@ ${CHURCH_STYLE}
 
 The fields:
 - title: the name of the request (e.g. "2027년 1분기 와드 방문" -> "Ward Visits, First Quarter 2027"). Title case, short.
-- guidance: a note to the presidents. Translate it as a full sentence or two.
+- guidance: a short note to the presidents shown at the top of the page. Translate it as written.
+- note: a message to the presidents. Translate it as written, keeping its line breaks.
 - seventy: the Area Seventy's personal name. Give the name only, romanized, family name first, no title (e.g. "박경렬" -> "Park Kyungryeol").
 - presidents: each president's personal name. Name only, romanized, family name first, no title; keep each id.
 If a field is already in English, return it unchanged. If a field is empty, return an empty string. Translate only; add nothing.`
@@ -21,6 +22,7 @@ const SCHEMA = {
   properties: {
     title: { type: 'string' },
     guidance: { type: 'string' },
+    note: { type: 'string' },
     seventy: { type: 'string' },
     presidents: {
       type: 'array',
@@ -32,7 +34,7 @@ const SCHEMA = {
       },
     },
   },
-  required: ['title', 'guidance', 'seventy', 'presidents'],
+  required: ['title', 'guidance', 'note', 'seventy', 'presidents'],
   additionalProperties: false,
 }
 
@@ -40,6 +42,7 @@ export async function translateRequestTexts(client: Anthropic, source: EnglishTe
   const input = {
     title: source.title,
     guidance: source.guidance,
+    note: source.note,
     seventy: source.seventy,
     presidents: Object.entries(source.presidents).map(([id, name]) => ({ id, name })),
   }
@@ -57,7 +60,7 @@ export async function translateRequestTexts(client: Anthropic, source: EnglishTe
   const text = message.content.find((b) => b.type === 'text')
   if (!text || text.type !== 'text') throw new Error('translate: no text')
   const out = JSON.parse(text.text) as {
-    title: string; guidance: string; seventy: string; presidents: { id: string; name: string }[]
+    title: string; guidance: string; note: string; seventy: string; presidents: { id: string; name: string }[]
   }
   const presidents: Record<string, string> = {}
   for (const id of Object.keys(source.presidents)) {
@@ -69,6 +72,7 @@ export async function translateRequestTexts(client: Anthropic, source: EnglishTe
   return {
     title: source.title ? out.title.trim() : '',
     guidance: source.guidance ? out.guidance.trim() : '',
+    note: source.note ? out.note.trim() : '',
     seventy: source.seventy ? out.seventy.trim() : '',
     presidents,
   }

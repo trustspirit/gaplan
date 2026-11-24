@@ -95,7 +95,7 @@ export interface PublicVisitRequest {
   seventyName: string
   dueDate: string | null
   /** 영어로 연 회장에게 보일 값. 옮기지 않았거나 원문이 바뀌었으면 없다 */
-  english?: { title: string; guidance: string; seventy: string } | null
+  english?: { title: string; guidance: string; note: string; seventy: string } | null
   status: VisitRequestStatus
   sundays: string[]
   units: VisitRequestUnit[]

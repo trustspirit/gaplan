@@ -1093,7 +1093,8 @@
         "dates": "Sundays asked of that stake",
         "due": "Due date",
         "guidance": "Emphasis",
-        "link": "Recommendation link"
+        "link": "Recommendation link",
+        "note": "The message to presidents from the request text"
       },
       "autoNote": "Rewritten from the Korean when you change the Korean and save. Edits you make here are saved as they are.",
       "retranslate": "Translate again from Korean",

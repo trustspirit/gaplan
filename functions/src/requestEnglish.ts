@@ -7,6 +7,8 @@
 export interface EnglishTexts {
   title: string
   guidance: string
+  /** 회장들에게 전할 말 — 추천 페이지에 보인다 */
+  note: string
   seventy: string
   /** unitId -> 회장 이름(호칭 없이) */
   presidents: Record<string, string>
@@ -32,12 +34,13 @@ export function presidentsOfUnits(
 }
 
 export function englishSource(
-  request: { title?: string; guidance?: string; seventyName?: string },
+  request: { title?: string; guidance?: string; note?: string; seventyName?: string },
   presidents: Record<string, string>,
 ): EnglishTexts {
   return {
     title: request.title ?? '',
     guidance: request.guidance ?? '',
+    note: request.note ?? '',
     seventy: request.seventyName ?? '',
     presidents,
   }
@@ -46,7 +49,7 @@ export function englishSource(
 function sameTexts(a: EnglishTexts, b: EnglishTexts): boolean {
   const ak = Object.keys(a.presidents).sort()
   const bk = Object.keys(b.presidents).sort()
-  return a.title === b.title && a.guidance === b.guidance && a.seventy === b.seventy
+  return a.title === b.title && a.guidance === b.guidance && (a.note ?? '') === (b.note ?? '') && a.seventy === b.seventy
     && ak.length === bk.length && ak.every((k, i) => k === bk[i] && a.presidents[k] === b.presidents[k])
 }
 
@@ -55,13 +58,13 @@ export function englishIsCurrent(english: RequestEnglish | undefined | null, sou
   return !!english?.source && sameTexts(english.source, source)
 }
 
-/** 제목·강조 사항·칠십인만 원문과 같은가 — 공개 페이지는 회장 이름을 쓰지 않는다 */
+/** 제목·강조 사항·전할 말·칠십인만 원문과 같은가 — 공개 페이지는 회장 이름을 쓰지 않는다 */
 export function englishForPage(
   english: RequestEnglish | undefined | null,
-  request: { title?: string; guidance?: string; seventyName?: string },
-): { title: string; guidance: string; seventy: string } | null {
+  request: { title?: string; guidance?: string; note?: string; seventyName?: string },
+): { title: string; guidance: string; note: string; seventy: string } | null {
   const src = english?.source
   if (!src || src.title !== (request.title ?? '') || src.guidance !== (request.guidance ?? '')
-    || src.seventy !== (request.seventyName ?? '')) return null
-  return { title: english.title, guidance: english.guidance, seventy: english.seventy }
+    || (src.note ?? '') !== (request.note ?? '') || src.seventy !== (request.seventyName ?? '')) return null
+  return { title: english.title, guidance: english.guidance, note: english.note ?? '', seventy: english.seventy }
 }

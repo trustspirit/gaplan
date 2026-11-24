@@ -114,6 +114,7 @@ export function StakeLinkList({
       dates: selectedOf(unitId).map((d) => dayjs(d).format('M/D')).join(', '),
       due: request.dueDate ? dayjs(request.dueDate).locale(lang).format(lang === 'en' ? 'MMM D' : 'M월 D일') : '',
       guidance: en ? en.guidance : request.guidance ?? '',
+      note: en ? en.note ?? '' : request.note ?? '',
       link,
     }
   }

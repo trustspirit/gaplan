@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { englishForPage, englishIsCurrent, englishSource, presidentsOfUnits } from './requestEnglish'
 
 const source = englishSource(
-  { title: '2027년 1분기 와드 방문', guidance: '성역이 필요한 와드를 우선해 주세요.', seventyName: '박경렬' },
+  { title: '2027년 1분기 와드 방문', guidance: '성역이 필요한 와드를 우선해 주세요.', note: '감사합니다.', seventyName: '박경렬' },
   { u1: '하태완' },
 )
 
@@ -21,18 +21,22 @@ describe('presidentsOfUnits', () => {
 })
 
 describe('englishIsCurrent / englishForPage', () => {
-  const english = { title: 'Ward Visits', guidance: 'Please…', seventy: 'Park Kyungryeol', presidents: { u1: 'Ha Taewan' }, source }
+  const english = { title: 'Ward Visits', guidance: 'Please…', note: 'Thank you.', seventy: 'Park Kyungryeol', presidents: { u1: 'Ha Taewan' }, source }
 
   it('is current only while every Korean value is the same', () => {
     expect(englishIsCurrent(english, source)).toBe(true)
     expect(englishIsCurrent(english, { ...source, presidents: { u1: '하태완', u2: '이지방' } })).toBe(false)
     expect(englishIsCurrent(english, { ...source, title: '다른 제목' })).toBe(false)
+    expect(englishIsCurrent(english, { ...source, note: '바뀐 말' })).toBe(false)
     expect(englishIsCurrent(undefined, source)).toBe(false)
   })
 
   it('gives the page its texts while the title, guidance and seventy are unchanged', () => {
-    const req = { title: source.title, guidance: source.guidance, seventyName: '박경렬' }
-    expect(englishForPage(english, req)).toEqual({ title: 'Ward Visits', guidance: 'Please…', seventy: 'Park Kyungryeol' })
+    const req = { title: source.title, guidance: source.guidance, note: source.note, seventyName: '박경렬' }
+    expect(englishForPage(english, req)).toEqual({
+      title: 'Ward Visits', guidance: 'Please…', note: 'Thank you.', seventy: 'Park Kyungryeol',
+    })
+    expect(englishForPage(english, { ...req, note: '바뀐 말' })).toBeNull()
     expect(englishForPage(english, { ...req, guidance: '바뀜' })).toBeNull()
     expect(englishForPage(null, req)).toBeNull()
   })

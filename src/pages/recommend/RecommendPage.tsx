@@ -160,7 +160,7 @@ export default function RecommendPage({
   const texts = data
     ? lang === 'en' && data.english
       ? data.english
-      : { title: data.title, guidance: data.guidance, seventy: data.seventyName }
+      : { title: data.title, guidance: data.guidance, note: data.note, seventy: data.seventyName }
     : null
   const wardLabel = (u: VisitRequestUnit, wardId: string) =>
     u.wards.find((w) => w.id === wardId)?.[lang] ?? ''
@@ -348,7 +348,7 @@ export default function RecommendPage({
       </div>
       <main className={clsx(styles.content, styles.contentWide)}>
         {guidanceBox}
-        {data.note && <p className={styles.note}>{data.note}</p>}
+        {texts?.note && <p className={styles.note}>{texts.note}</p>}
         {!isOpen && <div className={styles.closedBanner}>{t('recommend.closedBanner')}</div>}
 
         {/* 넓은 화면: 왼쪽은 할 일(일요일별 추천·보내기), 오른쪽은 참고(방문 기록·달력).

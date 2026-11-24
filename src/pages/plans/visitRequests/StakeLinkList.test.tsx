@@ -135,13 +135,14 @@ describe('StakeLinkList message', () => {
     const user = userEvent.setup()
     const onCopy = renderList({
       shareLangs: { u1: 'en' },
-      english: { title: 'Ward Visits, January', guidance: 'Please put first…', seventy: 'Park Kyungryeol', presidents: { u1: 'Ha Taewan' } },
+      english: { title: 'Ward Visits, January', guidance: 'Please put first…', note: 'Thank you.', seventy: 'Park Kyungryeol', presidents: { u1: 'Ha Taewan' } },
     })
     await user.click(screen.getByRole('button', { name: /visitRequest.matrix.copyMessage/ }))
     const msg = onCopy.mock.calls[0][0] as string
     expect(msg).toContain('[Ward visit recommendations] Ward Visits, January')
     expect(msg).toContain('Dear President Ha Taewan,')
     expect(msg).toContain('Area Seventy Park Kyungryeol')
+    expect(msg).toContain('\nThank you.\n')
     expect(msg).not.toMatch(/[가-힣]/)
   })
 
