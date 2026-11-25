@@ -7,7 +7,12 @@ import i18n from '@/i18n'
 import { AppRouter } from '@/router'
 
 function isAnonymousPublicRoute(pathname: string) {
-  return pathname.startsWith('/public/schedule/') || pathname.startsWith('/respond/')
+  return (
+    pathname.startsWith('/public/schedule/') ||
+    pathname.startsWith('/respond/') ||
+    // 운영에서는 recommend.html이 따로 열지만, 개발 서버와 예전 캐시에서는 이 앱 안에서 돈다
+    pathname.startsWith('/recommend/')
+  )
 }
 
 export default function App() {

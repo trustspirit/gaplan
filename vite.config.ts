@@ -38,6 +38,8 @@ const config = {
         // 나눠야 공개 방문자가 firebase auth·firestore와 전체 i18n 사전을 받지 않는다.
         main: resolve(__dirname, 'index.html'),
         public: resolve(__dirname, 'public.html'),
+        // 방문 추천 링크(/recommend/**)도 같은 이유로 따로 — 회장들이 휴대폰으로 연다.
+        recommend: resolve(__dirname, 'recommend.html'),
       },
     },
   },

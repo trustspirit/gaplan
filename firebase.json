@@ -16,6 +16,7 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       { "source": "/public/schedule/**", "function": "publicScheduleRenderer", "region": "asia-northeast3" },
+      { "source": "/recommend/**", "destination": "/recommend.html" },
       { "source": "**", "destination": "/index.html" }
     ],
     "headers": [

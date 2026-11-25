@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f7f8f8" />
+    <!-- 방문 추천 링크 전용 엔트리 — firebase.json이 /recommend/** 를 이 문서로 보낸다.
+         로그인 앱(index.html)의 auth·firestore·전체 사전을 싣지 않는다. -->
+    <meta name="gaplan-entry" content="recommend" />
+    <!-- Google Fonts를 싣지 않는다. 이 문서는 렌더 블로킹 왕복 하나가 첫 표시를
+         그대로 늦추는 자리라, 시스템 폰트 스택($font-family의 -apple-system 이하)으로
+         간다. iOS는 SF Pro, 안드로이드는 Roboto로 떨어져 오히려 네이티브해 보인다.
+         로그인 앱(index.html)은 Inter를 그대로 쓴다. -->
+    <title>GA Plan</title>
+    <!-- 링크 미리보기는 예전(index.html)과 같게 둔다 -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="GA Plan" />
+    <meta property="og:description" content="지역 칠십인 일정" />
+    <meta property="og:image" content="https://gaplan-fccfe.web.app/icon-512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:url" content="https://gaplan-fccfe.web.app" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/recommend/main.tsx"></script>
+  </body>
+</html>
