@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest'
 import {
   upcomingSundays,
   quarterSundays,
+  monthSundays,
   upcomingQuarters,
   quarterKey,
   unitsSnapshotForRegions,
@@ -119,5 +120,18 @@ describe('quarters', () => {
   it('starts from this quarter while it still has Sundays left', () => {
     expect(upcomingQuarters(2, dayjs('2026-11-15')).map(quarterKey)).toEqual(['2026-Q4', '2027-Q1'])
     expect(upcomingQuarters(1, dayjs('2026-12-27')).map(quarterKey)).toEqual(['2027-Q1'])
+  })
+})
+
+describe('monthSundays', () => {
+  it('lists every Sunday of the months the dates fall in', () => {
+    expect(monthSundays(['2027-01-17', '2027-02-14', '2027-01-10'])).toEqual([
+      '2027-01-03', '2027-01-10', '2027-01-17', '2027-01-24', '2027-01-31',
+      '2027-02-07', '2027-02-14', '2027-02-21', '2027-02-28',
+    ])
+  })
+
+  it('returns nothing for no dates', () => {
+    expect(monthSundays([])).toEqual([])
   })
 })

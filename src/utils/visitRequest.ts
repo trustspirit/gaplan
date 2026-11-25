@@ -179,6 +179,20 @@ export function upcomingQuarters(count: number, today: dayjs.Dayjs = dayjs()): Q
   return out
 }
 
+/** 주어진 날짜들이 든 달의 모든 일요일(YYYY-MM-DD, 오름차순, 중복 없음) */
+export function monthSundays(dates: string[]): string[] {
+  const months = [...new Set(dates.map((d) => d.slice(0, 7)))].sort()
+  return months.flatMap((m) => {
+    const start = dayjs(`${m}-01`)
+    const end = start.add(1, 'month')
+    const out: string[] = []
+    for (let d = start.add((7 - start.day()) % 7, 'day'); d.isBefore(end); d = d.add(7, 'day')) {
+      out.push(d.format('YYYY-MM-DD'))
+    }
+    return out
+  })
+}
+
 /** 그 분기의 일요일 중 오늘 뒤의 것(YYYY-MM-DD, 오름차순) */
 export function quarterSundays({ year, q }: Quarter, today: dayjs.Dayjs = dayjs()): string[] {
   const start = dayjs(new Date(year, (q - 1) * 3, 1))

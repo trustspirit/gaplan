@@ -30,6 +30,7 @@ import { ROUTES } from '@/router/routes'
 import {
   candidatesForSunday,
   GUIDANCE_MAX,
+  monthSundays,
   rankCandidates,
   requestProgress,
   wardRecency,
@@ -90,6 +91,8 @@ export function VisitRequestDetailPage() {
 
   const [wardStats, setWardStats] = useState<Record<string, WardVisitStat>>({})
   const [sundayStatus, setSundayStatus] = useState<Record<string, SundayStatus>>({})
+  // 요청 일요일이 든 달의 모든 일요일의 스테이크 막힘 — 그 달 스테이크 대회가 있는 스테이크를 추천에서 뒤로 민다
+  const [monthUnitBlocks, setMonthUnitBlocks] = useState<Record<string, Record<string, string>>>({})
   const [statusLoad, setStatusLoad] = useState<'loading' | 'ready' | 'failed'>('loading')
   const [pending, setPending] = useState<PendingDecision | null>(null)
   const [deciding, setDeciding] = useState(false)
@@ -168,10 +171,16 @@ export function VisitRequestDetailPage() {
     if (!reqId || !seventyUid || !sundaysKey) return
     let cancelled = false
     // 일요일 상황과 와드 방문 기록(회장들이 보는 것과 같은 집계). 참고용이라 실패해도 화면은 그대로 쓴다.
-    fetchSundayStatus(seventyUid, sundaysKey.split(','), reqId, { withWardStats: true })
+    // 그 달의 다른 일요일(요청에 없는 날)도 함께 묻는다 — 스테이크 대회를 놓치지 않게.
+    // 화면의 일요일 상황은 요청 일요일만 남긴다. 서버 한도(60)를 넘으면 요청 일요일만 묻는다.
+    const requested = sundaysKey.split(',')
+    const months = monthSundays(requested)
+    const asked = months.length <= 60 ? [...new Set([...months, ...requested])].sort() : requested
+    fetchSundayStatus(seventyUid, asked, reqId, { withWardStats: true })
       .then((s) => {
         if (cancelled) return
-        setSundayStatus(s.status)
+        setSundayStatus(Object.fromEntries(requested.filter((d) => s.status[d]).map((d) => [d, s.status[d]])))
+        setMonthUnitBlocks(Object.fromEntries(Object.entries(s.status).map(([d, st]) => [d, st.unitBlocks])))
         setWardStats(s.wardStats ?? {})
         setStatusLoad('ready')
       })
@@ -271,10 +280,8 @@ export function VisitRequestDetailPage() {
       sundays,
       request,
       wardStats,
-      // 칠십인이 막힌 날도 넘긴다 — 그 달에 스테이크 대회가 있는 스테이크를 뒤로 밀려고
-      unitBlocks: Object.fromEntries(
-        Object.entries(sundayStatus).map(([d, st]) => [d, st.unitBlocks]),
-      ),
+      // 요청에 없는 같은 달 일요일도 넘긴다 — 그 달에 스테이크 대회가 있는 스테이크를 뒤로 밀려고
+      unitBlocks: monthUnitBlocks,
     })
     setRefilling(true)
     try {

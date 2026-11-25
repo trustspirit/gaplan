@@ -155,6 +155,31 @@ describe('VisitRequestDetailPage', () => {
     expect(plan.roles['2027-01-10'].primary).toBeDefined()
   })
 
+  it('reads the whole month and pushes back a stake with a conference on a Sunday outside the request', async () => {
+    recommendations = []
+    const free = { busy: [], notes: [], unitBlocks: {}, councilRegionId: null }
+    vi.mocked(fetchSundayStatus).mockResolvedValueOnce({
+      status: {
+        '2027-01-10': free,
+        '2027-01-17': free,
+        // 요청에 없는 1/24에 서울동(u2) 스테이크 대회
+        '2027-01-24': { ...free, unitBlocks: { u2: '스테이크 대회' } },
+      },
+      lastVisitRegion: null,
+      wardStats: {},
+    })
+    const user = userEvent.setup()
+    renderPage()
+    expect(vi.mocked(fetchSundayStatus).mock.calls.at(-1)![1]).toEqual([
+      '2027-01-03', '2027-01-10', '2027-01-17', '2027-01-24', '2027-01-31',
+    ])
+    await user.click(await screen.findByRole('button', { name: 'visitRequest.balance.fill' }))
+    await waitFor(() => expect(setUnitSundayPlan).toHaveBeenCalled())
+    const [, plan] = vi.mocked(setUnitSundayPlan).mock.calls[0]
+    // 평소에는 서울동(교문 와드)이 앞서지만, 1월에 대회가 있어 서울(u1)이 1순위
+    expect(plan.roles['2027-01-10'].primary).toBe('u1')
+  })
+
   it('asks before refilling when a stake has already answered', async () => {
     const user = userEvent.setup()
     renderPage()
