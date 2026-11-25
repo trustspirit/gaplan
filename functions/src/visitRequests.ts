@@ -27,7 +27,7 @@ import {
   type RecommendationDoc,
 } from './visitRequestLogic'
 import { PUBLIC_MAX_INSTANCES } from './publicLimits'
-import Anthropic from '@anthropic-ai/sdk'
+import type Anthropic from '@anthropic-ai/sdk'
 import { checkPlanBalance } from './visitPlanBalance'
 import { buildReviewPayload, reviewPlan } from './visitPlanReview'
 import { SHARE_TEMPLATE_MAX } from './shareTemplate'
@@ -40,6 +40,15 @@ import { koreanTextsOf, withEnglishTexts } from './publicEnglish'
 import { translateTexts } from './textTranslate'
 import { createHash } from 'crypto'
 
+/**
+ * Anthropic 클라이언트. SDK는 번역·검토가 실제로 불릴 때만 불러온다 — 이 모듈의 다른 함수(공개 추천
+ * 링크 등)가 콜드 스타트마다 SDK를 읽지 않게.
+ */
+async function anthropicClient(apiKey: string): Promise<Anthropic> {
+  const { default: AnthropicSdk } = await import('@anthropic-ai/sdk')
+  return new AnthropicSdk({ apiKey })
+}
+
 const ID_RE = /^[\w-]+$/
 const DEFAULT_START = '10:00'
 const DEFAULT_END = '13:00'
@@ -48,18 +57,34 @@ const DEFAULT_END = '13:00'
  * 요청 문서의 스테이크·와드 목록을 그 칠십인 담당 CC와 서버 와드 표로 거른다.
  * 목록은 클라이언트가 찍어 보낸 것이라 그대로 믿지 않는다(visitRequestLogic.trustedUnits).
  */
-async function withTrustedUnits(request: VisitRequestDoc): Promise<VisitRequestDoc> {
-  const { unitIds } = await seventyScope(request.seventyUid)
+async function withTrustedUnits(
+  request: VisitRequestDoc,
+  scope: Promise<SeventyScope> = seventyScope(request.seventyUid),
+): Promise<VisitRequestDoc> {
+  const { unitIds } = await scope
   return { ...request, units: trustedUnits(request.units, new Set(unitIds), WARD_UNITS, UNIT_REGIONS) }
 }
 
-/** 칠십인의 담당 CC와 그 CC의 단위들. 사용자 문서를 서버에서 읽는다. */
-async function seventyScope(seventyUid: string | undefined) {
+interface SeventyScope {
+  regionIds: string[]
+  unitIds: string[]
+}
+
+/**
+ * 칠십인의 담당 CC와 그 CC의 단위들. 사용자 문서를 서버에서 읽는다.
+ * 한 호출에서 여러 번 쓰면 한 번 불러 그 Promise를 넘긴다 — 같은 문서를 거듭 읽지 않게.
+ * 호출 사이에는 캐시하지 않는다: 담당 CC가 바뀌면 다음 호출부터 바로 따라야 한다.
+ */
+async function seventyScope(seventyUid: string | undefined): Promise<SeventyScope> {
   const snap = seventyUid ? await admin.firestore().collection('users').doc(seventyUid).get() : null
-  const seventy = snap?.data() ?? {}
-  const regionIds: string[] = Array.isArray(seventy.regionIds) && seventy.regionIds.length
-    ? seventy.regionIds
-    : (typeof seventy.regionId === 'string' ? [seventy.regionId] : [])
+  return scopeOf(snap?.data() ?? {})
+}
+
+/** 사용자 문서에서 담당 CC와 그 단위들 */
+function scopeOf(user: FirebaseFirestore.DocumentData): SeventyScope {
+  const regionIds: string[] = Array.isArray(user.regionIds) && user.regionIds.length
+    ? user.regionIds
+    : (typeof user.regionId === 'string' ? [user.regionId] : [])
   return { regionIds, unitIds: regionIds.flatMap((r) => REGION_UNITS[r] ?? []) }
 }
 
@@ -82,20 +107,26 @@ async function loadSundayStatus(
   seventyUid: string,
   sundays: string[],
   ignoreScheduleIds: ReadonlySet<string> = new Set(),
+  opts: {
+    scope?: Promise<SeventyScope>
+    /** 이미 읽은 행사(generalSchedules). 아래 범위(첫 일요일 31일 전 ~ 마지막 일요일)를 덮어야 한다 */
+    events?: Promise<FirebaseFirestore.DocumentData[]>
+  } = {},
 ): Promise<Record<string, SundayStatus>> {
   if (sundays.length === 0) return {}
   const db = admin.firestore()
   const sorted = [...sundays].sort()
   const from = shiftDays(sorted[0], -31)
   const to = sorted[sorted.length - 1]
-  const [scope, schedSnap, eventSnap, slotSnap] = await Promise.all([
-    seventyScope(seventyUid),
+  const [scope, schedSnap, events, slotSnap] = await Promise.all([
+    opts.scope ?? seventyScope(seventyUid),
     db.collection('schedules')
       .where('seventyUid', '==', seventyUid)
       .where('date', '>=', from)
       .where('date', '<=', to)
       .get(),
-    db.collection('generalSchedules').where('date', '>=', from).where('date', '<=', to).get(),
+    opts.events ?? db.collection('generalSchedules').where('date', '>=', from).where('date', '<=', to).get()
+      .then((snap) => snap.docs.map((d) => d.data())),
     db.collection('availability').doc(seventyUid).collection('slots')
       .where('type', '==', 'override')
       .get(),
@@ -105,7 +136,7 @@ async function loadSundayStatus(
     regionIds: scope.regionIds,
     regionUnitIds: scope.unitIds,
     schedules: schedSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
-    events: eventSnap.docs.map((d) => d.data()),
+    events,
     blockedDates: slotSnap.docs
       .map((d) => d.data())
       .filter((x) => x.isBlocked === true && typeof x.date === 'string')
@@ -119,21 +150,40 @@ async function loadSundayStatus(
  * 추천 화면 달력용 공개 행사 — 요청의 첫 일요일이 든 달 1일부터 마지막 일요일이 든 달 말일까지.
  * 그 앞에서 시작해 걸쳐 들어오는 여러 날 행사를 위해 한 달 앞부터 읽는다.
  */
-async function loadCalendarEvents(seventyUid: string, sundays: string[]) {
-  if (sundays.length === 0) return []
+function calendarRange(sundays: string[]) {
   const sorted = [...sundays].sort()
   const from = `${sorted[0].slice(0, 7)}-01`
   const last = sorted[sorted.length - 1]
   const [y, m] = last.split('-').map(Number)
   const to = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10)
-  const [scope, snap] = await Promise.all([
-    seventyScope(seventyUid),
-    admin.firestore().collection('generalSchedules')
-      .where('date', '>=', shiftDays(from, -31))
-      .where('date', '<=', to)
-      .get(),
+  return { from, to }
+}
+
+/**
+ * 달력 범위(calendarRange)의 행사를 한 달 앞부터 읽는다. 이 범위는 loadSundayStatus가 읽는
+ * 범위(첫 일요일 31일 전 ~ 마지막 일요일)를 덮으므로 둘이 같이 쓸 수 있다.
+ */
+function readCalendarRangeEvents(sundays: string[]): Promise<FirebaseFirestore.DocumentData[]> {
+  const { from, to } = calendarRange(sundays)
+  return admin.firestore().collection('generalSchedules')
+    .where('date', '>=', shiftDays(from, -31))
+    .where('date', '<=', to)
+    .get()
+    .then((snap) => snap.docs.map((d) => d.data()))
+}
+
+async function loadCalendarEvents(
+  seventyUid: string,
+  sundays: string[],
+  opts: { scope?: Promise<SeventyScope>; events?: Promise<FirebaseFirestore.DocumentData[]> } = {},
+) {
+  if (sundays.length === 0) return []
+  const { from, to } = calendarRange(sundays)
+  const [scope, events] = await Promise.all([
+    opts.scope ?? seventyScope(seventyUid),
+    opts.events ?? readCalendarRangeEvents(sundays),
   ])
-  return publicCalendarEvents(snap.docs.map((d) => d.data()), scope.regionIds, scope.unitIds, from, to, UNIT_REGIONS)
+  return publicCalendarEvents(events, scope.regionIds, scope.unitIds, from, to, UNIT_REGIONS)
 }
 
 function decidedScheduleIds(request: VisitRequestDoc): Set<string> {
@@ -158,10 +208,13 @@ async function openRequest(requestId: unknown, token: unknown) {
   const snap = await ref.get()
   // 없는 문서와 틀린 토큰을 같은 오류로 — 문서 존재 여부를 흘리지 않는다.
   if (!snap.exists) throw new HttpsError('permission-denied', 'Invalid link')
-  const request = await withTrustedUnits(snap.data() as VisitRequestDoc)
+  const raw = snap.data() as VisitRequestDoc
+  const scope = seventyScope(raw.seventyUid)
+  const request = await withTrustedUnits(raw, scope)
   const unitId = unitIdForToken(request, token)
   if (!unitId) throw new HttpsError('permission-denied', 'Invalid link')
-  return { ref, request, unitId }
+  // scope는 이미 읽은 것 — 이어지는 읽기에 넘겨 같은 사용자 문서를 다시 읽지 않는다
+  return { ref, request, unitId, scope }
 }
 
 /** 공개 링크: 그 스테이크 기준의 요청 정보와 그 스테이크의 추천. 다른 스테이크는 확정 여부만. */
@@ -169,15 +222,18 @@ export const getVisitRequestPublic = onCall(
   { ...PUBLIC_HTTP_OPTS, maxInstances: PUBLIC_MAX_INSTANCES },
   async (req: CallableRequest<{ requestId?: unknown; token?: unknown; lang?: unknown }>) => {
     const data = req.data
-    const { ref, request, unitId } = await openRequest(data?.requestId, data?.token)
-    const recSnap = await ref.collection('recommendations').doc(unitId).get()
-    const recs = recSnap.exists ? [recSnap.data() as RecommendationDoc] : []
+    const { ref, request, unitId, scope } = await openRequest(data?.requestId, data?.token)
     const units = (request.units ?? []).filter((u) => u.id === unitId)
-    const [unitSchedules, sundayStatus, calendarEvents] = await Promise.all([
+    const sundays = request.sundays ?? []
+    // 일요일 상황과 달력이 같은 행사를 쓴다 — 넓은 쪽(달력 범위)으로 한 번만 읽는다
+    const events = sundays.length > 0 ? readCalendarRangeEvents(sundays) : Promise.resolve([])
+    const [recSnap, unitSchedules, sundayStatus, calendarEvents] = await Promise.all([
+      ref.collection('recommendations').doc(unitId).get(),
       schedulesForUnits(units.map((u) => u.id)),
-      loadSundayStatus(request.seventyUid ?? '', request.sundays ?? [], decidedScheduleIds(request)),
-      loadCalendarEvents(request.seventyUid ?? '', request.sundays ?? []),
+      loadSundayStatus(request.seventyUid ?? '', sundays, decidedScheduleIds(request), { scope, events }),
+      loadCalendarEvents(request.seventyUid ?? '', sundays, { scope, events }),
     ])
+    const recs = recSnap.exists ? [recSnap.data() as RecommendationDoc] : []
     const wardStats = wardVisitStats(units, unitSchedules, todayInSeoul())
     const view = {
       ...publicVisitRequestView(request, recs, unitId),
@@ -221,7 +277,7 @@ async function englishTexts(texts: string[]): Promise<Record<string, string>> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!missing.length || !apiKey) return out
   try {
-    const got = await translateTexts(new Anthropic({ apiKey }), missing)
+    const got = await translateTexts(await anthropicClient(apiKey), missing)
     const batch = db.batch()
     for (const [ko, en] of Object.entries(got)) {
       out[ko] = en
@@ -235,8 +291,8 @@ async function englishTexts(texts: string[]): Promise<Record<string, string>> {
 }
 
 /** 칠십인 담당 CC의 모든 와드 방문 기록. 회장들이 공개 링크에서 보는 숫자와 같은 함수로 센다. */
-async function seventyWardStats(seventyUid: string) {
-  const { unitIds } = await seventyScope(seventyUid)
+async function seventyWardStats(seventyUid: string, scope: Promise<SeventyScope> = seventyScope(seventyUid)) {
+  const { unitIds } = await scope
   const units = unitIds.map((id) => ({
     id,
     ko: '',
@@ -282,7 +338,7 @@ export const submitVisitRecommendation = onCall(
     picks?: unknown
   }>) => {
     const data = req.data
-    const { ref, request, unitId: linkUnitId } = await openRequest(data?.requestId, data?.token)
+    const { ref, request, unitId: linkUnitId, scope } = await openRequest(data?.requestId, data?.token)
     if (data?.unitId !== linkUnitId) throw new HttpsError('permission-denied', 'Invalid link')
     const db = admin.firestore()
     // 칠십인 일정·대회로 막힌 일요일. 읽기가 여러 컬렉션이라 트랜잭션 밖에서 한 번 본다.
@@ -290,6 +346,7 @@ export const submitVisitRecommendation = onCall(
       request.seventyUid ?? '',
       request.sundays ?? [],
       decidedScheduleIds(request),
+      { scope },
     )
     const unavailable = (date: string, unitId: string) =>
       isSundayBusy(status[date]) || unitId in (status[date]?.unitBlocks ?? {})
@@ -524,7 +581,13 @@ export const getVisitSundayStatus = onCall(
     }
 
     const db = admin.firestore()
-    const caller = (await db.collection('users').doc(req.auth.uid).get()).data() ?? {}
+    const requestId = typeof data.requestId === 'string' && ID_RE.test(data.requestId) ? data.requestId : null
+    // 권한 확인과 요청 읽기는 서로 기다릴 필요가 없다 — 요청 내용은 권한이 확인된 뒤에만 쓴다
+    const [callerSnap, reqSnap] = await Promise.all([
+      db.collection('users').doc(req.auth.uid).get(),
+      requestId ? db.collection('visitRequests').doc(requestId).get() : Promise.resolve(null),
+    ])
+    const caller = callerSnap.data() ?? {}
     const denied = confirmDeniedReason(
       { role: caller.role, uid: req.auth.uid, assignedSeventyUid: caller.assignedSeventyUid },
       seventyUid,
@@ -532,14 +595,13 @@ export const getVisitSundayStatus = onCall(
     if (denied) throw new HttpsError('permission-denied', denied)
 
     let ignore = new Set<string>()
-    if (typeof data.requestId === 'string' && ID_RE.test(data.requestId)) {
-      const reqSnap = await db.collection('visitRequests').doc(data.requestId).get()
-      const req = reqSnap.data() as VisitRequestDoc | undefined
-      if (req && req.seventyUid === seventyUid) ignore = decidedScheduleIds(req)
-    }
+    const visitReq = reqSnap?.data() as VisitRequestDoc | undefined
+    if (visitReq && visitReq.seventyUid === seventyUid) ignore = decidedScheduleIds(visitReq)
+    // 칠십인 본인이 부르면 이미 읽은 문서로 — 같은 사용자 문서를 또 읽지 않는다
+    const scope = seventyUid === req.auth.uid ? Promise.resolve(scopeOf(caller)) : seventyScope(seventyUid)
     const first = [...sundays].sort()[0]
     const [status, before, wardStats] = await Promise.all([
-      loadSundayStatus(seventyUid, sundays, ignore),
+      loadSundayStatus(seventyUid, sundays, ignore, { scope }),
       // 분기 경계에서 CC가 이어지지 않게 — 그 전 넉 달의 와드 방문 중 마지막 것의 CC
       db.collection('schedules')
         .where('seventyUid', '==', seventyUid)
@@ -548,7 +610,7 @@ export const getVisitSundayStatus = onCall(
         .select('type', 'status', 'date', 'unitId')
         .get(),
       // 요청을 만들기 전에 일요일마다 어느 와드가 급한지 보여 주려고 — 공개 링크와 같은 집계
-      data.withWardStats === true ? seventyWardStats(seventyUid) : Promise.resolve(undefined),
+      data.withWardStats === true ? seventyWardStats(seventyUid, scope) : Promise.resolve(undefined),
     ])
     return {
       status,
@@ -588,13 +650,14 @@ export const reviewVisitPlan = onCall(
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) throw new HttpsError('failed-precondition', 'ai-unavailable')
 
-    const request = await withTrustedUnits(raw)
+    const scope = seventyScope(raw.seventyUid)
+    const request = await withTrustedUnits(raw, scope)
     const units = request.units ?? []
     const sundays = request.sundays ?? []
     const today = todayInSeoul()
     const [schedules, status] = await Promise.all([
       schedulesForUnits(units.map((u) => u.id)),
-      loadSundayStatus(request.seventyUid ?? '', sundays, decidedScheduleIds(request)),
+      loadSundayStatus(request.seventyUid ?? '', sundays, decidedScheduleIds(request), { scope }),
     ])
     // 공개 링크와 같은 집계 — 요청에 찍힌 스테이크 기준
     const wardStats = wardVisitStats(units, schedules, today)
@@ -605,7 +668,7 @@ export const reviewVisitPlan = onCall(
     const issues = checkPlanBalance({ request: base, status, wardStats, today })
     const payload = buildReviewPayload({ request, wardStats, status, issues, today })
     try {
-      const suggestions = await reviewPlan(new Anthropic({ apiKey }), payload)
+      const suggestions = await reviewPlan(await anthropicClient(apiKey), payload)
       return { suggestions }
     } catch (err) {
       logger.error(`[reviewVisitPlan] failed request=${requestId}`, err)
@@ -633,7 +696,7 @@ export const translateShareTemplate = onCall(
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) throw new HttpsError('failed-precondition', 'ai-unavailable')
     try {
-      return { english: await translateText(new Anthropic({ apiKey }), text) }
+      return { english: await translateText(await anthropicClient(apiKey), text) }
     } catch (err) {
       logger.error('[translateShareTemplate] failed', err)
       throw new HttpsError('internal', 'ai-failed')
@@ -677,7 +740,7 @@ export const translateVisitRequest = onCall(
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) throw new HttpsError('failed-precondition', 'ai-unavailable')
     try {
-      const english: RequestEnglish = { ...(await translateRequestTexts(new Anthropic({ apiKey }), source)), source }
+      const english: RequestEnglish = { ...(await translateRequestTexts(await anthropicClient(apiKey), source)), source }
       await ref.update({ english })
       return { english }
     } catch (err) {

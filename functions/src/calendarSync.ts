@@ -7,20 +7,13 @@ import { onDocumentWritten } from 'firebase-functions/v2/firestore'
 import * as logger from 'firebase-functions/logger'
 import { BACKGROUND_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
-import { google } from 'googleapis'
+import { getCalendarClient } from './calendarClient'
 import { resolveScheduleRegionId } from './scheduleRegion'
 import { buildScheduleTitle } from './scheduleTitle'
 import { isBookkeepingOnlyWrite } from './bookkeepingWrite'
 import { calendarSyncNeedsUpdate } from './calendarSyncNeedsUpdate'
 import { isSeventyOnly } from './seventyOnly'
 import { buildCalendarEventFields, googleEventTimes, type GoogleEventTimesInput } from './calendarEventBody'
-
-function getCalendarClient() {
-  const auth = new google.auth.GoogleAuth({
-    scopes: ['https://www.googleapis.com/auth/calendar.events'],
-  })
-  return google.calendar({ version: 'v3', auth })
-}
 
 export const calendarSync = onDocumentWritten(
   { ...BACKGROUND_OPTS, document: 'schedules/{scheduleId}' },
@@ -62,7 +55,7 @@ export const calendarSync = onDocumentWritten(
     const wasCancelled = !after || after.status === 'cancelled'
     if (wasCancelled && eventIdToDelete) {
       try {
-        const calendar = getCalendarClient()
+        const calendar = await getCalendarClient()
         await calendar.events.delete({ calendarId: sharedCalendarId, eventId: eventIdToDelete })
       } catch (err) {
         logger.error('Google Calendar delete failed', err)
@@ -79,7 +72,7 @@ export const calendarSync = onDocumentWritten(
       const staleEventId: string | undefined = after.googleCalendarEventId
       if (!staleEventId) return
       try {
-        const calendar = getCalendarClient()
+        const calendar = await getCalendarClient()
         await calendar.events.delete({ calendarId: sharedCalendarId, eventId: staleEventId })
         await change.after.ref.update({ googleCalendarEventId: admin.firestore.FieldValue.delete() })
       } catch (err) {
@@ -96,7 +89,7 @@ export const calendarSync = onDocumentWritten(
     const { start, end } = googleEventTimes(after as GoogleEventTimesInput)
     const title = buildScheduleTitle(after)
 
-    const calendar = getCalendarClient()
+    const calendar = await getCalendarClient()
     // 취소됐던 자리에 다시 확정하면 before에 남은 이벤트 ID는 이미 지운 이벤트다 —
     // 그걸 update하지 말고 새로 만든다.
     const existingEventId: string | undefined =

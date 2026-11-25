@@ -11,19 +11,13 @@ import { onDocumentWritten } from 'firebase-functions/v2/firestore'
 import * as logger from 'firebase-functions/logger'
 import { BACKGROUND_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
-import { google, calendar_v3 } from 'googleapis'
+import type { calendar_v3 } from 'googleapis'
+import { getCalendarClient } from './calendarClient'
 import { isBookkeepingOnlyWrite } from './bookkeepingWrite'
 import { targetCalendarIdsFor, GENERAL_SCHEDULE_SHARED_CALENDAR_KEY } from './generalScheduleCalendarTargets'
 import { generalScheduleEventBody, type GeneralScheduleForCalendar } from './generalScheduleEventBody'
 import { planGeneralScheduleCalendarSync } from './generalScheduleCalendarPlan'
 import { isSeventyOnly } from './seventyOnly'
-
-function getCalendarClient() {
-  const auth = new google.auth.GoogleAuth({
-    scopes: ['https://www.googleapis.com/auth/calendar.events'],
-  })
-  return google.calendar({ version: 'v3', auth })
-}
 
 export const generalScheduleCalendarSync = onDocumentWritten(
   { ...BACKGROUND_OPTS, document: 'generalSchedules/{id}' },
@@ -70,7 +64,7 @@ export const generalScheduleCalendarSync = onDocumentWritten(
     const plan = planGeneralScheduleCalendarSync(desiredCalendarIds, existingEventIds)
     if (!plan.toInsert.length && !plan.toUpdate.length && !plan.toDelete.length) return
 
-    const calendar = getCalendarClient()
+    const calendar = await getCalendarClient()
     const idUpdates: Record<string, string | admin.firestore.FieldValue> = {}
 
     if (plan.toDelete.length) {

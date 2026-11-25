@@ -9,18 +9,11 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https'
 import * as logger from 'firebase-functions/logger'
 import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
-import { google } from 'googleapis'
+import { getCalendarClient } from './calendarClient'
 import { resolveScheduleRegionId } from './scheduleRegion'
 import { buildScheduleTitle, type ScheduleTitleInput } from './scheduleTitle'
 import { buildCalendarEventFields, googleEventTimes, type GoogleEventTimesInput } from './calendarEventBody'
 import { isSeventyOnly } from './seventyOnly'
-
-function getCalendarClient() {
-  const auth = new google.auth.GoogleAuth({
-    scopes: ['https://www.googleapis.com/auth/calendar.events'],
-  })
-  return google.calendar({ version: 'v3', auth })
-}
 
 export const manualCalendarSync = onCall(
   PUBLIC_HTTP_OPTS,
@@ -49,7 +42,7 @@ export const manualCalendarSync = onCall(
       return { success: true, synced: 0, message: '모든 일정이 이미 캘린더에 등록되어 있습니다.' }
     }
 
-    const calendar = getCalendarClient()
+    const calendar = await getCalendarClient()
     let synced = 0
     let failed = 0
 
