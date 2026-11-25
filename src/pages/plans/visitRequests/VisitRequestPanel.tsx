@@ -230,10 +230,11 @@ export function VisitRequestPanel() {
           sundayRegions: multiRegion ? sundayRegions : undefined,
         },
         wardStats: wardStats ?? {},
-        unitBlocks: Object.fromEntries(sundays.map((d) => [d, status[d]?.unitBlocks ?? {}])),
+        // 고르지 않은 일요일도 넘긴다 — 그 달에 스테이크 대회가 있는 스테이크를 뒤로 밀려고
+        unitBlocks: Object.fromEntries(offered.map((d) => [d, status[d]?.unitBlocks ?? {}])),
         perSunday: WARD_PICKS_PER_SUNDAY,
       }),
-    [sundays, snapshotUnits, multiRegion, sundayRegions, wardStats, status],
+    [sundays, offered, snapshotUnits, multiRegion, sundayRegions, wardStats, status],
   )
   const wardPicks = wardStats ? plan.picks : null
   // 스테이크 × 일요일 표 — 만들기 전에 분포를 한눈에

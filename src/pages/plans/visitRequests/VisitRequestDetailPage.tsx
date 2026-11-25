@@ -271,7 +271,10 @@ export function VisitRequestDetailPage() {
       sundays,
       request,
       wardStats,
-      unitBlocks: Object.fromEntries(sundays.map((d) => [d, sundayStatus[d]?.unitBlocks ?? {}])),
+      // 칠십인이 막힌 날도 넘긴다 — 그 달에 스테이크 대회가 있는 스테이크를 뒤로 밀려고
+      unitBlocks: Object.fromEntries(
+        Object.entries(sundayStatus).map(([d, st]) => [d, st.unitBlocks]),
+      ),
     })
     setRefilling(true)
     try {

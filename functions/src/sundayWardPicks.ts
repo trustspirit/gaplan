@@ -15,7 +15,10 @@ interface Input {
   regionOf: (date: string) => string | undefined
   units: VisitRequestUnit[]
   wardStats: Record<string, WardVisitStat>
-  /** date -> (unitId -> 행사 제목). 그 단위가 막힌 일요일 */
+  /**
+   * date -> (unitId -> 행사 제목). 그 단위가 막힌 일요일(스테이크 대회 등).
+   * 고른 일요일 밖의 날도 넣을 수 있다 — 같은 달에 막힌 날이 있는 스테이크를 그 달 뒤로 미는 데 쓴다.
+   */
   unitBlocks: Record<string, Record<string, string>>
   perSunday: number
 }
@@ -59,6 +62,8 @@ function dayBefore(date: string): string {
  * 3. 고른 스테이크 안에서는 방문 기록 없음 → 마지막 방문이 오래된 순(통계 화면의 방문 우선순위와 같다).
  *    이 계획에서 앞서 보인 와드는 그 스테이크의 다른 와드를 다 보인 뒤에 다시 보인다.
  * 4. 이미 방문이 잡힌 와드(nextVisit)와 그날 막힌 스테이크(unitBlocks; 스테이크 대회 등)는 뺀다.
+ * 5. 그 달의 다른 날에 막힌 스테이크(그 달에 스테이크 대회가 있다)는 그 달 방문하지 않는 것으로 보고
+ *    1번 순서보다 앞서 맨 뒤로 민다 — 다른 스테이크가 없을 때만 1순위·예비가 된다.
  */
 export function sundayWardPicks({
   sundays,
@@ -86,6 +91,14 @@ export function sundayWardPicks({
   let seq = 0
   // 이 계획에서 와드를 보인 횟수
   const shown = new Map<string, number>()
+  // YYYY-MM -> 그 달에 막힌 날이 있는 스테이크
+  const monthBlocked = new Map<string, Set<string>>()
+  for (const [date, blocks] of Object.entries(unitBlocks)) {
+    const ids = Object.keys(blocks)
+    if (ids.length === 0) continue
+    const month = date.slice(0, 7)
+    monthBlocked.set(month, new Set([...(monthBlocked.get(month) ?? []), ...ids]))
+  }
 
   const candidatesOf = (regionId: string): SundayWardPick[] =>
     units
@@ -119,7 +132,10 @@ export function sundayWardPicks({
     for (const list of byUnit.values()) {
       list.sort((a, b) => (shown.get(a.wardId) ?? 0) - (shown.get(b.wardId) ?? 0) || byUrgency(a, b))
     }
+    const busyMonth = monthBlocked.get(date.slice(0, 7))
+    const late = (id: string) => (busyMonth?.has(id) ? 1 : 0)
     const stakeOrder = (x: string, y: string) =>
+      late(x) - late(y) ||
       byDate(touched.get(x) ?? null, touched.get(y) ?? null) ||
       (askedSeq.get(x) ?? -1) - (askedSeq.get(y) ?? -1) ||
       byUrgency(byUnit.get(x)![0], byUnit.get(y)![0])

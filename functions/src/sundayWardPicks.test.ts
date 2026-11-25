@@ -112,6 +112,40 @@ describe('sundayWardPicks', () => {
     expect(picks['2027-01-10']).toEqual([])
   })
 
+  it('pushes back a stake with a stake conference on another Sunday of that month', () => {
+    // 평소에는 A(마지막 방문 2026-10)가 B(2026-11)보다 먼저
+    const recentB = { ...stats, b1: stat('2026-11-01') }
+    const picks = sundayWardPicks({
+      sundays: ['2027-01-10', '2027-02-14'],
+      regionOf: () => 'r1',
+      units,
+      wardStats: recentB,
+      // 고르지 않은 1월 24일에 A 스테이크 대회
+      unitBlocks: { '2027-01-24': { 'a-stake': '스테이크 대회' } },
+      perSunday: 2,
+    })
+    // 1월: A는 B 뒤로 — 예비로만
+    expect(picks['2027-01-10'].map((p) => p.unitId)).toEqual(['b-stake', 'a-stake'])
+    // 2월: 대회가 없는 달이라 다시 마지막 방문 순서
+    const feb = sundayWardPicks({
+      sundays: ['2027-02-14'], regionOf: () => 'r1', units, wardStats: recentB,
+      unitBlocks: { '2027-01-24': { 'a-stake': '스테이크 대회' } }, perSunday: 1,
+    })
+    expect(feb['2027-02-14'][0].unitId).toBe('a-stake')
+  })
+
+  it('still suggests a stake with a conference that month when no other stake is open', () => {
+    const picks = sundayWardPicks({
+      sundays: ['2027-01-10'],
+      regionOf: () => 'r2',
+      units,
+      wardStats: stats,
+      unitBlocks: { '2027-01-31': { 'c-stake': '스테이크 대회' } },
+      perSunday: 1,
+    })
+    expect(picks['2027-01-10'][0].wardId).toBe('c1')
+  })
+
   it('uses each Sunday’s own CC', () => {
     const picks = sundayWardPicks({
       sundays: ['2027-01-10', '2027-01-17'],
