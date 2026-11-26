@@ -20,6 +20,7 @@ import {
   Card,
   CardHeader,
   CardBody,
+  ErrorState,
   Input,
   Switch,
   SegmentedControl,
@@ -38,6 +39,10 @@ type Filter = 'all' | 'active'
 export function SharingPanel() {
   const { t } = useTranslation()
   const [fetching, setFetching] = useState(true)
+  // 읽지 못했으면 스위치를 잠가 둔다 — "전부 꺼짐"으로 보이는 화면에서 켜면 이미 나눠 준
+  // 링크의 토큰 자리에 새 토큰을 써 버린다.
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
   const [schedulePublic, setSchedulePublic] = useState(false)
   const [globalToken, setGlobalToken] = useState('')
   const [unitStates, setUnitStates] = useState<Record<string, PublicScopeState>>({})
@@ -49,8 +54,10 @@ export function SharingPanel() {
   const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set())
 
   useEffect(() => {
+    setFetching(true)
     Promise.all([getDoc(doc(db, 'settings', 'public')), getDoc(doc(db, 'settings', 'publicUnits'))])
       .then(([pubSnap, unitsSnap]) => {
+        setLoadFailed(false)
         const pubData = pubSnap.data() as
           | { schedulePublic?: boolean; globalToken?: string }
           | undefined
@@ -60,9 +67,12 @@ export function SharingPanel() {
       })
       // 읽기가 실패하면 여기 안 걸면 "전부 꺼짐"으로 조용히 렌더된다 — 뭔가
       // 잘못됐다는 표시가 전혀 없다.
-      .catch(() => toast.error(t('common.loadFailed')))
+      .catch(() => {
+        setLoadFailed(true)
+        toast.error(t('common.loadFailed'))
+      })
       .finally(() => setFetching(false))
-  }, [t])
+  }, [t, reloadKey])
 
   const groups = useMemo(() => buildSharingGroups(unitStates), [unitStates])
   const filteredGroups = useMemo(
@@ -122,6 +132,7 @@ export function SharingPanel() {
 
   return (
     <>
+      {loadFailed && <ErrorState onRetry={() => setReloadKey((k) => k + 1)} />}
       <Card>
         <CardHeader title={t('settings.sharing.globalTitle')} />
         <CardBody>
@@ -131,7 +142,7 @@ export function SharingPanel() {
               checked={schedulePublic}
               onChange={handleGlobalToggle}
               aria-label={t('settings.sharing.globalTitle')}
-              disabled={fetching}
+              disabled={fetching || loadFailed}
             />
             {schedulePublic && globalToken && (
               <button
@@ -207,7 +218,7 @@ export function SharingPanel() {
                     checked={row.enabled}
                     onChange={(next) => handleScopeToggle(row, next)}
                     aria-label={row.nameKo}
-                    disabled={fetching}
+                    disabled={fetching || loadFailed}
                   />
                   {row.enabled && row.token && (
                     <button

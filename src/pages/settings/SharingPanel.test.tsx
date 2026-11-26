@@ -144,6 +144,15 @@ describe('SharingPanel', () => {
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('common.loadFailed'))
   })
 
+  it('keeps every switch locked after a failed read, and offers a retry', async () => {
+    // 못 읽은 화면은 전부 꺼짐으로 보인다 — 거기서 켜면 이미 나눠 준 링크의 토큰을 새로 써 버린다
+    vi.mocked(getDoc).mockRejectedValue(new Error('offline'))
+    render(<SharingPanel />)
+    await waitFor(() => expect(toast.error).toHaveBeenCalled())
+    for (const el of screen.getAllByRole('checkbox')) expect(el).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'common.retry' })).toBeInTheDocument()
+  })
+
   // FIX 6 — 지역 접기. 검색·필터로 좁혀지지 않은 기본 화면에서는 지역이 접혀
   // 있어야 한다("전부 펼친 수십 행" 문제, 스펙 §4.3).
   describe('region collapse', () => {
