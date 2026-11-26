@@ -14,6 +14,8 @@ const savedLang = localStorage.getItem(STORAGE_KEY) ?? 'ko'
 
 // Set initial dayjs locale to match saved language
 dayjs.locale(savedLang === 'en' ? 'en' : 'ko')
+// 화면 낭독기의 발음과 브라우저의 "이 페이지를 번역할까요?" 판단이 <html lang>을 따른다
+document.documentElement.lang = savedLang === 'en' ? 'en' : 'ko'
 
 /**
  * 한국어 사전만 번들에 싣고, 다른 언어는 처음 쓸 때 받는다(영어 사전 gzip 약 15 kB).
@@ -50,6 +52,7 @@ i18n.on('languageChanged', (lng) => {
   // 공개 추천 링크는 링크가 언어를 정한다 — 앱 설정으로 남기지 않는다
   if (!window.location.pathname.startsWith('/recommend/')) localStorage.setItem(STORAGE_KEY, lng)
   dayjs.locale(lng === 'en' ? 'en' : 'ko')
+  document.documentElement.lang = lng === 'en' ? 'en' : 'ko'
 })
 
 export default i18n

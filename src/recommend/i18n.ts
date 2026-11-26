@@ -11,6 +11,7 @@ import { recommend as enRecommend, common as enCommon } from '@/i18n/en.json'
 // 언어는 링크가 정한다(?lang=en) — RecommendPage가 마운트할 때 바꾼다. 브라우저에 남기지 않는다.
 const lng = new URLSearchParams(window.location.search).get('lang') === 'en' ? 'en' : 'ko'
 dayjs.locale(lng)
+document.documentElement.lang = lng
 
 i18n.use(initReactI18next).init({
   resources: {
@@ -24,6 +25,7 @@ i18n.use(initReactI18next).init({
 
 i18n.on('languageChanged', (next) => {
   dayjs.locale(next === 'en' ? 'en' : 'ko')
+  document.documentElement.lang = next === 'en' ? 'en' : 'ko'
 })
 
 export default i18n

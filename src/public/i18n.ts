@@ -21,6 +21,7 @@ function savedLang(): 'ko' | 'en' {
 
 const lng = savedLang()
 dayjs.locale(lng)
+document.documentElement.lang = lng
 
 i18n.use(initReactI18next).init({
   resources: { ko: { translation: ko }, en: { translation: en } },
@@ -31,6 +32,7 @@ i18n.use(initReactI18next).init({
 
 i18n.on('languageChanged', (next) => {
   dayjs.locale(next === 'en' ? 'en' : 'ko')
+  document.documentElement.lang = next === 'en' ? 'en' : 'ko'
 })
 
 export default i18n
