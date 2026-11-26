@@ -20,12 +20,17 @@ body {
   background: $color-sidebar;
   color: $color-text;
   line-height: $line-height-normal;
+  // hidden은 요소를 스크롤 상자로 만들어(overflow-y가 auto로 계산된다) 안쪽의 position: sticky가
+  // 화면이 아니라 그 상자에 붙는다 — 문서 전체가 스크롤되는 공개 페이지에서 붙지 않는다.
+  // clip은 넘침만 자른다. hidden은 clip을 모르는 브라우저(Safari 15 이하)용이다.
   overflow-x: hidden;
+  overflow-x: clip;
 }
 #root {
   width: 100%;
   min-width: 0;
   overflow-x: hidden;
+  overflow-x: clip;
 }
 img,
 svg {
