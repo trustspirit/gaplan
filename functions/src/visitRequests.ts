@@ -44,10 +44,19 @@ import { createHash } from 'crypto'
  * Anthropic 클라이언트. SDK는 번역·검토가 실제로 불릴 때만 불러온다 — 이 모듈의 다른 함수(공개 추천
  * 링크 등)가 콜드 스타트마다 SDK를 읽지 않게.
  */
-async function anthropicClient(apiKey: string): Promise<Anthropic> {
+async function anthropicClient(
+  apiKey: string,
+  limits?: { timeout: number; maxRetries: number },
+): Promise<Anthropic> {
   const { default: AnthropicSdk } = await import('@anthropic-ai/sdk')
-  return new AnthropicSdk({ apiKey })
+  return new AnthropicSdk({ apiKey, ...limits })
 }
+
+/**
+ * 공개 추천 화면이 여는 길에서 기다리는 번역의 상한. SDK 기본값(10분, 재시도 2번)은 함수 제한 시간보다
+ * 길어, 응답이 느리면 한국어 이름으로 내려가지 못하고 화면 전체가 "불러오지 못했습니다"가 된다.
+ */
+const PAGE_TRANSLATE_LIMITS = { timeout: 20_000, maxRetries: 0 }
 
 const ID_RE = /^[\w-]+$/
 const DEFAULT_START = '10:00'
@@ -277,7 +286,7 @@ async function englishTexts(texts: string[]): Promise<Record<string, string>> {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!missing.length || !apiKey) return out
   try {
-    const got = await translateTexts(await anthropicClient(apiKey), missing)
+    const got = await translateTexts(await anthropicClient(apiKey, PAGE_TRANSLATE_LIMITS), missing)
     const batch = db.batch()
     for (const [ko, en] of Object.entries(got)) {
       out[ko] = en
