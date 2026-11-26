@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { useBackdropDismiss } from '../useBackdropDismiss'
 import styles from './BottomSheet.module.scss'
 
 interface BottomSheetProps {
@@ -26,6 +27,7 @@ export function BottomSheet({
   const sheetRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
   useFocusTrap(sheetRef, open, onClose)
+  const backdrop = useBackdropDismiss(onClose)
 
   useEffect(() => {
     if (open) {
@@ -37,7 +39,7 @@ export function BottomSheet({
   return createPortal(
     // inert keeps the closed (but still mounted, for the exit transition)
     // sheet out of the tab order and accessibility tree
-    <div className={clsx(styles.overlay, open && styles.open)} onClick={onClose} inert={!open}>
+    <div className={clsx(styles.overlay, open && styles.open)} {...backdrop} inert={!open}>
       <div
         ref={sheetRef}
         tabIndex={-1}

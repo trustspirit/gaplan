@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { acquireScrollLock, releaseScrollLock } from '@/utils/scrollLock'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { useBackdropDismiss } from '../useBackdropDismiss'
 import styles from './Modal.module.scss'
 
 interface ModalProps {
@@ -20,6 +21,7 @@ export function Modal({ open, onClose, title, 'aria-label': ariaLabel, children,
   const modalRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
   useFocusTrap(modalRef, open, onClose)
+  const backdrop = useBackdropDismiss(onClose)
 
   useEffect(() => {
     if (!open) return
@@ -30,7 +32,7 @@ export function Modal({ open, onClose, title, 'aria-label': ariaLabel, children,
   if (!open) return null
 
   return createPortal(
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={styles.overlay} {...backdrop}>
       <div
         ref={modalRef}
         tabIndex={-1}
