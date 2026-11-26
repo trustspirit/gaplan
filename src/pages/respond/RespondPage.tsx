@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import dayjs from 'dayjs'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { HttpsCallable } from 'firebase/functions'
 import { publicCallable } from '@/services/publicFunctions'
 import { usePublicTask } from './usePublicTask'
 import { SlotSelectionGrid } from './SlotSelectionGrid'
+import { splitDateSlots } from './respondSlots'
 import styles from './RespondPage.module.scss'
 
 interface SelectedSlot {
@@ -69,6 +71,20 @@ export default function RespondPage() {
       i18n.changeLanguage(saved)
     }
   }, [i18n])
+
+  // 이미 낸 응답으로 채운다 — 다시 연 회장이 빈 화면에서 처음부터 고르다 예전 응답을 덮어쓰지 않게.
+  const prefilled = useRef(false)
+  useEffect(() => {
+    if (!task || prefilled.current) return
+    prefilled.current = true
+    setSelectedSlots(task.respondedSlots ?? [])
+    setWardDateMap(Object.fromEntries((task.wardAssignments ?? []).map((a) => [a.wardName, a.date])))
+  }, [task])
+
+  const dateSlots = useMemo(
+    () => (task ? splitDateSlots(task.availableDateSlots, task.slotDurationMinutes) : []),
+    [task],
+  )
 
   const toggleLang = () => {
     const next = i18n.language === 'ko' ? 'en' : 'ko'
@@ -146,6 +162,8 @@ export default function RespondPage() {
   }
 
   const isInterview = task.type === 'select_interview'
+  // 서버가 준 스테이크의 와드. 예전 서버는 주지 않는다 — 그때는 이미 낸 응답의 와드만 보인다.
+  const wardNames = task.wards?.length ? task.wards : task.wardAssignments.map((a) => a.wardName)
   const canSubmit = isInterview
     ? selectedSlots.length > 0
     : Object.values(wardDateMap).some((d) => d)
@@ -166,8 +184,6 @@ export default function RespondPage() {
           {task.note && <div className={styles.taskNote}>{task.note}</div>}
         </div>
 
-        {submitError && <div className={styles.errorBanner}>{submitError}</div>}
-
         {isInterview ? (
           <>
             <div className={styles.sectionTitle}>
@@ -179,7 +195,7 @@ export default function RespondPage() {
               )}
             </div>
             <SlotSelectionGrid
-              availableDateSlots={task.availableDateSlots}
+              availableDateSlots={dateSlots}
               selectedSlots={selectedSlots}
               onToggle={handleToggleSlot}
             />
@@ -188,11 +204,12 @@ export default function RespondPage() {
           <>
             <div className={styles.sectionTitle}>{t('respond.selectWardDatesTitle')}</div>
             <div className={styles.wardList}>
-              {task.wardAssignments.map(({ wardName }) => (
+              {wardNames.map((wardName) => (
                 <div key={wardName} className={styles.wardItem}>
                   <span className={styles.wardName}>{wardName}</span>
                   <select
                     className={styles.wardDateSelect}
+                    aria-label={wardName}
                     value={wardDateMap[wardName] ?? ''}
                     onChange={(e) =>
                       setWardDateMap((prev) => ({ ...prev, [wardName]: e.target.value }))
@@ -201,7 +218,7 @@ export default function RespondPage() {
                     <option value="">{t('respond.dateSelect')}</option>
                     {task.availableDates.map((date) => (
                       <option key={date} value={date}>
-                        {date}
+                        {dayjs(date).format(t('respond.dateFormat'))}
                       </option>
                     ))}
                   </select>
@@ -212,6 +229,12 @@ export default function RespondPage() {
         )}
 
         <div className={styles.submitSection}>
+          {/* 보내기 단추 바로 위에 — 긴 목록을 내려와 누른 사람도 실패를 본다 */}
+          {submitError && (
+            <div className={styles.errorBanner} role="alert">
+              {submitError}
+            </div>
+          )}
           <button
             type="button"
             className={styles.submitBtn}

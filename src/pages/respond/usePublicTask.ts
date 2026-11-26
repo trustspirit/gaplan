@@ -20,6 +20,8 @@ export interface PublicTaskInfo {
   assignedTo: string
   respondedSlots: Array<{ date: string; startTime: string; endTime: string }>
   wardAssignments: Array<{ wardName: string; date: string }>
+  /** 날짜를 고를 와드들. 배포 전 서버는 보내지 않는다 */
+  wards?: string[]
 }
 
 // 'invalid-link' | 'load-failed' are sentinel codes the page translates;
