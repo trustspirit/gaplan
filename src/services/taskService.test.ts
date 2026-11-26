@@ -18,7 +18,7 @@ vi.mock('firebase/firestore', () => firestoreMocks)
 vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn() }))
 vi.mock('@/firebase', () => ({ db: 'db', functions: 'functions' }))
 
-import { deleteTask } from './taskService'
+import { createTask, deleteTask } from './taskService'
 
 describe('deleteTask', () => {
   beforeEach(() => {
@@ -30,5 +30,33 @@ describe('deleteTask', () => {
 
     expect(doc).toHaveBeenCalledWith('db', 'tasks', 'task-1')
     expect(deleteDoc).toHaveBeenCalledWith({ kind: 'doc', args: ['db', 'tasks', 'task-1'] })
+  })
+})
+
+describe('createTask', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    firestoreMocks.addDoc.mockResolvedValue({ id: 'new-task' })
+    firestoreMocks.serverTimestamp.mockReturnValue('server-time')
+  })
+
+  it('leaves out fields left empty — Firestore rejects a document holding undefined', async () => {
+    await createTask({
+      type: 'select_visit',
+      assignedTo: 'p1',
+      seventyUid: 's1',
+      regionId: 'r1',
+      dueDate: '2026-12-01',
+      createdBy: 'a1',
+      availableDays: [0],
+      availableDates: ['2026-12-06'],
+      note: undefined,
+      projectId: undefined,
+    })
+
+    const written = firestoreMocks.addDoc.mock.calls[0][1] as Record<string, unknown>
+    expect(Object.values(written)).not.toContain(undefined)
+    expect(written).not.toHaveProperty('note')
+    expect(written).toMatchObject({ assignedTo: 'p1', status: 'pending', availableDates: ['2026-12-06'] })
   })
 })

@@ -6,7 +6,7 @@ import {
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/firebase'
 import type { Task, RespondedSlot } from '@/types'
-import { mapDocs, snapshotErrHandler } from './_utils'
+import { mapDocs, snapshotErrHandler, stripUndefined } from './_utils'
 
 // President: pending + responded tasks (responded = awaiting admin/seventy confirmation)
 export function subscribeToTasks(
@@ -121,7 +121,8 @@ export async function createTask(params: {
 
   const { projectId, ...rest } = params
   const ref = await addDoc(collection(db, 'tasks'), {
-    ...rest,
+    // 비워 둔 요청 사항·제목은 undefined로 온다 — 그대로 넣으면 Firestore가 문서를 통째로 거부한다
+    ...stripUndefined(rest),
     ...(projectId ? { projectId } : {}),
     respondToken, status: 'pending', notifiedAt: [], createdAt: serverTimestamp(),
   })
