@@ -1,5 +1,5 @@
 import { AlertCircle, Clock } from 'lucide-react'
-import dayjs from 'dayjs'
+import { daysUntil } from '@/utils/date'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 import type { Task } from '@/types'
@@ -13,7 +13,7 @@ interface TaskCardProps {
 
 export function TaskCard({ task, onAction }: TaskCardProps) {
   const { t } = useTranslation()
-  const daysLeft = dayjs(task.dueDate).diff(dayjs(), 'day')
+  const daysLeft = daysUntil(task.dueDate)
   const isUrgent = daysLeft <= 3
   const isOverdue = daysLeft < 0
   const isResponded = task.status === 'responded'

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import dayjs from 'dayjs'
+import { daysUntil } from '@/utils/date'
 import { toast } from 'sonner'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
@@ -91,7 +92,7 @@ export function TaskRow({ task, presidentName, unitName, onDeleteTask }: TaskRow
   const [expiring, setExpiring] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
-  const daysLeft = dayjs(task.dueDate).diff(dayjs(), 'day')
+  const daysLeft = daysUntil(task.dueDate)
   const isOverdue = daysLeft < 0
   const typeLabel = task.title ?? t(`task.type.${task.type}`, { defaultValue: task.type })
   const hasSlots = (task.respondedSlots?.length ?? 0) > 0

@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { daysUntil } from '@/utils/date'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 import { Badge, Button, Card, CardBody } from '@/components/ui'
@@ -18,7 +19,7 @@ export function PrimaryTaskCard({
   onAction: (task: Task) => void
 }) {
   const { t } = useTranslation()
-  const daysLeft = dayjs(task.dueDate).diff(dayjs(), 'day')
+  const daysLeft = daysUntil(task.dueDate)
   const isOverdue = daysLeft < 0
   const isUrgent = daysLeft <= 3
 
