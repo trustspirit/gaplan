@@ -297,7 +297,7 @@ $page-bg: $neutral-50;
   align-items: center;
   gap: $space-2;
   width: 100%;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 $space-3;
   border: 1px solid $color-border-strong;
   border-radius: $border-radius-md;
@@ -573,13 +573,19 @@ $page-bg: $neutral-50;
 
 @media (max-width: 959px) {
   .layout[data-view='list'] .calendarCol,
-  .layout[data-view='calendar'] .listCol,
+  // 달력 보기에서도 남길 말과 보내기 줄은 남긴다 — 달력에서 와드를 고른 회장이 보낼 곳이 있어야 한다.
+  .layout[data-view='calendar'] .listSection,
   .layout[data-view='calendar'] .statsSection {
     display: none;
   }
 
   .calendarCol {
     margin-bottom: $space-8;
+  }
+
+  // 보내기 줄(sticky)이 달력 보기에서도 화면 아래에 붙어 있도록, 붙는 범위를 목록 단이 아니라 전체로 넓힌다.
+  .listCol {
+    display: contents;
   }
 }
 

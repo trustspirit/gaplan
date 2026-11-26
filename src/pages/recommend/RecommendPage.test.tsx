@@ -215,6 +215,54 @@ describe('RecommendPage', () => {
     expect(triggers()[1]).toHaveTextContent('신촌 와드')
   })
 
+  it('keeps the confirmation when the refresh after sending fails', async () => {
+    const user = await openAsSeoul()
+    await pick(user, 0, '녹번 와드')
+    getMock.mockRejectedValue(new Error('offline'))
+    await user.click(screen.getByRole('button', { name: 'recommend.submit' }))
+    expect(await screen.findByText('recommend.doneTitle')).toBeInTheDocument()
+    await waitFor(() => expect(getMock).toHaveBeenCalledTimes(2))
+    expect(screen.getByText('recommend.doneTitle')).toBeInTheDocument()
+    expect(screen.queryByText('recommend.loadFailed')).not.toBeInTheDocument()
+  })
+
+  it('still closes the page when a refresh says the link no longer works', async () => {
+    const user = await openAsSeoul()
+    getMock.mockRejectedValue({ code: 'functions/permission-denied' })
+    await user.click(screen.getByRole('button', { name: 'recommend.submit' }))
+    expect(await screen.findByText('recommend.invalidLink')).toBeInTheDocument()
+  })
+
+  it('does not send an earlier pick for a Sunday the seventy has since taken away', async () => {
+    // 1월 17일은 이제 이 스테이크의 일요일이 아니다 — 목록에 없어 회장이 지울 수도 없다
+    const user = await open({
+      sundays: ['2027-01-10', '2027-01-24'],
+      recommendations: [
+        {
+          ...earlier,
+          picks: [
+            { date: '2027-01-10', wardId: 'seoul-sinchon', wardName: '신촌 와드' },
+            { date: '2027-01-17', wardId: 'seoul-nokbeon', wardName: '녹번 와드' },
+          ],
+        },
+      ],
+    })
+    await waitFor(() => expect(triggers()[0]).toHaveTextContent('신촌 와드'))
+    expect(screen.getByText(/recommend.pickedCount/)).toHaveTextContent('"count":1')
+    await user.click(screen.getByRole('button', { name: 'recommend.resubmit' }))
+    await waitFor(() => expect(submitMock).toHaveBeenCalled())
+    expect(submitMock.mock.calls[0][0].picks).toEqual([{ date: '2027-01-10', wardId: 'seoul-sinchon' }])
+  })
+
+  it('keeps the send bar outside the part the calendar view hides', async () => {
+    const user = await open()
+    await user.click(screen.getByRole('tab', { name: /recommend.viewCalendar/ }))
+    // jsdom은 CSS를 계산하지 않는다 — 달력 보기에서 숨는 구역(listSection) 밖에 있는지로 본다
+    const submit = screen.getByRole('button', { name: 'recommend.submit' })
+    expect(submit.closest('[class*="listSection"]')).toBeNull()
+    expect(screen.getByText('recommend.step2').closest('[class*="listSection"]')).not.toBeNull()
+  })
+
   it('does not count or send a Sunday that was decided for another unit', async () => {
     getMock.mockResolvedValueOnce({ data: data({ decisions: {} }) })
     const user = userEvent.setup()

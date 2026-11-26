@@ -248,7 +248,7 @@ export function VisitRequestDetailPage() {
       await setVisitRequestStatus(request.id, next)
       toast.success(next === 'closed' ? t('visitRequest.closed') : t('visitRequest.reopened'))
     } catch {
-      toast.error(t('visitRequest.decideFailed'))
+      toast.error(t(next === 'closed' ? 'visitRequest.closeFailed' : 'visitRequest.reopenFailed'))
     } finally {
       setStatusSaving(false)
     }
@@ -304,7 +304,7 @@ export function VisitRequestDetailPage() {
       toast.success(t('visitRequest.deleted'))
       navigate(ROUTES.planVisitRequests)
     } catch {
-      toast.error(t('visitRequest.decideFailed'))
+      toast.error(t('visitRequest.deleteFailed'))
       setDeleting(false)
     }
   }

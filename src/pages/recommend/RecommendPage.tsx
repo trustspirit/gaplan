@@ -121,7 +121,10 @@ export default function RecommendPage({
       .then((res) => !cancelled && setState({ kind: 'ready', data: res.data }))
       .catch((err: { code?: string }) => {
         if (cancelled) return
-        setState({ kind: 'error', invalid: err?.code === 'functions/permission-denied' })
+        const invalid = err?.code === 'functions/permission-denied'
+        // 이미 화면이 떠 있으면(제출 뒤·언어 전환 뒤 다시 받기) 실패해도 그대로 둔다 — 보낸 직후
+        // "불러오지 못했습니다"가 뜨면 회장은 추천이 안 갔다고 읽는다. 링크가 막힌 경우만 알린다.
+        setState((prev) => (prev.kind === 'ready' && !invalid ? prev : { kind: 'error', invalid }))
       })
     return () => {
       cancelled = true
@@ -181,6 +184,8 @@ export default function RecommendPage({
       Object.entries(picks)
         .filter(([d, w]) => {
           if (!w) return false
+          // 칠십인이 이 스테이크에서 뺀 일요일은 목록에 없어 고칠 수도 없다 — 예전 추천이 남아 있어도 보내지 않는다.
+          if (data && !data.sundays.includes(d)) return false
           const decision = data?.decisions[d]
           if (decision) return decision.unitId === unitId
           if (data && unit && otherRegionTurn(data, unit, d) !== null) return false
@@ -395,7 +400,7 @@ export default function RecommendPage({
           <div className={styles.listCol}>
 
             {/* 1. 일요일별 추천 */}
-            <section className={styles.section} aria-labelledby="rec-step2">
+            <section className={clsx(styles.section, styles.listSection)} aria-labelledby="rec-step2">
               <h2 id="rec-step2" className={styles.stepTitle}>
                 <span className={styles.stepNo}>1</span>
                 {t('recommend.step2')}
