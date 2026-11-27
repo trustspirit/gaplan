@@ -25,3 +25,16 @@ export async function findAssignedSeventyRefs<R>(db: AssignedSeventyDb<R>, preUi
   )
   return snaps.flatMap((snap) => snap.docs.map((d) => d.ref))
 }
+
+/**
+ * 그 칠십인 것인 기록 — 방문 요청·태스크·방문 계획. 일정(schedules)은 병합 함수가 따로 옮긴다.
+ * 옛 uid에 남으면 첫 로그인 뒤 칠십인·집행서기 화면에서 이 기록들이 사라진다.
+ */
+export const SEVENTY_OWNED_COLLECTIONS = ['visitRequests', 'tasks', 'visitPlans'] as const
+
+export async function findSeventyOwnedRefs<R>(db: AssignedSeventyDb<R>, preUid: string): Promise<R[]> {
+  const snaps = await Promise.all(
+    SEVENTY_OWNED_COLLECTIONS.map((name) => db.collection(name).where('seventyUid', '==', preUid).get()),
+  )
+  return snaps.flatMap((snap) => snap.docs.map((d) => d.ref))
+}
