@@ -40,7 +40,17 @@ function wardDisplayName(wardNameKo: string, lang: 'ko' | 'en'): string {
  * 색은 쓰지 않는다 — 스테이크 색과 방문 칸 색칠은 시선을 흩뜨린다고 사용자가 거절했다.
  * 방문은 진한 와드 이름 + 흐린 스테이크 이름, 예정은 흐린 글씨 + "예정"으로만 구분한다.
  */
-export function WardVisitsView({ token }: { token: string }) {
+export function WardVisitsView({
+  token,
+  scrollToCurrentMonth = false,
+  onAutoScrolled,
+}: {
+  token: string
+  /** 이번 달 카드로 한 번 내릴지. "처음 이 탭을 열 때만"은 페이지가 정한다 — 탭을 오가거나
+   *  새로고침해 이 컴포넌트가 다시 떠도 다시 내리지 않게. */
+  scrollToCurrentMonth?: boolean
+  onAutoScrolled?: () => void
+}) {
   const { t, i18n } = useTranslation()
   const lang: 'ko' | 'en' = i18n.language === 'en' ? 'en' : 'ko'
   const dow = lang === 'ko' ? DOW_KO : DOW_EN
@@ -83,16 +93,18 @@ export function WardVisitsView({ token }: { token: string }) {
 
   const months = loaded ? buildWardVisitYear(loaded, year, today) : null
 
-  // 처음 이 탭을 열었을 때 한 번만, 휴대폰에서 이번 달 카드로 내린다(표는 한 화면에 다 보인다).
+  // 휴대폰에서 이번 달 카드로 한 번 내린다(표는 한 화면에 다 보인다).
   useEffect(() => {
-    if (scrolledRef.current || status !== 'ready' || year !== currentYear) return
+    if (!scrollToCurrentMonth || scrolledRef.current || status !== 'ready' || year !== currentYear)
+      return
     scrolledRef.current = true
+    onAutoScrolled?.()
     const card = currentCardRef.current
     if (!card) return
     if (typeof window.matchMedia === 'function' && window.matchMedia(DESKTOP_QUERY).matches) return
     const top = card.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET
     if (top > 0) window.scrollTo({ top, behavior: 'smooth' })
-  }, [status, year, currentYear])
+  }, [scrollToCurrentMonth, onAutoScrolled, status, year, currentYear])
 
   const monthLabel = (m: WardVisitMonth, long: boolean) => {
     const d = dayjs(`${m.key}-01`)
@@ -118,20 +130,22 @@ export function WardVisitsView({ token }: { token: string }) {
   )
 
   const renderCard = (m: WardVisitMonth) => {
-    // 일요일 줄(방문이 없어도) + 평일 방문 줄을 날짜순으로 한 목록에.
+    // 일요일 줄(방문이 없어도) + 평일 방문 줄을 날짜순으로 한 목록에. 같은 날짜는 한 줄에 쌓는다.
     type Row = { date: string; visits: WardVisitEntry[] }
-    const rows: Row[] = []
-    for (const slot of m.slots) {
-      if (slot.sundayDate) {
-        rows.push({
-          date: slot.sundayDate,
-          visits: slot.visits.filter((v) => v.date === slot.sundayDate),
-        })
+    const byDate = new Map<string, Row>()
+    const rowFor = (date: string) => {
+      let row = byDate.get(date)
+      if (!row) {
+        row = { date, visits: [] }
+        byDate.set(date, row)
       }
-      for (const v of slot.visits)
-        if (v.date !== slot.sundayDate) rows.push({ date: v.date, visits: [v] })
+      return row
     }
-    rows.sort((a, b) => a.date.localeCompare(b.date))
+    for (const slot of m.slots) {
+      if (slot.sundayDate) rowFor(slot.sundayDate)
+      for (const v of slot.visits) rowFor(v.date).visits.push(v)
+    }
+    const rows = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date))
     const todayIndex = m.isCurrent ? rows.findIndex((r) => r.date > today) : -1
 
     return (
@@ -162,7 +176,7 @@ export function WardVisitsView({ token }: { token: string }) {
                   <span className={styles.todayLine} />
                 </div>
               )}
-              <div className={styles.cardRow}>
+              <div className={styles.cardRow} data-row-date={row.date}>
                 <span className={styles.day}>
                   {dayjs(row.date).date()}
                   <small>{dow[dayjs(row.date).day()]}</small>

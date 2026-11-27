@@ -1,4 +1,4 @@
-import { doc, setDoc, writeBatch } from 'firebase/firestore'
+import { doc, runTransaction, setDoc, writeBatch } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { generatePublicToken } from '@/utils/publicToken'
 import { seventyScopeId } from '@/utils/publicScope'
@@ -91,20 +91,25 @@ export async function setSeventyPublic(
   const scopeId = seventyScopeId(seventyUid)
 
   if (next && !currentToken && globalToken) {
-    const batch = writeBatch(db)
-    batch.set(doc(db, 'settings', 'publicTokens'), { [globalToken]: scopeId }, { merge: true })
-    batch.set(
-      doc(db, 'settings', 'publicUnits'),
-      { [scopeId]: { enabled: true, token: globalToken } },
-      { merge: true },
-    )
-    batch.set(
-      doc(db, 'settings', 'public'),
-      { globalToken: '', globalTokenMovedTo: scopeId },
-      { merge: true },
-    )
-    await batch.commit()
-    return { token: globalToken, tookOverGlobal: true }
+    // 화면에 남은 globalToken만 믿지 않는다 — 화면을 열어 둔 사이 다른 사람이 이미 넘겨받았으면 같은
+    // 토큰을 다른 칠십인에게 다시 옮기게 된다. 지금도 그 토큰이 전체 링크일 때만 넘겨받는다.
+    const tookOver = await runTransaction(db, async (tx) => {
+      const pubRef = doc(db, 'settings', 'public')
+      const tokensRef = doc(db, 'settings', 'publicTokens')
+      const [pub, tokens] = await Promise.all([tx.get(pubRef), tx.get(tokensRef)])
+      if (pub.data()?.globalToken !== globalToken || tokens.data()?.[globalToken] !== ALL_SCOPE) {
+        return false
+      }
+      tx.set(tokensRef, { [globalToken]: scopeId }, { merge: true })
+      tx.set(
+        doc(db, 'settings', 'publicUnits'),
+        { [scopeId]: { enabled: true, token: globalToken } },
+        { merge: true },
+      )
+      tx.set(pubRef, { globalToken: '', globalTokenMovedTo: scopeId }, { merge: true })
+      return true
+    })
+    if (tookOver) return { token: globalToken, tookOverGlobal: true }
   }
 
   const token = await setScopePublic(scopeId, next, currentToken)

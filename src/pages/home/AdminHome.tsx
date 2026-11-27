@@ -51,10 +51,20 @@ export function AdminHome() {
   const publicUrl = globalToken ? `${window.location.origin}/public/schedule/${globalToken}` : null
 
   useEffect(() => {
-    getDoc(doc(db, 'settings', 'public')).then((snap) => {
+    getDoc(doc(db, 'settings', 'public')).then(async (snap) => {
       const data = snap.data()
       setSchedulePublic(data?.schedulePublic === true)
-      if (data?.globalToken) setGlobalToken(data.globalToken as string)
+      if (data?.globalToken) {
+        setGlobalToken(data.globalToken as string)
+        return
+      }
+      // 전체 링크가 칠십인 개인 링크로 옮겨 갔으면 그 주소가 이제 "공개 링크"다(publicLinkService의
+      // setSeventyPublic). 껐다 켜도 전체 링크는 다시 생기지 않으니 설정으로 보내는 안내는 틀리다.
+      const movedTo = typeof data?.globalTokenMovedTo === 'string' ? data.globalTokenMovedTo : ''
+      if (!movedTo) return
+      const units = await getDoc(doc(db, 'settings', 'publicUnits'))
+      const moved = units.data()?.[movedTo] as { enabled?: boolean; token?: string } | undefined
+      if (moved?.enabled && moved.token) setGlobalToken(moved.token)
     })
   }, [])
 

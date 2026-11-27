@@ -72,9 +72,8 @@
 .visit {
   display: block;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  // 자르지 않고 줄을 바꾼다 — 긴 와드 이름 뒤의 "예정"·요일이 말줄임에 잘리면 예정인지 알 수 없다.
+  overflow-wrap: anywhere;
 
   &[data-planned] .ward {
     color: $color-text-muted;

@@ -174,6 +174,12 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
   // 칠십인 개인 링크에서만 "방문 와드" 탭이 생긴다. 최신 응답에서만 켠다(historyBefore와 같은 이유).
   const [wardVisitsAvailable, setWardVisitsAvailable] = useState(false)
   const [view, setView] = useState<'schedule' | 'wards'>('schedule')
+  // 한 번 연 방문 와드 탭은 숨겨 두기만 한다 — 탭을 오갈 때마다 다시 받고 다시 스크롤하지 않게.
+  // 새로고침은 refreshKey로 다시 띄워 받은 기록을 버린다.
+  const [wardsOpened, setWardsOpened] = useState(false)
+  // 이번 달로 내리기는 이 페이지에서 처음 탭을 열 때 한 번뿐이다(새로고침해도 다시 하지 않는다).
+  const [wardsAutoScrolled, setWardsAutoScrolled] = useState(false)
+  const markWardsAutoScrolled = useCallback(() => setWardsAutoScrolled(true), [])
 
   const toggleNotes = (id: string) => {
     setOpenNotes((prev) => {
@@ -476,16 +482,27 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
                 role="tab"
                 aria-selected={view === v}
                 className={clsx(styles.viewTab, view === v && styles.viewTabActive)}
-                onClick={() => setView(v)}
+                onClick={() => {
+                  setView(v)
+                  if (v === 'wards') setWardsOpened(true)
+                }}
               >
                 {v === 'schedule' ? t('public.tabSchedule') : t('public.tabWardVisits')}
               </button>
             ))}
           </div>
         )}
-        {view === 'wards' && token ? (
-          <WardVisitsView token={token} />
-        ) : (
+        {wardsOpened && token && (
+          <div hidden={view !== 'wards'}>
+            <WardVisitsView
+              key={refreshKey}
+              token={token}
+              scrollToCurrentMonth={!wardsAutoScrolled}
+              onAutoScrolled={markWardsAutoScrolled}
+            />
+          </div>
+        )}
+        {view === 'wards' ? null : (
         <>
         {!isInitialLoading && historyStatus !== 'unavailable' && (
           <div className={styles.historyBar} ref={historyBarRef}>

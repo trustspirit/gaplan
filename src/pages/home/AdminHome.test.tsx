@@ -27,11 +27,13 @@ function schedule(over: Partial<Schedule> = {}): Schedule {
 
 let schedules: Schedule[] = []
 let publicSettings: Record<string, unknown> = {}
+let unitSettings: Record<string, unknown> = {}
 const navigateMock = vi.fn()
 
 beforeEach(() => {
   schedules = [schedule()]
   publicSettings = {}
+  unitSettings = {}
   navigateMock.mockClear()
 })
 
@@ -60,8 +62,10 @@ vi.mock('@/hooks/useDeleteWithUndo', () => ({
 // jsdom에 없는 window.matchMedia를 부른다.
 vi.mock('@/hooks/useIsMobile', () => ({ useIsMobile: () => false }))
 vi.mock('firebase/firestore', () => ({
-  doc: vi.fn(),
-  getDoc: vi.fn(() => Promise.resolve({ data: () => publicSettings })),
+  doc: vi.fn((_db: unknown, col: string, id: string) => `${col}/${id}`),
+  getDoc: vi.fn((ref: string) =>
+    Promise.resolve({ data: () => (ref === 'settings/publicUnits' ? unitSettings : publicSettings) }),
+  ),
 }))
 vi.mock('@/firebase', () => ({ db: {} }))
 vi.mock('@/services/scheduleService', () => ({ deleteScheduleViaCF: vi.fn() }))
@@ -123,6 +127,25 @@ describe('AdminHome', () => {
       expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/public/schedule/tok123`),
     )
     expect(navigateMock).not.toHaveBeenCalled()
+  })
+
+  // 전체 링크가 칠십인 개인 링크로 옮겨 간 뒤에도 홈의 "공개 링크"는 그 주소를 복사해야 한다 —
+  // "껐다 켜면 새 링크가 생긴다"는 안내는 넘겨받은 뒤에는 거짓이다.
+  it('copies the seventy link the shared link moved to', async () => {
+    publicSettings = { schedulePublic: true, globalToken: '', globalTokenMovedTo: 'seventy:u1' }
+    unitSettings = { 'seventy:u1': { enabled: true, token: 'tok123' } }
+    vi.mocked(toast.info).mockClear()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.assign(navigator, { clipboard: { writeText } })
+
+    render(<AdminHome />)
+    await waitFor(() => expect(getDoc).toHaveBeenCalledWith('settings/publicUnits'))
+    await userEvent.click(screen.getByRole('button', { name: /common.publicLink/ }))
+
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/public/schedule/tok123`),
+    )
+    expect(toast.info).not.toHaveBeenCalled()
   })
 
   // 판정 R41 — 홈에 지표 타일을 두지 않는다.

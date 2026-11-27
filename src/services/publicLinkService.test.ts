@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => ({
   batchSet: vi.fn(),
   batchCommit: vi.fn().mockResolvedValue(undefined),
   setDoc: vi.fn().mockResolvedValue(undefined),
+  txSet: vi.fn(),
+  txDocs: {} as Record<string, Record<string, unknown>>,
 }))
 
 vi.mock('@/firebase', () => ({ db: {} }))
@@ -11,6 +13,11 @@ vi.mock('firebase/firestore', () => ({
   doc: (_db: unknown, col: string, id: string) => `${col}/${id}`,
   setDoc: mocks.setDoc,
   writeBatch: () => ({ set: mocks.batchSet, commit: mocks.batchCommit }),
+  runTransaction: (_db: unknown, fn: (tx: unknown) => Promise<unknown>) =>
+    fn({
+      get: (ref: string) => Promise.resolve({ data: () => mocks.txDocs[ref] }),
+      set: mocks.txSet,
+    }),
 }))
 vi.mock('@/utils/publicToken', () => ({ generatePublicToken: () => 'newtok' }))
 
@@ -18,6 +25,11 @@ beforeEach(() => {
   mocks.batchSet.mockClear()
   mocks.batchCommit.mockClear()
   mocks.setDoc.mockClear()
+  mocks.txSet.mockClear()
+  mocks.txDocs = {
+    'settings/public': { globalToken: 'gtok' },
+    'settings/publicTokens': { gtok: '__all__' },
+  }
 })
 
 describe('setGlobalPublic', () => {
@@ -136,18 +148,36 @@ describe('setSeventyPublic', () => {
     const result = await setSeventyPublic('u1', true, null, 'gtok')
 
     expect(result).toEqual({ token: 'gtok', tookOverGlobal: true })
-    expect(mocks.batchSet).toHaveBeenCalledWith('settings/publicTokens', { gtok: 'seventy:u1' }, { merge: true })
-    expect(mocks.batchSet).toHaveBeenCalledWith(
+    expect(mocks.txSet).toHaveBeenCalledWith('settings/publicTokens', { gtok: 'seventy:u1' }, { merge: true })
+    expect(mocks.txSet).toHaveBeenCalledWith(
       'settings/publicUnits',
       { 'seventy:u1': { enabled: true, token: 'gtok' } },
       { merge: true },
     )
-    expect(mocks.batchSet).toHaveBeenCalledWith(
+    expect(mocks.txSet).toHaveBeenCalledWith(
       'settings/public',
       { globalToken: '', globalTokenMovedTo: 'seventy:u1' },
       { merge: true },
     )
-    expect(mocks.batchCommit).toHaveBeenCalledTimes(1)
+  })
+
+  // 화면을 열어 둔 사이 다른 사람이 이미 넘겨받았으면, 화면에 남은 옛 토큰으로 다시 넘겨받지 않는다 —
+  // 그러면 첫 칠십인의 주소·구독에 두 번째 칠십인 일정이 뜬다.
+  it('does not take over a shared token that already moved elsewhere', async () => {
+    mocks.txDocs = {
+      'settings/public': { globalToken: '', globalTokenMovedTo: 'seventy:u0' },
+      'settings/publicTokens': { gtok: 'seventy:u0' },
+    }
+
+    const result = await setSeventyPublic('u1', true, null, 'gtok')
+
+    expect(result).toEqual({ token: 'newtok', tookOverGlobal: false })
+    expect(mocks.txSet).not.toHaveBeenCalled()
+    expect(mocks.batchSet).toHaveBeenCalledWith(
+      'settings/publicUnits',
+      { 'seventy:u1': { enabled: true, token: 'newtok' } },
+      { merge: true },
+    )
   })
 
   it('mints its own token when there is no shared link to take over', async () => {
