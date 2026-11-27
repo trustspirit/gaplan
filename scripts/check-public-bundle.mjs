@@ -8,7 +8,10 @@ import { fileURLToPath } from 'node:url'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // 엔트리별 gzip 상한. 공개 일정과 방문 추천 링크는 로그인 앱과 따로 빌드된다(vite.config.ts).
 const ENTRIES = [
-  { html: 'public.html', limit: 90 * 1024 },
+  // 90 kB였다. 이전 일정 불러오기(2026-11)로 기능 코드만 0.8 kB 늘어 CI 빌드가 90.5 kB가 됐다 —
+  // 청크 수(5)는 그대로라 로그인 앱 모듈이 새로 딸려 온 게 아니다. 이 검사가 잡으려는 건
+  // 그런 수십 kB짜리 유입이므로 여유를 조금만 더 둔다.
+  { html: 'public.html', limit: 95 * 1024 },
   // 추천 화면은 firebase/functions 호출이 필요해 공개 일정보다 크다(2026-11 기준 약 131 kB).
   { html: 'recommend.html', limit: 140 * 1024 },
 ]
