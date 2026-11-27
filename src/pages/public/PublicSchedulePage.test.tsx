@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type {
   PublicGeneralScheduleItem,
   PublicScheduleItem,
@@ -13,12 +13,14 @@ vi.mock('react-i18next', () => ({
   }),
 }))
 
-const { fetchPublicSchedulePageDataMock } = vi.hoisted(() => ({
+const { fetchPublicSchedulePageDataMock, fetchPublicScheduleHistoryMock } = vi.hoisted(() => ({
   fetchPublicSchedulePageDataMock: vi.fn(),
+  fetchPublicScheduleHistoryMock: vi.fn(),
 }))
 
 vi.mock('@/services/publicScheduleService', () => ({
   fetchPublicSchedulePageData: fetchPublicSchedulePageDataMock,
+  fetchPublicScheduleHistory: fetchPublicScheduleHistoryMock,
 }))
 
 const scheduleItem: PublicScheduleItem = {
@@ -149,5 +151,89 @@ describe('PublicSchedulePage — 여러 날 행사', () => {
     const row = screen.getByText('다가올 금식').closest(`.${styles.scheduleRow}`)!
     expect(row.querySelector(`.${styles.dow}`)).toBeInTheDocument()
     expect(row.querySelector(`.${styles.dateEnd}`)).toBeNull()
+  })
+})
+
+describe('PublicSchedulePage — 이전 일정 불러오기', () => {
+  const olderVisit: PublicScheduleItem = { ...scheduleItem, id: 'older-1', date: '2098-12-01', customTitle: '지난 방문' }
+
+  beforeEach(() => {
+    sessionStorage.clear()
+    fetchPublicSchedulePageDataMock.mockReset()
+    fetchPublicScheduleHistoryMock.mockReset()
+  })
+
+  it('서버가 경계를 주지 않으면(배포 전) 이전 일정 줄을 보이지 않는다', async () => {
+    fetchPublicSchedulePageDataMock.mockResolvedValue({
+      schedules: [scheduleItem],
+      generalSchedules: [],
+      scopeDisplayName: null,
+    })
+    renderPage('token-no-history')
+    await waitFor(() => expect(document.querySelector(`.${styles.scheduleRow}`)).not.toBeNull())
+    expect(screen.queryByText('public.historyLoad')).toBeNull()
+  })
+
+  it('버튼을 누르면 경계 이전 일정을 받아 위에 붙이고, 끝이면 더 없음을 보여준다', async () => {
+    fetchPublicSchedulePageDataMock.mockResolvedValue({
+      schedules: [scheduleItem],
+      generalSchedules: [],
+      scopeDisplayName: null,
+      historyBefore: '2099-01-03',
+    })
+    fetchPublicScheduleHistoryMock.mockResolvedValue({
+      schedules: [olderVisit],
+      generalSchedules: [],
+      nextBefore: null,
+    })
+    renderPage('token-history')
+
+    fireEvent.click(await screen.findByText('public.historyLoad'))
+
+    await waitFor(() => expect(screen.getByText('지난 방문')).toBeInTheDocument())
+    expect(fetchPublicScheduleHistoryMock).toHaveBeenCalledWith('token-history', '2099-01-03')
+    expect(screen.getByText('public.historyEnd')).toBeInTheDocument()
+    const ids = Array.from(document.querySelectorAll('[data-entry-id]')).map((el) => el.getAttribute('data-entry-id'))
+    expect(ids).toEqual(['older-1', 'sched-1'])
+  })
+
+  it('다음 쪽은 서버가 준 nextBefore로 이어 부른다', async () => {
+    fetchPublicSchedulePageDataMock.mockResolvedValue({
+      schedules: [scheduleItem],
+      generalSchedules: [],
+      scopeDisplayName: null,
+      historyBefore: '2099-01-03',
+    })
+    fetchPublicScheduleHistoryMock
+      .mockResolvedValueOnce({ schedules: [olderVisit], generalSchedules: [], nextBefore: '2098-12-01' })
+      .mockResolvedValueOnce({ schedules: [], generalSchedules: [], nextBefore: null })
+    renderPage('token-history-2')
+
+    fireEvent.click(await screen.findByText('public.historyLoad'))
+    await waitFor(() => expect(screen.getByText('지난 방문')).toBeInTheDocument())
+    fireEvent.click(screen.getByText('public.historyLoad'))
+
+    await waitFor(() => expect(screen.getByText('public.historyEnd')).toBeInTheDocument())
+    expect(fetchPublicScheduleHistoryMock).toHaveBeenLastCalledWith('token-history-2', '2098-12-01')
+  })
+
+  it('실패하면 다시 시도 버튼을 보여주고, 누르면 같은 경계로 다시 부른다', async () => {
+    fetchPublicSchedulePageDataMock.mockResolvedValue({
+      schedules: [scheduleItem],
+      generalSchedules: [],
+      scopeDisplayName: null,
+      historyBefore: '2099-01-03',
+    })
+    fetchPublicScheduleHistoryMock
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce({ schedules: [olderVisit], generalSchedules: [], nextBefore: null })
+    renderPage('token-history-err')
+
+    fireEvent.click(await screen.findByText('public.historyLoad'))
+    fireEvent.click(await screen.findByText('public.retry'))
+
+    await waitFor(() => expect(screen.getByText('지난 방문')).toBeInTheDocument())
+    expect(fetchPublicScheduleHistoryMock).toHaveBeenCalledTimes(2)
+    expect(fetchPublicScheduleHistoryMock).toHaveBeenLastCalledWith('token-history-err', '2099-01-03')
   })
 })

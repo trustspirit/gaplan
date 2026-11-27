@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
@@ -20,6 +20,7 @@ import { ALL_UNITS, WARDS } from '@/constants/regions'
 import { isMultiDayEvent } from '@/types'
 import { isMultiDaySchedule, scheduleLastDate } from '@/utils/scheduleDates'
 import {
+  fetchPublicScheduleHistory,
   fetchPublicSchedulePageData,
   type PublicGeneralScheduleItem,
   type PublicScheduleItem,
@@ -41,6 +42,22 @@ function getUnitName(unitId: string, lang: string) {
 function getWardName(wardNameKo: string, lang: string) {
   if (lang !== 'en') return wardNameKo
   return WARDS.find((w) => w.name.ko === wardNameKo)?.name.en ?? wardNameKo
+}
+
+// 위로 스크롤해 화면 맨 위에서 이만큼 안쪽으로 들어오면 이전 일정을 이어 받는다.
+const HISTORY_TRIGGER_PX = 400
+
+/**
+ * 이전 일정 불러오기 상태.
+ * unavailable: 서버가 historyBefore를 주지 않았다(배포 전 함수) — 줄 자체를 감춘다.
+ * end: 끝까지 받았다 — "더 없음"을 보여준다.
+ */
+type HistoryStatus = 'unavailable' | 'idle' | 'loading' | 'error' | 'end'
+
+/** 이미 있는 항목을 앞세워(더 최신 응답이다) 이전 일정을 앞에 붙인다. */
+function prependById<T extends { id: string }>(current: T[], older: T[]): T[] {
+  const seen = new Set(current.map((item) => item.id))
+  return [...older.filter((item) => !seen.has(item.id)), ...current]
 }
 
 function SkeletonCards() {
@@ -144,6 +161,14 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
   const [openNotes, setOpenNotes] = useState<Set<string>>(new Set())
   const todayMarkerRef = useRef<HTMLDivElement | null>(null)
   const autoScrolledToTodayRef = useRef(false)
+  const mainRef = useRef<HTMLElement | null>(null)
+  const [historyCursor, setHistoryCursor] = useState<string | null>(null)
+  const [historyStatus, setHistoryStatus] = useState<HistoryStatus>('unavailable')
+  // 새로고침·토큰 변경 뒤에 도착한 이전 일정 응답은 버린다 — 새 목록에 옛 쪽이 섞인다.
+  const historyGenRef = useRef(0)
+  // 이전 일정을 위에 붙이기 직전, 맨 위 항목의 화면 위치. 붙인 뒤 그만큼 스크롤을 되돌려
+  // 보던 자리가 아래로 밀리지 않게 한다.
+  const historyAnchorRef = useRef<{ el: HTMLElement; top: number } | null>(null)
 
   const toggleNotes = (id: string) => {
     setOpenNotes((prev) => {
@@ -169,6 +194,9 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
     }
 
     let cancelled = false
+    historyGenRef.current += 1
+    setHistoryCursor(null)
+    setHistoryStatus('unavailable')
 
     // 동기 씨앗 — 있으면 즉시 렌더(스켈레톤 스킵). 서버가 문서에 심어 준 데이터를
     // 먼저 본다: 이 문서와 함께 도착한 것이라 왕복이 없다. 없으면 지난 방문의
@@ -185,12 +213,16 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
     // 항상 최신 데이터 백그라운드 fetch
     setRefreshing(true)
     fetchPublicSchedulePageData(token)
-      .then(({ schedules: s, generalSchedules: generals, scopeDisplayName: name }) => {
+      .then(({ schedules: s, generalSchedules: generals, scopeDisplayName: name, historyBefore }) => {
         if (cancelled) return
         setSchedules(s)
         setScopeDisplayName(name)
         setGeneralSchedules(generals)
         setFetchError(false)
+        // 이전 일정의 경계는 방금 받은 최신 응답에서만 잡는다 — 문서에 심긴 데이터나 캐시는
+        // 경계가 다를 수 있어(배포 전 데이터) 그 사이 일정이 빠질 수 있다.
+        setHistoryCursor(historyBefore ?? null)
+        setHistoryStatus(historyBefore ? 'idle' : 'unavailable')
         saveScheduleCache(token, {
           schedules: s,
           generalSchedules: generals,
@@ -230,6 +262,59 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
     i18n.changeLanguage(next)
     localStorage.setItem('publicLang', next)
   }
+
+  // keepPosition: 스크롤로 불렀을 때만 보던 자리를 지킨다. 맨 위에서 버튼을 눌렀다면
+  // 받은 이전 일정이 바로 눈앞에 보여야 한다 — 자리를 지키면 아무 일도 없는 것처럼 보인다.
+  const loadOlder = useCallback((keepPosition: boolean) => {
+    if (!token || !historyCursor) return
+    if (historyStatus !== 'idle' && historyStatus !== 'error') return
+
+    const gen = historyGenRef.current
+    setHistoryStatus('loading')
+    fetchPublicScheduleHistory(token, historyCursor)
+      .then((page) => {
+        if (gen !== historyGenRef.current) return
+        const first = keepPosition ? mainRef.current?.querySelector<HTMLElement>('[data-entry-id]') : null
+        historyAnchorRef.current = first ? { el: first, top: first.getBoundingClientRect().top } : null
+        setSchedules((prev) => prependById(prev, page.schedules))
+        setGeneralSchedules((prev) => prependById(prev, page.generalSchedules))
+        setHistoryCursor(page.nextBefore)
+        setHistoryStatus(page.nextBefore ? 'idle' : 'end')
+      })
+      .catch((e) => {
+        if (gen !== historyGenRef.current) return
+        console.warn('[PublicSchedulePage] history fetch failed:', e)
+        setHistoryStatus('error')
+      })
+  }, [token, historyCursor, historyStatus])
+
+  // 위에 붙인 만큼 스크롤을 내려 보던 항목을 제자리에 둔다. 브라우저의 스크롤 고정
+  // (overflow-anchor)이 이미 맞춰 줬다면 차이가 0이라 아무것도 하지 않는다 — iOS Safari처럼
+  // 그게 없는 곳에서만 실제로 움직인다.
+  useLayoutEffect(() => {
+    const anchor = historyAnchorRef.current
+    if (!anchor) return
+    historyAnchorRef.current = null
+    if (!anchor.el.isConnected) return
+    const delta = anchor.el.getBoundingClientRect().top - anchor.top
+    if (delta !== 0) window.scrollBy(0, delta)
+  })
+
+  // 사용자가 위로 스크롤해 맨 위 근처에 오면 이어 받는다. 아래로 움직이는 스크롤(처음
+  // "오늘"로 내려가는 자동 스크롤, 붙인 뒤의 위치 보정)은 무시한다. 실패하면 자동으로 다시
+  // 부르지 않고 버튼으로 재시도하게 둔다.
+  useEffect(() => {
+    if (historyStatus !== 'idle') return
+    let lastY = window.scrollY
+    const onScroll = () => {
+      const y = window.scrollY
+      const movingUp = y < lastY
+      lastY = y
+      if (movingUp && y < HISTORY_TRIGGER_PX) loadOlder(true)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [historyStatus, loadOlder])
 
   const handleRefresh = () => {
     if (token) clearScheduleCache(token)
@@ -364,7 +449,34 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
         </div>
       </header>
 
-      <main className={styles.main}>
+      <main className={styles.main} ref={mainRef}>
+        {!isInitialLoading && historyStatus !== 'unavailable' && (
+          <div className={styles.historyBar}>
+            {historyStatus === 'idle' && (
+              <button type="button" className={styles.historyBtn} onClick={() => loadOlder(false)}>
+                <ChevronUp size={14} />
+                {t('public.historyLoad')}
+              </button>
+            )}
+            {historyStatus === 'loading' && (
+              <span className={styles.historyStatus} role="status">
+                <RefreshCw size={13} className={styles.spinning} />
+                {t('public.historyLoading')}
+              </span>
+            )}
+            {historyStatus === 'error' && (
+              <>
+                <span className={styles.historyStatus}>{t('public.historyError')}</span>
+                <button type="button" className={styles.historyBtn} onClick={() => loadOlder(false)}>
+                  {t('public.retry')}
+                </button>
+              </>
+            )}
+            {historyStatus === 'end' && (
+              <span className={styles.historyStatus}>{t('public.historyEnd')}</span>
+            )}
+          </div>
+        )}
         {isInitialLoading ? (
           <SkeletonCards />
         ) : monthKeys.length === 0 ? (
@@ -409,6 +521,7 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
                             className={styles.scheduleRow}
                             data-past={gIsPast}
                             data-kind="general"
+                            data-entry-id={`gs-${gs.id}`}
                           >
                             <div className={styles.scheduleRowMain}>
                               <div className={styles.colorBar} data-type={gs.category} />
@@ -500,7 +613,7 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
                     return (
                       <Fragment key={s.id}>
                         {renderTodayMarker(monthKey, entryIndex)}
-                        <div className={styles.scheduleRow} data-past={isPast}>
+                        <div className={styles.scheduleRow} data-past={isPast} data-entry-id={s.id}>
                           <div className={styles.scheduleRowMain}>
                             <div
                               className={styles.colorBar}

@@ -33,7 +33,7 @@ export class PublicScopeError extends Error {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type FirestoreDocData = Record<string, any>
+export type FirestoreDocData = Record<string, any>
 
 interface FirestoreDocSnapshotLike {
   exists: boolean
@@ -44,18 +44,19 @@ interface FirestoreDocRefLike {
   get(): Promise<FirestoreDocSnapshotLike>
 }
 
-interface FirestoreQueryDocLike {
+export interface FirestoreQueryDocLike {
   id: string
   data(): FirestoreDocData
 }
 
-interface FirestoreQuerySnapshotLike {
+export interface FirestoreQuerySnapshotLike {
   docs: FirestoreQueryDocLike[]
 }
 
-interface FirestoreQueryLike {
+export interface FirestoreQueryLike {
   where(field: string, op: string, value: unknown): FirestoreQueryLike
   orderBy(field: string, direction?: string): FirestoreQueryLike
+  limit(n: number): FirestoreQueryLike
   get(): Promise<FirestoreQuerySnapshotLike>
 }
 
@@ -110,13 +111,22 @@ export interface PublicSchedulePayload {
   schedules: PublicSchedule[]
   generalSchedules: PublicGeneralSchedule[]
   scopeDisplayName: string | null
+  // 이 응답이 담은 가장 이른 날짜(포함). 이보다 앞선 일정은 getPublicScheduleHistory에
+  // before로 넘겨 10개씩 받는다 — 일정·행사가 같은 경계를 써야 그 사이가 비지 않는다.
+  historyBefore: string
 }
 
-function todayInSeoul(): string {
-  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split('T')[0]
+/** 토큰이 가리키는 공개 범위. 판정은 resolvePublicScope 한 곳에서만 한다. */
+export interface PublicScope {
+  scopeValue: string
+  // 전체 공유면 null, 그 외에는 이 링크가 보여줄 유닛 id 목록.
+  unitIds: string[] | null
+  scopeDisplayName: string | null
+  // 행사 스코프 판정은 유닛 링크에서도 그 유닛의 CC 기준으로 해야 한다.
+  scopeRegionId: string | null
 }
 
-export async function buildPublicSchedulePayload(db: FirestoreLike, token: string): Promise<PublicSchedulePayload> {
+export async function resolvePublicScope(db: FirestoreLike, token: string): Promise<PublicScope> {
   const [tokensSnap, settingsSnap, unitsSnap] = await Promise.all([
     db.doc('settings/publicTokens').get(),
     db.doc('settings/public').get(),
@@ -137,7 +147,6 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
 
   let unitIds: string[] | null = null
   let scopeDisplayName: string | null = null
-  // 행사 스코프 판정은 유닛 링크에서도 그 유닛의 CC 기준으로 해야 한다.
   let scopeRegionId: string | null = null
 
   if (scopeValue !== '__all__') {
@@ -155,9 +164,105 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
     scopeRegionId = getScopeRegionId(scopeValue)
   }
 
+  return { scopeValue, unitIds, scopeDisplayName, scopeRegionId }
+}
+
+/**
+ * 일정 문서가 이 공개 범위에 실리는가.
+ * 지역 공유는 와드 방문만 노출하되, 그 CC의 협의 평의회는 함께 내보낸다.
+ * 칠십인 전용으로 표시한 일정(주로 협의 평의회)은 지역 공유에서 뺀다.
+ */
+export function isScheduleInPublicScope(data: FirestoreDocData, scope: PublicScope): boolean {
+  if (scope.unitIds === null) return true
+  return (
+    !isSeventyOnly(data) &&
+    (data.type === 'ward_visit' || isCcCouncilForScope(data, scope.scopeValue))
+  )
+}
+
+/** 일정 문서를 공개 응답 모양으로 옮긴다. 칠십인 전용 필드는 전체 공유에서만 싣는다. */
+export function toPublicSchedule(
+  d: FirestoreQueryDocLike,
+  scope: PublicScope,
+  seventyNotesById: Map<string, string>,
+): PublicSchedule {
+  const sd = d.data()
+  const isAll = scope.unitIds === null
+  return {
+    id: d.id,
+    type: sd.type,
+    unitId: sd.unitId,
+    ...(sd.regionId ? { regionId: sd.regionId } : {}),
+    ...(sd.targetKind === CC_COUNCIL_TARGET_KIND ? { targetKind: CC_COUNCIL_TARGET_KIND } : {}),
+    date: sd.date,
+    ...(isMultiDaySchedule(sd as { date: string; endDate?: string | null }) ? { endDate: sd.endDate } : {}),
+    ...(isAllDaySchedule(sd) ? { allDay: true } : {}),
+    startTime: sd.startTime,
+    endTime: sd.endTime,
+    status: sd.status,
+    ...(sd.wardName ? { wardName: sd.wardName } : {}),
+    ...(sd.zoomLink != null ? { zoomLink: sd.zoomLink } : {}),
+    ...(sd.customTitle != null ? { customTitle: sd.customTitle } : {}),
+    ...(sd.confirmedAt ? { confirmedAt: sd.confirmedAt } : {}),
+    ...(sd.notes != null ? { notes: sd.notes } : {}),
+    ...(isAll && seventyNotesById.has(d.id) ? { seventyNotes: seventyNotesById.get(d.id) } : {}),
+    ...(isAll && sd.presidentAccompanied === true ? { presidentAccompanied: true } : {}),
+  }
+}
+
+/** 행사가 이 공개 범위에 실리는가. 로그인 사용자용 관련성 판단(isGeneralScheduleRelevant,
+ *  src/types/generalSchedule.ts)과는 별개의 규칙이다. */
+export function isGeneralInPublicScope(data: FirestoreDocData, scope: PublicScope): boolean {
+  return generalScheduleInScope(data, scope.scopeRegionId, scope.unitIds)
+}
+
+/** 행사 문서를 공개 응답 모양으로 옮긴다. 칠십인 전용 메모는 전체 공유에서만 싣는다. */
+export function toPublicGeneralSchedule(
+  d: FirestoreQueryDocLike,
+  scope: PublicScope,
+  generalSeventyNotesById: Map<string, string>,
+): PublicGeneralSchedule {
+  const data = d.data()
+  return {
+    id: d.id,
+    title: data.title,
+    date: data.date,
+    ...(data.endDate ? { endDate: data.endDate } : {}),
+    ...(data.startTime ? { startTime: data.startTime } : {}),
+    ...(data.endTime ? { endTime: data.endTime } : {}),
+    category: data.category,
+    isPublic: true,
+    ...(data.seventyAttends === true ? { seventyAttends: true } : {}),
+    ...(scope.unitIds === null && generalSeventyNotesById.has(d.id)
+      ? { seventyNotes: generalSeventyNotesById.get(d.id) }
+      : {}),
+  }
+}
+
+/** 메모 컬렉션 조회 결과를 id → 메모 맵으로. 비어 있는 메모는 뺀다. */
+export function notesById(snap: FirestoreQuerySnapshotLike | null): Map<string, string> {
+  const map = new Map<string, string>()
+  for (const d of snap?.docs ?? []) {
+    const notes = d.data().notes
+    if (typeof notes === 'string' && notes.trim()) map.set(d.id, notes)
+  }
+  return map
+}
+
+/** 공개 일정표가 처음에 싣는 가장 이른 날짜 — 일주일 전. */
+function initialCutoff(): string {
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - 7)
-  const cutoffStr = cutoff.toISOString().split('T')[0]
+  return cutoff.toISOString().split('T')[0]
+}
+
+export async function buildPublicSchedulePayload(db: FirestoreLike, token: string): Promise<PublicSchedulePayload> {
+  const scope = await resolvePublicScope(db, token)
+  const { scopeValue, unitIds, scopeDisplayName } = scope
+
+  // 일정과 행사가 같은 경계를 쓴다 — 예전처럼 행사만 오늘부터 실으면, 위로 스크롤해
+  // 이전 일정을 이어 받을 때 지난 일주일의 행사가 영영 빠진다.
+  const cutoffStr = initialCutoff()
 
   let query = db.collection('schedules')
   if (unitIds !== null) query = query.where('unitId', 'in', unitIds)
@@ -176,13 +281,12 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
 
   // 칠십인 전용 행사는 isPublic이 false라 아래 isPublic 쿼리에 걸리지 않는다. 전체 공유
   // (칠십인 전용 페이지)에서만 한 번 더 조회해 합친다 — CC·유닛 링크는 아예 읽지 않는다.
-  const today = todayInSeoul()
   const seventyOnlyQuery =
     unitIds === null
       ? db
           .collection('generalSchedules')
           .where('seventyOnly', '==', true)
-          .where('date', '>=', today)
+          .where('date', '>=', cutoffStr)
           .orderBy('date', 'asc')
           .get()
           // 이 조회는 (seventyOnly, date) 복합 색인이 있어야 한다. 색인이 아직 만들어지는 중이면
@@ -230,7 +334,7 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
     db
       .collection('generalSchedules')
       .where('isPublic', '==', true)
-      .where('date', '>=', today)
+      .where('date', '>=', cutoffStr)
       .orderBy('date', 'asc')
       .get(),
     ccQuery,
@@ -239,82 +343,24 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
     generalSeventyNotesQuery,
   ])
 
-  const generalSeventyNotesById = new Map<string, string>()
-  for (const d of generalSeventyNotesSnap?.docs ?? []) {
-    const notes = d.data().notes
-    if (typeof notes === 'string' && notes.trim()) generalSeventyNotesById.set(d.id, notes)
-  }
-
-  const seventyNotesById = new Map<string, string>()
-  for (const d of seventyNotesSnap?.docs ?? []) {
-    const notes = d.data().notes
-    if (typeof notes === 'string' && notes.trim()) seventyNotesById.set(d.id, notes)
-  }
-
-  const unitSet = unitIds !== null ? new Set(unitIds) : null
+  const generalSeventyNotesById = notesById(generalSeventyNotesSnap)
+  const seventyNotesById = notesById(seventyNotesSnap)
 
   // 두 쿼리는 서로 겹치지 않지만(협의 평의회는 unitId가 빈 값), 방어적으로 id 기준 중복을 제거한다.
   const docs = dedupeById([...snap.docs, ...(ccSnap?.docs ?? [])])
 
   const schedules: PublicSchedule[] = docs
-    // 지역 공유는 와드 방문만 노출하되, 그 CC의 협의 평의회는 함께 내보낸다.
-    // 칠십인 전용으로 표시한 일정(주로 협의 평의회)은 지역 공유에서 뺀다.
-    .filter(
-      (d) =>
-        unitSet === null ||
-        (!isSeventyOnly(d.data()) &&
-          (d.data().type === 'ward_visit' || isCcCouncilForScope(d.data(), scopeValue))),
-    )
+    .filter((d) => isScheduleInPublicScope(d.data(), scope))
     .sort((a, b) => (a.data().date as string).localeCompare(b.data().date as string))
-    .map((d) => {
-      const sd = d.data()
-      return {
-        id: d.id,
-        type: sd.type,
-        unitId: sd.unitId,
-        ...(sd.regionId ? { regionId: sd.regionId } : {}),
-        ...(sd.targetKind === CC_COUNCIL_TARGET_KIND ? { targetKind: CC_COUNCIL_TARGET_KIND } : {}),
-        date: sd.date,
-        ...(isMultiDaySchedule(sd as { date: string; endDate?: string | null }) ? { endDate: sd.endDate } : {}),
-        ...(isAllDaySchedule(sd) ? { allDay: true } : {}),
-        startTime: sd.startTime,
-        endTime: sd.endTime,
-        status: sd.status,
-        ...(sd.wardName ? { wardName: sd.wardName } : {}),
-        ...(sd.zoomLink != null ? { zoomLink: sd.zoomLink } : {}),
-        ...(sd.customTitle != null ? { customTitle: sd.customTitle } : {}),
-        ...(sd.confirmedAt ? { confirmedAt: sd.confirmedAt } : {}),
-        ...(sd.notes != null ? { notes: sd.notes } : {}),
-        ...(unitSet === null && seventyNotesById.has(d.id) ? { seventyNotes: seventyNotesById.get(d.id) } : {}),
-        ...(unitSet === null && sd.presidentAccompanied === true ? { presidentAccompanied: true } : {}),
-      }
-    })
+    .map((d) => toPublicSchedule(d, scope, seventyNotesById))
 
   const generalDocs = dedupeById([...generalSnap.docs, ...(seventyOnlySnap?.docs ?? [])]).sort((a, b) =>
     (a.data().date as string).localeCompare(b.data().date as string),
   )
 
   const generalSchedules: PublicGeneralSchedule[] = generalDocs
-    // 로그인 사용자용 관련성 판단은 isGeneralScheduleRelevant(src/types/generalSchedule.ts)를 쓴다 —
-    // 이건 공개 스코프(전체 공유 vs 특정 CC 링크)에 실려야 하는지를 판단하는 별개의 규칙이다.
-    .filter((d) => generalScheduleInScope(d.data(), scopeRegionId, unitIds))
-    .map((d) => {
-      const data = d.data()
-      return {
-        id: d.id,
-        title: data.title,
-        date: data.date,
-        ...(data.endDate ? { endDate: data.endDate } : {}),
-        ...(data.startTime ? { startTime: data.startTime } : {}),
-        ...(data.endTime ? { endTime: data.endTime } : {}),
-        category: data.category,
-        isPublic: true,
-        ...(data.seventyAttends === true ? { seventyAttends: true } : {}),
-        ...(unitIds === null && generalSeventyNotesById.has(d.id)
-          ? { seventyNotes: generalSeventyNotesById.get(d.id) }
-          : {}),
-      }
-    })
+    .filter((d) => isGeneralInPublicScope(d.data(), scope))
+    .map((d) => toPublicGeneralSchedule(d, scope, generalSeventyNotesById))
 
-  return { schedules, generalSchedules, scopeDisplayName }
+  return { schedules, generalSchedules, scopeDisplayName, historyBefore: cutoffStr }
 }

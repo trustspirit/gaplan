@@ -22,6 +22,10 @@
     "presidentAccompanied": "Stake President Accompanies",
     "seventyNotesTitle": "Seventy-only notes",
     "allDay": "All day",
-    "seventyAttends": "Area Seventy attends"
+    "seventyAttends": "Area Seventy attends",
+    "historyLoad": "Show earlier",
+    "historyLoading": "Loading earlier schedules...",
+    "historyEnd": "No earlier schedules",
+    "historyError": "Could not load earlier schedules"
   }
 }

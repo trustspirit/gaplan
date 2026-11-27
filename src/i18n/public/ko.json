@@ -22,6 +22,10 @@
     "presidentAccompanied": "스테이크 회장 동행",
     "seventyNotesTitle": "칠십인 전용 메모",
     "allDay": "종일",
-    "seventyAttends": "지역 칠십인 참석"
+    "seventyAttends": "지역 칠십인 참석",
+    "historyLoad": "이전 일정 보기",
+    "historyLoading": "이전 일정을 불러오는 중...",
+    "historyEnd": "이전 일정이 더 없습니다",
+    "historyError": "이전 일정을 불러오지 못했습니다"
   }
 }
