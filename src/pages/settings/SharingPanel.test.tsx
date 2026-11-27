@@ -3,19 +3,31 @@ import userEvent from '@testing-library/user-event'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { getDoc } from 'firebase/firestore'
-import { setGlobalPublic, setScopePublic } from '@/services/publicLinkService'
+import { setGlobalPublic, setScopePublic, setSeventyPublic } from '@/services/publicLinkService'
 import { expectNoAccentStripe } from '@/components/ui/testing/bannedPatterns'
 import { toast } from 'sonner'
 import { SharingPanel } from './SharingPanel'
 
 let publicDoc: Record<string, unknown> = {}
 let unitsDoc: Record<string, unknown> = {}
+let mockUsers: Array<Record<string, unknown>> = []
+
+vi.mock('jotai', () => ({
+  useAtomValue: () => ({ uid: 'adm', role: 'admin', name: '관리자', email: 'adm@x', createdAt: '' }),
+  atom: vi.fn(),
+}))
+vi.mock('@/hooks/useUsers', () => ({ useUsers: () => ({ users: mockUsers, loading: false }) }))
 
 beforeEach(() => {
   publicDoc = { schedulePublic: true, globalToken: 'gtok' }
   unitsDoc = { 'seoul-stake': { enabled: true, token: 'stok' } }
   vi.mocked(setGlobalPublic).mockClear().mockResolvedValue('gtok')
   vi.mocked(setScopePublic).mockClear().mockResolvedValue('stok')
+  vi.mocked(setSeventyPublic).mockClear().mockResolvedValue({ token: 'gtok', tookOverGlobal: true })
+  mockUsers = [
+    { uid: 'u1', role: 'seventy', name: '김칠십', email: 'a@x', createdAt: '' },
+    { uid: 'u2', role: 'seventy', name: '나칠십', email: 'b@x', createdAt: '', preRegistered: true },
+  ]
   // 개별 테스트가 getDoc을 지연·거부로 덮어쓰므로(fetching/에러 테스트), 매번
   // 기본 구현으로 되돌려 다음 테스트로 새지 않게 한다.
   vi.mocked(getDoc)
@@ -28,8 +40,11 @@ beforeEach(() => {
     )
 })
 
+// 실제 i18next의 t는 렌더마다 같은 함수다. 매번 새로 만들면 화면의 읽기 effect(deps에 t)가 렌더마다
+// 다시 돌아 방금 바꾼 상태를 덮어쓴다.
+const stableT = (k: string) => k
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (k: string) => k }),
+  useTranslation: () => ({ t: stableT }),
   initReactI18next: { type: '3rdParty', init: () => {} },
 }))
 vi.mock('@/firebase', () => ({ db: {} }))
@@ -42,6 +57,7 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/services/publicLinkService', () => ({
   setGlobalPublic: vi.fn(),
   setScopePublic: vi.fn(),
+  setSeventyPublic: vi.fn(),
 }))
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
@@ -100,7 +116,7 @@ describe('SharingPanel', () => {
     const row = screen.getByTestId('global-toggle')
     await userEvent.click(within(row).getByRole('checkbox'))
 
-    await waitFor(() => expect(setGlobalPublic).toHaveBeenCalledWith(false, 'gtok'))
+    await waitFor(() => expect(setGlobalPublic).toHaveBeenCalledWith(false, 'gtok', null))
   })
 
   // 판정 R49 — 전역 킬스위치가 꺼져 있으면 단위 링크가 전부 죽는다. 그 사실을 적는다.
@@ -186,6 +202,39 @@ describe('SharingPanel', () => {
 
       await userEvent.click(toggle)
       expect(within(seoulGroup).queryByText('서울 스테이크')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('칠십인 개인 링크', () => {
+    const seventyRow = (name: string) => screen.getByText(name).closest('[data-seventy-row]') as HTMLElement
+
+    it('처음 켜면 전체 링크 토큰을 넘겨 서비스로 보내고, 넘겨받으면 전체 링크 복사를 감추고 안내한다', async () => {
+      render(<SharingPanel />)
+      await waitFor(() => expect(screen.getByText('김칠십')).toBeInTheDocument())
+      expect(within(screen.getByTestId('global-toggle')).getByTitle('common.copyLink')).toBeInTheDocument()
+
+      await userEvent.click(within(seventyRow('김칠십')).getByRole('checkbox'))
+
+      await waitFor(() => expect(setSeventyPublic).toHaveBeenCalledWith('u1', true, null, 'gtok'))
+      expect(await screen.findByText('settings.sharing.globalMovedTo')).toBeInTheDocument()
+      expect(within(screen.getByTestId('global-toggle')).queryByTitle('common.copyLink')).toBeNull()
+    })
+
+    it('이미 넘겨받았으면 처음부터 안내하고, 전역 스위치는 옮긴 곳을 서비스에 알린다', async () => {
+      publicDoc = { schedulePublic: true, globalToken: '', globalTokenMovedTo: 'seventy:u1' }
+      render(<SharingPanel />)
+
+      expect(await screen.findByText('settings.sharing.globalMovedTo')).toBeInTheDocument()
+      await userEvent.click(within(screen.getByTestId('global-toggle')).getByRole('checkbox'))
+      await waitFor(() => expect(setGlobalPublic).toHaveBeenCalledWith(false, null, 'seventy:u1'))
+    })
+
+    it('미리 등록만 된 칠십인 줄은 잠그고 이유를 적는다', async () => {
+      render(<SharingPanel />)
+      await waitFor(() => expect(screen.getByText('나칠십')).toBeInTheDocument())
+
+      expect(within(seventyRow('나칠십')).getByRole('checkbox')).toBeDisabled()
+      expect(within(seventyRow('나칠십')).getByText('settings.sharing.seventyLocked')).toBeInTheDocument()
     })
   })
 })

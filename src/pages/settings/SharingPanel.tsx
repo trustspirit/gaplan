@@ -1,15 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useAtomValue } from 'jotai'
 import { doc, getDoc } from 'firebase/firestore'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { Copy, Check, ChevronDown, ChevronRight } from 'lucide-react'
 import { db } from '@/firebase'
+import { authUserAtom } from '@/store/authAtom'
+import { useUsers } from '@/hooks/useUsers'
 import {
   setGlobalPublic,
   setScopePublic,
+  setSeventyPublic,
   type PublicScopeState,
 } from '@/services/publicLinkService'
+import { seventyScopeId } from '@/utils/publicScope'
+import { buildSeventyLinkRows, type SeventyLinkRow } from './seventyLinkRows'
 import {
   buildSharingGroups,
   filterSharingGroups,
@@ -45,6 +51,10 @@ export function SharingPanel() {
   const [reloadKey, setReloadKey] = useState(0)
   const [schedulePublic, setSchedulePublic] = useState(false)
   const [globalToken, setGlobalToken] = useState('')
+  // 전체 링크 토큰이 칠십인 개인 링크로 옮겨 갔으면 그 범위 값(`seventy:<uid>`).
+  const [globalMovedTo, setGlobalMovedTo] = useState('')
+  const viewer = useAtomValue(authUserAtom)
+  const { users } = useUsers()
   const [unitStates, setUnitStates] = useState<Record<string, PublicScopeState>>({})
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
@@ -59,10 +69,11 @@ export function SharingPanel() {
       .then(([pubSnap, unitsSnap]) => {
         setLoadFailed(false)
         const pubData = pubSnap.data() as
-          | { schedulePublic?: boolean; globalToken?: string }
+          | { schedulePublic?: boolean; globalToken?: string; globalTokenMovedTo?: string }
           | undefined
         setSchedulePublic(pubData?.schedulePublic === true)
         setGlobalToken(pubData?.globalToken ?? '')
+        setGlobalMovedTo(pubData?.globalTokenMovedTo ?? '')
         setUnitStates((unitsSnap.data() as Record<string, PublicScopeState>) ?? {})
       })
       // 읽기가 실패하면 여기 안 걸면 "전부 꺼짐"으로 조용히 렌더된다 — 뭔가
@@ -75,6 +86,13 @@ export function SharingPanel() {
   }, [t, reloadKey])
 
   const groups = useMemo(() => buildSharingGroups(unitStates), [unitStates])
+  const seventyRows = useMemo(
+    () => (viewer ? buildSeventyLinkRows(viewer, users, unitStates) : []),
+    [viewer, users, unitStates],
+  )
+  const movedToName = globalMovedTo
+    ? (users.find((u) => seventyScopeId(u.uid) === globalMovedTo)?.name ?? globalMovedTo)
+    : ''
   const filteredGroups = useMemo(
     () => filterSharingGroups(groups, query, filter === 'active'),
     [groups, query, filter],
@@ -113,9 +131,27 @@ export function SharingPanel() {
 
   const handleGlobalToggle = async (next: boolean) => {
     try {
-      const token = await setGlobalPublic(next, globalToken || null)
+      const token = await setGlobalPublic(next, globalToken || null, globalMovedTo || null)
       setSchedulePublic(next)
       setGlobalToken(token ?? '')
+    } catch {
+      toast.error(t('common.saveFailed'))
+    }
+  }
+
+  const handleSeventyToggle = async (row: SeventyLinkRow, next: boolean) => {
+    try {
+      const { token, tookOverGlobal } = await setSeventyPublic(
+        row.uid,
+        next,
+        row.token || null,
+        globalToken || null,
+      )
+      setUnitStates((prev) => ({ ...prev, [row.scopeId]: { enabled: next, token: token ?? '' } }))
+      if (tookOverGlobal) {
+        setGlobalToken('')
+        setGlobalMovedTo(row.scopeId)
+      }
     } catch {
       toast.error(t('common.saveFailed'))
     }
@@ -155,6 +191,50 @@ export function SharingPanel() {
               </button>
             )}
           </div>
+          {globalMovedTo && (
+            <p className={styles.desc}>{t('settings.sharing.globalMovedTo', { name: movedToName })}</p>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title={t('settings.sharing.seventyTitle')} />
+        <CardBody>
+          <p className={styles.desc}>{t('settings.sharing.seventyDesc')}</p>
+          {seventyRows.length === 0 ? (
+            <p className={styles.noMatch}>{t('settings.sharing.seventyEmpty')}</p>
+          ) : (
+            seventyRows.map((row) => (
+              <div
+                key={row.scopeId}
+                data-seventy-row
+                className={clsx(styles.row, row.enabled && styles.rowActive)}
+              >
+                <span className={styles.rowName}>
+                  {row.name}
+                  {row.locked && (
+                    <span className={styles.rowNote}>{t('settings.sharing.seventyLocked')}</span>
+                  )}
+                </span>
+                <Switch
+                  checked={row.enabled}
+                  onChange={(next) => handleSeventyToggle(row, next)}
+                  aria-label={row.name}
+                  disabled={fetching || loadFailed || row.locked}
+                />
+                {row.enabled && row.token && (
+                  <button
+                    type="button"
+                    className={styles.copyBtn}
+                    onClick={() => handleCopy(row.scopeId, row.token)}
+                    title={t('common.copyLink')}
+                  >
+                    {copiedScope === row.scopeId ? <Check size={14} /> : <Copy size={14} />}
+                  </button>
+                )}
+              </div>
+            ))
+          )}
         </CardBody>
       </Card>
 

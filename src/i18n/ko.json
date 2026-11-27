@@ -522,7 +522,12 @@
       "noMatch": "찾는 이름이 없습니다.",
       "copied": "링크를 복사했습니다.",
       "collapseRegion": "{{region}} 접기",
-      "expandRegion": "{{region}} 펼치기"
+      "expandRegion": "{{region}} 펼치기",
+      "seventyTitle": "칠십인 개인 링크",
+      "seventyDesc": "그 칠십인의 일정만 보이는 링크입니다.",
+      "seventyLocked": "첫 로그인 뒤에 만들 수 있습니다",
+      "seventyEmpty": "담당 칠십인이 없습니다",
+      "globalMovedTo": "전체 링크는 {{name}} 칠십인 개인 링크로 옮겨졌습니다"
     }
   },
   "admin": {

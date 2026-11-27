@@ -1,6 +1,7 @@
 import { doc, setDoc, writeBatch } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { generatePublicToken } from '@/utils/publicToken'
+import { seventyScopeId } from '@/utils/publicScope'
 
 /** `settings/publicUnits`의 한 항목 */
 export interface PublicScopeState {
@@ -19,8 +20,11 @@ const ALL_SCOPE = '__all__'
 export async function setGlobalPublic(
   next: boolean,
   currentToken: string | null,
+  // 전체 링크 토큰이 칠십인 개인 링크로 옮겨 갔으면 그 범위 값. 그때는 스위치만 바꾸고 새 토큰을
+  // 만들지 않는다 — 껐다 켤 때마다 전체 링크가 말없이 되살아나면 안 된다.
+  movedTo: string | null = null,
 ): Promise<string | null> {
-  if (next && !currentToken) {
+  if (next && !currentToken && !movedTo) {
     const token = generatePublicToken()
     const batch = writeBatch(db)
     batch.set(
@@ -68,4 +72,41 @@ export async function setScopePublic(
   )
   await batch.commit()
   return currentToken
+}
+
+/**
+ * 칠십인 개인 링크를 켜고 끈다.
+ *
+ * 처음 켤 때(그 칠십인에게 아직 토큰이 없을 때) 전체 링크 토큰이 있으면 새로 만들지 않고 그 토큰을
+ * 넘겨받는다 — 이미 전달된 칠십인 전용 링크 주소와 캘린더 구독이 그대로 그 칠십인 링크가 된다.
+ * 넘겨받으면 전체 링크 토큰을 비우고 어디로 옮겼는지 남긴다(setGlobalPublic의 movedTo). 그래서
+ * 넘겨받기는 한 번만 일어난다.
+ */
+export async function setSeventyPublic(
+  seventyUid: string,
+  next: boolean,
+  currentToken: string | null,
+  globalToken: string | null,
+): Promise<{ token: string | null; tookOverGlobal: boolean }> {
+  const scopeId = seventyScopeId(seventyUid)
+
+  if (next && !currentToken && globalToken) {
+    const batch = writeBatch(db)
+    batch.set(doc(db, 'settings', 'publicTokens'), { [globalToken]: scopeId }, { merge: true })
+    batch.set(
+      doc(db, 'settings', 'publicUnits'),
+      { [scopeId]: { enabled: true, token: globalToken } },
+      { merge: true },
+    )
+    batch.set(
+      doc(db, 'settings', 'public'),
+      { globalToken: '', globalTokenMovedTo: scopeId },
+      { merge: true },
+    )
+    await batch.commit()
+    return { token: globalToken, tookOverGlobal: true }
+  }
+
+  const token = await setScopePublic(scopeId, next, currentToken)
+  return { token, tookOverGlobal: false }
 }

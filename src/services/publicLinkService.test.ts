@@ -1,4 +1,4 @@
-import { setGlobalPublic, setScopePublic } from './publicLinkService'
+import { setGlobalPublic, setScopePublic, setSeventyPublic } from './publicLinkService'
 
 const mocks = vi.hoisted(() => ({
   batchSet: vi.fn(),
@@ -115,6 +115,66 @@ describe('setScopePublic', () => {
     expect(mocks.batchSet).toHaveBeenCalledWith(
       'settings/publicUnits',
       { 'seoul-stake': { enabled: false, token: '' } },
+      { merge: true },
+    )
+  })
+})
+
+describe('setGlobalPublic after the shared link moved to a seventy', () => {
+  // 넘겨받은 뒤 전역 스위치를 껐다 켜면 전체 링크가 말없이 되살아나면 안 된다.
+  it('only flips the switch and never mints a new shared token', async () => {
+    const token = await setGlobalPublic(true, null, 'seventy:u1')
+
+    expect(token).toBeNull()
+    expect(mocks.setDoc).toHaveBeenCalledWith('settings/public', { schedulePublic: true }, { merge: true })
+    expect(mocks.batchSet).not.toHaveBeenCalled()
+  })
+})
+
+describe('setSeventyPublic', () => {
+  it('takes over the shared link the first time a seventy link is turned on', async () => {
+    const result = await setSeventyPublic('u1', true, null, 'gtok')
+
+    expect(result).toEqual({ token: 'gtok', tookOverGlobal: true })
+    expect(mocks.batchSet).toHaveBeenCalledWith('settings/publicTokens', { gtok: 'seventy:u1' }, { merge: true })
+    expect(mocks.batchSet).toHaveBeenCalledWith(
+      'settings/publicUnits',
+      { 'seventy:u1': { enabled: true, token: 'gtok' } },
+      { merge: true },
+    )
+    expect(mocks.batchSet).toHaveBeenCalledWith(
+      'settings/public',
+      { globalToken: '', globalTokenMovedTo: 'seventy:u1' },
+      { merge: true },
+    )
+    expect(mocks.batchCommit).toHaveBeenCalledTimes(1)
+  })
+
+  it('mints its own token when there is no shared link to take over', async () => {
+    const result = await setSeventyPublic('u1', true, null, null)
+
+    expect(result).toEqual({ token: 'newtok', tookOverGlobal: false })
+    expect(mocks.batchSet).toHaveBeenCalledWith(
+      'settings/publicUnits',
+      { 'seventy:u1': { enabled: true, token: 'newtok' } },
+      { merge: true },
+    )
+  })
+
+  it('keeps its own token instead of taking over once it already has one', async () => {
+    const result = await setSeventyPublic('u1', true, 'mytok', 'gtok')
+
+    expect(result).toEqual({ token: 'mytok', tookOverGlobal: false })
+    expect(mocks.batchSet).not.toHaveBeenCalledWith('settings/publicTokens', { gtok: 'seventy:u1' }, { merge: true })
+  })
+
+  it('turns off without dropping the token', async () => {
+    const result = await setSeventyPublic('u1', false, 'mytok', null)
+
+    expect(result).toEqual({ token: 'mytok', tookOverGlobal: false })
+    expect(mocks.batchSet).toHaveBeenCalledWith(
+      'settings/publicUnits',
+      { 'seventy:u1': { enabled: false, token: 'mytok' } },
       { merge: true },
     )
   })
