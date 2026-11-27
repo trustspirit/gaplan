@@ -162,6 +162,7 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
   const todayMarkerRef = useRef<HTMLDivElement | null>(null)
   const autoScrolledToTodayRef = useRef(false)
   const mainRef = useRef<HTMLElement | null>(null)
+  const historyBarRef = useRef<HTMLDivElement | null>(null)
   const [historyCursor, setHistoryCursor] = useState<string | null>(null)
   const [historyStatus, setHistoryStatus] = useState<HistoryStatus>('unavailable')
   // 새로고침·토큰 변경 뒤에 도착한 이전 일정 응답은 버린다 — 새 목록에 옛 쪽이 섞인다.
@@ -263,19 +264,24 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
     localStorage.setItem('publicLang', next)
   }
 
-  // keepPosition: 스크롤로 불렀을 때만 보던 자리를 지킨다. 맨 위에서 버튼을 눌렀다면
-  // 받은 이전 일정이 바로 눈앞에 보여야 한다 — 자리를 지키면 아무 일도 없는 것처럼 보인다.
+  // keepPosition: 스크롤로 불렀으면 보던 항목을 제자리에 둔다. 버튼으로 불렀으면 버튼 줄을
+  // 제자리에 둬 그 바로 아래로 이전 일정이 펼쳐지게 한다 — 보던 항목을 지키면 새 일정이 화면
+  // 위로 밀려나 아무 일도 없는 것처럼 보인다.
   const loadOlder = useCallback((keepPosition: boolean) => {
     if (!token || !historyCursor) return
     if (historyStatus !== 'idle' && historyStatus !== 'error') return
 
     const gen = historyGenRef.current
+    // 이전 일정을 보기 시작했으면 "오늘"로 자동 스크롤할 일은 더 없다.
+    autoScrolledToTodayRef.current = true
     setHistoryStatus('loading')
     fetchPublicScheduleHistory(token, historyCursor)
       .then((page) => {
         if (gen !== historyGenRef.current) return
-        const first = keepPosition ? mainRef.current?.querySelector<HTMLElement>('[data-entry-id]') : null
-        historyAnchorRef.current = first ? { el: first, top: first.getBoundingClientRect().top } : null
+        const anchor = keepPosition
+          ? mainRef.current?.querySelector<HTMLElement>('[data-entry-id]')
+          : historyBarRef.current
+        historyAnchorRef.current = anchor ? { el: anchor, top: anchor.getBoundingClientRect().top } : null
         setSchedules((prev) => prependById(prev, page.schedules))
         setGeneralSchedules((prev) => prependById(prev, page.generalSchedules))
         setHistoryCursor(page.nextBefore)
@@ -318,7 +324,6 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
 
   const handleRefresh = () => {
     if (token) clearScheduleCache(token)
-    autoScrolledToTodayRef.current = false
     setRefreshKey((k) => k + 1)
   }
 
@@ -383,11 +388,17 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
       scrollY: window.scrollY,
       viewportHeight: window.innerHeight,
     })
-    if (targetTop === null) return
+    if (targetTop === null) {
+      // "오늘"이 이미 화면 위쪽에 보여 내릴 필요가 없다 — 그 판정도 한 번으로 끝낸다. 열어 두면
+      // 이전 일정을 위에 붙여 "오늘"이 밀려난 순간 다시 판정해 오늘로 끌어내린다. 캐시로 먼저
+      // 그린 화면은 최신 데이터가 오면 달라질 수 있어, 그때까지는 판정을 미룬다.
+      if (!refreshing) autoScrolledToTodayRef.current = true
+      return
+    }
 
     autoScrolledToTodayRef.current = true
     window.scrollTo({ top: targetTop, behavior: 'smooth' })
-  }, [isInitialLoading, todayMarkerPlacement])
+  }, [isInitialLoading, refreshing, todayMarkerPlacement])
 
   const renderTodayMarker = (monthKey: string, itemIndex: number) => {
     if (todayMarkerPlacement?.groupKey !== monthKey || todayMarkerPlacement.itemIndex !== itemIndex)
@@ -451,7 +462,7 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
 
       <main className={styles.main} ref={mainRef}>
         {!isInitialLoading && historyStatus !== 'unavailable' && (
-          <div className={styles.historyBar}>
+          <div className={styles.historyBar} ref={historyBarRef}>
             {historyStatus === 'idle' && (
               <button type="button" className={styles.historyBtn} onClick={() => loadOlder(false)}>
                 <ChevronUp size={14} />

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach } from 'vitest'
 import type {
   PublicGeneralScheduleItem,
   PublicScheduleItem,
@@ -235,5 +236,49 @@ describe('PublicSchedulePage — 이전 일정 불러오기', () => {
     await waitFor(() => expect(screen.getByText('지난 방문')).toBeInTheDocument())
     expect(fetchPublicScheduleHistoryMock).toHaveBeenCalledTimes(2)
     expect(fetchPublicScheduleHistoryMock).toHaveBeenLastCalledWith('token-history-err', '2099-01-03')
+  })
+})
+
+describe('PublicSchedulePage — 이전 일정과 오늘 자동 스크롤', () => {
+  const olderVisit: PublicScheduleItem = { ...scheduleItem, id: 'older-1', date: '2000-12-01', customTitle: '지난 방문' }
+  const todayVisit: PublicScheduleItem = { ...scheduleItem, id: 'later-1', date: '2099-01-10' }
+  const original = HTMLElement.prototype.getBoundingClientRect
+
+  beforeEach(() => {
+    sessionStorage.clear()
+    fetchPublicSchedulePageDataMock.mockReset()
+    fetchPublicScheduleHistoryMock.mockReset()
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    // "오늘" 표시는 처음엔 화면 위쪽(100px)에 있고, 이전 일정이 붙으면 아래(2000px)로 밀린다.
+    HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+      const pushed = document.querySelector('[data-entry-id="older-1"]') !== null
+      const top = this.className.includes(styles.todayMarker) ? (pushed ? 2000 : 100) : 0
+      return { top, bottom: top, left: 0, right: 0, width: 0, height: 0, x: 0, y: top, toJSON: () => ({}) }
+    }
+  })
+
+  afterEach(() => {
+    HTMLElement.prototype.getBoundingClientRect = original
+    vi.restoreAllMocks()
+  })
+
+  it('오늘이 이미 보여 내리지 않았다면, 이전 일정을 붙여도 오늘로 끌어내리지 않는다', async () => {
+    fetchPublicSchedulePageDataMock.mockResolvedValue({
+      schedules: [todayVisit],
+      generalSchedules: [],
+      scopeDisplayName: null,
+      historyBefore: '2001-01-01',
+    })
+    fetchPublicScheduleHistoryMock.mockResolvedValue({
+      schedules: [olderVisit],
+      generalSchedules: [],
+      nextBefore: null,
+    })
+    renderPage('token-history-scroll')
+
+    fireEvent.click(await screen.findByText('public.historyLoad'))
+    await waitFor(() => expect(screen.getByText('지난 방문')).toBeInTheDocument())
+
+    expect(window.scrollTo).not.toHaveBeenCalled()
   })
 })
