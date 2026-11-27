@@ -323,6 +323,36 @@ describe('PublicSchedulePage — 방문 와드 탭', () => {
     expect(screen.getByRole('banner')).toContainElement(tablist)
   })
 
+  it('머리글 높이를 재어 --public-header-h로 알려 준다', async () => {
+    const observers: Array<(entries: unknown[]) => void> = []
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(cb: (entries: unknown[]) => void) {
+          observers.push(cb)
+        }
+        observe() {}
+        disconnect() {}
+      },
+    )
+    fetchPublicSchedulePageDataMock.mockResolvedValue({
+      schedules: [scheduleItem],
+      generalSchedules: [],
+      scopeDisplayName: null,
+      wardVisitsAvailable: true,
+    })
+    const { container } = renderPage('token-header-h')
+    await screen.findByRole('tablist')
+    const header = screen.getByRole('banner')
+    header.getBoundingClientRect = () => ({ height: 76 }) as DOMRect
+    observers.forEach((cb) => cb([]))
+
+    await waitFor(() =>
+      expect((container.firstChild as HTMLElement).style.getPropertyValue('--public-header-h')).toBe('76px'),
+    )
+    vi.unstubAllGlobals()
+  })
+
   it('탭을 오가도 방문 기록을 다시 받지 않고, 새로고침하면 다시 받는다', async () => {
     fetchPublicSchedulePageDataMock.mockResolvedValue({
       schedules: [scheduleItem],

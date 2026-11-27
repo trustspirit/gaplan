@@ -2,7 +2,7 @@
 @use '@/styles/mixins' as *;
 
 // 칠십인 개인 링크의 "방문 와드" 탭. 색은 쓰지 않는다 — 방문 칸·스테이크 색칠은 시선이
-// 흩어진다고 사용자가 거절했다. 진한 글씨(방문)·흐린 글씨(스테이크·예정)로만 구분한다.
+// 흩어진다고 사용자가 거절했다. 와드 이름은 진하게, 스테이크 이름과 "예정" 꼬리표만 흐리게.
 
 .wrap {
   display: flex;
@@ -11,10 +11,17 @@
 }
 
 .yearNav {
+  // 스크롤해도 보이도록 고정 머리글 바로 아래에 붙인다. 높이는 페이지가 재어 넘긴다
+  // (PublicSchedulePage의 --public-header-h). 뒤 목록이 비치지 않게 페이지 바탕색을 깐다.
+  position: sticky;
+  top: var(--public-header-h, 60px);
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: $space-3;
+  padding: $space-2 0;
+  background: $color-bg;
 }
 
 .yearBtn {
@@ -74,11 +81,7 @@
   min-width: 0;
   // 자르지 않고 줄을 바꾼다 — 긴 와드 이름 뒤의 "예정"·요일이 말줄임에 잘리면 예정인지 알 수 없다.
   overflow-wrap: anywhere;
-
-  &[data-planned] .ward {
-    color: $color-text-muted;
-    font-weight: $font-weight-medium;
-  }
+  // 예정 방문도 같은 글자색·굵기다 — "예정" 꼬리표(.planned)로만 구분한다(사용자 결정).
 }
 
 .ward {

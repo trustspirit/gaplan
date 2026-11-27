@@ -164,6 +164,10 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
   const todayMarkerRef = useRef<HTMLDivElement | null>(null)
   const autoScrolledToTodayRef = useRef(false)
   const mainRef = useRef<HTMLElement | null>(null)
+  const headerRef = useRef<HTMLElement | null>(null)
+  // 고정 머리글의 실제 높이. 화면 폭·터치 여부로 44~76px까지 바뀐다 — 방문 와드 탭의 연도 넘김이
+  // 이 값(--public-header-h)으로 머리글 바로 아래에 붙는다.
+  const [headerHeight, setHeaderHeight] = useState<number | null>(null)
   const historyBarRef = useRef<HTMLDivElement | null>(null)
   const [historyCursor, setHistoryCursor] = useState<string | null>(null)
   const [historyStatus, setHistoryStatus] = useState<HistoryStatus>('unavailable')
@@ -340,6 +344,16 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
     setRefreshKey((k) => k + 1)
   }
 
+  useEffect(() => {
+    const header = headerRef.current
+    if (!header || typeof ResizeObserver === 'undefined') return
+    const measure = () => setHeaderHeight(Math.round(header.getBoundingClientRect().height))
+    const observer = new ResizeObserver(measure)
+    observer.observe(header)
+    measure()
+    return () => observer.disconnect()
+  }, [])
+
   const lang = i18n.language
 
   const title = scopeDisplayName
@@ -454,8 +468,15 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
   }
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
+    <div
+      className={styles.page}
+      style={
+        headerHeight !== null
+          ? ({ '--public-header-h': `${headerHeight}px` } as React.CSSProperties)
+          : undefined
+      }
+    >
+      <header className={styles.header} ref={headerRef}>
         <h1 className={styles.headerTitle}>{title}</h1>
         {/* 칠십인 개인 링크의 보기 전환. 본문 맨 위에 두면 스크롤할 때 함께 올라가 사라져
             고정 머리글에 둔다 — 데스크톱은 가운데, 휴대폰은 오른쪽 버튼들 앞. */}

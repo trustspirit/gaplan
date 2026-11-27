@@ -137,4 +137,18 @@ describe('WardVisitsView', () => {
     expect(block).not.toMatch(/white-space:\s*nowrap/)
     expect(block).not.toMatch(/text-overflow:\s*ellipsis/)
   })
+
+  // 스크롤하면 연도 넘김이 사라졌다 — 고정 머리글 바로 아래(--public-header-h)에 붙어 있어야 한다.
+  it('연도 넘김 줄은 머리글 아래에 붙어 있다', () => {
+    const scss = readFileSync(resolve(__dirname, 'WardVisitsView.module.scss'), 'utf8')
+    const block = scss.slice(scss.indexOf('.yearNav {'), scss.indexOf('}', scss.indexOf('.yearNav {')))
+    expect(block).toMatch(/position:\s*sticky/)
+    expect(block).toMatch(/top:\s*var\(--public-header-h/)
+  })
+
+  // 예정 방문도 지난 방문과 같은 글자색·굵기로 두고 "예정" 꼬리표로만 구분한다(사용자 결정).
+  it('예정 방문의 와드 이름을 흐리게 바꾸지 않는다', () => {
+    const scss = readFileSync(resolve(__dirname, 'WardVisitsView.module.scss'), 'utf8')
+    expect(scss).not.toMatch(/\[data-planned\][^{]*\{[^}]*color/)
+  })
 })

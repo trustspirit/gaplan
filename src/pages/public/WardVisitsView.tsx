@@ -38,7 +38,7 @@ function wardDisplayName(wardNameKo: string, lang: 'ko' | 'en'): string {
  * 1년 표로 그린다(CSS가 폭에 따라 하나만 보인다).
  *
  * 색은 쓰지 않는다 — 스테이크 색과 방문 칸 색칠은 시선을 흩뜨린다고 사용자가 거절했다.
- * 방문은 진한 와드 이름 + 흐린 스테이크 이름, 예정은 흐린 글씨 + "예정"으로만 구분한다.
+ * 방문은 진한 와드 이름 + 흐린 스테이크 이름. 예정 방문도 같은 글씨에 "예정" 꼬리표만 붙인다.
  */
 export function WardVisitsView({
   token,
