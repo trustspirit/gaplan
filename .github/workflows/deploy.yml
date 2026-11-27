@@ -37,8 +37,11 @@ jobs:
               - 'firestore.indexes.json'
 
   deploy-hosting:
-    needs: changes
-    if: needs.changes.outputs.hosting == 'true' || github.event_name == 'workflow_dispatch'
+    # 백엔드(색인·함수)가 끝난 뒤에 호스팅을 올린다. 새 화면이 아직 없는 함수를 부르거나, 새 범위를
+    # 모르는 옛 함수 앞에서 칠십인 링크를 켜 기존 주소가 막히는 일이 없게 한다. 백엔드가 건너뛰어진
+    # 푸시(화면만 바뀜)에서는 결과가 skipped라 그대로 돈다.
+    needs: [changes, deploy-backend]
+    if: ${{ !cancelled() && needs.deploy-backend.result != 'failure' && (needs.changes.outputs.hosting == 'true' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
