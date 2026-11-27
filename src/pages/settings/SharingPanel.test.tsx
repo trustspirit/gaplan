@@ -229,12 +229,12 @@ describe('SharingPanel', () => {
       await waitFor(() => expect(setGlobalPublic).toHaveBeenCalledWith(false, null, 'seventy:u1'))
     })
 
-    it('미리 등록만 된 칠십인 줄은 잠그고 이유를 적는다', async () => {
+    // 첫 로그인 때 링크가 진짜 uid로 옮겨 가므로(mergePreRegisteredUser) 잠그지 않는다.
+    it('미리 등록만 된 칠십인 줄도 켤 수 있다', async () => {
       render(<SharingPanel />)
       await waitFor(() => expect(screen.getByText('나칠십')).toBeInTheDocument())
 
-      expect(within(seventyRow('나칠십')).getByRole('checkbox')).toBeDisabled()
-      expect(within(seventyRow('나칠십')).getByText('settings.sharing.seventyLocked')).toBeInTheDocument()
+      expect(within(seventyRow('나칠십')).getByRole('checkbox')).toBeEnabled()
     })
   })
 })

@@ -525,7 +525,6 @@
       "expandRegion": "Expand {{region}}",
       "seventyTitle": "Seventy personal links",
       "seventyDesc": "Shows only that Seventy's schedule.",
-      "seventyLocked": "Available after their first sign-in",
       "seventyEmpty": "No assigned Seventy",
       "globalMovedTo": "The shared link now belongs to {{name}}"
     }

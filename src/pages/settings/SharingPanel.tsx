@@ -210,17 +210,12 @@ export function SharingPanel() {
                 data-seventy-row
                 className={clsx(styles.row, row.enabled && styles.rowActive)}
               >
-                <span className={styles.rowName}>
-                  {row.name}
-                  {row.locked && (
-                    <span className={styles.rowNote}>{t('settings.sharing.seventyLocked')}</span>
-                  )}
-                </span>
+                <span className={styles.rowName}>{row.name}</span>
                 <Switch
                   checked={row.enabled}
                   onChange={(next) => handleSeventyToggle(row, next)}
                   aria-label={row.name}
-                  disabled={fetching || loadFailed || row.locked}
+                  disabled={fetching || loadFailed}
                 />
                 {row.enabled && row.token && (
                   <button

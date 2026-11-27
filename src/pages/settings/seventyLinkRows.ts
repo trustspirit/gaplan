@@ -8,8 +8,6 @@ export interface SeventyLinkRow {
   scopeId: string
   enabled: boolean
   token: string
-  /** 미리 등록만 된 칠십인 — 첫 로그인 때 uid가 바뀌어 그 전에 만든 링크는 빈 일정표가 된다. */
-  locked: boolean
 }
 
 function isSeventy(user: AppUser): boolean {
@@ -23,6 +21,7 @@ function isExecSecretary(user: AppUser): boolean {
 /**
  * 「설정 › 공유」의 칠십인 개인 링크 줄. 관리자는 칠십인 전부, 집행서기는 담당 칠십인 한 명만 본다.
  * 이 제한은 화면에서만 한다 — 규칙은 지금도 집행서기가 공개 링크 문서를 통째로 쓸 수 있게 열려 있다.
+ * 미리 등록만 된 칠십인도 켤 수 있다 — 첫 로그인 때 mergePreRegisteredUser가 링크도 진짜 uid로 옮긴다.
  */
 export function buildSeventyLinkRows(
   viewer: AppUser,
@@ -45,7 +44,6 @@ export function buildSeventyLinkRows(
         scopeId,
         enabled: state?.enabled === true,
         token: state?.token ?? '',
-        locked: s.preRegistered === true,
       }
     })
     .sort((a, b) => a.name.localeCompare(b.name, 'ko'))

@@ -15,7 +15,7 @@ describe('buildSeventyLinkRows', () => {
   it('관리자에게는 칠십인(부역할 칠십인 관리자 포함) 전부를 이름순으로 보여 준다', () => {
     const rows = buildSeventyLinkRows(u({ uid: 'adm', role: 'admin' }), users, {})
     expect(rows.map((r) => r.uid)).toEqual(['b', 'a', 'p'])
-    expect(rows[0]).toMatchObject({ scopeId: 'seventy:b', enabled: false, token: '', locked: false })
+    expect(rows[0]).toMatchObject({ scopeId: 'seventy:b', enabled: false, token: '' })
   })
 
   it('집행서기에게는 담당 칠십인 한 줄만', () => {
@@ -32,11 +32,12 @@ describe('buildSeventyLinkRows', () => {
     expect(buildSeventyLinkRows(u({ uid: 'es', role: 'exec_secretary' }), users, {})).toEqual([])
   })
 
-  it('미리 등록만 된 칠십인 줄은 잠그고, 저장된 켜짐·토큰을 반영한다', () => {
+  // 첫 로그인 때 mergePreRegisteredUser가 개인 링크도 진짜 uid로 옮기므로 잠그지 않는다.
+  it('미리 등록만 된 칠십인도 줄이 있고, 저장된 켜짐·토큰을 반영한다', () => {
     const rows = buildSeventyLinkRows(u({ uid: 'adm', role: 'admin' }), users, {
       'seventy:a': { enabled: true, token: 't' },
     })
-    expect(rows.find((r) => r.uid === 'p')?.locked).toBe(true)
-    expect(rows.find((r) => r.uid === 'a')).toMatchObject({ enabled: true, token: 't', locked: false })
+    expect(rows.find((r) => r.uid === 'p')).not.toHaveProperty('locked')
+    expect(rows.find((r) => r.uid === 'a')).toMatchObject({ enabled: true, token: 't' })
   })
 })

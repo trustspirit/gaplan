@@ -88,13 +88,6 @@
   @include truncate;
 }
 
-// 칠십인 줄이 잠긴 이유(미리 등록만 된 칠십인).
-.rowNote {
-  margin-left: $space-2;
-  font-size: $font-size-xs;
-  color: var(--text-muted);
-}
-
 .collapseBtn {
   display: inline-flex;
   align-items: center;
