@@ -1,7 +1,14 @@
 import { type Request, onRequest } from 'firebase-functions/v2/https'
 import { PUBLIC_HTTP_OPTS } from './fnOptions'
 import * as admin from 'firebase-admin'
-import { getScopeUnitIds, getScopeDisplayName, getScopeRegionId } from './regions'
+import {
+  PublicScopeError,
+  resolvePublicScope,
+  schedulesBaseQuery,
+  type FirestoreLike,
+  type PublicScope,
+} from './publicSchedulePayload'
+import { icsScopeErrorMessage } from './publicScheduleIcsScope'
 import { isCcCouncilForScope } from './ccCouncil'
 import { buildScheduleTitle } from './scheduleTitle'
 import { generalScheduleInScope } from './generalScheduleScope'
@@ -56,48 +63,22 @@ export const publicScheduleIcs = onRequest(
         return
       }
 
-      // Resolve token, global flag, and per-unit flags in parallel
-      const [tokensSnap, settingsSnap, unitsSnap] = await Promise.all([
-        admin.firestore().doc('settings/publicTokens').get(),
-        admin.firestore().doc('settings/public').get(),
-        admin.firestore().doc('settings/publicUnits').get(),
-      ])
-
-      const scopeValue: string | undefined = tokensSnap.exists ? tokensSnap.data()?.[token] : undefined
-      if (!scopeValue) {
-        res.setHeader('Cache-Control', 'no-store')
-        res.status(403).send('Invalid token')
-        return
-      }
-
-      const globalEnabled = settingsSnap.exists && settingsSnap.data()?.schedulePublic === true
-      if (!globalEnabled) {
-        res.setHeader('Cache-Control', 'no-store')
-        res.status(403).send('Public schedule is not enabled')
-        return
-      }
-
-      let unitIds: string[] | null = null
-      let calName = '일정표'
-      // 행사 스코프 판정은 유닛 링크에서도 그 유닛의 CC 기준으로 해야 한다.
-      let scopeRegionId: string | null = null
-
-      if (scopeValue !== '__all__') {
-        const unitEnabled = unitsSnap.exists && unitsSnap.data()?.[scopeValue]?.enabled === true
-        if (!unitEnabled) {
+      // 토큰·전역 스위치·링크별 켜짐 판정은 웹 화면과 같은 함수를 쓴다(칠십인 개인 링크 포함).
+      // 따로 복사해 두면 한쪽만 새 범위를 알게 되고, 그 링크의 구독이 끊긴다.
+      const db = admin.firestore() as unknown as FirestoreLike
+      let scope: PublicScope
+      try {
+        scope = await resolvePublicScope(db, token)
+      } catch (e) {
+        if (e instanceof PublicScopeError) {
           res.setHeader('Cache-Control', 'no-store')
-          res.status(403).send('This scope is not enabled')
+          res.status(403).send(icsScopeErrorMessage(e.reason))
           return
         }
-        unitIds = getScopeUnitIds(scopeValue)
-        if (unitIds.length === 0) {
-          res.setHeader('Cache-Control', 'no-store')
-          res.status(403).send('Invalid scope')
-          return
-        }
-        calName = getScopeDisplayName(scopeValue) || '일정표'
-        scopeRegionId = getScopeRegionId(scopeValue)
+        throw e
       }
+      const { scopeValue, unitIds, scopeRegionId } = scope
+      const calName = scope.scopeDisplayName ?? '일정표'
 
       // Date cutoff: 7 days ago — same window as the web view
       const cutoff = new Date()
@@ -107,9 +88,7 @@ export const publicScheduleIcs = onRequest(
       // Regional scopes query with unitId 'in' (≤6 units per CCM region, Firestore
       // limit 30) backed by the (unitId, status, date) composite index; the
       // stake-wide scope reads everything via the (status, date) index.
-      let schedulesQuery = admin.firestore()
-        .collection('schedules') as admin.firestore.Query
-      if (unitIds !== null) schedulesQuery = schedulesQuery.where('unitId', 'in', unitIds)
+      const schedulesQuery = schedulesBaseQuery(db, scope)
 
       // 협의 평의회는 CC 전체가 대상이라 unitId가 비어 있다. unitId-in 쿼리로는 못 잡으니
       // regionId로 별도 조회해 합친다. (전체 공유는 이미 전 일정을 읽어 자동 포함)
@@ -168,7 +147,6 @@ export const publicScheduleIcs = onRequest(
 
       const [schedulesSnap, ccSnap, generalSnap, seventyOnlySnap, seventyNotesSnap, generalSeventyNotesSnap] = await Promise.all([
         schedulesQuery
-          .where('status', '==', 'confirmed')
           .where('date', '>=', cutoffStr)
           .orderBy('date', 'asc')
           .get(),
