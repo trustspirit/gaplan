@@ -28,6 +28,7 @@ import {
 import { loadScheduleCache, saveScheduleCache, clearScheduleCache } from '@/utils/scheduleCache'
 import { readInlinePublicData } from '@/utils/inlinePublicData'
 import { getTodayMarkerPlacement, getTodayMarkerScrollTop } from './todayMarker'
+import { WardVisitsView } from './WardVisitsView'
 import styles from './PublicSchedulePage.module.scss'
 
 const DOW_KO = ['일', '월', '화', '수', '목', '금', '토']
@@ -170,6 +171,9 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
   // 이전 일정을 위에 붙이기 직전, 맨 위 항목의 화면 위치. 붙인 뒤 그만큼 스크롤을 되돌려
   // 보던 자리가 아래로 밀리지 않게 한다.
   const historyAnchorRef = useRef<{ el: HTMLElement; top: number } | null>(null)
+  // 칠십인 개인 링크에서만 "방문 와드" 탭이 생긴다. 최신 응답에서만 켠다(historyBefore와 같은 이유).
+  const [wardVisitsAvailable, setWardVisitsAvailable] = useState(false)
+  const [view, setView] = useState<'schedule' | 'wards'>('schedule')
 
   const toggleNotes = (id: string) => {
     setOpenNotes((prev) => {
@@ -214,8 +218,10 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
     // 항상 최신 데이터 백그라운드 fetch
     setRefreshing(true)
     fetchPublicSchedulePageData(token)
-      .then(({ schedules: s, generalSchedules: generals, scopeDisplayName: name, historyBefore }) => {
+      .then(({ schedules: s, generalSchedules: generals, scopeDisplayName: name, historyBefore, wardVisitsAvailable: wards }) => {
         if (cancelled) return
+        setWardVisitsAvailable(wards === true)
+        if (wards !== true) setView('schedule')
         setSchedules(s)
         setScopeDisplayName(name)
         setGeneralSchedules(generals)
@@ -310,7 +316,7 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
   // "오늘"로 내려가는 자동 스크롤, 붙인 뒤의 위치 보정)은 무시한다. 실패하면 자동으로 다시
   // 부르지 않고 버튼으로 재시도하게 둔다.
   useEffect(() => {
-    if (historyStatus !== 'idle') return
+    if (historyStatus !== 'idle' || view !== 'schedule') return
     let lastY = window.scrollY
     const onScroll = () => {
       const y = window.scrollY
@@ -320,7 +326,7 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [historyStatus, loadOlder])
+  }, [historyStatus, loadOlder, view])
 
   const handleRefresh = () => {
     if (token) clearScheduleCache(token)
@@ -461,6 +467,26 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
       </header>
 
       <main className={styles.main} ref={mainRef}>
+        {wardVisitsAvailable && (
+          <div className={styles.viewTabs} role="tablist">
+            {(['schedule', 'wards'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                role="tab"
+                aria-selected={view === v}
+                className={clsx(styles.viewTab, view === v && styles.viewTabActive)}
+                onClick={() => setView(v)}
+              >
+                {t(v === 'schedule' ? 'public.tabSchedule' : 'public.tabWardVisits')}
+              </button>
+            ))}
+          </div>
+        )}
+        {view === 'wards' && token ? (
+          <WardVisitsView token={token} />
+        ) : (
+        <>
         {!isInitialLoading && historyStatus !== 'unavailable' && (
           <div className={styles.historyBar} ref={historyBarRef}>
             {historyStatus === 'idle' && (
@@ -710,6 +736,8 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
               </section>
             )
           })
+        )}
+        </>
         )}
       </main>
 

@@ -1,11 +1,16 @@
 import { callPublicFunction } from './publicScheduleFetch'
-import type { PublicScheduleHistoryPage, PublicSchedulePageData } from '@/types/publicSchedule'
+import type {
+  PublicScheduleHistoryPage,
+  PublicSchedulePageData,
+  PublicWardVisitItem,
+} from '@/types/publicSchedule'
 
 export type {
   PublicGeneralScheduleItem,
   PublicScheduleHistoryPage,
   PublicScheduleItem,
   PublicSchedulePageData,
+  PublicWardVisitItem,
 } from '@/types/publicSchedule'
 
 export async function fetchPublicSchedulePageData(token: string): Promise<PublicSchedulePageData> {
@@ -18,6 +23,7 @@ export async function fetchPublicSchedulePageData(token: string): Promise<Public
     generalSchedules: result.generalSchedules ?? [],
     scopeDisplayName: result.scopeDisplayName ?? null,
     ...(typeof result.historyBefore === 'string' ? { historyBefore: result.historyBefore } : {}),
+    ...(result.wardVisitsAvailable === true ? { wardVisitsAvailable: true } : {}),
   }
 }
 
@@ -35,4 +41,13 @@ export async function fetchPublicScheduleHistory(
     generalSchedules: result.generalSchedules ?? [],
     nextBefore: typeof result.nextBefore === 'string' ? result.nextBefore : null,
   }
+}
+
+/** 칠십인 개인 링크의 한 해 치 와드 방문. */
+export async function fetchPublicWardVisits(token: string, year: number): Promise<PublicWardVisitItem[]> {
+  const result = await callPublicFunction<{ token: string; year: number }, { visits?: PublicWardVisitItem[] }>(
+    'getPublicWardVisits',
+    { token, year },
+  )
+  return Array.isArray(result.visits) ? result.visits : []
 }

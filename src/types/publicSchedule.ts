@@ -40,6 +40,8 @@ export interface PublicSchedulePageData {
   // 이 응답이 담은 가장 이른 날짜. 이전 일정은 이 날짜를 before로 넘겨 받는다.
   // 서버가 이 필드를 모르는(배포 전) 경우엔 빠지고, 화면은 이전 일정 불러오기를 감춘다.
   historyBefore?: string
+  // 칠십인 개인 링크일 때만 true — "방문 와드" 탭을 보일지 정한다.
+  wardVisitsAvailable?: boolean
 }
 
 /** getPublicScheduleHistory 한 쪽. nextBefore가 null이면 더 이전 일정이 없다. */

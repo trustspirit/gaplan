@@ -1,0 +1,249 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+// 칠십인 개인 링크의 "방문 와드" 탭. 색은 쓰지 않는다 — 방문 칸·스테이크 색칠은 시선이
+// 흩어진다고 사용자가 거절했다. 진한 글씨(방문)·흐린 글씨(스테이크·예정)로만 구분한다.
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.yearNav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-3;
+}
+
+.yearBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  background: $color-surface;
+  color: $color-text;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.yearLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  min-width: 64px;
+  text-align: center;
+}
+
+.loading,
+.errorBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-8;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.errorBox {
+  color: $color-danger;
+}
+
+.retryBtn {
+  min-height: 44px;
+  padding: $space-2 $space-5;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-size-sm;
+  cursor: pointer;
+}
+
+// ─── 방문 하나 ─────────────────────────────────────────────────────────────
+.visit {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &[data-planned] .ward {
+    color: $color-text-muted;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.ward {
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.stake,
+.planned {
+  font-style: normal;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  margin-left: $space-1;
+}
+
+// ─── 휴대폰: 달마다 일요일 줄 ─────────────────────────────────────────────
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  @include desktop {
+    display: none;
+  }
+}
+
+.card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: $space-2;
+  margin: 0;
+  padding: $space-2 $space-3;
+  border-bottom: 1px solid $color-border;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+}
+
+.cardSummary {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-normal;
+  color: $color-text-muted;
+}
+
+.cardRows {
+  display: flex;
+  flex-direction: column;
+}
+
+.cardRow {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  min-height: 40px;
+  padding: $space-2 $space-3;
+  font-size: $font-size-sm;
+
+  & + & {
+    border-top: 1px solid $color-border;
+  }
+}
+
+.day {
+  flex-shrink: 0;
+  width: 40px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+
+  small {
+    margin-left: 2px;
+    font-weight: $font-weight-normal;
+    color: $color-text-muted;
+  }
+}
+
+.rowVisits {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.noVisit {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+// 공개 일정표의 "오늘" 구분선과 같은 모양(PublicSchedulePage.module.scss의 .todayMarker).
+.todayMarker {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-1 $space-3;
+  color: $color-primary;
+}
+
+.todayLine {
+  height: 1px;
+  flex: 1;
+  background: rgba($color-primary, 0.28);
+}
+
+.todayLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+// ─── 데스크톱: 1년 표 ─────────────────────────────────────────────────────
+// 가로줄만 둔다(세로줄 없음). 칸 배경은 모두 같은 흰색.
+.table {
+  display: none;
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  font-size: $font-size-sm;
+
+  @include desktop {
+    display: table;
+  }
+
+  th {
+    padding: $space-2 $space-3;
+    text-align: left;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+  }
+
+  td {
+    padding: $space-2 $space-3;
+    border-top: 1px solid $color-border;
+    vertical-align: top;
+  }
+}
+
+.monthCol {
+  width: 56px;
+}
+
+.monthCell {
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+
+  tr[data-current] & {
+    color: $color-primary;
+  }
+}
+
+.slotCell {
+  min-width: 0;
+
+  .visit + .visit {
+    margin-top: 2px;
+  }
+}

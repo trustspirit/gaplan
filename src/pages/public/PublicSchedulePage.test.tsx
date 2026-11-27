@@ -14,14 +14,17 @@ vi.mock('react-i18next', () => ({
   }),
 }))
 
-const { fetchPublicSchedulePageDataMock, fetchPublicScheduleHistoryMock } = vi.hoisted(() => ({
-  fetchPublicSchedulePageDataMock: vi.fn(),
-  fetchPublicScheduleHistoryMock: vi.fn(),
-}))
+const { fetchPublicSchedulePageDataMock, fetchPublicScheduleHistoryMock, fetchPublicWardVisitsMock } =
+  vi.hoisted(() => ({
+    fetchPublicSchedulePageDataMock: vi.fn(),
+    fetchPublicScheduleHistoryMock: vi.fn(),
+    fetchPublicWardVisitsMock: vi.fn(),
+  }))
 
 vi.mock('@/services/publicScheduleService', () => ({
   fetchPublicSchedulePageData: fetchPublicSchedulePageDataMock,
   fetchPublicScheduleHistory: fetchPublicScheduleHistoryMock,
+  fetchPublicWardVisits: fetchPublicWardVisitsMock,
 }))
 
 const scheduleItem: PublicScheduleItem = {
@@ -280,5 +283,40 @@ describe('PublicSchedulePage — 이전 일정과 오늘 자동 스크롤', () =
     await waitFor(() => expect(screen.getByText('지난 방문')).toBeInTheDocument())
 
     expect(window.scrollTo).not.toHaveBeenCalled()
+  })
+})
+
+describe('PublicSchedulePage — 방문 와드 탭', () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+    fetchPublicSchedulePageDataMock.mockReset()
+    fetchPublicWardVisitsMock.mockReset()
+    fetchPublicWardVisitsMock.mockResolvedValue([])
+  })
+
+  it('칠십인 개인 링크면 탭이 보이고, 방문 와드를 누르면 방문 기록을 받는다', async () => {
+    fetchPublicSchedulePageDataMock.mockResolvedValue({
+      schedules: [scheduleItem],
+      generalSchedules: [],
+      scopeDisplayName: null,
+      wardVisitsAvailable: true,
+    })
+    renderPage('token-seventy')
+
+    fireEvent.click(await screen.findByText('public.tabWardVisits'))
+
+    await waitFor(() => expect(fetchPublicWardVisitsMock).toHaveBeenCalledWith('token-seventy', expect.any(Number)))
+    expect(document.querySelector(`.${styles.scheduleRow}`)).toBeNull()
+  })
+
+  it('칠십인 개인 링크가 아니면 탭이 없다', async () => {
+    fetchPublicSchedulePageDataMock.mockResolvedValue({
+      schedules: [scheduleItem],
+      generalSchedules: [],
+      scopeDisplayName: null,
+    })
+    renderPage('token-all')
+    await waitFor(() => expect(document.querySelector(`.${styles.scheduleRow}`)).not.toBeNull())
+    expect(screen.queryByText('public.tabWardVisits')).toBeNull()
   })
 })

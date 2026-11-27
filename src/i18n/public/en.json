@@ -26,6 +26,20 @@
     "historyLoad": "Show earlier",
     "historyLoading": "Loading earlier schedules...",
     "historyEnd": "No earlier schedules",
-    "historyError": "Could not load earlier schedules"
+    "historyError": "Could not load earlier schedules",
+    "tabSchedule": "Schedule",
+    "tabWardVisits": "Ward visits",
+    "wardNoVisit": "No visit",
+    "wardPlanned": "Planned",
+    "wardMonthSummary": "{{visits}} visits / {{sundays}} Sundays",
+    "wardSlot1": "1st Sun",
+    "wardSlot2": "2nd",
+    "wardSlot3": "3rd",
+    "wardSlot4": "4th",
+    "wardSlot5": "5th",
+    "wardMonth": "Month",
+    "wardPrevYear": "Previous year",
+    "wardNextYear": "Next year",
+    "wardLoadError": "Could not load visits"
   }
 }

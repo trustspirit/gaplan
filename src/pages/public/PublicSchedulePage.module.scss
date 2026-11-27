@@ -120,6 +120,34 @@
   margin-bottom: $space-6;
 }
 
+// 칠십인 개인 링크의 [전체 일정 | 방문 와드] 탭. 로그인 앱의 SegmentedControl을 끌어오면
+// 공개 번들이 커져 같은 모양만 여기서 다시 그린다.
+.viewTabs {
+  display: flex;
+  max-width: 320px;
+  margin: 0 auto $space-3;
+  padding: 3px;
+  border-radius: $border-radius-lg;
+  background: $color-border;
+}
+
+.viewTab {
+  flex: 1;
+  min-height: 40px;
+  border: 0;
+  border-radius: $border-radius-md;
+  background: transparent;
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  cursor: pointer;
+}
+
+.viewTabActive {
+  background: $color-surface;
+  color: $color-text;
+  font-weight: $font-weight-semibold;
+}
+
 // 목록 맨 위 — 이전 일정 불러오기. 위로 스크롤하면 저절로 불리고, 버튼은 스크롤할 수 없을
 // 만큼 목록이 짧을 때와 실패 뒤 재시도용이다.
 .historyBar {

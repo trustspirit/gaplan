@@ -26,6 +26,20 @@
     "historyLoad": "이전 일정 보기",
     "historyLoading": "이전 일정을 불러오는 중...",
     "historyEnd": "이전 일정이 더 없습니다",
-    "historyError": "이전 일정을 불러오지 못했습니다"
+    "historyError": "이전 일정을 불러오지 못했습니다",
+    "tabSchedule": "전체 일정",
+    "tabWardVisits": "방문 와드",
+    "wardNoVisit": "방문 없음",
+    "wardPlanned": "예정",
+    "wardMonthSummary": "방문 {{visits}} / 일요일 {{sundays}}",
+    "wardSlot1": "첫째 일요일",
+    "wardSlot2": "둘째",
+    "wardSlot3": "셋째",
+    "wardSlot4": "넷째",
+    "wardSlot5": "다섯째",
+    "wardMonth": "월",
+    "wardPrevYear": "이전 해",
+    "wardNextYear": "다음 해",
+    "wardLoadError": "방문 기록을 불러오지 못했습니다"
   }
 }
