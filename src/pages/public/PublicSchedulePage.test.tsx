@@ -309,6 +309,20 @@ describe('PublicSchedulePage — 방문 와드 탭', () => {
     expect(document.querySelector(`.${styles.scheduleRow}`)).toBeNull()
   })
 
+  // 본문 맨 위에 두면 스크롤할 때 함께 올라가 사라진다 — 고정 머리글 안에 둔다.
+  it('탭은 고정 머리글 안에 있다', async () => {
+    fetchPublicSchedulePageDataMock.mockResolvedValue({
+      schedules: [scheduleItem],
+      generalSchedules: [],
+      scopeDisplayName: null,
+      wardVisitsAvailable: true,
+    })
+    renderPage('token-seventy-header')
+
+    const tablist = await screen.findByRole('tablist')
+    expect(screen.getByRole('banner')).toContainElement(tablist)
+  })
+
   it('탭을 오가도 방문 기록을 다시 받지 않고, 새로고침하면 다시 받는다', async () => {
     fetchPublicSchedulePageDataMock.mockResolvedValue({
       schedules: [scheduleItem],

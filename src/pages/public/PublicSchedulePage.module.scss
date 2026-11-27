@@ -103,6 +103,63 @@
   flex-shrink: 0;
 }
 
+// 칠십인 개인 링크의 [전체 일정 | 방문 와드] 보기 전환 — 고정 머리글 안.
+// 눈에 띄도록 반투명 바탕을 깔고 아이콘을 붙인다(테두리만 있던 작은 알약은 잘 안 보였다).
+// 데스크톱은 머리글 가운데, 휴대폰은 오른쪽 버튼들 앞. 머리글 높이가 바뀌지 않도록 버튼 높이는
+// .langToggle을 넘지 않게 둔다. 바탕·글자색은 .langToggle과 같은 반투명 흰색 계열.
+.viewTabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 2px;
+  margin-left: auto;
+  border-radius: $border-radius-full;
+  background: rgba(255, 255, 255, 0.14);
+
+  @include desktop {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-left: 0;
+  }
+}
+
+.viewTab {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  border: 0;
+  border-radius: $border-radius-full;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  padding: $space-1 $space-4;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  @media (pointer: coarse) {
+    min-height: $touch-target-min - 4px;
+  }
+
+  @media (max-width: 600px) {
+    padding: $space-1 $space-2;
+    font-size: $font-size-xs;
+  }
+}
+
+.viewTabActive,
+.viewTabActive:hover {
+  background: #fff;
+  color: $color-sidebar;
+  font-weight: $font-weight-semibold;
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────
 .main {
   flex: 1;
@@ -118,34 +175,6 @@
 
 .monthGroup {
   margin-bottom: $space-6;
-}
-
-// 칠십인 개인 링크의 [전체 일정 | 방문 와드] 탭. 로그인 앱의 SegmentedControl을 끌어오면
-// 공개 번들이 커져 같은 모양만 여기서 다시 그린다.
-.viewTabs {
-  display: flex;
-  max-width: 320px;
-  margin: 0 auto $space-3;
-  padding: 3px;
-  border-radius: $border-radius-lg;
-  background: $color-border;
-}
-
-.viewTab {
-  flex: 1;
-  min-height: 40px;
-  border: 0;
-  border-radius: $border-radius-md;
-  background: transparent;
-  color: $color-text-muted;
-  font-size: $font-size-sm;
-  cursor: pointer;
-}
-
-.viewTabActive {
-  background: $color-surface;
-  color: $color-text;
-  font-weight: $font-weight-semibold;
 }
 
 // 목록 맨 위 — 이전 일정 불러오기. 위로 스크롤하면 저절로 불리고, 버튼은 스크롤할 수 없을

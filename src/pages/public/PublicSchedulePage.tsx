@@ -15,6 +15,7 @@ import {
   UserCheck,
   User,
   Lock,
+  MapPin,
 } from 'lucide-react'
 import { ALL_UNITS, WARDS } from '@/constants/regions'
 import { isMultiDayEvent } from '@/types'
@@ -456,6 +457,28 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
     <div className={styles.page}>
       <header className={styles.header}>
         <h1 className={styles.headerTitle}>{title}</h1>
+        {/* 칠십인 개인 링크의 보기 전환. 본문 맨 위에 두면 스크롤할 때 함께 올라가 사라져
+            고정 머리글에 둔다 — 데스크톱은 가운데, 휴대폰은 오른쪽 버튼들 앞. */}
+        {wardVisitsAvailable && (
+          <div className={styles.viewTabs} role="tablist">
+            {(['schedule', 'wards'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                role="tab"
+                aria-selected={view === v}
+                className={clsx(styles.viewTab, view === v && styles.viewTabActive)}
+                onClick={() => {
+                  setView(v)
+                  if (v === 'wards') setWardsOpened(true)
+                }}
+              >
+                {v === 'schedule' ? <CalendarDays size={15} /> : <MapPin size={15} />}
+                <span>{v === 'schedule' ? t('public.tabSchedule') : t('public.tabWardVisits')}</span>
+              </button>
+            ))}
+          </div>
+        )}
         <div className={styles.headerActions}>
           <button className={styles.langToggle} onClick={toggleLang}>
             {lang === 'ko' ? 'EN' : '한'}
@@ -473,25 +496,6 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
       </header>
 
       <main className={styles.main} ref={mainRef}>
-        {wardVisitsAvailable && (
-          <div className={styles.viewTabs} role="tablist">
-            {(['schedule', 'wards'] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                role="tab"
-                aria-selected={view === v}
-                className={clsx(styles.viewTab, view === v && styles.viewTabActive)}
-                onClick={() => {
-                  setView(v)
-                  if (v === 'wards') setWardsOpened(true)
-                }}
-              >
-                {v === 'schedule' ? t('public.tabSchedule') : t('public.tabWardVisits')}
-              </button>
-            ))}
-          </div>
-        )}
         {wardsOpened && token && (
           <div hidden={view !== 'wards'}>
             <WardVisitsView
