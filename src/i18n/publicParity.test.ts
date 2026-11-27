@@ -18,8 +18,9 @@ import en from './en.json'
 // 파일을 읽으려는 의도와 충돌하므로, import.meta.url을 먼저 경로 문자열로 변환한
 // 뒤 path로 조합해 그 변환을 우회한다.
 const HERE = fileURLToPath(import.meta.url)
-const PAGE_PATH = path.resolve(path.dirname(HERE), '../pages/public/PublicSchedulePage.tsx')
-const PAGE = readFileSync(PAGE_PATH, 'utf8')
+// 공개 엔트리가 그리는 화면 파일들 — 방문 와드 탭(WardVisitsView)도 같은 가드를 받는다.
+const PAGE_FILES = ['../pages/public/PublicSchedulePage.tsx', '../pages/public/WardVisitsView.tsx']
+const PAGE = PAGE_FILES.map((f) => readFileSync(path.resolve(path.dirname(HERE), f), 'utf8')).join('\n')
 
 // PublicSchedulePage.tsx가 실제로 부르는 키를 파일에서 직접 스캔한다. 사람이
 // 유지보수하는 목록은 페이지가 바뀌어도 갱신을 잊을 수 있어 가드가 되지 못한다 —

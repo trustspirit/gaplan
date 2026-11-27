@@ -16,13 +16,6 @@ import styles from './WardVisitsView.module.scss'
 const MIN_YEAR = 2000
 const DOW_KO = ['일', '월', '화', '수', '목', '금', '토']
 const DOW_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const SLOT_KEYS = [
-  'public.wardSlot1',
-  'public.wardSlot2',
-  'public.wardSlot3',
-  'public.wardSlot4',
-  'public.wardSlot5',
-]
 // _mixins.scss의 desktop 믹스인과 같은 폭 — 표와 카드가 바뀌는 곳(WardVisitsView.module.scss).
 const DESKTOP_QUERY = '(min-width: 769px)'
 // 고정 머리글 높이만큼 띄운다(todayMarker.ts의 topOffset과 같은 값).
@@ -235,9 +228,12 @@ export function WardVisitsView({ token }: { token: string }) {
             <thead>
               <tr>
                 <th className={styles.monthCol}>{t('public.wardMonth')}</th>
-                {SLOT_KEYS.map((key) => (
-                  <th key={key}>{t(key)}</th>
-                ))}
+                {/* 키를 문자열로 적는다 — publicParity 테스트가 계산된 t() 키를 막는다. */}
+                <th>{t('public.wardSlot1')}</th>
+                <th>{t('public.wardSlot2')}</th>
+                <th>{t('public.wardSlot3')}</th>
+                <th>{t('public.wardSlot4')}</th>
+                <th>{t('public.wardSlot5')}</th>
               </tr>
             </thead>
             <tbody>

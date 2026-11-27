@@ -478,7 +478,7 @@ export default function PublicSchedulePage({ token }: PublicSchedulePageProps) {
                 className={clsx(styles.viewTab, view === v && styles.viewTabActive)}
                 onClick={() => setView(v)}
               >
-                {t(v === 'schedule' ? 'public.tabSchedule' : 'public.tabWardVisits')}
+                {v === 'schedule' ? t('public.tabSchedule') : t('public.tabWardVisits')}
               </button>
             ))}
           </div>
