@@ -192,6 +192,22 @@ describe('buildPublicScheduleHistory', () => {
     expect(scoped.schedules[0].seventyNotes).toBeUndefined()
   })
 
+  it('칠십인 개인 링크는 그 칠십인의 일정만 이어 준다', async () => {
+    const db = setup({
+      scope: 'seventy:u1',
+      schedules: [
+        visit('a', '2026-01-10', { seventyUid: 'u1' }),
+        visit('b', '2026-01-03', { seventyUid: 'u1' }),
+        visit('c', '2026-01-05', { seventyUid: 'u2' }),
+        visit('d', '2026-01-06'),
+      ],
+    })
+
+    const pages = await readAll(db, '2026-02-01')
+
+    expect(pages.flatMap((p) => p.schedules.map((s) => s.id)).sort()).toEqual(['a', 'b'])
+  })
+
   it('알 수 없는 토큰은 처음 페이지와 같이 거부한다', async () => {
     const db = setup({ scope: '__all__' })
     await expect(buildPublicScheduleHistory(db, 'nope', '2026-01-01')).rejects.toMatchObject({

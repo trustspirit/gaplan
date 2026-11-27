@@ -5,6 +5,7 @@ import {
   isScheduleInPublicScope,
   notesById,
   resolvePublicScope,
+  schedulesBaseQuery,
   toPublicGeneralSchedule,
   toPublicSchedule,
   type FirestoreLike,
@@ -70,11 +71,7 @@ function sourcesFor(db: FirestoreLike, scope: PublicScope): Source[] {
   const sources: Source[] = [
     {
       kind: 'schedule',
-      base: () => {
-        let q = db.collection('schedules')
-        if (unitIds !== null) q = q.where('unitId', 'in', unitIds)
-        return q.where('status', '==', 'confirmed')
-      },
+      base: () => schedulesBaseQuery(db, scope),
     },
     {
       kind: 'general',

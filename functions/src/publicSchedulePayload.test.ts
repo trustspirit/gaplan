@@ -229,4 +229,47 @@ describe('buildPublicSchedulePayload', () => {
       expect(payload.generalSchedules[1]).not.toHaveProperty('seventyAttends')
     })
   })
+  describe('칠십인 개인 링크', () => {
+    const sched = (id: string, seventyUid: string | undefined, type = 'interview') => ({
+      id,
+      data: () => ({
+        type,
+        unitId: 'seoul-stake',
+        date: '2999-01-05',
+        startTime: '10:00',
+        endTime: '11:00',
+        status: 'confirmed',
+        ...(seventyUid ? { seventyUid } : {}),
+      }),
+    })
+    const setupSeventy = (enabled: boolean) =>
+      setupFirestore({
+        tokens: { tok: 'seventy:u1' },
+        units: { 'seventy:u1': { enabled } },
+        schedules: [sched('mine', 'u1'), sched('other', 'u2'), sched('none', undefined)],
+      })
+
+    it('켜진 칠십인 링크는 그 칠십인의 일정만, 와드 방문이 아닌 것도 함께 싣는다', async () => {
+      const p = await buildPublicSchedulePayload(setupSeventy(true), 'tok')
+      expect(p.schedules.map((s) => s.id)).toEqual(['mine'])
+      expect(p.wardVisitsAvailable).toBe(true)
+      expect(p.scopeDisplayName).toBeNull()
+    })
+
+    it('꺼진 칠십인 링크는 scope-not-enabled', async () => {
+      await expect(buildPublicSchedulePayload(setupSeventy(false), 'tok')).rejects.toMatchObject({
+        reason: 'scope-not-enabled',
+      })
+    })
+
+    it('uid가 빈 칠십인 범위는 invalid-scope', async () => {
+      const db = setupFirestore({ tokens: { tok: 'seventy:' }, units: { 'seventy:': { enabled: true } } })
+      await expect(buildPublicSchedulePayload(db, 'tok')).rejects.toMatchObject({ reason: 'invalid-scope' })
+    })
+
+    it('전체 공유와 지역 링크는 wardVisitsAvailable이 false', async () => {
+      const p = await buildPublicSchedulePayload(setupFirestore({ tokens: { tok: '__all__' } }), 'tok')
+      expect(p.wardVisitsAvailable).toBe(false)
+    })
+  })
 })

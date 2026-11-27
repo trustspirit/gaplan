@@ -114,7 +114,12 @@ export interface PublicSchedulePayload {
   // 이 응답이 담은 가장 이른 날짜(포함). 이보다 앞선 일정은 getPublicScheduleHistory에
   // before로 넘겨 10개씩 받는다 — 일정·행사가 같은 경계를 써야 그 사이가 비지 않는다.
   historyBefore: string
+  // 칠십인 개인 링크일 때만 true — 화면이 "방문 와드" 탭을 보일지 여기서 정한다.
+  wardVisitsAvailable: boolean
 }
+
+/** 칠십인 개인 링크의 범위 값 접두사. `seventy:<uid>`. */
+export const SEVENTY_SCOPE_PREFIX = 'seventy:'
 
 /** 토큰이 가리키는 공개 범위. 판정은 resolvePublicScope 한 곳에서만 한다. */
 export interface PublicScope {
@@ -124,6 +129,9 @@ export interface PublicScope {
   scopeDisplayName: string | null
   // 행사 스코프 판정은 유닛 링크에서도 그 유닛의 CC 기준으로 해야 한다.
   scopeRegionId: string | null
+  // 칠십인 개인 링크면 그 칠십인 uid. 일정은 이 칠십인 것만 싣고, 나머지(행사·메모)는
+  // 전체 공유와 같게 다룬다 — 그래서 unitIds는 null이다.
+  seventyUid: string | null
 }
 
 export async function resolvePublicScope(db: FirestoreLike, token: string): Promise<PublicScope> {
@@ -149,6 +157,15 @@ export async function resolvePublicScope(db: FirestoreLike, token: string): Prom
   let scopeDisplayName: string | null = null
   let scopeRegionId: string | null = null
 
+  if (scopeValue.startsWith(SEVENTY_SCOPE_PREFIX)) {
+    if (unitsSnap.data()?.[scopeValue]?.enabled !== true) {
+      throw new PublicScopeError('scope-not-enabled')
+    }
+    const seventyUid = scopeValue.slice(SEVENTY_SCOPE_PREFIX.length)
+    if (!seventyUid) throw new PublicScopeError('invalid-scope')
+    return { scopeValue, unitIds: null, scopeDisplayName: null, scopeRegionId: null, seventyUid }
+  }
+
   if (scopeValue !== '__all__') {
     const unitEnabled = unitsSnap.exists && unitsSnap.data()?.[scopeValue]?.enabled === true
 
@@ -164,7 +181,19 @@ export async function resolvePublicScope(db: FirestoreLike, token: string): Prom
     scopeRegionId = getScopeRegionId(scopeValue)
   }
 
-  return { scopeValue, unitIds, scopeDisplayName, scopeRegionId }
+  return { scopeValue, unitIds, scopeDisplayName, scopeRegionId, seventyUid: null }
+}
+
+/**
+ * 공개 범위에 맞춘 확정 일정 쿼리의 출발점. 날짜 조건과 정렬은 호출부가 붙인다.
+ * 처음 페이지·이전 일정·ICS·방문 와드가 모두 여기서 시작해야 한 링크가 진입점마다 다른
+ * 일정을 내보내지 않는다. 협의 평의회용 regionId 쿼리(지역 링크 전용)는 여기 속하지 않는다.
+ */
+export function schedulesBaseQuery(db: FirestoreLike, scope: PublicScope): FirestoreQueryLike {
+  let q = db.collection('schedules')
+  if (scope.seventyUid !== null) q = q.where('seventyUid', '==', scope.seventyUid)
+  else if (scope.unitIds !== null) q = q.where('unitId', 'in', scope.unitIds)
+  return q.where('status', '==', 'confirmed')
 }
 
 /**
@@ -264,8 +293,6 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
   // 이전 일정을 이어 받을 때 지난 일주일의 행사가 영영 빠진다.
   const cutoffStr = initialCutoff()
 
-  let query = db.collection('schedules')
-  if (unitIds !== null) query = query.where('unitId', 'in', unitIds)
 
   // 협의 평의회는 CC 전체가 대상이라 unitId가 비어 있어 위 unitId-in 쿼리에 걸리지 않는다.
   // regionId로 한 번 더 조회해 합친다. (전체 공유는 애초에 전 일정을 읽으므로 불필요)
@@ -326,8 +353,7 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
       : null
 
   const [snap, generalSnap, ccSnap, seventyOnlySnap, seventyNotesSnap, generalSeventyNotesSnap] = await Promise.all([
-    query
-      .where('status', '==', 'confirmed')
+    schedulesBaseQuery(db, scope)
       .where('date', '>=', cutoffStr)
       .orderBy('date', 'asc')
       .get(),
@@ -362,5 +388,11 @@ export async function buildPublicSchedulePayload(db: FirestoreLike, token: strin
     .filter((d) => isGeneralInPublicScope(d.data(), scope))
     .map((d) => toPublicGeneralSchedule(d, scope, generalSeventyNotesById))
 
-  return { schedules, generalSchedules, scopeDisplayName, historyBefore: cutoffStr }
+  return {
+    schedules,
+    generalSchedules,
+    scopeDisplayName,
+    historyBefore: cutoffStr,
+    wardVisitsAvailable: scope.seventyUid !== null,
+  }
 }
