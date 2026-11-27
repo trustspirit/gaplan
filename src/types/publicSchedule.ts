@@ -48,3 +48,11 @@ export interface PublicScheduleHistoryPage {
   generalSchedules: PublicGeneralScheduleItem[]
   nextBefore: string | null
 }
+
+/** getPublicWardVisits 한 항목 — 칠십인 개인 링크의 "방문 와드" 탭. */
+export interface PublicWardVisitItem {
+  id: string
+  date: string
+  wardName: string
+  unitId: string
+}
